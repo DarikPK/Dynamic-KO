@@ -8,4 +8,44 @@
     <string name="main_btn_share_pdf">Share PDF</string>
     <string name="main_btn_templates">Save/Load Template</string>
     <string name="main_btn_generate_pdf">Generate PDF</string>
+
+    <!-- CoverSetupScreen -->
+    <string name="cover_setup_title">Cover Setup</string>
+    <string name="cover_setup_client_name_label">Client Name</string>
+    <string name="cover_setup_ruc_label">RUC</string>
+    <string name="cover_setup_address_label">Address</string>
+    <string name="cover_setup_select_image_button">Select Main Image</string>
+    <string name="cover_setup_navigate_back_description">Navigate Back</string>
+    <string name="cover_setup_text_customization_title">Text Customization</string>
+    <string name="cover_setup_font_size_label">Font Size: %1$.0f sp</string>
+    <string name="cover_setup_alignment_label">Alignment</string>
+    <string name="cover_setup_align_start">Start</string>
+    <string name="cover_setup_align_center">Center</string>
+    <string name="cover_setup_align_end">End</string>
+    <string name="field_client_name">Client</string>
+    <string name="field_ruc">RUC</string>
+    <string name="field_address">Address</string>
+    <string name="cover_image_selected_description">Selected main image</string>
+    <string name="cover_no_image_selected">No image selected</string>
+
+    <!-- Border Customization -->
+    <string name="cover_setup_border_customization_title">Border Customization</string>
+    <string name="cover_setup_border_color_label">Border Color:</string>
+    <string name="cover_setup_border_visibility_label">Border Side Visibility:</string>
+    <string name="cover_setup_border_top">Top</string>
+    <string name="cover_setup_border_bottom">Bottom</string>
+    <string name="cover_setup_border_left">Left</string>
+    <string name="cover_setup_border_right">Right</string>
+    <string name="color_black">Black</string>
+    <string name="color_gray">Gray</string>
+    <string name="color_blue">Blue</string>
+    <string name="color_red">Red</string>
+    <string name="color_green">Green</string>
+
+    <!-- Margin Customization -->
+    <string name="cover_setup_margins_customization_title">Margins Customization (cm)</string>
+    <string name="cover_setup_margin_top">Top:</string>
+    <string name="cover_setup_margin_bottom">Bottom:</string>
+    <string name="cover_setup_margin_left">Left:</string>
+    <string name="cover_setup_margin_right">Right:</string>
 </resources>
