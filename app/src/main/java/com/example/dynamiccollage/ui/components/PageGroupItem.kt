@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.PhotoLibrary // Asegurar que esta importación es correcta o ajustar el icono
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -99,16 +99,16 @@ fun PageGroupItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedButton(onClick = { onAddImagesClicked(pageGroup.id) }) {
-                    Icon(Icons.Default.PhotoLibrary, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
+                    Icon(Icons.Filled.PhotoLibrary, contentDescription = null, modifier = Modifier.padding(end = 4.dp)) // Re-asegurando el uso de Icons.Filled
                     Text(stringResource(R.string.group_item_add_images_button))
                 }
                 Row {
                     IconButton(onClick = { onEditGroupClicked(pageGroup) }) {
-                        Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.group_item_edit_button_description))
+                        Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.group_item_edit_button_description)) // Usar Icons.Filled consistentemente
                     }
                     Spacer(modifier = Modifier.width(4.dp))
                     IconButton(onClick = { onDeleteGroupClicked(pageGroup.id) }) {
-                        Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.group_item_delete_button_description), tint = MaterialTheme.colorScheme.error)
+                        Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.group_item_delete_button_description), tint = MaterialTheme.colorScheme.error) // Usar Icons.Filled consistentemente
                     }
                 }
             }
