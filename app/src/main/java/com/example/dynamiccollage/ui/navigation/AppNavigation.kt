@@ -6,7 +6,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.dynamiccollage.ui.screens.MainScreen
 import com.example.dynamiccollage.ui.screens.PlaceholderScreen
-import com.example.dynamiccollage.ui.screens.CoverSetupScreen // Importar la nueva pantalla
+import com.example.dynamiccollage.ui.screens.CoverSetupScreen
+import com.example.dynamiccollage.ui.screens.InnerPagesScreen // Importar la nueva pantalla
 
 @Composable
 fun AppNavigation() {
@@ -16,10 +17,10 @@ fun AppNavigation() {
             MainScreen(navController = navController)
         }
         composable(Screen.CoverSetup.route) {
-            CoverSetupScreen(navController = navController) // Usar la nueva pantalla
+            CoverSetupScreen(navController = navController)
         }
         composable(Screen.InnerPages.route) {
-            PlaceholderScreen(screenName = "Páginas Interiores")
+            InnerPagesScreen(navController = navController) // Usar la nueva pantalla
         }
         composable(Screen.PdfPreview.route) {
             PlaceholderScreen(screenName = "Vista Previa PDF")

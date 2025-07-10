@@ -49,4 +49,33 @@
     <string name="cover_setup_margin_bottom">Bottom:</string>
     <string name="cover_setup_margin_left">Left:</string>
     <string name="cover_setup_margin_right">Right:</string>
+
+    <!-- InnerPagesScreen -->
+    <string name="inner_pages_title">Inner Pages</string>
+    <string name="inner_pages_add_group_fab_description">Add Group</string>
+    <string name="inner_pages_content_in_development">Inner Pages content in development.</string>
+    <string name="inner_pages_no_groups">No page groups. Add a new one.</string>
+
+    <!-- Create/Edit Page Group Dialog -->
+    <string name="dialog_create_group_title">Create New Group</string>
+    <string name="dialog_edit_group_title">Edit Group</string>
+    <string name="group_name_label">Group Name (Optional)</string>
+    <string name="group_orientation_label">Orientation</string>
+    <string name="orientation_vertical">Vertical</string>
+    <string name="orientation_horizontal">Horizontal</string>
+    <string name="photos_per_sheet_label">Photos per Sheet</string>
+    <string name="one_photo">1 Photo</string>
+    <string name="two_photos">2 Photos</string>
+    <string name="sheet_count_label">Number of Sheets</string>
+    <string name="optional_text_label">Optional Text (1st page of group)</string>
+    <string name="save_button">Save</string>
+    <string name="cancel_button">Cancel</string>
+
+    <!-- PageGroupItem -->
+    <string name="group_item_unnamed_group">Unnamed Group (ID: %1$s…)</string>
+    <string name="group_item_total_photos_required">Total Photos Required</string>
+    <string name="group_item_photos_loaded">Photos Loaded</string>
+    <string name="group_item_add_images_button">Images</string>
+    <string name="group_item_edit_button_description">Edit Group</string>
+    <string name="group_item_delete_button_description">Delete Group</string>
 </resources>
