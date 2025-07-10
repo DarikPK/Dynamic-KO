@@ -123,7 +123,8 @@ fun CoverSetupScreen(
                 onValueChange = { viewModel.onRucChange(it) },
                 label = { Text(stringResource(id = R.string.cover_setup_ruc_label)) },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
 
             OutlinedTextField(
@@ -176,37 +177,6 @@ fun CoverSetupScreen(
             }
 
 
-            // Visualización de la imagen seleccionada
-            if (coverConfig.mainImageUri != null) {
-                AsyncImage(
-                    model = ImageRequest.Builder(context)
-                        .data(coverConfig.mainImageUri)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = stringResource(R.string.cover_image_selected_description),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(16f / 9f) // Proporción de ejemplo, ajustar según necesidad
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .border(1.dp, MaterialTheme.colorScheme.outline),
-                    contentScale = ContentScale.Fit
-                )
-            } else {
-                Box( // Placeholder si no hay imagen
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(16f / 9f)
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .border(1.dp, MaterialTheme.colorScheme.outline),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        stringResource(R.string.cover_no_image_selected),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
-
             Spacer(modifier = Modifier.height(16.dp))
             Divider()
             Spacer(modifier = Modifier.height(8.dp))
@@ -221,8 +191,8 @@ fun CoverSetupScreen(
             TextCustomizationSection(
                 label = stringResource(id = R.string.field_client_name),
                 textStyleConfig = coverConfig.clientNameStyle,
-                onTextStyleChange = { newSize, newAlign ->
-                    viewModel.onTextStyleChange(DefaultCoverConfig.CLIENT_NAME_ID, newSize, newAlign)
+                onTextStyleChange = { newSize, newAlign, newColor ->
+                    viewModel.onTextStyleChange(DefaultCoverConfig.CLIENT_NAME_ID, newSize, newAlign, newColor)
                 }
             )
 
@@ -230,8 +200,8 @@ fun CoverSetupScreen(
             TextCustomizationSection(
                 label = stringResource(id = R.string.field_ruc),
                 textStyleConfig = coverConfig.rucStyle,
-                onTextStyleChange = { newSize, newAlign ->
-                    viewModel.onTextStyleChange(DefaultCoverConfig.RUC_ID, newSize, newAlign)
+                onTextStyleChange = { newSize, newAlign, newColor ->
+                    viewModel.onTextStyleChange(DefaultCoverConfig.RUC_ID, newSize, newAlign, newColor)
                 }
             )
 
@@ -239,8 +209,8 @@ fun CoverSetupScreen(
             TextCustomizationSection(
                 label = stringResource(id = R.string.field_address),
                 textStyleConfig = coverConfig.subtitleStyle,
-                onTextStyleChange = { newSize, newAlign ->
-                    viewModel.onTextStyleChange(DefaultCoverConfig.SUBTITLE_ID, newSize, newAlign)
+                onTextStyleChange = { newSize, newAlign, newColor ->
+                    viewModel.onTextStyleChange(DefaultCoverConfig.SUBTITLE_ID, newSize, newAlign, newColor)
                 }
             )
 
@@ -297,9 +267,17 @@ fun CoverSetupScreen(
 fun TextCustomizationSection(
     label: String,
     textStyleConfig: TextStyleConfig,
-    onTextStyleChange: (newSize: Float?, newAlign: TextAlign?) -> Unit
+    onTextStyleChange: (newSize: Float?, newAlign: TextAlign?, newColor: Color?) -> Unit
 ) {
     var currentFontSizeSlider by remember(textStyleConfig.fontSize) { mutableStateOf(textStyleConfig.fontSize.value) }
+    val colorOptions = mapOf(
+        stringResource(R.string.color_black) to Color.Black,
+        stringResource(R.string.color_gray) to Color.Gray,
+        // stringResource(R.string.color_white) to Color.White, // Blanco puede ser problemático en tema claro
+        stringResource(R.string.color_blue) to Color.Blue,
+        stringResource(R.string.color_red) to Color.Red,
+        stringResource(R.string.color_green) to Color.Green
+    )
 
     Column(
         modifier = Modifier
@@ -319,7 +297,7 @@ fun TextCustomizationSection(
             valueRange = 8f..72f, // Rango de tamaño de fuente (ej: 8sp a 72sp)
             steps = 63, // (72-8) / 1 step
             onValueChangeFinished = {
-                onTextStyleChange(currentFontSizeSlider, null)
+                onTextStyleChange(currentFontSizeSlider, null, null)
             }
         )
 
@@ -336,10 +314,31 @@ fun TextCustomizationSection(
             alignmentOptions.forEachIndexed { index, option ->
                 SegmentedButton(
                     selected = index == selectedAlignmentIndex,
-                    onClick = { onTextStyleChange(null, option.first) },
+                    onClick = { onTextStyleChange(null, option.first, null) },
                     shape = SegmentedButtonDefaults.itemShape(index = index, count = alignmentOptions.size)
                 ) {
                     Text(option.second)
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Selector de Color del Texto
+        Text(stringResource(id = R.string.cover_setup_text_color_label))
+        Row(
+            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            colorOptions.forEach { (name, colorValue) ->
+                OutlinedButton(
+                    onClick = { onTextStyleChange(null, null, colorValue) },
+                    modifier = Modifier.padding(horizontal = 2.dp),
+                    border = if (textStyleConfig.fontColor == colorValue) ButtonDefaults.outlinedButtonBorder.copy(width = 2.dp) else ButtonDefaults.outlinedButtonBorder,
+                ) {
+                    Box(modifier = Modifier.size(20.dp).background(colorValue))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(name, style = MaterialTheme.typography.bodySmall)
                 }
             }
         }

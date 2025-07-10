@@ -48,28 +48,32 @@ class CoverSetupViewModel : ViewModel() {
     fun onTextStyleChange(
         fieldId: String,
         newSize: Float? = null, // Usamos Float para el slider, luego convertimos a sp
-        newAlign: androidx.compose.ui.text.style.TextAlign? = null
+        newAlign: androidx.compose.ui.text.style.TextAlign? = null,
+        newColor: androidx.compose.ui.graphics.Color? = null
         // newFontFamily: androidx.compose.ui.text.font.FontFamily? = null // Para futura implementación
     ) {
         _coverConfig.update { currentState ->
             val newClientStyle = if (fieldId == DefaultCoverConfig.CLIENT_NAME_ID) {
                 currentState.clientNameStyle.copy(
                     fontSize = newSize?.toInt()?.coerceIn(8, 72)?.sp ?: currentState.clientNameStyle.fontSize,
-                    textAlign = newAlign ?: currentState.clientNameStyle.textAlign
+                    textAlign = newAlign ?: currentState.clientNameStyle.textAlign,
+                    fontColor = newColor ?: currentState.clientNameStyle.fontColor
                 )
             } else currentState.clientNameStyle
 
             val newRucStyle = if (fieldId == DefaultCoverConfig.RUC_ID) {
                 currentState.rucStyle.copy(
                     fontSize = newSize?.toInt()?.coerceIn(8, 72)?.sp ?: currentState.rucStyle.fontSize,
-                    textAlign = newAlign ?: currentState.rucStyle.textAlign
+                    textAlign = newAlign ?: currentState.rucStyle.textAlign,
+                    fontColor = newColor ?: currentState.rucStyle.fontColor
                 )
             } else currentState.rucStyle
 
             val newSubtitleStyle = if (fieldId == DefaultCoverConfig.SUBTITLE_ID) {
                 currentState.subtitleStyle.copy(
                     fontSize = newSize?.toInt()?.coerceIn(8, 72)?.sp ?: currentState.subtitleStyle.fontSize,
-                    textAlign = newAlign ?: currentState.subtitleStyle.textAlign
+                    textAlign = newAlign ?: currentState.subtitleStyle.textAlign,
+                    fontColor = newColor ?: currentState.subtitleStyle.fontColor
                 )
             } else currentState.subtitleStyle
 

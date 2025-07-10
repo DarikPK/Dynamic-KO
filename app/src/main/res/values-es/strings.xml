@@ -41,6 +41,7 @@
     <string name="color_blue">Azul</string>
     <string name="color_red">Rojo</string>
     <string name="color_green">Verde</string>
+    <string name="cover_setup_text_color_label">Color del Texto:</string>
 
     <!-- Margin Customization -->
     <string name="cover_setup_margins_customization_title">Personalización de Márgenes (cm)</string>
