@@ -1,0 +1,9 @@
+package com.example.dynamiccollage.ui.navigation
+
+sealed class Screen(val route: String) {
+    object Main : Screen("main_screen")
+    object CoverSetup : Screen("cover_setup_screen")
+    object InnerPages : Screen("inner_pages_screen")
+    object PdfPreview : Screen("pdf_preview_screen")
+    // object Settings : Screen("settings_screen") // Ejemplo si se necesitara
+}

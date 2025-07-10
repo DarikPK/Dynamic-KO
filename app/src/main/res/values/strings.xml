@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Dynamic Collage</string>
+
+    <!-- MainScreen Buttons -->
+    <string name="main_btn_cover_setup">Cover Setup</string>
+    <string name="main_btn_inner_pages">Manage Inner Pages</string>
+    <string name="main_btn_preview_pdf">PDF Preview</string>
+    <string name="main_btn_share_pdf">Share PDF</string>
+    <string name="main_btn_templates">Save/Load Template</string>
+    <string name="main_btn_generate_pdf">Generate PDF</string>
+</resources>
