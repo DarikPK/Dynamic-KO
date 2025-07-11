@@ -41,7 +41,7 @@ import androidx.activity.ComponentActivity // Para el ViewModelStoreOwner
 @Composable
 fun MainScreen(
     navController: NavController,
-    projectViewModel: ProjectViewModel = viewModel(viewModelStoreOwner = LocalContext.current as ComponentActivity)
+    projectViewModel: ProjectViewModel // Ahora se recibe como parámetro
 ) {
     val context = LocalContext.current
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }

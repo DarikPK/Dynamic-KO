@@ -46,9 +46,9 @@ import com.example.dynamiccollage.viewmodel.InnerPagesViewModel
 @Composable
 fun InnerPagesScreen(
     navController: NavController,
-    navController: NavController,
+    // navController: NavController, // Eliminado navController duplicado
     innerPagesViewModel: InnerPagesViewModel = viewModel(),
-    projectViewModel: ProjectViewModel = viewModel(viewModelStoreOwner = LocalContext.current as ComponentActivity)
+    projectViewModel: ProjectViewModel // Ahora se recibe como parámetro
 ) {
     val pageGroups by innerPagesViewModel.pageGroups.collectAsState()
     val showDialog by innerPagesViewModel.showCreateGroupDialog.collectAsState()
@@ -143,13 +143,13 @@ fun InnerPagesScreen(
                         PageGroupItem(
                             pageGroup = pageGroup,
                             onAddImagesClicked = { groupId ->
-                                viewModel.onAddImagesClickedForGroup(groupId)
+                                innerPagesViewModel.onAddImagesClickedForGroup(groupId)
                             },
                             onEditGroupClicked = { groupToEdit ->
-                                viewModel.onEditGroupClicked(groupToEdit)
+                                innerPagesViewModel.onEditGroupClicked(groupToEdit)
                             },
                             onDeleteGroupClicked = { groupId ->
-                                viewModel.removePageGroup(groupId)
+                                innerPagesViewModel.removePageGroup(groupId)
                             }
                         )
                     }

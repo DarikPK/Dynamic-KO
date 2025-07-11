@@ -5,13 +5,18 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
+import androidx.activity.viewModels // Importar para by viewModels()
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.example.dynamiccollage.ui.navigation.AppNavigation
 import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
+import com.example.dynamiccollage.viewmodel.ProjectViewModel // Importar ProjectViewModel
 
 class MainActivity : ComponentActivity() {
+    // Obtener el ProjectViewModel con el alcance de esta Activity
+    private val projectViewModel: ProjectViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -20,7 +25,8 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AppNavigation()
+                    // Pasar la instancia del ProjectViewModel a AppNavigation
+                    AppNavigation(projectViewModel = projectViewModel)
                 }
             }
         }

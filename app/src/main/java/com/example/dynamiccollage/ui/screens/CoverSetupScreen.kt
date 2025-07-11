@@ -79,20 +79,10 @@ import com.example.dynamiccollage.viewmodel.CoverSetupViewModel
 @Composable
 fun CoverSetupScreen(
     navController: NavController,
-    coverSetupViewModel: CoverSetupViewModel = viewModel()
-    // projectViewModel se obtendrá dentro del cuerpo
+    coverSetupViewModel: CoverSetupViewModel = viewModel(),
+    projectViewModel: ProjectViewModel // Ahora se recibe como parámetro
 ) {
-    val viewModelStoreOwner = LocalViewModelStoreOwner.current
-    val projectViewModel: ProjectViewModel = if (viewModelStoreOwner != null) {
-        viewModel(viewModelStoreOwner = viewModelStoreOwner)
-    } else {
-        // Fallback o error, aunque en una Activity/Fragment esto no debería ser nulo.
-        // Podrías lanzar una excepción o retornar un mock/stub si es para Previews.
-        // Para simplificar, si es nulo en un contexto real, algo está muy mal.
-        // En Previews, esto podría pasar si no se provee un ViewModelStoreOwner.
-        // Considerar usar un factory o Hilt para DI en un proyecto más grande.
-        viewModel() // Intento de fallback, podría no funcionar como se espera si el owner es crucial.
-    }
+    // val projectViewModel: ProjectViewModel = viewModel(viewModelStoreOwner = LocalContext.current as ComponentActivity) -> Eliminado
     val coverConfig by coverSetupViewModel.coverConfig.collectAsState()
     val context = LocalContext.current
 
