@@ -31,8 +31,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import android.widget.Toast // Para el mensaje de guardado
+import android.widget.Toast
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.runtime.LaunchedEffect // Importar LaunchedEffect
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
@@ -77,9 +78,10 @@ import com.example.dynamiccollage.viewmodel.CoverSetupViewModel
 @Composable
 fun CoverSetupScreen(
     navController: NavController,
-    coverSetupViewModel: CoverSetupViewModel = viewModel(),
-    projectViewModel: ProjectViewModel = viewModel(viewModelStoreOwner = LocalContext.current as ComponentActivity)
+    coverSetupViewModel: CoverSetupViewModel = viewModel()
+    // projectViewModel se obtendrá dentro del cuerpo
 ) {
+    val projectViewModel: ProjectViewModel = viewModel(viewModelStoreOwner = LocalContext.current as ComponentActivity)
     val coverConfig by coverSetupViewModel.coverConfig.collectAsState()
     val context = LocalContext.current
 
