@@ -49,12 +49,23 @@
     <string name="cover_setup_margin_bottom">Inferior:</string>
     <string name="cover_setup_margin_left">Izquierdo:</string>
     <string name="cover_setup_margin_right">Derecho:</string>
+    <string name="save_cover_config_button_description">Guardar configuración de portada</string>
+    <string name="cover_config_saved_toast">Configuración de portada guardada.</string>
 
     <!-- InnerPagesScreen -->
     <string name="inner_pages_title">Páginas Interiores</string>
     <string name="inner_pages_add_group_fab_description">Añadir Grupo</string>
     <string name="inner_pages_content_in_development">Contenido de Páginas Interiores en desarrollo.</string>
     <string name="inner_pages_no_groups">No hay grupos de páginas. Añade uno nuevo.</string>
+    <string name="save_page_groups_button_description">Guardar grupos de páginas</string>
+    <string name="page_groups_saved_toast">Grupos de páginas guardados.</string>
+
+    <!-- MainScreen - Delete Project -->
+    <string name="main_btn_delete_project">Eliminar Proyecto Actual</string>
+    <string name="delete_project_dialog_title">Confirmar Eliminación</string>
+    <string name="delete_project_dialog_message">¿Estás seguro de que deseas eliminar todos los datos del proyecto actual? Esta acción no se puede deshacer.</string>
+    <string name="delete_button">Eliminar</string>
+    <string name="project_deleted_toast">Proyecto eliminado.</string>
 
     <!-- Create/Edit Page Group Dialog -->
     <string name="dialog_create_group_title">Crear Nuevo Grupo</string>

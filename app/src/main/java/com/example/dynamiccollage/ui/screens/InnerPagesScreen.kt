@@ -21,12 +21,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.activity.ComponentActivity // Para obtener ViewModel con alcance de Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.filled.Save // Importar icono de guardar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import android.widget.Toast // Para el mensaje de guardado
 import com.example.dynamiccollage.ui.components.CreateEditGroupDialog // Importar el diálogo
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,22 +46,29 @@ import com.example.dynamiccollage.viewmodel.InnerPagesViewModel
 @Composable
 fun InnerPagesScreen(
     navController: NavController,
-    viewModel: InnerPagesViewModel = viewModel()
+    navController: NavController,
+    innerPagesViewModel: InnerPagesViewModel = viewModel(),
+    projectViewModel: ProjectViewModel = viewModel(viewModelStoreOwner = LocalContext.current as ComponentActivity)
 ) {
-    val pageGroups by viewModel.pageGroups.collectAsState()
-    val showDialog by viewModel.showCreateGroupDialog.collectAsState()
-    val editingGroup by viewModel.editingGroup.collectAsState()
-    val currentGroupAddingImages by viewModel.currentGroupAddingImages.collectAsState()
+    val pageGroups by innerPagesViewModel.pageGroups.collectAsState()
+    val showDialog by innerPagesViewModel.showCreateGroupDialog.collectAsState()
+    val editingGroup by innerPagesViewModel.editingGroup.collectAsState()
+    val currentGroupAddingImages by innerPagesViewModel.currentGroupAddingImages.collectAsState()
+    val context = LocalContext.current
+
+    // Cargar la configuración inicial del ProjectViewModel
+    LaunchedEffect(projectViewModel.currentPageGroups.value) {
+        innerPagesViewModel.loadInitialPageGroups(projectViewModel.currentPageGroups.value)
+    }
 
     val multipleImagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris ->
         if (uris.isNotEmpty()) {
-            viewModel.onImagesSelectedForGroup(uris)
+            innerPagesViewModel.onImagesSelectedForGroup(uris)
         }
     }
 
-    // Efecto para lanzar el selector de imágenes cuando currentGroupAddingImages cambia y no es null
     LaunchedEffect(currentGroupAddingImages) {
         if (currentGroupAddingImages != null) {
             multipleImagePickerLauncher.launch("image/*")
@@ -68,8 +78,8 @@ fun InnerPagesScreen(
     if (showDialog) {
         CreateEditGroupDialog(
             editingGroup = editingGroup,
-            viewModel = viewModel,
-            onDismiss = { viewModel.onDismissCreateGroupDialog() }
+            viewModel = innerPagesViewModel, // Pasar el ViewModel de la pantalla
+            onDismiss = { innerPagesViewModel.onDismissCreateGroupDialog() }
         )
     }
 
@@ -85,13 +95,24 @@ fun InnerPagesScreen(
                         )
                     }
                 },
+                actions = {
+                    IconButton(onClick = {
+                        projectViewModel.setPageGroups(pageGroups) // Guardar la lista actual de grupos
+                        Toast.makeText(context, context.getString(R.string.page_groups_saved_toast), Toast.LENGTH_SHORT).show()
+                    }) {
+                        Icon(
+                            imageVector = Icons.Filled.Save,
+                            contentDescription = stringResource(id = R.string.save_page_groups_button_description)
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { viewModel.onAddNewGroupClicked() }) { // Conectar FAB
+            FloatingActionButton(onClick = { innerPagesViewModel.onAddNewGroupClicked() }) {
                 Icon(
                     Icons.Filled.Add,
                     contentDescription = stringResource(id = R.string.inner_pages_add_group_fab_description)

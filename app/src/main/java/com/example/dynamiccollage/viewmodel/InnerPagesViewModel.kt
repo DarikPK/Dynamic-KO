@@ -2,22 +2,30 @@ package com.example.dynamiccollage.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.dynamiccollage.data.model.PageGroup // Importar el modelo PageGroup
+import com.example.dynamiccollage.data.model.PageGroup
+import com.example.dynamiccollage.data.model.PageOrientation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update // Importar update
+import kotlinx.coroutines.flow.update
 
-class InnerPagesViewModel : ViewModel() {
+class InnerPagesViewModel : ViewModel() { // No tomará ProjectViewModel en constructor por ahora
 
-    private val _pageGroups = MutableStateFlow<List<PageGroup>>(emptyList())
+    private val _pageGroups = MutableStateFlow<List<PageGroup>>(emptyList()) // Estado local
     val pageGroups: StateFlow<List<PageGroup>> = _pageGroups.asStateFlow()
 
     private val _showCreateGroupDialog = MutableStateFlow(false)
     val showCreateGroupDialog: StateFlow<Boolean> = _showCreateGroupDialog.asStateFlow()
+
+    // Funciones para que la UI cargue el estado inicial y observe cambios del ProjectViewModel
+    fun loadInitialPageGroups(initialGroups: List<PageGroup>) {
+        _pageGroups.value = initialGroups
+    }
 
     // Estado temporal para el grupo que se está creando/editando
     private val _editingGroup = MutableStateFlow<PageGroup?>(null) // Podría ser un PageGroup temporal o borrador
@@ -135,8 +143,11 @@ class InnerPagesViewModel : ViewModel() {
     // Más estados y lógica:
     // - Lógica de validación de imágenes por grupo
 
-    val areAllPhotoQuotasMet: StateFlow<Boolean> = pageGroups.map { groups ->
+    val areAllPhotoQuotasMet: StateFlow<Boolean> = _pageGroups.map { groups -> // Observar _pageGroups (local)
         if (groups.isEmpty()) true // Si no hay grupos, se considera válido para no bloquear
         else groups.all { it.isPhotoQuotaMet }
     }.stateIn(viewModelScope, SharingStarted.Lazily, true)
+
+    // La función savePageGroupsToProject se llamará desde la UI,
+    // y esta a su vez llamará a projectViewModel.setPageGroups(_pageGroups.value)
 }

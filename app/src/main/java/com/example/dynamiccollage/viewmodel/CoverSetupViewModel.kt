@@ -10,10 +10,19 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
-class CoverSetupViewModel : ViewModel() {
 
-    private val _coverConfig = MutableStateFlow(CoverPageConfig())
+class CoverSetupViewModel : ViewModel() { // No más ProjectViewModel en constructor
+
+    private val _coverConfig = MutableStateFlow(CoverPageConfig()) // Inicia con default localmente
     val coverConfig: StateFlow<CoverPageConfig> = _coverConfig.asStateFlow()
+
+    // Se llamará desde la Screen para cargar la configuración del proyecto
+    fun loadInitialConfig(initialConfig: CoverPageConfig) {
+        _coverConfig.value = initialConfig
+    }
+
+    // La lógica de guardar ahora reside en la Screen o se pasa el ProjectViewModel a esta función
+    // Por simplicidad, la Screen llamará a projectViewModel.updateCoverConfig(ESTADO_ACTUAL_DE_ESTE_VM)
 
     fun onClientNameChange(newName: String) {
         _coverConfig.update { currentState ->

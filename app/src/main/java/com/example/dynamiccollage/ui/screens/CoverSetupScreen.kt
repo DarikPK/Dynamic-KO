@@ -20,7 +20,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.activity.ComponentActivity
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Save // Importar icono de guardar
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Divider
@@ -28,6 +31,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import android.widget.Toast // Para el mensaje de guardado
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -73,10 +77,17 @@ import com.example.dynamiccollage.viewmodel.CoverSetupViewModel
 @Composable
 fun CoverSetupScreen(
     navController: NavController,
-    viewModel: CoverSetupViewModel = viewModel()
+    coverSetupViewModel: CoverSetupViewModel = viewModel(),
+    projectViewModel: ProjectViewModel = viewModel(viewModelStoreOwner = LocalContext.current as ComponentActivity)
 ) {
-    val coverConfig by viewModel.coverConfig.collectAsState()
+    val coverConfig by coverSetupViewModel.coverConfig.collectAsState()
     val context = LocalContext.current
+
+    // Cargar la configuración inicial del ProjectViewModel cuando la pantalla se lanza por primera vez
+    // o cuando la configuración del proyecto cambie (ej. por un reset).
+    LaunchedEffect(projectViewModel.currentCoverConfig.value) {
+        coverSetupViewModel.loadInitialConfig(projectViewModel.currentCoverConfig.value)
+    }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -96,6 +107,17 @@ fun CoverSetupScreen(
                         )
                     }
                 },
+                actions = {
+                    IconButton(onClick = {
+                        projectViewModel.updateCoverConfig(coverConfig)
+                        Toast.makeText(context, context.getString(R.string.cover_config_saved_toast), Toast.LENGTH_SHORT).show()
+                    }) {
+                        Icon(
+                            imageVector = Icons.Filled.Save,
+                            contentDescription = stringResource(id = R.string.save_cover_config_button_description)
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
@@ -112,7 +134,7 @@ fun CoverSetupScreen(
         ) {
             OutlinedTextField(
                 value = coverConfig.clientNameStyle.content,
-                onValueChange = { viewModel.onClientNameChange(it) },
+                onValueChange = { coverSetupViewModel.onClientNameChange(it) },
                 label = { Text(stringResource(id = R.string.cover_setup_client_name_label)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
@@ -120,7 +142,7 @@ fun CoverSetupScreen(
 
             OutlinedTextField(
                 value = coverConfig.rucStyle.content,
-                onValueChange = { viewModel.onRucChange(it) },
+                onValueChange = { coverSetupViewModel.onRucChange(it) },
                 label = { Text(stringResource(id = R.string.cover_setup_ruc_label)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -129,7 +151,7 @@ fun CoverSetupScreen(
 
             OutlinedTextField(
                 value = coverConfig.subtitleStyle.content,
-                onValueChange = { viewModel.onAddressChange(it) },
+                onValueChange = { coverSetupViewModel.onAddressChange(it) },
                 label = { Text(stringResource(id = R.string.cover_setup_address_label)) },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3
