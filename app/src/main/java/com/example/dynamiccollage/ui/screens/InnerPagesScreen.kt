@@ -79,7 +79,7 @@ fun InnerPagesScreen(
 
     if (showDialog) {
         CreateEditGroupDialog(
-            editingGroup = editingGroup,
+            editingGroup = editingGroup, // Corregido de editing_group a editingGroup
             viewModel = innerPagesViewModel,
             onDismiss = { innerPagesViewModel.onDismissCreateGroupDialog() }
         )
