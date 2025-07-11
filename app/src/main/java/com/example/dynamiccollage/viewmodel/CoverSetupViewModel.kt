@@ -1,21 +1,17 @@
 package com.example.dynamiccollage.viewmodel
 
-import android.content.ContentResolver
-import android.graphics.BitmapFactory
 import android.net.Uri
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.Color // Asegúrate que Color esté importado si no lo estaba
+import androidx.compose.ui.text.style.TextAlign // Asegúrate que TextAlign esté importado
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.example.dynamiccollage.data.model.CoverPageConfig
-import com.example.dynamiccollage.data.model.PageOrientation
+import com.example.dynamiccollage.data.model.DefaultCoverConfig // Sigue siendo usado por fieldId
+import com.example.dynamiccollage.data.model.PageOrientation // NUEVA IMPORTACIÓN
+import com.example.dynamiccollage.data.model.TextStyleConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
-import java.io.InputStream
 import kotlin.math.roundToInt
 
 class CoverSetupViewModel : ViewModel() {
@@ -23,98 +19,84 @@ class CoverSetupViewModel : ViewModel() {
     private val _coverConfig = MutableStateFlow(CoverPageConfig())
     val coverConfig: StateFlow<CoverPageConfig> = _coverConfig.asStateFlow()
 
-    private val _detectedPhotoOrientation = MutableStateFlow<PageOrientation?>(null)
-    val detectedPhotoOrientation: StateFlow<PageOrientation?> = _detectedPhotoOrientation.asStateFlow()
-
     fun loadInitialConfig(initialConfig: CoverPageConfig) {
         _coverConfig.value = initialConfig
-        _detectedPhotoOrientation.value = null // Resetear al cargar, la detección es solo para nuevas selecciones
     }
 
     fun onClientNameChange(newName: String) {
-        _coverConfig.update { it.copy(clientNameStyle = it.clientNameStyle.copy(content = newName)) }
+        _coverConfig.update { currentState ->
+            currentState.copy(
+                clientNameStyle = currentState.clientNameStyle.copy(content = newName)
+            )
+        }
     }
 
     fun onRucChange(newRuc: String) {
-        _coverConfig.update { it.copy(rucStyle = it.rucStyle.copy(content = newRuc)) }
+        _coverConfig.update { currentState ->
+            currentState.copy(
+                rucStyle = currentState.rucStyle.copy(content = newRuc)
+            )
+        }
     }
 
     fun onAddressChange(newAddress: String) {
-        _coverConfig.update { it.copy(subtitleStyle = it.subtitleStyle.copy(content = newAddress)) }
-    }
-
-    fun onMainImageSelected(uri: Uri?, contentResolver: ContentResolver) {
-        _coverConfig.update { it.copy(mainImageUri = uri?.toString()) }
-        if (uri != null) {
-            try {
-                contentResolver.openInputStream(uri)?.use { stream ->
-                    val options = BitmapFactory.Options().apply {
-                        inJustDecodeBounds = true
-                    }
-                    BitmapFactory.decodeStream(stream, null, options)
-                    val imageHeight = options.outHeight
-                    val imageWidth = options.outWidth
-
-                    if (imageWidth > 0 && imageHeight > 0) {
-                        val detected = if (imageHeight > imageWidth) {
-                            PageOrientation.Vertical
-                        } else {
-                            PageOrientation.Horizontal
-                        }
-                        _detectedPhotoOrientation.value = detected
-                        // Opcional: Preseleccionar orientación de página
-                        // if (_coverConfig.value.pageOrientation != detected) {
-                        //    onPageOrientationChange(detected) // Asegúrate que esta función no cree un bucle si también actualiza la foto
-                        // }
-                    } else {
-                        _detectedPhotoOrientation.value = null
-                    }
-                } ?: run { _detectedPhotoOrientation.value = null } // Si openInputStream devuelve null
-            } catch (e: Exception) {
-                _detectedPhotoOrientation.value = null
-                e.printStackTrace() // Consider a more user-friendly error handling/logging
-            }
-        } else {
-            _detectedPhotoOrientation.value = null
+        _coverConfig.update { currentState ->
+            currentState.copy(
+                subtitleStyle = currentState.subtitleStyle.copy(content = newAddress)
+            )
         }
     }
 
+    fun onMainImageSelected(uri: Uri?) {
+        _coverConfig.update { currentState ->
+            // Guardar la URI como String para consistencia con el modelo CoverPageConfig
+            currentState.copy(mainImageUri = uri?.toString())
+        }
+    }
+
+    // NUEVA FUNCIÓN
     fun onPageOrientationChange(newOrientation: PageOrientation) {
-        _coverConfig.update { it.copy(pageOrientation = newOrientation) }
-    }
-
-    fun updateClientNameStyle(newSize: Float? = null, newAlign: TextAlign? = null, newColor: Color? = null) {
-        _coverConfig.update { current ->
-            current.copy(
-                clientNameStyle = current.clientNameStyle.copy(
-                    fontSize = newSize?.roundToInt()?.coerceIn(8, 72) ?: current.clientNameStyle.fontSize,
-                    textAlign = newAlign ?: current.clientNameStyle.textAlign,
-                    fontColor = newColor ?: current.clientNameStyle.fontColor
-                )
-            )
+        _coverConfig.update { currentState ->
+            currentState.copy(pageOrientation = newOrientation)
         }
     }
 
-    fun updateRucStyle(newSize: Float? = null, newAlign: TextAlign? = null, newColor: Color? = null) {
-        _coverConfig.update { current ->
-            current.copy(
-                rucStyle = current.rucStyle.copy(
-                    fontSize = newSize?.roundToInt()?.coerceIn(8, 72) ?: current.rucStyle.fontSize,
-                    textAlign = newAlign ?: current.rucStyle.textAlign,
-                    fontColor = newColor ?: current.rucStyle.fontColor
+    fun onTextStyleChange(
+        fieldId: String,
+        newSize: Float? = null,
+        newAlign: TextAlign? = null,
+        newColor: Color? = null
+    ) {
+        _coverConfig.update { currentState ->
+            val newClientStyle = if (fieldId == DefaultCoverConfig.CLIENT_NAME_ID) {
+                currentState.clientNameStyle.copy(
+                    fontSize = newSize?.roundToInt()?.coerceIn(8, 72) ?: currentState.clientNameStyle.fontSize,
+                    textAlign = newAlign ?: currentState.clientNameStyle.textAlign,
+                    fontColor = newColor ?: currentState.clientNameStyle.fontColor
                 )
-            )
-        }
-    }
+            } else currentState.clientNameStyle
 
-    fun updateSubtitleStyle(newSize: Float? = null, newAlign: TextAlign? = null, newColor: Color? = null) {
-        _coverConfig.update { current ->
-            current.copy(
-                subtitleStyle = current.subtitleStyle.copy(
-                    fontSize = newSize?.roundToInt()?.coerceIn(8, 72) ?: current.subtitleStyle.fontSize,
-                    textAlign = newAlign ?: current.subtitleStyle.textAlign,
-                    fontColor = newColor ?: current.subtitleStyle.fontColor
+            val newRucStyle = if (fieldId == DefaultCoverConfig.RUC_ID) {
+                currentState.rucStyle.copy(
+                    fontSize = newSize?.roundToInt()?.coerceIn(8, 72) ?: currentState.rucStyle.fontSize,
+                    textAlign = newAlign ?: currentState.rucStyle.textAlign,
+                    fontColor = newColor ?: currentState.rucStyle.fontColor
                 )
+            } else currentState.rucStyle
+
+            val newSubtitleStyle = if (fieldId == DefaultCoverConfig.SUBTITLE_ID) {
+                currentState.subtitleStyle.copy(
+                    // CORRECCIÓN DE CONSISTENCIA: usar roundToInt como en los otros
+                    fontSize = newSize?.roundToInt()?.coerceIn(8, 72) ?: currentState.subtitleStyle.fontSize,
+                    textAlign = newAlign ?: currentState.subtitleStyle.textAlign,
+                    fontColor = newColor ?: currentState.subtitleStyle.fontColor
+                )
+            } else currentState.subtitleStyle
+
+            currentState.copy(
+                clientNameStyle = newClientStyle,
+                rucStyle = newRucStyle,
+                subtitleStyle = newSubtitleStyle
             )
         }
     }
