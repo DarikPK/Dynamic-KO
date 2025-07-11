@@ -22,12 +22,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState // Importar collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.Color // Para el texto de error
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
@@ -44,16 +46,20 @@ fun CreateEditGroupDialog(
     viewModel: InnerPagesViewModel,
     onDismiss: () -> Unit
 ) {
-    if (editingGroup == null) return // No debería mostrarse si no hay grupo para editar/crear
+    if (editingGroup == null) return
 
-    // Usar el estado del ViewModel directamente para los campos o un estado local que se sincronice
-    // Para una edición más robusta, es mejor que el diálogo modifique el _editingGroup del ViewModel.
+    val isConfigValid by viewModel.isEditingGroupConfigValid.collectAsState()
+    val pageGroupsFromVM by viewModel.pageGroups.collectAsState() // Para obtener imageUris.size del grupo original
+
+    val originalGroup = remember(editingGroup.id, pageGroupsFromVM) {
+        pageGroupsFromVM.find { it.id == editingGroup.id }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                 text = if (viewModel.pageGroups.value.none { it.id == editingGroup.id })
+                text = if (originalGroup == null) // Es un grupo nuevo si no está en la lista del VM
                     stringResource(R.string.dialog_create_group_title)
                 else stringResource(R.string.dialog_edit_group_title)
             )
@@ -105,8 +111,18 @@ fun CreateEditGroupDialog(
                     label = { Text(stringResource(R.string.sheet_count_label)) },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true
+                    singleLine = true,
+                    isError = editingGroup.sheetCount <= 0 // Validación simple para Nro Hojas
                 )
+                if (editingGroup.sheetCount <= 0) {
+                    Text(
+                        text = stringResource(R.string.error_sheet_count_invalid),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(start = 16.dp)
+                    )
+                }
+
 
                 OutlinedTextField(
                     value = editingGroup.optionalTextStyle.content,
@@ -115,14 +131,26 @@ fun CreateEditGroupDialog(
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 2
                 )
+
+                // Mostrar advertencia si la configuración no coincide con las fotos cargadas (solo en edición)
+                if (originalGroup != null && originalGroup.imageUris.isNotEmpty() && !isConfigValid && editingGroup.sheetCount > 0) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(
+                            R.string.warning_photo_quota_mismatch,
+                            editingGroup.totalPhotosRequired,
+                            originalGroup.imageUris.size
+                        ),
+                        color = MaterialTheme.colorScheme.error, // O un color de advertencia
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
             }
         },
         confirmButton = {
             Button(
-                onClick = {
-                    viewModel.saveEditingGroup()
-                    // onDismiss() // onSaveEditingGroup ya llama a onDismiss
-                }
+                onClick = { viewModel.saveEditingGroup() },
+                enabled = isConfigValid && editingGroup.sheetCount > 0 // Deshabilitar si no es válido
             ) { Text(stringResource(R.string.save_button)) }
         },
         dismissButton = {

@@ -28,8 +28,11 @@ class InnerPagesViewModel : ViewModel() { // No tomará ProjectViewModel en cons
     }
 
     // Estado temporal para el grupo que se está creando/editando
-    private val _editingGroup = MutableStateFlow<PageGroup?>(null) // Podría ser un PageGroup temporal o borrador
+    private val _editingGroup = MutableStateFlow<PageGroup?>(null)
     val editingGroup: StateFlow<PageGroup?> = _editingGroup.asStateFlow()
+
+    private val _isEditingGroupConfigValid = MutableStateFlow(true) // Nuevo StateFlow para validación
+    val isEditingGroupConfigValid: StateFlow<Boolean> = _isEditingGroupConfigValid.asStateFlow()
 
     // Estado para saber a qué grupo se le están añadiendo imágenes
     private val _currentGroupAddingImages = MutableStateFlow<String?>(null)
@@ -67,32 +70,40 @@ class InnerPagesViewModel : ViewModel() { // No tomará ProjectViewModel en cons
 
 
     fun onAddNewGroupClicked() {
-        _editingGroup.value = PageGroup() // Iniciar con un PageGroup por defecto, el ID se genera aquí
+        _editingGroup.value = PageGroup() // Iniciar con un PageGroup por defecto
+        _isEditingGroupConfigValid.value = true // Un grupo nuevo es inicialmente válido (hasta que se definan hojas)
         _showCreateGroupDialog.value = true
     }
 
     fun onEditGroupClicked(groupToEdit: PageGroup) {
-        _editingGroup.value = groupToEdit // Cargar el grupo existente para edición
+        _editingGroup.value = groupToEdit
+        validateEditingGroupConfig() // Validar al cargar para edición
         _showCreateGroupDialog.value = true
     }
 
     fun onDismissCreateGroupDialog() {
         _showCreateGroupDialog.value = false
-        _editingGroup.value = null // Limpiar el grupo en edición
+        _editingGroup.value = null
+        _isEditingGroupConfigValid.value = true // Resetear validación
     }
 
     fun saveEditingGroup() {
+        if (!_isEditingGroupConfigValid.value) {
+            // Opcionalmente, podrías tener un StateFlow para un mensaje de error específico
+            // y no cerrar el diálogo, o permitir cerrar pero no guardar.
+            // Por ahora, si el botón Guardar estuviera habilitado y se llama a esto,
+            // se guardaría. La UI debería deshabilitar el botón Guardar.
+            return
+        }
+
         val groupToSave = _editingGroup.value ?: return
-        // Verificar si el ID del grupo en edición ya existe en la lista de pageGroups
         val existingGroupIndex = _pageGroups.value.indexOfFirst { it.id == groupToSave.id }
 
         if (existingGroupIndex != -1) {
-            // El grupo existe, actualizarlo
             _pageGroups.update { currentList ->
                 currentList.toMutableList().apply { this[existingGroupIndex] = groupToSave }
             }
         } else {
-            // El grupo es nuevo, añadirlo
             _pageGroups.update { currentList -> currentList + groupToSave }
         }
         onDismissCreateGroupDialog()
@@ -122,32 +133,54 @@ class InnerPagesViewModel : ViewModel() { // No tomará ProjectViewModel en cons
     // Funciones para actualizar _editingGroup mientras se configura en el diálogo
     fun onEditingGroupNameChange(name: String) {
         _editingGroup.value = _editingGroup.value?.copy(groupName = name)
+        // El nombre no afecta la validación de cuota de fotos
     }
-    fun onEditingGroupOrientationChange(orientation: com.example.dynamiccollage.data.model.PageOrientation) {
+    fun onEditingGroupOrientationChange(orientation: PageOrientation) {
         _editingGroup.value = _editingGroup.value?.copy(orientation = orientation)
+        validateEditingGroupConfig()
     }
     fun onEditingGroupPhotosPerSheetChange(count: Int) {
         _editingGroup.value = _editingGroup.value?.copy(photosPerSheet = count.coerceIn(1,2))
+        validateEditingGroupConfig()
     }
     fun onEditingGroupSheetCountChange(countString: String) {
-        val count = countString.toIntOrNull()?.coerceAtLeast(1) ?: _editingGroup.value?.sheetCount ?: 1
-        _editingGroup.value = _editingGroup.value?.copy(sheetCount = count)
+        val currentGroup = _editingGroup.value
+        val newCount = countString.toIntOrNull()?.coerceAtLeast(1) ?: currentGroup?.sheetCount ?: 1
+        if (currentGroup?.sheetCount != newCount) {
+            _editingGroup.value = currentGroup?.copy(sheetCount = newCount)
+            validateEditingGroupConfig()
+        }
     }
     fun onEditingGroupOptionalTextChange(text: String) {
         _editingGroup.value = _editingGroup.value?.copy(
             optionalTextStyle = _editingGroup.value!!.optionalTextStyle.copy(content = text)
         )
+        // El texto opcional no afecta la validación de cuota de fotos
     }
 
+    private fun validateEditingGroupConfig() {
+        val group = _editingGroup.value
+        if (group == null) {
+            _isEditingGroupConfigValid.value = true // No hay grupo en edición, o es nuevo sin datos.
+            return
+        }
 
-    // Más estados y lógica:
-    // - Lógica de validación de imágenes por grupo
+        // La validación principal es que el número de hojas sea > 0
+        // Y si hay imágenes cargadas, la nueva config (totalPhotosRequired) debe ser igual al número de imágenes cargadas.
+        // O, si no hay imágenes cargadas, la config es válida.
+        val isValidSheetCount = group.sheetCount > 0
+        val imagesAlreadyLoaded = _pageGroups.value.find { it.id == group.id }?.imageUris?.size ?: 0
 
-    val areAllPhotoQuotasMet: StateFlow<Boolean> = _pageGroups.map { groups -> // Observar _pageGroups (local)
-        if (groups.isEmpty()) true // Si no hay grupos, se considera válido para no bloquear
+        if (imagesAlreadyLoaded > 0) { // Solo validar cuota si ya hay imágenes (es decir, estamos editando)
+            _isEditingGroupConfigValid.value = isValidSheetCount && (group.totalPhotosRequired == imagesAlreadyLoaded)
+        } else { // Si es un grupo nuevo o un grupo sin imágenes aún, solo validar sheetCount
+            _isEditingGroupConfigValid.value = isValidSheetCount
+        }
+    }
+
+    val areAllPhotoQuotasMet: StateFlow<Boolean> = _pageGroups.map { groups ->
+        if (groups.isEmpty()) true
         else groups.all { it.isPhotoQuotaMet }
     }.stateIn(viewModelScope, SharingStarted.Lazily, true)
 
-    // La función savePageGroupsToProject se llamará desde la UI,
-    // y esta a su vez llamará a projectViewModel.setPageGroups(_pageGroups.value)
 }

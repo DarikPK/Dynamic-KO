@@ -1,100 +1,125 @@
 package com.example.dynamiccollage.viewmodel
 
+import android.content.ContentResolver
+import android.graphics.BitmapFactory
 import android.net.Uri
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.dynamiccollage.data.model.CoverPageConfig
-import com.example.dynamiccollage.data.model.DefaultCoverConfig
-import com.example.dynamiccollage.data.model.TextStyleConfig
+import com.example.dynamiccollage.data.model.PageOrientation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
+import java.io.InputStream
+import kotlin.math.roundToInt
 
+class CoverSetupViewModel : ViewModel() {
 
-class CoverSetupViewModel : ViewModel() { // No más ProjectViewModel en constructor
-
-    private val _coverConfig = MutableStateFlow(CoverPageConfig()) // Inicia con default localmente
+    private val _coverConfig = MutableStateFlow(CoverPageConfig())
     val coverConfig: StateFlow<CoverPageConfig> = _coverConfig.asStateFlow()
 
-    // Se llamará desde la Screen para cargar la configuración del proyecto
+    private val _detectedPhotoOrientation = MutableStateFlow<PageOrientation?>(null)
+    val detectedPhotoOrientation: StateFlow<PageOrientation?> = _detectedPhotoOrientation.asStateFlow()
+
     fun loadInitialConfig(initialConfig: CoverPageConfig) {
         _coverConfig.value = initialConfig
+        _detectedPhotoOrientation.value = null // Resetear al cargar, la detección es solo para nuevas selecciones
     }
 
-    // La lógica de guardar ahora reside en la Screen o se pasa el ProjectViewModel a esta función
-    // Por simplicidad, la Screen llamará a projectViewModel.updateCoverConfig(ESTADO_ACTUAL_DE_ESTE_VM)
-
     fun onClientNameChange(newName: String) {
-        _coverConfig.update { currentState ->
-            currentState.copy(
-                clientNameStyle = currentState.clientNameStyle.copy(content = newName)
-            )
-        }
+        _coverConfig.update { it.copy(clientNameStyle = it.clientNameStyle.copy(content = newName)) }
     }
 
     fun onRucChange(newRuc: String) {
-        _coverConfig.update { currentState ->
-            currentState.copy(
-                rucStyle = currentState.rucStyle.copy(content = newRuc)
-            )
-        }
+        _coverConfig.update { it.copy(rucStyle = it.rucStyle.copy(content = newRuc)) }
     }
 
     fun onAddressChange(newAddress: String) {
-        _coverConfig.update { currentState ->
-            currentState.copy(
-                subtitleStyle = currentState.subtitleStyle.copy(content = newAddress)
+        _coverConfig.update { it.copy(subtitleStyle = it.subtitleStyle.copy(content = newAddress)) }
+    }
+
+    fun onMainImageSelected(uri: Uri?, contentResolver: ContentResolver) {
+        _coverConfig.update { it.copy(mainImageUri = uri?.toString()) }
+        if (uri != null) {
+            try {
+                contentResolver.openInputStream(uri)?.use { stream ->
+                    val options = BitmapFactory.Options().apply {
+                        inJustDecodeBounds = true
+                    }
+                    BitmapFactory.decodeStream(stream, null, options)
+                    val imageHeight = options.outHeight
+                    val imageWidth = options.outWidth
+
+                    if (imageWidth > 0 && imageHeight > 0) {
+                        val detected = if (imageHeight > imageWidth) {
+                            PageOrientation.Vertical
+                        } else {
+                            PageOrientation.Horizontal
+                        }
+                        _detectedPhotoOrientation.value = detected
+                        // Opcional: Preseleccionar orientación de página
+                        // if (_coverConfig.value.pageOrientation != detected) {
+                        //    onPageOrientationChange(detected) // Asegúrate que esta función no cree un bucle si también actualiza la foto
+                        // }
+                    } else {
+                        _detectedPhotoOrientation.value = null
+                    }
+                } ?: run { _detectedPhotoOrientation.value = null } // Si openInputStream devuelve null
+            } catch (e: Exception) {
+                _detectedPhotoOrientation.value = null
+                e.printStackTrace() // Consider a more user-friendly error handling/logging
+            }
+        } else {
+            _detectedPhotoOrientation.value = null
+        }
+    }
+
+    fun onPageOrientationChange(newOrientation: PageOrientation) {
+        _coverConfig.update { it.copy(pageOrientation = newOrientation) }
+    }
+
+    fun updateClientNameStyle(newSize: Float? = null, newAlign: TextAlign? = null, newColor: Color? = null) {
+        _coverConfig.update { current ->
+            current.copy(
+                clientNameStyle = current.clientNameStyle.copy(
+                    fontSize = newSize?.roundToInt()?.coerceIn(8, 72) ?: current.clientNameStyle.fontSize,
+                    textAlign = newAlign ?: current.clientNameStyle.textAlign,
+                    fontColor = newColor ?: current.clientNameStyle.fontColor
+                )
             )
         }
     }
 
-    fun onMainImageSelected(uri: Uri?) {
-        _coverConfig.update { currentState ->
-            currentState.copy(mainImageUri = uri?.toString())
-        }
-    }
-
-    fun onTextStyleChange(
-        fieldId: String,
-        newSize: Float? = null, // Usamos Float para el slider, luego convertimos a sp
-        newAlign: androidx.compose.ui.text.style.TextAlign? = null,
-        newColor: androidx.compose.ui.graphics.Color? = null
-        // newFontFamily: androidx.compose.ui.text.font.FontFamily? = null // Para futura implementación
-    ) {
-        _coverConfig.update { currentState ->
-            val newClientStyle = if (fieldId == DefaultCoverConfig.CLIENT_NAME_ID) {
-                currentState.clientNameStyle.copy(
-                    fontSize = newSize?.toInt()?.coerceIn(8, 72)?.sp ?: currentState.clientNameStyle.fontSize,
-                    textAlign = newAlign ?: currentState.clientNameStyle.textAlign,
-                    fontColor = newColor ?: currentState.clientNameStyle.fontColor
+    fun updateRucStyle(newSize: Float? = null, newAlign: TextAlign? = null, newColor: Color? = null) {
+        _coverConfig.update { current ->
+            current.copy(
+                rucStyle = current.rucStyle.copy(
+                    fontSize = newSize?.roundToInt()?.coerceIn(8, 72) ?: current.rucStyle.fontSize,
+                    textAlign = newAlign ?: current.rucStyle.textAlign,
+                    fontColor = newColor ?: current.rucStyle.fontColor
                 )
-            } else currentState.clientNameStyle
-
-            val newRucStyle = if (fieldId == DefaultCoverConfig.RUC_ID) {
-                currentState.rucStyle.copy(
-                    fontSize = newSize?.toInt()?.coerceIn(8, 72)?.sp ?: currentState.rucStyle.fontSize,
-                    textAlign = newAlign ?: currentState.rucStyle.textAlign,
-                    fontColor = newColor ?: currentState.rucStyle.fontColor
-                )
-            } else currentState.rucStyle
-
-            val newSubtitleStyle = if (fieldId == DefaultCoverConfig.SUBTITLE_ID) {
-                currentState.subtitleStyle.copy(
-                    fontSize = newSize?.toInt()?.coerceIn(8, 72)?.sp ?: currentState.subtitleStyle.fontSize,
-                    textAlign = newAlign ?: currentState.subtitleStyle.textAlign,
-                    fontColor = newColor ?: currentState.subtitleStyle.fontColor
-                )
-            } else currentState.subtitleStyle
-
-            currentState.copy(
-                clientNameStyle = newClientStyle,
-                rucStyle = newRucStyle,
-                subtitleStyle = newSubtitleStyle
             )
         }
     }
 
-    fun onBorderColorChange(newColor: androidx.compose.ui.graphics.Color) {
+    fun updateSubtitleStyle(newSize: Float? = null, newAlign: TextAlign? = null, newColor: Color? = null) {
+        _coverConfig.update { current ->
+            current.copy(
+                subtitleStyle = current.subtitleStyle.copy(
+                    fontSize = newSize?.roundToInt()?.coerceIn(8, 72) ?: current.subtitleStyle.fontSize,
+                    textAlign = newAlign ?: current.subtitleStyle.textAlign,
+                    fontColor = newColor ?: current.subtitleStyle.fontColor
+                )
+            )
+        }
+    }
+
+    fun onBorderColorChange(newColor: Color) {
         _coverConfig.update { it.copy(borderColor = newColor) }
     }
 
@@ -121,16 +146,10 @@ class CoverSetupViewModel : ViewModel() { // No más ProjectViewModel en constru
         right: String? = null
     ) {
         _coverConfig.update { currentState ->
-            // Convertir String a Dp, manteniendo el valor anterior si la conversión falla o el string es nulo/vacío
-            // Se asume que el input es en cm y se convierte a Dp (1 cm ~ 37.8 dp, aproximado)
-            // Para una conversión más precisa, se debería usar la densidad de pantalla,
-            // pero para la UI, una conversión fija es suficiente. La conversión final se hará para el PDF.
-            val cmToDpRatio = 37.8f
-
-            val newTop = top?.toFloatOrNull()?.let { (it * cmToDpRatio).dp } ?: currentState.marginTop
-            val newBottom = bottom?.toFloatOrNull()?.let { (it * cmToDpRatio).dp } ?: currentState.marginBottom
-            val newLeft = left?.toFloatOrNull()?.let { (it * cmToDpRatio).dp } ?: currentState.marginLeft
-            val newRight = right?.toFloatOrNull()?.let { (it * cmToDpRatio).dp } ?: currentState.marginRight
+            val newTop = top?.toFloatOrNull() ?: currentState.marginTop
+            val newBottom = bottom?.toFloatOrNull() ?: currentState.marginBottom
+            val newLeft = left?.toFloatOrNull() ?: currentState.marginLeft
+            val newRight = right?.toFloatOrNull() ?: currentState.marginRight
 
             currentState.copy(
                 marginTop = newTop,
@@ -140,6 +159,4 @@ class CoverSetupViewModel : ViewModel() { // No más ProjectViewModel en constru
             )
         }
     }
-
-    // TODO: Add functions for template loading/saving
 }

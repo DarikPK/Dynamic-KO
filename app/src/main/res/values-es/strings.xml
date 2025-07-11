@@ -51,6 +51,11 @@
     <string name="cover_setup_margin_right">Derecho:</string>
     <string name="save_cover_config_button_description">Guardar configuración de portada</string>
     <string name="cover_config_saved_toast">Configuración de portada guardada.</string>
+    <string name="cover_setup_page_orientation_label">Orientación de la Portada</string>
+    <string name="cover_photo_orientation_detected">Orientación de foto detectada: %1$s</string>
+    <string name="cover_photo_orientation_not_detected">No se pudo detectar la orientación de la foto.</string>
+    <string name="cover_photo_orientation_none_selected">Ninguna foto seleccionada para detectar orientación.</string>
+    <!-- orientation_vertical y orientation_horizontal ya existen y pueden ser reutilizadas -->
 
     <!-- InnerPagesScreen -->
     <string name="inner_pages_title">Páginas Interiores</string>
@@ -81,6 +86,8 @@
     <string name="optional_text_label">Texto Opcional (1ra página del grupo)</string>
     <string name="save_button">Guardar</string>
     <string name="cancel_button">Cancelar</string>
+    <string name="error_sheet_count_invalid">El número de hojas debe ser al menos 1.</string>
+    <string name="warning_photo_quota_mismatch">Advertencia: La configuración requiere %1$d fotos, pero el grupo tiene %2$d cargadas. Ajuste la configuración o las imágenes.</string>
 
     <!-- PageGroupItem -->
     <string name="group_item_unnamed_group">Grupo sin nombre (ID: %1$s…)</string>

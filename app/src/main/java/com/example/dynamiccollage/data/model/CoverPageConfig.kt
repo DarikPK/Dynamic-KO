@@ -1,14 +1,17 @@
 package com.example.dynamiccollage.data.model
 
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
+// Quitar Dp y dp si los márgenes son Float
+// import androidx.compose.ui.unit.Dp
+// import androidx.compose.ui.unit.dp
 
 // Valores por defecto para la configuración de la portada
 object DefaultCoverConfig {
-    const val CLIENT_NAME_ID = "clientName"
-    const val RUC_ID = "ruc"
-    const val SUBTITLE_ID = "subtitle" // Dirección
+    // IDs ya no son necesarios si TextStyleConfig no tiene 'id' y el ViewModel maneja estilos por separado
+    // const val CLIENT_NAME_ID = "clientName"
+    // const val RUC_ID = "ruc"
+    // const val SUBTITLE_ID = "subtitle"
 
     val BORDER_COLOR: Color = Color.Black
     const val BORDER_VISIBLE_TOP: Boolean = true
@@ -16,18 +19,25 @@ object DefaultCoverConfig {
     const val BORDER_VISIBLE_LEFT: Boolean = true
     const val BORDER_VISIBLE_RIGHT: Boolean = true
 
-    val MARGIN_TOP: Dp = 25.4.dp // 2.54 cm
-    val MARGIN_BOTTOM: Dp = 25.4.dp // 2.54 cm
-    val MARGIN_LEFT: Dp = 31.8.dp // 3.18 cm
-    val MARGIN_RIGHT: Dp = 31.8.dp // 3.18 cm
+    // Márgenes como Float (cm)
+    const val MARGIN_TOP_CM: Float = 2.54f
+    const val MARGIN_BOTTOM_CM: Float = 2.54f
+    const val MARGIN_LEFT_CM: Float = 3.18f
+    const val MARGIN_RIGHT_CM: Float = 3.18f
+
+    val PAGE_ORIENTATION: PageOrientation = PageOrientation.Vertical
+
+    // Función para obtener una instancia por defecto, si ProjectViewModel la necesita
+    fun get(): CoverPageConfig = CoverPageConfig()
 }
 
 data class CoverPageConfig(
-    val clientNameStyle: TextStyleConfig = TextStyleConfig(id = DefaultCoverConfig.CLIENT_NAME_ID),
-    val rucStyle: TextStyleConfig = TextStyleConfig(id = DefaultCoverConfig.RUC_ID),
-    val subtitleStyle: TextStyleConfig = TextStyleConfig(id = DefaultCoverConfig.SUBTITLE_ID), // Dirección
+    // Asumiendo que TextStyleConfig no tiene 'id' y fontSize es Int
+    val clientNameStyle: TextStyleConfig = TextStyleConfig(fontSize = 16),
+    val rucStyle: TextStyleConfig = TextStyleConfig(fontSize = 16),
+    val subtitleStyle: TextStyleConfig = TextStyleConfig(fontSize = 14), // Ejemplo de tamaño diferente
 
-    val mainImageUri: String? = null, // URI de la imagen principal como String
+    val mainImageUri: String? = null,
 
     val borderColor: Color = DefaultCoverConfig.BORDER_COLOR,
     val borderVisibleTop: Boolean = DefaultCoverConfig.BORDER_VISIBLE_TOP,
@@ -35,11 +45,13 @@ data class CoverPageConfig(
     val borderVisibleLeft: Boolean = DefaultCoverConfig.BORDER_VISIBLE_LEFT,
     val borderVisibleRight: Boolean = DefaultCoverConfig.BORDER_VISIBLE_RIGHT,
 
-    // Márgenes en Dp para la UI, se convertirán para el PDF
-    val marginTop: Dp = DefaultCoverConfig.MARGIN_TOP,
-    val marginBottom: Dp = DefaultCoverConfig.MARGIN_BOTTOM,
-    val marginLeft: Dp = DefaultCoverConfig.MARGIN_LEFT,
-    val marginRight: Dp = DefaultCoverConfig.MARGIN_RIGHT,
+    // Márgenes como Float (cm)
+    val marginTop: Float = DefaultCoverConfig.MARGIN_TOP_CM,
+    val marginBottom: Float = DefaultCoverConfig.MARGIN_BOTTOM_CM,
+    val marginLeft: Float = DefaultCoverConfig.MARGIN_LEFT_CM,
+    val marginRight: Float = DefaultCoverConfig.MARGIN_RIGHT_CM,
 
-    val templateName: String? = null // Para guardar/cargar plantillas
+    val pageOrientation: PageOrientation = DefaultCoverConfig.PAGE_ORIENTATION, // Nuevo campo
+
+    val templateName: String? = null
 )

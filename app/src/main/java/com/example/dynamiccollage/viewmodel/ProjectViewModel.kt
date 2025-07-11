@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.update
 
 class ProjectViewModel : ViewModel() {
 
-    private val _currentCoverConfig = MutableStateFlow(CoverPageConfig())
+    private val _currentCoverConfig = MutableStateFlow(DefaultCoverConfig.get()) // Usar DefaultCoverConfig.get()
     val currentCoverConfig: StateFlow<CoverPageConfig> = _currentCoverConfig.asStateFlow()
 
     private val _currentPageGroups = MutableStateFlow<List<PageGroup>>(emptyList())

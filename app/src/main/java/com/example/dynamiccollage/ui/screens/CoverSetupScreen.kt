@@ -66,7 +66,8 @@ import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.dynamiccollage.R
-import com.example.dynamiccollage.data.model.DefaultCoverConfig
+// import com.example.dynamiccollage.data.model.DefaultCoverConfig // No se usa si los IDs se eliminan de onTextStyleChange
+import com.example.dynamiccollage.data.model.PageOrientation // Importar PageOrientation
 import com.example.dynamiccollage.data.model.TextStyleConfig
 import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
 import com.example.dynamiccollage.viewmodel.CoverSetupViewModel
@@ -90,8 +91,9 @@ fun CoverSetupScreen(
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
-        coverSetupViewModel.onMainImageSelected(uri)
+        coverSetupViewModel.onMainImageSelected(uri, context.contentResolver)
     }
+    val detectedPhotoOrientation by coverSetupViewModel.detectedPhotoOrientation.collectAsState()
 
     Scaffold(
         topBar = {
@@ -166,6 +168,26 @@ fun CoverSetupScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // Mensaje de orientación de foto detectada
+            val photoOrientationText = when {
+                coverConfig.mainImageUri == null -> stringResource(R.string.cover_photo_orientation_none_selected)
+                detectedPhotoOrientation != null -> {
+                    val orientationStr = if (detectedPhotoOrientation == PageOrientation.Vertical)
+                        stringResource(R.string.orientation_vertical)
+                    else
+                        stringResource(R.string.orientation_horizontal)
+                    stringResource(R.string.cover_photo_orientation_detected, orientationStr)
+                }
+                else -> stringResource(R.string.cover_photo_orientation_not_detected)
+            }
+            Text(
+                text = photoOrientationText,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+
+
             if (coverConfig.mainImageUri != null) {
                 AsyncImage(
                     model = ImageRequest.Builder(context)
@@ -200,6 +222,25 @@ fun CoverSetupScreen(
             Divider()
             Spacer(modifier = Modifier.height(8.dp))
 
+            // Selector de Orientación de Portada
+            Text(stringResource(R.string.cover_setup_page_orientation_label), style = MaterialTheme.typography.titleMedium)
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                SegmentedButton(
+                    selected = coverConfig.pageOrientation == PageOrientation.Vertical,
+                    onClick = { coverSetupViewModel.onPageOrientationChange(PageOrientation.Vertical) },
+                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                ) { Text(stringResource(R.string.orientation_vertical)) }
+                SegmentedButton(
+                    selected = coverConfig.pageOrientation == PageOrientation.Horizontal,
+                    onClick = { coverSetupViewModel.onPageOrientationChange(PageOrientation.Horizontal) },
+                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                ) { Text(stringResource(R.string.orientation_horizontal)) }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            Divider()
+            Spacer(modifier = Modifier.height(8.dp))
+
             Text(
                 stringResource(id = R.string.cover_setup_text_customization_title),
                 style = MaterialTheme.typography.titleMedium,
@@ -210,7 +251,7 @@ fun CoverSetupScreen(
                 label = stringResource(id = R.string.field_client_name),
                 textStyleConfig = coverConfig.clientNameStyle,
                 onTextStyleChange = { newSize, newAlign, newColor ->
-                    coverSetupViewModel.onTextStyleChange(DefaultCoverConfig.CLIENT_NAME_ID, newSize, newAlign, newColor)
+                    coverSetupViewModel.updateClientNameStyle(newSize, newAlign, newColor)
                 }
             )
 
@@ -218,7 +259,7 @@ fun CoverSetupScreen(
                 label = stringResource(id = R.string.field_ruc),
                 textStyleConfig = coverConfig.rucStyle,
                 onTextStyleChange = { newSize, newAlign, newColor ->
-                    coverSetupViewModel.onTextStyleChange(DefaultCoverConfig.RUC_ID, newSize, newAlign, newColor)
+                    coverSetupViewModel.updateRucStyle(newSize, newAlign, newColor)
                 }
             )
 
@@ -226,7 +267,7 @@ fun CoverSetupScreen(
                 label = stringResource(id = R.string.field_address),
                 textStyleConfig = coverConfig.subtitleStyle,
                 onTextStyleChange = { newSize, newAlign, newColor ->
-                    coverSetupViewModel.onTextStyleChange(DefaultCoverConfig.SUBTITLE_ID, newSize, newAlign, newColor)
+                    coverSetupViewModel.updateSubtitleStyle(newSize, newAlign, newColor)
                 }
             )
 
