@@ -4,14 +4,14 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.dynamiccollage.ui.screens.MainScreen
-import com.example.dynamiccollage.ui.screens.PlaceholderScreen
 import com.example.dynamiccollage.ui.screens.CoverSetupScreen
 import com.example.dynamiccollage.ui.screens.InnerPagesScreen
-import com.example.dynamiccollage.viewmodel.ProjectViewModel // Importar ProjectViewModel
+import com.example.dynamiccollage.ui.screens.MainScreen
+import com.example.dynamiccollage.ui.screens.PlaceholderScreen
+import com.example.dynamiccollage.viewmodel.ProjectViewModel
 
 @Composable
-fun AppNavigation(projectViewModel: ProjectViewModel) { // Aceptar ProjectViewModel
+fun AppNavigation(projectViewModel: ProjectViewModel) {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = Screen.Main.route) {
         composable(Screen.Main.route) {
@@ -24,7 +24,7 @@ fun AppNavigation(projectViewModel: ProjectViewModel) { // Aceptar ProjectViewMo
             InnerPagesScreen(navController = navController, projectViewModel = projectViewModel)
         }
         composable(Screen.PdfPreview.route) {
-            // PdfPreviewScreen también podría necesitar projectViewModel si muestra datos del proyecto
+            // Considerar si PdfPreviewScreen también necesita projectViewModel
             PlaceholderScreen(screenName = "Vista Previa PDF")
         }
         // composable(Screen.Settings.route) {

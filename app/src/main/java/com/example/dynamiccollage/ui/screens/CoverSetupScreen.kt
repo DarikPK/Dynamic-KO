@@ -1,55 +1,50 @@
 package com.example.dynamiccollage.ui.screens
 
+import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.activity.ComponentActivity
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Save // Importar icono de guardar
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import android.widget.Toast
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner // Importar LocalViewModelStoreOwner
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.ui.unit.Dp
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,8 +56,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -74,20 +71,18 @@ import com.example.dynamiccollage.data.model.DefaultCoverConfig
 import com.example.dynamiccollage.data.model.TextStyleConfig
 import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
 import com.example.dynamiccollage.viewmodel.CoverSetupViewModel
+import com.example.dynamiccollage.viewmodel.ProjectViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CoverSetupScreen(
     navController: NavController,
     coverSetupViewModel: CoverSetupViewModel = viewModel(),
-    projectViewModel: ProjectViewModel // Ahora se recibe como parámetro
+    projectViewModel: ProjectViewModel // Se recibe como parámetro
 ) {
-    // val projectViewModel: ProjectViewModel = viewModel(viewModelStoreOwner = LocalContext.current as ComponentActivity) -> Eliminado
     val coverConfig by coverSetupViewModel.coverConfig.collectAsState()
     val context = LocalContext.current
 
-    // Cargar la configuración inicial del ProjectViewModel cuando la pantalla se lanza por primera vez
-    // o cuando la configuración del proyecto cambie (ej. por un reset).
     LaunchedEffect(projectViewModel.currentCoverConfig.value) {
         coverSetupViewModel.loadInitialConfig(projectViewModel.currentCoverConfig.value)
     }
@@ -95,7 +90,7 @@ fun CoverSetupScreen(
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
-        viewModel.onMainImageSelected(uri)
+        coverSetupViewModel.onMainImageSelected(uri)
     }
 
     Scaffold(
@@ -163,9 +158,7 @@ fun CoverSetupScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Button(
-                onClick = {
-                    imagePickerLauncher.launch("image/*")
-                },
+                onClick = { imagePickerLauncher.launch("image/*") },
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
                 Text(stringResource(id = R.string.cover_setup_select_image_button))
@@ -173,23 +166,22 @@ fun CoverSetupScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Visualización de la imagen seleccionada
             if (coverConfig.mainImageUri != null) {
                 AsyncImage(
                     model = ImageRequest.Builder(context)
                         .data(coverConfig.mainImageUri)
                         .crossfade(true)
                         .build(),
-                    contentDescription = "Imagen principal seleccionada", // TODO: Externalize
+                    contentDescription = stringResource(R.string.cover_image_selected_description),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .aspectRatio(16f / 9f) // Proporción de ejemplo, ajustar según necesidad
+                        .aspectRatio(16f / 9f)
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                         .border(1.dp, MaterialTheme.colorScheme.outline),
-                    contentScale = ContentScale.Fit // O ContentScale.Crop según el diseño deseado
+                    contentScale = ContentScale.Fit
                 )
             } else {
-                Box( // Placeholder si no hay imagen
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(16f / 9f)
@@ -197,10 +189,12 @@ fun CoverSetupScreen(
                         .border(1.dp, MaterialTheme.colorScheme.outline),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Ninguna imagen seleccionada", style = MaterialTheme.typography.bodySmall) // TODO: Externalize
+                    Text(
+                        stringResource(R.string.cover_no_image_selected),
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
-
 
             Spacer(modifier = Modifier.height(16.dp))
             Divider()
@@ -212,40 +206,27 @@ fun CoverSetupScreen(
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
 
-            // Personalización para Nombre del Cliente
             TextCustomizationSection(
                 label = stringResource(id = R.string.field_client_name),
                 textStyleConfig = coverConfig.clientNameStyle,
                 onTextStyleChange = { newSize, newAlign, newColor ->
-                    viewModel.onTextStyleChange(DefaultCoverConfig.CLIENT_NAME_ID, newSize, newAlign, newColor)
+                    coverSetupViewModel.onTextStyleChange(DefaultCoverConfig.CLIENT_NAME_ID, newSize, newAlign, newColor)
                 }
             )
 
-            // Personalización para RUC
             TextCustomizationSection(
                 label = stringResource(id = R.string.field_ruc),
                 textStyleConfig = coverConfig.rucStyle,
                 onTextStyleChange = { newSize, newAlign, newColor ->
-                    viewModel.onTextStyleChange(DefaultCoverConfig.RUC_ID, newSize, newAlign, newColor)
+                    coverSetupViewModel.onTextStyleChange(DefaultCoverConfig.RUC_ID, newSize, newAlign, newColor)
                 }
             )
 
-            // Personalización para Dirección
             TextCustomizationSection(
                 label = stringResource(id = R.string.field_address),
                 textStyleConfig = coverConfig.subtitleStyle,
                 onTextStyleChange = { newSize, newAlign, newColor ->
-                    viewModel.onTextStyleChange(DefaultCoverConfig.SUBTITLE_ID, newSize, newAlign, newColor)
-                }
-            )
-
-
-            // Personalización para Dirección
-            TextCustomizationSection(
-                label = stringResource(id = R.string.field_address),
-                textStyleConfig = coverConfig.subtitleStyle,
-                onTextStyleChange = { newSize, newAlign ->
-                    viewModel.onTextStyleChange(DefaultCoverConfig.SUBTITLE_ID, newSize, newAlign)
+                    coverSetupViewModel.onTextStyleChange(DefaultCoverConfig.SUBTITLE_ID, newSize, newAlign, newColor)
                 }
             )
 
@@ -259,9 +240,9 @@ fun CoverSetupScreen(
                 borderVisibleBottom = coverConfig.borderVisibleBottom,
                 borderVisibleLeft = coverConfig.borderVisibleLeft,
                 borderVisibleRight = coverConfig.borderVisibleRight,
-                onBorderColorChange = { viewModel.onBorderColorChange(it) },
+                onBorderColorChange = { coverSetupViewModel.onBorderColorChange(it) },
                 onBorderVisibilityChange = { top, bottom, left, right ->
-                    viewModel.onBorderVisibilityChange(top, bottom, left, right)
+                    coverSetupViewModel.onBorderVisibilityChange(top, bottom, left, right)
                 }
             )
 
@@ -275,14 +256,10 @@ fun CoverSetupScreen(
                 marginLeft = coverConfig.marginLeft,
                 marginRight = coverConfig.marginRight,
                 onMarginChange = { top, bottom, left, right ->
-                    viewModel.onMarginChange(top, bottom, left, right)
+                    coverSetupViewModel.onMarginChange(top, bottom, left, right)
                 }
             )
-
-            // Aquí se añadirán más adelante:
-            // - Vista previa de la portada (maqueta)
-            // - Botones para guardar/cargar plantillas
-            Spacer(modifier = Modifier.height(24.dp)) // Espacio al final
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
@@ -298,7 +275,6 @@ fun TextCustomizationSection(
     val colorOptions = mapOf(
         stringResource(R.string.color_black) to Color.Black,
         stringResource(R.string.color_gray) to Color.Gray,
-        // stringResource(R.string.color_white) to Color.White, // Blanco puede ser problemático en tema claro
         stringResource(R.string.color_blue) to Color.Blue,
         stringResource(R.string.color_red) to Color.Red,
         stringResource(R.string.color_green) to Color.Green
@@ -313,20 +289,16 @@ fun TextCustomizationSection(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(label, style = MaterialTheme.typography.titleSmall)
-
-        // Slider para Tamaño de Fuente
         Text(stringResource(id = R.string.cover_setup_font_size_label, currentFontSizeSlider))
         Slider(
             value = currentFontSizeSlider,
             onValueChange = { currentFontSizeSlider = it },
-            valueRange = 8f..72f, // Rango de tamaño de fuente (ej: 8sp a 72sp)
-            steps = 63, // (72-8) / 1 step
+            valueRange = 8f..72f,
+            steps = 63,
             onValueChangeFinished = {
                 onTextStyleChange(currentFontSizeSlider, null, null)
             }
         )
-
-        // SegmentedButton para Alineación
         Text(stringResource(id = R.string.cover_setup_alignment_label))
         val alignmentOptions = listOf(
             TextAlign.Start to stringResource(id = R.string.cover_setup_align_start),
@@ -346,10 +318,7 @@ fun TextCustomizationSection(
                 }
             }
         }
-
         Spacer(modifier = Modifier.height(8.dp))
-
-        // Selector de Color del Texto
         Text(stringResource(id = R.string.cover_setup_text_color_label))
         Row(
             modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
@@ -367,27 +336,6 @@ fun TextCustomizationSection(
                 }
             }
         }
-        // TODO: Añadir selector de Familia de Fuentes (si se implementa)
-    }
-}
-
-
-@Preview(showBackground = true)
-@Composable
-fun CoverSetupScreenPreviewWithImage() {
-    DynamicCollageTheme {
-        val previewViewModel = CoverSetupViewModel()
-        // Simular una imagen seleccionada para la preview
-        // previewViewModel.onMainImageSelected(android.net.Uri.EMPTY)
-        CoverSetupScreen(navController = rememberNavController(), viewModel = previewViewModel)
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun CoverSetupScreenPreviewWithoutImage() {
-    DynamicCollageTheme {
-        CoverSetupScreen(rememberNavController(), viewModel = CoverSetupViewModel())
     }
 }
 
@@ -399,10 +347,7 @@ fun MarginCustomizationSection(
     marginRight: Dp,
     onMarginChange: (top: String?, bottom: String?, left: String?, right: String?) -> Unit
 ) {
-    // Factor de conversión para mostrar de Dp a cm en la UI (aproximado)
     val dpToCmRatio = 1f / 37.8f
-
-    // Estados locales para los TextFields, inicializados con el valor convertido de Dp a cm
     var topInput by remember(marginTop) { mutableStateOf((marginTop.value * dpToCmRatio).toString()) }
     var bottomInput by remember(marginBottom) { mutableStateOf((marginBottom.value * dpToCmRatio).toString()) }
     var leftInput by remember(marginLeft) { mutableStateOf((marginLeft.value * dpToCmRatio).toString()) }
@@ -421,7 +366,6 @@ fun MarginCustomizationSection(
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.align(Alignment.CenterHorizontally)
         )
-
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             MarginTextField(
                 label = stringResource(id = R.string.cover_setup_margin_top),
@@ -488,7 +432,6 @@ fun BorderCustomizationSection(
         stringResource(R.string.color_blue) to Color.Blue,
         stringResource(R.string.color_red) to Color.Red,
         stringResource(R.string.color_green) to Color.Green
-        // Se pueden añadir más colores o un selector de color más avanzado
     )
 
     Column(
@@ -504,8 +447,6 @@ fun BorderCustomizationSection(
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.align(Alignment.CenterHorizontally)
         )
-
-        // Selector de Color del Borde
         Text(stringResource(id = R.string.cover_setup_border_color_label))
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -523,10 +464,7 @@ fun BorderCustomizationSection(
                 }
             }
         }
-
         Spacer(modifier = Modifier.height(8.dp))
-
-        // Visibilidad de Lados del Borde
         Text(stringResource(id = R.string.cover_setup_border_visibility_label))
         Column {
             BorderVisibilityCheckbox(
@@ -565,10 +503,39 @@ fun BorderVisibilityCheckbox(label: String, checked: Boolean, onCheckedChange: (
 }
 
 
+@Preview(showBackground = true)
+@Composable
+fun CoverSetupScreenPreviewWithImage() {
+    DynamicCollageTheme {
+        val context = LocalContext.current
+        CoverSetupScreen(
+            navController = rememberNavController(),
+            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity)
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun CoverSetupScreenPreviewWithoutImage() {
+    DynamicCollageTheme {
+        val context = LocalContext.current
+        CoverSetupScreen(
+            navController = rememberNavController(),
+            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity)
+        )
+    }
+}
+
+
 @Preview(showBackground = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun CoverSetupScreenDarkPreview() {
     DynamicCollageTheme(darkTheme = true) {
-        CoverSetupScreen(rememberNavController(), viewModel = CoverSetupViewModel())
+        val context = LocalContext.current
+        CoverSetupScreen(
+            navController = rememberNavController(),
+            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity)
+        )
     }
 }

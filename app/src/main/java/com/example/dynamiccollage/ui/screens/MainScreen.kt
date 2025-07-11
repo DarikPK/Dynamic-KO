@@ -1,6 +1,7 @@
 package com.example.dynamiccollage.ui.screens
 
 import android.widget.Toast
+import androidx.activity.ComponentActivity // Necesario para el viewModelStoreOwner en previews si no se pasa el VM
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -24,24 +26,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.compose.viewModel // Para la preview
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.dynamiccollage.R
 import com.example.dynamiccollage.ui.navigation.Screen
 import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
-import androidx.activity.ComponentActivity // Para el ViewModelStoreOwner
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     navController: NavController,
-    projectViewModel: ProjectViewModel // Ahora se recibe como parámetro
+    projectViewModel: ProjectViewModel // Se recibe como parámetro
 ) {
     val context = LocalContext.current
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
@@ -101,28 +103,23 @@ fun MainScreen(
             MainButton(
                 text = stringResource(R.string.main_btn_share_pdf),
                 onClick = {
-                    // Lógica para compartir PDF (se implementará más adelante)
                     Toast.makeText(context, "Compartir PDF: Próximamente", Toast.LENGTH_SHORT).show()
                 }
             )
             MainButton(
                 text = stringResource(R.string.main_btn_templates),
                 onClick = {
-                    // Lógica para guardar/cargar plantillas (se implementará más adelante)
                     Toast.makeText(context, "Plantillas: Próximamente", Toast.LENGTH_SHORT).show()
                 }
             )
-            Spacer(modifier = Modifier.weight(1f)) // Empuja el último botón hacia abajo
+            Spacer(modifier = Modifier.weight(1f))
             MainButton(
                 text = stringResource(R.string.main_btn_generate_pdf),
                 onClick = {
-                    // Lógica para generar PDF (se implementará más adelante)
                     Toast.makeText(context, "Generar PDF: Próximamente", Toast.LENGTH_SHORT).show()
                 }
             )
-
-            // Nuevo Botón para Eliminar Proyecto
-            Spacer(modifier = Modifier.height(16.dp)) // Un poco de espacio antes del botón de eliminar
+            Spacer(modifier = Modifier.height(16.dp))
             MainButton(
                 text = stringResource(R.string.main_btn_delete_project),
                 onClick = { showDeleteConfirmDialog = true },
@@ -137,8 +134,8 @@ fun MainScreen(
 fun MainButton(
     text: String,
     onClick: () -> Unit,
-    buttonColor: androidx.compose.ui.graphics.Color? = null, // Parámetro opcional para color
-    textColor: androidx.compose.ui.graphics.Color? = null
+    buttonColor: Color? = null,
+    textColor: Color? = null
 ) {
     val colors = if (buttonColor != null) {
         ButtonDefaults.buttonColors(containerColor = buttonColor)
@@ -162,10 +159,15 @@ fun MainButton(
 @Composable
 fun MainScreenPreview() {
     DynamicCollageTheme {
-        // Para la preview, el ProjectViewModel no se inyectará automáticamente así.
-        // Se necesitaría un mock o una forma de proveerlo para previews si se quiere probar la lógica de eliminación.
-        // Por ahora, la preview mostrará la UI sin la interacción del ViewModel.
-        MainScreen(navController = rememberNavController())
+        // Para que la preview funcione sin crash, el ProjectViewModel necesita ser proveído.
+        // Una forma es usar un viewModel() dummy o un mock.
+        // Esto es solo un ejemplo de cómo podrías necesitar ajustar previews.
+        val context = LocalContext.current
+        MainScreen(
+            navController = rememberNavController(),
+            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity) // Esto podría fallar en preview si el contexto no es una Activity
+            // O pasar un mock/stub ProjectViewModel
+        )
     }
 }
 
@@ -173,6 +175,10 @@ fun MainScreenPreview() {
 @Composable
 fun MainScreenDarkPreview() {
     DynamicCollageTheme(darkTheme = true) {
-        MainScreen(navController = rememberNavController())
+        val context = LocalContext.current
+        MainScreen(
+            navController = rememberNavController(),
+            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity)
+        )
     }
 }

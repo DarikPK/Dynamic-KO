@@ -1,5 +1,9 @@
 package com.example.dynamiccollage.ui.screens
 
+import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,9 +13,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import com.example.dynamiccollage.data.model.PageGroup
-import com.example.dynamiccollage.ui.components.PageGroupItem // Importar PageGroupItem
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -21,34 +24,33 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.activity.ComponentActivity // Para obtener ViewModel con alcance de Activity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.material.icons.filled.Save // Importar icono de guardar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import android.widget.Toast // Para el mensaje de guardado
-import com.example.dynamiccollage.ui.components.CreateEditGroupDialog // Importar el diálogo
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.example.dynamiccollage.R // Asegúrate de que R se importe correctamente
+import com.example.dynamiccollage.R
+import com.example.dynamiccollage.data.model.PageGroup
+import com.example.dynamiccollage.ui.components.CreateEditGroupDialog
+import com.example.dynamiccollage.ui.components.PageGroupItem
 import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
 import com.example.dynamiccollage.viewmodel.InnerPagesViewModel
+import com.example.dynamiccollage.viewmodel.ProjectViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InnerPagesScreen(
     navController: NavController,
-    // navController: NavController, // Eliminado navController duplicado
     innerPagesViewModel: InnerPagesViewModel = viewModel(),
-    projectViewModel: ProjectViewModel // Ahora se recibe como parámetro
+    projectViewModel: ProjectViewModel // Se recibe como parámetro
 ) {
     val pageGroups by innerPagesViewModel.pageGroups.collectAsState()
     val showDialog by innerPagesViewModel.showCreateGroupDialog.collectAsState()
@@ -56,7 +58,6 @@ fun InnerPagesScreen(
     val currentGroupAddingImages by innerPagesViewModel.currentGroupAddingImages.collectAsState()
     val context = LocalContext.current
 
-    // Cargar la configuración inicial del ProjectViewModel
     LaunchedEffect(projectViewModel.currentPageGroups.value) {
         innerPagesViewModel.loadInitialPageGroups(projectViewModel.currentPageGroups.value)
     }
@@ -77,8 +78,8 @@ fun InnerPagesScreen(
 
     if (showDialog) {
         CreateEditGroupDialog(
-            editingGroup = editingGroup,
-            viewModel = innerPagesViewModel, // Pasar el ViewModel de la pantalla
+            editingGroup = editing_group,
+            viewModel = innerPagesViewModel,
             onDismiss = { innerPagesViewModel.onDismissCreateGroupDialog() }
         )
     }
@@ -97,7 +98,7 @@ fun InnerPagesScreen(
                 },
                 actions = {
                     IconButton(onClick = {
-                        projectViewModel.setPageGroups(pageGroups) // Guardar la lista actual de grupos
+                        projectViewModel.setPageGroups(pageGroups)
                         Toast.makeText(context, context.getString(R.string.page_groups_saved_toast), Toast.LENGTH_SHORT).show()
                     }) {
                         Icon(
@@ -124,7 +125,7 @@ fun InnerPagesScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp), // Padding general para el contenido
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (pageGroups.isEmpty()) {
@@ -137,7 +138,7 @@ fun InnerPagesScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp) // Un poco más de espacio
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(pageGroups, key = { group -> group.id }) { pageGroup ->
                         PageGroupItem(
@@ -163,7 +164,11 @@ fun InnerPagesScreen(
 @Composable
 fun InnerPagesScreenPreview() {
     DynamicCollageTheme {
-        InnerPagesScreen(rememberNavController())
+        val context = LocalContext.current
+        InnerPagesScreen(
+            navController = rememberNavController(),
+            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity)
+        )
     }
 }
 
@@ -171,6 +176,10 @@ fun InnerPagesScreenPreview() {
 @Composable
 fun InnerPagesScreenDarkPreview() {
     DynamicCollageTheme(darkTheme = true) {
-        InnerPagesScreen(rememberNavController())
+        val context = LocalContext.current
+        InnerPagesScreen(
+            navController = rememberNavController(),
+            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity)
+        )
     }
 }
