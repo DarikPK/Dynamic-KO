@@ -1,7 +1,6 @@
 package com.example.dynamiccollage.ui.screens
 
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -61,7 +60,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.compose.viewModel // Para obtener ViewModels específicos de pantalla
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
@@ -77,9 +76,10 @@ import com.example.dynamiccollage.viewmodel.ProjectViewModel
 @Composable
 fun CoverSetupScreen(
     navController: NavController,
-    coverSetupViewModel: CoverSetupViewModel = viewModel(),
-    projectViewModel: ProjectViewModel // Se recibe como parámetro
+    projectViewModel: ProjectViewModel // Se recibe como parámetro explícito
 ) {
+    val coverSetupViewModel: CoverSetupViewModel = viewModel() // Se obtiene aquí dentro
+
     val coverConfig by coverSetupViewModel.coverConfig.collectAsState()
     val context = LocalContext.current
 
@@ -510,6 +510,8 @@ fun CoverSetupScreenPreviewWithImage() {
         val context = LocalContext.current
         CoverSetupScreen(
             navController = rememberNavController(),
+            // Para la preview, necesitaríamos un ProjectViewModel real o mock.
+            // Esto fallará si ProjectViewModel tiene dependencias no disponibles en preview.
             projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity)
         )
     }
