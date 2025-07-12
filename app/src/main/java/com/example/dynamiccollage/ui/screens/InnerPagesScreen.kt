@@ -2,8 +2,6 @@ package com.example.dynamiccollage.ui.screens
 
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +23,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -34,6 +33,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -59,14 +59,23 @@ fun InnerPagesScreen(
     val pageGroups by innerPagesViewModel.localPageGroups.collectAsState()
     val showDialog by innerPagesViewModel.showCreateGroupDialog.collectAsState()
     val editingGroup by innerPagesViewModel.editingGroup.collectAsState()
-    val currentGroupAddingImages by innerPagesViewModel.currentGroupAddingImages.collectAsState()
     val context = LocalContext.current
+    val hasInnerPagesBeenSaved by projectViewModel.hasInnerPagesBeenSaved.collectAsStateWithLifecycle()
 
+    // Cargar los grupos desde el proyecto una sola vez y marcar que hay cambios sin guardar
     LaunchedEffect(Unit) {
         innerPagesViewModel.loadGroupsFromProject()
+        projectViewModel.confirmInnerPagesSaved(false)
     }
 
-    // ELIMINADO: El lanzador de imágenes y su LaunchedEffect se han movido a ImageUploadScreen.
+    // Al salir de esta pantalla, si los cambios no se guardaron, se resetean.
+    DisposableEffect(Unit) {
+        onDispose {
+            if (!hasInnerPagesBeenSaved) {
+                projectViewModel.resetPageGroups()
+            }
+        }
+    }
 
     if (showDialog) {
         CreateEditGroupDialog(
@@ -81,7 +90,11 @@ fun InnerPagesScreen(
             CenterAlignedTopAppBar(
                 title = { Text(stringResource(id = R.string.inner_pages_title)) },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = {
+                        // Al volver, si no hemos guardado, la lógica de onDispose se encargará.
+                        // Si queremos ser explícitos, podríamos llamar a reset aquí, pero onDispose es más robusto.
+                        navController.popBackStack()
+                    }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(id = R.string.cover_setup_navigate_back_description)
@@ -136,7 +149,8 @@ fun InnerPagesScreen(
                         PageGroupItem(
                             pageGroup = pageGroup,
                             onAddImagesClicked = { groupId ->
-                                // Navegar a la nueva pantalla de carga de imágenes
+                                // Marcamos como "guardado" temporalmente para que onDispose no borre los datos al navegar
+                                projectViewModel.confirmInnerPagesSaved(true)
                                 navController.navigate(Screen.ImageUpload.createRoute(groupId))
                             },
                             onEditGroupClicked = { groupToEdit ->
