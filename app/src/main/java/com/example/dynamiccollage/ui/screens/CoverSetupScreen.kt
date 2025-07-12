@@ -84,7 +84,7 @@ fun CoverSetupScreen(
 ) {
     val coverConfig by coverSetupViewModel.coverConfig.collectAsState()
     val context = LocalContext.current
-    // val detectedPhotoOrientation by coverSetupViewModel.detectedPhotoOrientation.collectAsState() // Para Paso 2
+    val detectedPhotoOrientation by coverSetupViewModel.detectedPhotoOrientation.collectAsState() // NUEVO
 
     LaunchedEffect(projectViewModel.currentCoverConfig.value) {
         coverSetupViewModel.loadInitialConfig(projectViewModel.currentCoverConfig.value)
@@ -93,8 +93,8 @@ fun CoverSetupScreen(
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
-        // Pasar contentResolver para el Paso 2 (Detección de Orientación de Foto)
-        coverSetupViewModel.onMainImageSelected(uri) // , context.contentResolver) // Descomentar cuando se implemente Paso 2 completamente
+        // MODIFICADO: Pasar contentResolver
+        coverSetupViewModel.onMainImageSelected(uri, context.contentResolver)
     }
 
     Scaffold(
@@ -170,7 +170,25 @@ fun CoverSetupScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Visualización de la imagen seleccionada
+            // Mensaje de orientación de foto detectada (NUEVO)
+            val photoOrientationText = when {
+                coverConfig.mainImageUri == null -> stringResource(R.string.cover_photo_orientation_none_selected)
+                detectedPhotoOrientation != null -> {
+                    val orientationStr = if (detectedPhotoOrientation == PageOrientation.Vertical)
+                        stringResource(R.string.orientation_vertical)
+                    else
+                        stringResource(R.string.orientation_horizontal)
+                    stringResource(R.string.cover_photo_orientation_detected, orientationStr)
+                }
+                else -> stringResource(R.string.cover_photo_orientation_not_detected)
+            }
+            Text(
+                text = photoOrientationText,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 4.dp, bottom = 4.dp)
+            )
+            // Fin Mensaje de orientación
+
             if (coverConfig.mainImageUri != null) {
                 AsyncImage(
                     model = ImageRequest.Builder(context)
@@ -201,10 +219,6 @@ fun CoverSetupScreen(
                 }
             }
 
-            // Mensaje de orientación de foto detectada (para Paso 2)
-            // val photoOrientationText = // ... lógica del mensaje
-            // Text(text = photoOrientationText, ...)
-
             Spacer(modifier = Modifier.height(16.dp))
             Divider()
             Spacer(modifier = Modifier.height(8.dp))
@@ -220,13 +234,14 @@ fun CoverSetupScreen(
                     selected = coverConfig.pageOrientation == PageOrientation.Vertical,
                     onClick = { coverSetupViewModel.onPageOrientationChange(PageOrientation.Vertical) },
                     shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
-                ) { Text(stringResource(R.string.orientation_vertical)) }
+                ) { Text(stringResource(R.string.orientation_vertical)) } // Reutilizar strings existentes
                 SegmentedButton(
                     selected = coverConfig.pageOrientation == PageOrientation.Horizontal,
                     onClick = { coverSetupViewModel.onPageOrientationChange(PageOrientation.Horizontal) },
                     shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
-                ) { Text(stringResource(R.string.orientation_horizontal)) }
+                ) { Text(stringResource(R.string.orientation_horizontal)) } // Reutilizar strings existentes
             }
+            // Fin Selector de Orientación
 
             Spacer(modifier = Modifier.height(16.dp))
             Divider()
@@ -242,6 +257,7 @@ fun CoverSetupScreen(
                 label = stringResource(id = R.string.field_client_name),
                 textStyleConfig = coverConfig.clientNameStyle,
                 onTextStyleChange = { newSize, newAlign, newColor ->
+                    // Usar los IDs de DefaultCoverConfig como los tenías
                     coverSetupViewModel.onTextStyleChange(DefaultCoverConfig.CLIENT_NAME_ID, newSize, newAlign, newColor)
                 }
             )
@@ -282,10 +298,8 @@ fun CoverSetupScreen(
             Divider()
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Ajuste aquí: coverConfig.marginTop ya es Float (cm), no necesita .dp
-            // La sección MarginCustomizationSection debe ser adaptada para tomar Float y su lógica interna también.
             MarginCustomizationSection(
-                marginTop = coverConfig.marginTop, // Pasar Float directamente
+                marginTop = coverConfig.marginTop, // Pasa Float
                 marginBottom = coverConfig.marginBottom,
                 marginLeft = coverConfig.marginLeft,
                 marginRight = coverConfig.marginRight,
@@ -364,7 +378,7 @@ fun TextCustomizationSection(
             colorOptions.forEach { (name, colorValue) ->
                 OutlinedButton(
                     onClick = { onTextStyleChange(null, null, colorValue) },
-                    modifier = Modifier.padding(8.dp), // Ajustado el padding aquí también
+                    modifier = Modifier.padding(8.dp),
                     border = if (textStyleConfig.fontColor == colorValue) ButtonDefaults.outlinedButtonBorder.copy(width = 2.dp) else ButtonDefaults.outlinedButtonBorder,
                 ) {
                     Box(modifier = Modifier.size(20.dp).background(colorValue))
@@ -378,13 +392,12 @@ fun TextCustomizationSection(
 
 @Composable
 fun MarginCustomizationSection(
-    marginTop: Float, // Cambiado a Float
-    marginBottom: Float, // Cambiado a Float
-    marginLeft: Float, // Cambiado a Float
-    marginRight: Float, // Cambiado a Float
+    marginTop: Float, // Acepta Float
+    marginBottom: Float, // Acepta Float
+    marginLeft: Float, // Acepta Float
+    marginRight: Float, // Acepta Float
     onMarginChange: (top: String?, bottom: String?, left: String?, right: String?) -> Unit
 ) {
-    // Los valores ya son Float (cm), solo se convierten a String para el TextField
     var topInput by remember(marginTop) { mutableStateOf(marginTop.toString()) }
     var bottomInput by remember(marginBottom) { mutableStateOf(marginBottom.toString()) }
     var leftInput by remember(marginLeft) { mutableStateOf(marginLeft.toString()) }
@@ -486,14 +499,14 @@ fun BorderCustomizationSection(
         )
         Text(stringResource(id = R.string.cover_setup_border_color_label))
         Row(
-            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), // Añadido scroll por si no caben
-            horizontalArrangement = Arrangement.spacedBy(4.dp) // Espacio entre botones
+            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             colorOptions.forEach { (name, colorValue) ->
                 OutlinedButton(
                     onClick = { onBorderColorChange(colorValue) },
                     modifier = Modifier.padding(horizontal = 2.dp),
-                    border = if (borderColor == colorValue) ButtonDefaults.outlinedButtonBorder.copy(width = 2.dp) else ButtonDefaults.outlinedButtonBorder,
+                   border = if (borderColor == colorValue) ButtonDefaults.outlinedButtonBorder.copy(width = 2.dp) else ButtonDefaults.outlinedButtonBorder,
                 ) {
                     Box(modifier = Modifier.size(20.dp).background(colorValue))
                     Spacer(modifier = Modifier.width(8.dp))
@@ -541,36 +554,12 @@ fun BorderVisibilityCheckbox(label: String, checked: Boolean, onCheckedChange: (
 
 @Preview(showBackground = true)
 @Composable
-fun CoverSetupScreenPreviewWithImage() {
+fun CoverSetupScreenPreview() { // Renombrada para evitar conflicto con las tuyas
     DynamicCollageTheme {
         val context = LocalContext.current
         CoverSetupScreen(
             navController = rememberNavController(),
-            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity)
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun CoverSetupScreenPreviewWithoutImage() {
-    DynamicCollageTheme {
-        val context = LocalContext.current
-        CoverSetupScreen(
-            navController = rememberNavController(),
-            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity)
-        )
-    }
-}
-
-@Preview(showBackground = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
-@Composable
-fun CoverSetupScreenDarkPreview() {
-    DynamicCollageTheme(darkTheme = true) {
-        val context = LocalContext.current
-        CoverSetupScreen(
-            navController = rememberNavController(),
-            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity)
+            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity) // Para que la preview funcione
         )
     }
 }
