@@ -1,6 +1,7 @@
 package com.example.dynamiccollage.ui.screens
 
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -39,6 +40,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.dynamiccollage.R
 import com.example.dynamiccollage.ui.components.CreateEditGroupDialog
 import com.example.dynamiccollage.ui.components.PageGroupItem
+import com.example.dynamiccollage.ui.navigation.Screen
 import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
 import com.example.dynamiccollage.viewmodel.InnerPagesViewModel
 import com.example.dynamiccollage.viewmodel.InnerPagesViewModelFactory
@@ -48,38 +50,23 @@ import com.example.dynamiccollage.viewmodel.ProjectViewModel
 @Composable
 fun InnerPagesScreen(
     navController: NavController,
-    projectViewModel: ProjectViewModel // Se recibe como parámetro
+    projectViewModel: ProjectViewModel
 ) {
-    // Usar el Factory para crear el InnerPagesViewModel, pasándole el ProjectViewModel
     val innerPagesViewModel: InnerPagesViewModel = viewModel(
         factory = InnerPagesViewModelFactory(projectViewModel)
     )
 
-    val pageGroups by innerPagesViewModel.pageGroups.collectAsState()
+    val pageGroups by innerPagesViewModel.localPageGroups.collectAsState()
     val showDialog by innerPagesViewModel.showCreateGroupDialog.collectAsState()
     val editingGroup by innerPagesViewModel.editingGroup.collectAsState()
     val currentGroupAddingImages by innerPagesViewModel.currentGroupAddingImages.collectAsState()
     val context = LocalContext.current
 
-    // Este LaunchedEffect ya no es necesario aquí, porque el ViewModel ahora
-    // observa directamente el StateFlow del ProjectViewModel.
-    // LaunchedEffect(projectViewModel.currentPageGroups.value) {
-    //     innerPagesViewModel.loadInitialPageGroups(projectViewModel.currentPageGroups.value)
-    // }
-
-    val multipleImagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetMultipleContents()
-    ) { uris ->
-        if (uris.isNotEmpty()) {
-            innerPagesViewModel.onImagesSelectedForGroup(uris)
-        }
+    LaunchedEffect(Unit) {
+        innerPagesViewModel.loadGroupsFromProject()
     }
 
-    LaunchedEffect(currentGroupAddingImages) {
-        if (currentGroupAddingImages != null) {
-            multipleImagePickerLauncher.launch("image/*")
-        }
-    }
+    // ELIMINADO: El lanzador de imágenes y su LaunchedEffect se han movido a ImageUploadScreen.
 
     if (showDialog) {
         CreateEditGroupDialog(
@@ -102,11 +89,8 @@ fun InnerPagesScreen(
                     }
                 },
                 actions = {
-                    // El botón de Guardar aquí es ahora opcional, ya que cada acción se guarda
-                    // en ProjectViewModel al momento. Se puede mantener para una confirmación
-                    // explícita del usuario de que ha terminado en esta pantalla.
                     IconButton(onClick = {
-                        // projectViewModel.setPageGroups(pageGroups) // Esta llamada ya no es necesaria si todo se actualiza en tiempo real
+                        innerPagesViewModel.saveChangesToProject()
                         Toast.makeText(context, context.getString(R.string.page_groups_saved_toast), Toast.LENGTH_SHORT).show()
                     }) {
                         Icon(
@@ -152,7 +136,8 @@ fun InnerPagesScreen(
                         PageGroupItem(
                             pageGroup = pageGroup,
                             onAddImagesClicked = { groupId ->
-                                innerPagesViewModel.onAddImagesClickedForGroup(groupId)
+                                // Navegar a la nueva pantalla de carga de imágenes
+                                navController.navigate(Screen.ImageUpload.createRoute(groupId))
                             },
                             onEditGroupClicked = { groupToEdit ->
                                 innerPagesViewModel.onEditGroupClicked(groupToEdit)

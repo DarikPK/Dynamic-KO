@@ -11,11 +11,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 
+// Este ViewModel ahora necesita el ProjectViewModel para comunicarse con él
 class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : ViewModel() {
 
-    // Ya no hay una lista local de grupos. Se observa directamente del ProjectViewModel.
-    val pageGroups: StateFlow<List<PageGroup>> = projectViewModel.currentPageGroups
+    // Lista LOCAL de grupos para la edición en esta pantalla
+    private val _localPageGroups = MutableStateFlow<List<PageGroup>>(emptyList())
+    val localPageGroups: StateFlow<List<PageGroup>> = _localPageGroups.asStateFlow()
 
     private val _showCreateGroupDialog = MutableStateFlow(false)
     val showCreateGroupDialog: StateFlow<Boolean> = _showCreateGroupDialog.asStateFlow()
@@ -28,22 +31,36 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
 
     val isEditingGroupConfigValid: StateFlow<Boolean> = combine(
         editingGroup,
-        projectViewModel.currentPageGroups
-    ) { group, projectGroups ->
-        if (group == null) {
-            return@combine true
-        }
+        _localPageGroups // Validar contra la lista local
+    ) { group, currentGroups ->
+        if (group == null) return@combine true
         val isValidSheetCount = group.sheetCount > 0
-        val originalGroup = projectGroups.find { it.id == group.id }
+        val originalGroup = currentGroups.find { it.id == group.id }
         val imagesAlreadyLoaded = originalGroup?.imageUris?.size ?: 0
 
-        if (imagesAlreadyLoaded > 0) { // Es un grupo existente que se está editando
+        if (imagesAlreadyLoaded > 0) {
             isValidSheetCount && (group.totalPhotosRequired == imagesAlreadyLoaded)
-        } else { // Es un grupo nuevo o uno existente sin imágenes
+        } else {
             isValidSheetCount
         }
     }.stateIn(viewModelScope, SharingStarted.Lazily, true)
 
+    // Carga la lista desde el ProjectViewModel al iniciar
+    fun loadGroupsFromProject() {
+        _localPageGroups.value = projectViewModel.currentPageGroups.value
+        // Al cargar, marcamos que no hay cambios sin guardar
+        projectViewModel.confirmInnerPagesSaved(true)
+    }
+
+    // El botón "Guardar" en la UI llamará a esta función
+    fun saveChangesToProject() {
+        projectViewModel.setPageGroups(_localPageGroups.value)
+        projectViewModel.confirmInnerPagesSaved(true)
+    }
+
+    private fun markChangesAsUnsaved() {
+        projectViewModel.confirmInnerPagesSaved(false)
+    }
 
     fun onAddNewGroupClicked() {
         _editingGroup.value = PageGroup()
@@ -64,24 +81,24 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         val groupToSave = _editingGroup.value ?: return
         if (!isEditingGroupConfigValid.value) return
 
-        val existingGroup = pageGroups.value.find { it.id == groupToSave.id }
-        val isNewGroup = existingGroup == null
+        val existingGroupIndex = _localPageGroups.value.indexOfFirst { it.id == groupToSave.id }
 
-        if (isNewGroup) {
-            projectViewModel.addPageGroupToProject(groupToSave)
+        if (existingGroupIndex != -1) {
+            _localPageGroups.update { currentList ->
+                currentList.toMutableList().apply { this[existingGroupIndex] = groupToSave }
+            }
         } else {
-            projectViewModel.updatePageGroupInProject(groupToSave)
+            _localPageGroups.update { currentList -> currentList + groupToSave }
         }
-
+        markChangesAsUnsaved()
         onDismissCreateGroupDialog()
-
-        if (isNewGroup) {
-            onAddImagesClickedForGroup(groupToSave.id)
-        }
     }
 
     fun removePageGroup(groupId: String) {
-        projectViewModel.removePageGroupFromProject(groupId)
+        _localPageGroups.update { currentList ->
+            currentList.filterNot { it.id == groupId }
+        }
+        markChangesAsUnsaved()
     }
 
     fun onAddImagesClickedForGroup(groupId: String) {
@@ -90,13 +107,19 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
 
     fun onImagesSelectedForGroup(uris: List<Uri>) {
         val groupId = _currentGroupAddingImages.value ?: return
-        val groupToUpdate = pageGroups.value.find { it.id == groupId } ?: return
 
-        val existingUris = groupToUpdate.imageUris.toSet()
-        val newUrisToAdd = uris.map { it.toString() }.filterNot { existingUris.contains(it) }
-        val updatedGroup = groupToUpdate.copy(imageUris = groupToUpdate.imageUris + newUrisToAdd)
-
-        projectViewModel.updatePageGroupInProject(updatedGroup)
+        _localPageGroups.update { currentList ->
+            currentList.map { group ->
+                if (group.id == groupId) {
+                    val existingUris = group.imageUris.toSet()
+                    val newUrisToAdd = uris.map { it.toString() }.filterNot { existingUris.contains(it) }
+                    group.copy(imageUris = group.imageUris + newUrisToAdd)
+                } else {
+                    group
+                }
+            }
+        }
+        markChangesAsUnsaved()
         _currentGroupAddingImages.value = null
     }
 
@@ -126,7 +149,7 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         )
     }
 
-    val areAllPhotoQuotasMet: StateFlow<Boolean> = pageGroups.map { groups ->
+    val areAllPhotoQuotasMet: StateFlow<Boolean> = _localPageGroups.map { groups ->
         if (groups.isEmpty()) true
         else groups.all { it.isPhotoQuotaMet }
     }.stateIn(viewModelScope, SharingStarted.Lazily, true)

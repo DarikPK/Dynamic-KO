@@ -40,8 +40,26 @@ class ProjectViewModel : ViewModel() {
         }
     }
 
+    // --- Lógica de Guardado Explícito para Páginas Interiores ---
+    private val _hasInnerPagesBeenSaved = MutableStateFlow(true)
+    val hasInnerPagesBeenSaved: StateFlow<Boolean> = _hasInnerPagesBeenSaved.asStateFlow()
+
+    fun confirmInnerPagesSaved(saved: Boolean) {
+        _hasInnerPagesBeenSaved.value = saved
+    }
+
+    fun resetPageGroups() {
+        _currentPageGroups.value = emptyList()
+        // Al resetear los grupos, consideramos que el estado "guardado" se pierde
+        // hasta que el usuario vuelva a guardar explícitamente.
+        // O podríamos mantenerlo en true, dependiendo del flujo deseado.
+        // Por ahora, lo mantenemos en true para no borrar al salir de la pantalla vacía.
+        _hasInnerPagesBeenSaved.value = true
+    }
+    // --- Fin Lógica de Guardado Explícito ---
+
     fun resetProject() {
-        _currentCoverConfig.value = CoverPageConfig() // Restablecer a la configuración por defecto
-        _currentPageGroups.value = emptyList()       // Vaciar la lista de grupos
+        _currentCoverConfig.value = CoverPageConfig()
+        resetPageGroups() // Usar la nueva función para resetear grupos
     }
 }

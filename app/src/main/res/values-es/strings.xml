@@ -89,6 +89,12 @@
     <string name="error_sheet_count_invalid">El número de hojas debe ser al menos 1.</string>
     <string name="warning_photo_quota_mismatch">Advertencia: La configuración requiere %1$d fotos, pero el grupo tiene %2$d cargadas. Ajuste la configuración o las imágenes.</string>
 
+    <!-- ImageUploadScreen -->
+    <string name="image_upload_title">Cargar Imágenes</string>
+    <string name="image_upload_quota_message">Requeridas: %1$d | Cargadas: %2$d</string>
+    <string name="image_upload_add_photos_button">Añadir Fotos</string>
+    <string name="image_upload_done_button">Listo</string>
+
     <!-- PageGroupItem -->
     <string name="group_item_unnamed_group">Grupo sin nombre (ID: %1$s…)</string>
     <string name="group_item_total_photos_required">Total Fotos Requeridas</string>

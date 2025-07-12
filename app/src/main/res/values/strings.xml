@@ -89,6 +89,12 @@
     <string name="error_sheet_count_invalid">Number of sheets must be at least 1.</string>
     <string name="warning_photo_quota_mismatch">Warning: Configuration requires %1$d photos, but the group has %2$d loaded. Adjust settings or images.</string>
 
+    <!-- ImageUploadScreen -->
+    <string name="image_upload_title">Upload Images</string>
+    <string name="image_upload_quota_message">Required: %1$d | Loaded: %2$d</string>
+    <string name="image_upload_add_photos_button">Add Photos</string>
+    <string name="image_upload_done_button">Done</string>
+
     <!-- PageGroupItem -->
     <string name="group_item_unnamed_group">Unnamed Group (ID: %1$s…)</string>
     <string name="group_item_total_photos_required">Total Photos Required</string>
