@@ -51,6 +51,19 @@ object PdfGenerator {
         }
     }
 
+    /**
+     * Genera una lista de Bitmaps para previsualizar las páginas del PDF.
+     * NOTA: Esta funcionalidad es compleja y se deja pendiente.
+     * Retorna una lista vacía para evitar errores de compilación.
+     */
+    fun generatePreviewBitmaps(
+        context: Context,
+        coverConfig: CoverPageConfig,
+        pageGroups: List<PageGroup>
+    ): List<Bitmap> {
+        return emptyList()
+    }
+
     private fun drawCoverPage(pdfDocument: PdfDocument, context: Context, config: CoverPageConfig) {
         val pageWidth = if (config.pageOrientation == PageOrientation.Vertical) A4_WIDTH else A4_HEIGHT
         val pageHeight = if (config.pageOrientation == PageOrientation.Vertical) A4_HEIGHT else A4_WIDTH
@@ -59,6 +72,7 @@ object PdfGenerator {
         val page = pdfDocument.startPage(pageInfo)
         val canvas = page.canvas
 
+        // Asumiendo que los márgenes en CoverPageConfig son Float (cm)
         val marginTop = config.marginTop * CM_TO_POINTS
         val marginBottom = config.marginBottom * CM_TO_POINTS
         val marginLeft = config.marginLeft * CM_TO_POINTS
@@ -73,6 +87,7 @@ object PdfGenerator {
         for (textField in textFields) {
             if (textField.isVisible) {
                 textPaint.color = textField.fontColor.hashCode()
+                // Asumiendo que fontSize en TextStyleConfig es Int
                 textPaint.textSize = textField.fontSize.toFloat()
 
                 val alignment = when (textField.textAlign) {
@@ -89,10 +104,11 @@ object PdfGenerator {
                 canvas.translate(contentArea.left, currentY)
                 staticLayout.draw(canvas)
                 canvas.restore()
-                currentY += staticLayout.height
+                currentY += staticLayout.height + 5 // Pequeño espacio entre textos
             }
         }
 
+        // Asumiendo que mainImageUri en CoverPageConfig es String?
         config.mainImageUri?.let { uriString ->
             val imageRect = RectF(contentArea.left, currentY, contentArea.right, contentArea.bottom)
             if (imageRect.height() > 0 && imageRect.width() > 0) {
@@ -120,11 +136,10 @@ object PdfGenerator {
     }
 
     private fun drawInnerPages(pdfDocument: PdfDocument, context: Context, pageGroups: List<PageGroup>) {
-        var pageNumber = 2 // La portada es la página 1
-        var imageUriIndex = 0
+        var pageNumber = 2
 
-        for (group in pageGroups) {
-            if (group.imageUris.isEmpty()) continue // Omitir grupos sin imágenes
+        pageGroups.forEach { group ->
+            if (group.imageUris.isEmpty()) return@forEach
 
             val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG)
             val optionalTextLayout = if (group.optionalTextStyle.isVisible) {
@@ -136,20 +151,22 @@ object PdfGenerator {
                     else -> Layout.Alignment.ALIGN_NORMAL
                 }
                 StaticLayout.Builder.obtain(
-                    group.optionalTextStyle.content, 0, group.optionalTextStyle.content.length, textPaint, A4_WIDTH - 100 // Ancho de texto arbitrario
+                    group.optionalTextStyle.content, 0, group.optionalTextStyle.content.length, textPaint, A4_WIDTH - 100
                 ).setAlignment(alignment).build()
             } else null
 
+            var imageUriIndex = 0
             for (sheetIndex in 0 until group.sheetCount) {
+                if(imageUriIndex >= group.imageUris.size) break
+
                 val pageWidth = if (group.orientation == PageOrientation.Vertical) A4_WIDTH else A4_HEIGHT
                 val pageHeight = if (group.orientation == PageOrientation.Vertical) A4_HEIGHT else A4_WIDTH
 
                 val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber++).create()
                 val page = pdfDocument.startPage(pageInfo)
                 val canvas = page.canvas
-                var currentY = 20f // Margen superior pequeño
+                var currentY = 20f
 
-                // Dibujar texto opcional solo en la primera página del grupo
                 if (sheetIndex == 0 && optionalTextLayout != null) {
                     canvas.save()
                     canvas.translate(50f, currentY)
@@ -158,7 +175,6 @@ object PdfGenerator {
                     currentY += optionalTextLayout.height + 20f
                 }
 
-                // Definir los rectángulos para las imágenes
                 val rects = getRectsForPage(pageWidth, pageHeight, currentY, group.tableLayout.first, group.tableLayout.second)
 
                 for (rect in rects) {
@@ -230,61 +246,5 @@ object PdfGenerator {
             }
         }
         return inSampleSize
-    }
-
-    /**
-     * Genera una lista de Bitmaps para previsualizar las páginas del PDF.
-     */
-    fun generatePreviewBitmaps(
-        context: Context,
-        coverConfig: CoverPageConfig,
-        pageGroups: List<PageGroup>
-    ): List<Bitmap> {
-        val bitmaps = mutableListOf<Bitmap>()
-        val pdfDocument = PdfDocument()
-
-        try {
-            // Dibujar portada en un documento temporal
-            drawCoverPage(pdfDocument, context, coverConfig)
-            // Dibujar páginas interiores en el documento temporal
-            drawInnerPages(pdfDocument, context, pageGroups)
-
-            // Renderizar cada página del documento a un Bitmap
-            for (i in 0 until pdfDocument.pages.size) {
-                val page = pdfDocument.pages[i]
-                // Crear un Bitmap con las dimensiones de la página y renderizar su contenido
-                val bitmap = Bitmap.createBitmap(page.canvas.width, page.canvas.height, Bitmap.Config.ARGB_8888)
-                page.canvas.drawBitmap(bitmap, 0f, 0f, null) // Esto no es correcto para renderizar.
-                // La forma correcta es tener un canvas asociado al bitmap y dibujar la página en él.
-                // Sin embargo, la API PdfDocument no facilita renderizar una página ya finalizada a otro canvas.
-                // Un enfoque más simple es crear un bitmap y dibujar el contenido dos veces.
-                // O, para una preview, podemos renderizar a una escala menor.
-
-                // --- Enfoque Correcto y Simplificado para la Preview ---
-                // No podemos "re-renderizar" una página de PdfDocument.
-                // Lo que haremos es crear un Bitmap y un Canvas para ese Bitmap, y luego
-                // llamar a nuestras funciones de dibujo (drawCoverPage, etc.) para que dibujen en ESE canvas.
-                // Esto es ineficiente. La mejor manera es generar el PDF, guardarlo y luego usar una librería
-                // para renderizar las páginas del archivo PDF a Bitmaps.
-
-                // --- Enfoque Alternativo y Práctico (sin librerías extra) ---
-                // Renderizar a un Bitmap directamente, sin crear el PDF.
-                // Esto implica duplicar la lógica de creación de página.
-                // Lo haremos simple por ahora.
-
-                // --- Corrección: La API no permite esto fácilmente. Vamos a dejarlo como TODO
-                // y la pantalla de preview mostrará un placeholder. La implementación real
-                // requeriría una librería de renderizado de PDF como pdf-renderer de `com.github.barteksc:android-pdf-viewer`
-                // o las APIs de Android 12+ `PdfRenderer`. Para no añadir dependencias complejas ahora,
-                // simularemos esto.
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        } finally {
-            pdfDocument.close()
-        }
-
-        // Placeholder: por ahora retornamos una lista vacía.
-        return bitmaps
     }
 }

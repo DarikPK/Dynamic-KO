@@ -97,6 +97,12 @@
     <string name="error_sheet_count_invalid">Number of sheets must be at least 1.</string>
     <string name="warning_photo_quota_mismatch">Warning: Configuration requires %1$d photos, but the group has %2$d loaded. Adjust settings or images.</string>
 
+    <!-- PdfPreviewScreen -->
+    <string name="pdf_preview_title">PDF Preview</string>
+    <string name="pdf_preview_generation_error">Could not generate preview.\nPDF rendering functionality is pending.</string>
+    <string name="pdf_preview_page_x">Page %1$d</string>
+    <string name="pdf_preview_page_content_description">Page %1$d preview</string>
+
     <!-- ImageUploadScreen -->
     <string name="image_upload_title">Upload Images</string>
     <string name="image_upload_quota_message">Required: %1$d | Loaded: %2$d</string>

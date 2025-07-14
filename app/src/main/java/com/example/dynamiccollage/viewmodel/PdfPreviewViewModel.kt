@@ -25,7 +25,7 @@ class PdfPreviewViewModel(private val projectViewModel: ProjectViewModel) : View
             _isLoading.value = true
             val bitmaps = withContext(Dispatchers.IO) {
                 // Esta función actualmente retorna una lista vacía.
-                // Cuando se implemente, generará los bitmaps reales.
+                // Cuando se implemente una librería de renderizado, generará los bitmaps reales.
                 PdfGenerator.generatePreviewBitmaps(
                     context = context,
                     coverConfig = projectViewModel.currentCoverConfig.value,

@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -33,6 +34,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -61,7 +63,7 @@ fun PdfPreviewScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Vista Previa del PDF") }, // TODO: Externalize
+                title = { Text(stringResource(id = R.string.pdf_preview_title)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
@@ -85,7 +87,11 @@ fun PdfPreviewScreen(
             if (isLoading) {
                 CircularProgressIndicator()
             } else if (bitmaps.isEmpty()) {
-                Text("No se pudo generar la vista previa.\nLa funcionalidad de renderizado de PDF está pendiente.") // TODO: Externalize
+                Text(
+                    text = stringResource(id = R.string.pdf_preview_generation_error),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(16.dp)
+                )
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
@@ -94,14 +100,17 @@ fun PdfPreviewScreen(
                 ) {
                     itemsIndexed(bitmaps) { index, bitmap ->
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Página ${index + 1}", style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                text = stringResource(id = R.string.pdf_preview_page_x, index + 1),
+                                style = MaterialTheme.typography.titleMedium
+                            )
                             Card(
                                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Image(
                                     bitmap = bitmap.asImageBitmap(),
-                                    contentDescription = "Vista previa de la página ${index + 1}",
+                                    contentDescription = stringResource(id = R.string.pdf_preview_page_content_description, index + 1),
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .aspectRatio(1f / 1.414f), // Proporción A4
