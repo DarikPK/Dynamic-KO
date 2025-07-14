@@ -8,4 +8,5 @@ sealed class Screen(val route: String) {
         fun createRoute(groupId: String) = "image_upload_screen/$groupId"
     }
     object PdfPreview : Screen("pdf_preview_screen")
+
 }

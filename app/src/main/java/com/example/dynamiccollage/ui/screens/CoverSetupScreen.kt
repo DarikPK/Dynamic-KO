@@ -319,7 +319,7 @@ fun TextCustomizationSection(
     textStyleConfig: TextStyleConfig,
     onTextStyleChange: (newSize: Float?, newAlign: TextAlign?, newColor: Color?) -> Unit
 ) {
-    val fontSizeInt: Int = textStyleConfig.fontSize
+    val fontSizeInt: Int = textStyleConfig.fontSize.value.toInt()
     var currentFontSizeSlider: Float by remember(fontSizeInt) {
         mutableStateOf(fontSizeInt.toFloat())
     }

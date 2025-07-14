@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory // Importación para BitmapFactory
 import android.net.Uri
 import androidx.compose.ui.graphics.Color // Asegúrate que Color esté importado si no lo estaba
 import androidx.compose.ui.text.style.TextAlign // Asegúrate que TextAlign esté importado
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 // viewModelScope no es estrictamente necesario aquí si no hay corutinas lanzadas directamente en init o similar
 import com.example.dynamiccollage.data.model.CoverPageConfig
@@ -59,7 +60,7 @@ class CoverSetupViewModel : ViewModel() {
     // MODIFICADO: para aceptar ContentResolver y detectar orientación
     fun onMainImageSelected(uri: Uri?, contentResolver: ContentResolver) {
         _coverConfig.update { currentState ->
-            currentState.copy(mainImageUri = uri?.toString())
+            currentState.copy(mainImageUri = uri)
         }
         if (uri != null) {
             try {
@@ -111,7 +112,7 @@ class CoverSetupViewModel : ViewModel() {
         _coverConfig.update { currentState ->
             val newClientStyle = if (fieldId == DefaultCoverConfig.CLIENT_NAME_ID) {
                 currentState.clientNameStyle.copy(
-                    fontSize = newSize?.roundToInt()?.coerceIn(8, 72) ?: currentState.clientNameStyle.fontSize,
+                    fontSize = newSize?.roundToInt()?.coerceIn(8, 72)?.sp ?: currentState.clientNameStyle.fontSize,
                     textAlign = newAlign ?: currentState.clientNameStyle.textAlign,
                     fontColor = newColor ?: currentState.clientNameStyle.fontColor
                 )
@@ -119,7 +120,7 @@ class CoverSetupViewModel : ViewModel() {
 
             val newRucStyle = if (fieldId == DefaultCoverConfig.RUC_ID) {
                 currentState.rucStyle.copy(
-                    fontSize = newSize?.roundToInt()?.coerceIn(8, 72) ?: currentState.rucStyle.fontSize,
+                    fontSize = newSize?.roundToInt()?.coerceIn(8, 72)?.sp ?: currentState.rucStyle.fontSize,
                     textAlign = newAlign ?: currentState.rucStyle.textAlign,
                     fontColor = newColor ?: currentState.rucStyle.fontColor
                 )
@@ -127,7 +128,7 @@ class CoverSetupViewModel : ViewModel() {
 
             val newSubtitleStyle = if (fieldId == DefaultCoverConfig.SUBTITLE_ID) {
                 currentState.subtitleStyle.copy(
-                    fontSize = newSize?.roundToInt()?.coerceIn(8, 72) ?: currentState.subtitleStyle.fontSize,
+                    fontSize = newSize?.roundToInt()?.coerceIn(8, 72)?.sp ?: currentState.subtitleStyle.fontSize,
                     textAlign = newAlign ?: currentState.subtitleStyle.textAlign,
                     fontColor = newColor ?: currentState.subtitleStyle.fontColor
                 )

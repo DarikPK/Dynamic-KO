@@ -1,5 +1,6 @@
 package com.example.dynamiccollage.ui.navigation
 
+import com.example.dynamiccollage.ui.screens.PdfPreviewScreen
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost

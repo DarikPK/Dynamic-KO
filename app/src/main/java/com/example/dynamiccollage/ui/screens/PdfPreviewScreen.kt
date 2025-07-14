@@ -1,5 +1,6 @@
 package com.example.dynamiccollage.ui.screens
 
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
