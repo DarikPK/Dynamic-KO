@@ -27,6 +27,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -45,6 +46,7 @@ import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
 import com.example.dynamiccollage.viewmodel.InnerPagesViewModel
 import com.example.dynamiccollage.viewmodel.InnerPagesViewModelFactory
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,6 +63,7 @@ fun InnerPagesScreen(
     val editingGroup by innerPagesViewModel.editingGroup.collectAsState()
     val context = LocalContext.current
     val hasInnerPagesBeenSaved by projectViewModel.hasInnerPagesBeenSaved.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope() // Obtener el scope de la corutina
 
     // Cargar los grupos desde el proyecto una sola vez y marcar que hay cambios sin guardar
     LaunchedEffect(Unit) {
@@ -91,8 +94,6 @@ fun InnerPagesScreen(
                 title = { Text(stringResource(id = R.string.inner_pages_title)) },
                 navigationIcon = {
                     IconButton(onClick = {
-                        // Al volver, si no hemos guardado, la lógica de onDispose se encargará.
-                        // Si queremos ser explícitos, podríamos llamar a reset aquí, pero onDispose es más robusto.
                         navController.popBackStack()
                     }) {
                         Icon(
@@ -149,9 +150,11 @@ fun InnerPagesScreen(
                         PageGroupItem(
                             pageGroup = pageGroup,
                             onAddImagesClicked = { groupId ->
-                                // Marcamos como "guardado" temporalmente para que onDispose no borre los datos al navegar
-                                projectViewModel.confirmInnerPagesSaved(true)
-                                navController.navigate(Screen.ImageUpload.createRoute(groupId))
+                                scope.launch {
+                                    // Marcamos como "guardado" temporalmente para que onDispose no borre los datos al navegar
+                                    projectViewModel.confirmInnerPagesSaved(true)
+                                    navController.navigate(Screen.ImageUpload.createRoute(groupId))
+                                }
                             },
                             onEditGroupClicked = { groupToEdit ->
                                 innerPagesViewModel.onEditGroupClicked(groupToEdit)
