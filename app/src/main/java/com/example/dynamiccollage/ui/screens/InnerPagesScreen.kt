@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -22,6 +23,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -52,10 +54,13 @@ fun InnerPagesScreen(
         factory = InnerPagesViewModelFactory(projectViewModel)
     )
 
-    val pageGroups by innerPagesViewModel.pageGroups.collectAsState() // Corregido de .localPageGroups
+    val pageGroups by innerPagesViewModel.pageGroups.collectAsState()
     val showDialog by innerPagesViewModel.showCreateGroupDialog.collectAsState()
     val editingGroup by innerPagesViewModel.editingGroup.collectAsState()
     val context = LocalContext.current
+
+    // La lógica de carga inicial y descarte de cambios se movió al ViewModel o se eliminó
+    // para simplificar y resolver problemas de navegación.
 
     if (showDialog) {
         CreateEditGroupDialog(
@@ -77,7 +82,7 @@ fun InnerPagesScreen(
                         )
                     }
                 },
-                // Se elimina el botón de guardar, ya que las acciones ahora se guardan automáticamente.
+                // El botón Guardar se elimina porque el guardado ahora es automático para ser más robusto
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
@@ -122,7 +127,7 @@ fun InnerPagesScreen(
                             },
                             onDeleteGroupClicked = { groupId ->
                                 innerPagesViewModel.removePageGroup(groupId)
-                                Toast.makeText(context, "Grupo eliminado", Toast.LENGTH_SHORT).show() // Feedback inmediato
+                                Toast.makeText(context, "Grupo eliminado", Toast.LENGTH_SHORT).show()
                             }
                         )
                     }

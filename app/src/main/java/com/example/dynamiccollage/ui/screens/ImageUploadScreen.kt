@@ -5,7 +5,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
@@ -27,6 +26,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -55,41 +55,21 @@ fun ImageUploadScreen(
         factory = InnerPagesViewModelFactory(projectViewModel)
     )
 
-    // Encontrar el grupo específico basado en el groupId.
-    // Observamos toda la lista para que la pantalla se recomponga si las URIs de nuestro grupo cambian.
-    val pageGroups by innerPagesViewModel.localPageGroups.collectAsState()
+    val pageGroups by innerPagesViewModel.pageGroups.collectAsState()
     val group = pageGroups.find { it.id == groupId }
 
     val multipleImagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris ->
         if (uris.isNotEmpty()) {
-            innerPagesViewModel.onImagesSelectedForGroup(uris)
+            innerPagesViewModel.onImagesSelectedForGroup(uris, groupId)
         }
     }
 
-    // Si por alguna razón el grupo no se encuentra, podríamos mostrar un error o volver atrás.
     if (group == null) {
         Text("Error: Grupo no encontrado.")
-        // Opcionalmente, navegar hacia atrás:
         LaunchedEffect(Unit) { navController.popBackStack() }
         return
-    }
-
-    val currentGroupAddingImages by innerPagesViewModel.currentGroupAddingImages.collectAsState()
-
-    val multipleImagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetMultipleContents()
-    ) { uris ->
-        if (uris.isNotEmpty()) {
-            innerPagesViewModel.onImagesSelectedForGroup(uris)
-        }
-    }
-
-    LaunchedEffect(currentGroupAddingImages) {
-        if (currentGroupAddingImages == groupId) { // Solo lanzar si este es el grupo activo para la carga
-            multipleImagePickerLauncher.launch("image/*")
-        }
     }
 
     Scaffold(
@@ -129,7 +109,8 @@ fun ImageUploadScreen(
                     group.imageUris.size
                 ),
                 style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(vertical = 8.dp)
+                modifier = Modifier.padding(vertical = 8.dp),
+                color = if (group.isPhotoQuotaMet) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
             )
 
             LazyVerticalGrid(
@@ -152,11 +133,7 @@ fun ImageUploadScreen(
             }
 
             Button(
-                onClick = {
-                    // Para que funcione, necesitamos establecer el grupo actual para la carga de imágenes
-                    innerPagesViewModel.onAddImagesClickedForGroup(groupId)
-                    // El LaunchedEffect en la pantalla principal se encargará de lanzar el selector
-                },
+                onClick = { multipleImagePickerLauncher.launch("image/*") },
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
             ) {
                 Text(stringResource(R.string.image_upload_add_photos_button))
@@ -164,7 +141,7 @@ fun ImageUploadScreen(
 
             Button(
                 onClick = { navController.popBackStack() },
-                enabled = group.isPhotoQuotaMet, // El botón "Listo" solo se habilita si la cuota está cumplida
+                enabled = group.isPhotoQuotaMet,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(stringResource(R.string.image_upload_done_button))
