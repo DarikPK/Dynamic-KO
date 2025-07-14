@@ -116,7 +116,14 @@ fun MainScreen(
             MainButton(
                 text = stringResource(R.string.main_btn_generate_pdf),
                 onClick = {
-                    Toast.makeText(context, "Generar PDF: Próximamente", Toast.LENGTH_SHORT).show()
+                    val pdfGenerator = com.example.dynamiccollage.util.PdfGenerator(context, projectViewModel)
+                    val pdfFile = pdfGenerator.generatePdf()
+                    if (pdfFile != null) {
+                        val encodedPath = java.net.URLEncoder.encode(pdfFile.absolutePath, "UTF-8")
+                        navController.navigate(Screen.PdfPreview.withArgs(encodedPath))
+                    } else {
+                        Toast.makeText(context, "Error al generar el PDF", Toast.LENGTH_SHORT).show()
+                    }
                 }
             )
             Spacer(modifier = Modifier.height(16.dp))

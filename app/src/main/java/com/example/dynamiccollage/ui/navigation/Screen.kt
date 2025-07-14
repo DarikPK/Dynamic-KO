@@ -6,4 +6,13 @@ sealed class Screen(val route: String) {
     object InnerPages : Screen("inner_pages_screen")
     object PdfPreview : Screen("pdf_preview_screen")
     // object Settings : Screen("settings_screen") // Ejemplo si se necesitara
+
+    fun withArgs(vararg args: String): String {
+        return buildString {
+            append(route)
+            args.forEach { arg ->
+                append("/$arg")
+            }
+        }
+    }
 }
