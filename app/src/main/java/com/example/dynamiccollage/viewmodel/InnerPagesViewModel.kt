@@ -86,6 +86,17 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         projectViewModel.updatePageGroupInProject(updatedGroup)
     }
 
+    fun removeImageFromGroup(groupId: String, imageUri: String) {
+        val groupToUpdate = projectViewModel.currentPageGroups.value.find { it.id == groupId } ?: return
+
+        val updatedImageUris = groupToUpdate.imageUris.toMutableList().apply {
+            remove(imageUri)
+        }
+
+        val updatedGroup = groupToUpdate.copy(imageUris = updatedImageUris)
+        projectViewModel.updatePageGroupInProject(updatedGroup)
+    }
+
     fun onEditingGroupNameChange(name: String) {
         _editingGroup.value = _editingGroup.value?.copy(groupName = name)
     }
