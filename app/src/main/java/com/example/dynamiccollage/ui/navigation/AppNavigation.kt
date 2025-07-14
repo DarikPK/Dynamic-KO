@@ -43,7 +43,7 @@ fun AppNavigation(projectViewModel: ProjectViewModel) {
             }
         }
         composable(Screen.PdfPreview.route) {
-            PlaceholderScreen(screenName = "Vista Previa PDF")
+            PdfPreviewScreen(navController = navController, projectViewModel = projectViewModel)
         }
     }
 }

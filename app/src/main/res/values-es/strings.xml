@@ -72,6 +72,14 @@
     <string name="delete_button">Eliminar</string>
     <string name="project_deleted_toast">Proyecto eliminado.</string>
 
+    <!-- PDF Generation -->
+    <string name="generate_pdf_dialog_title">Nombrar y Generar PDF</string>
+    <string name="pdf_filename_label">Nombre del archivo (sin .pdf)</string>
+    <string name="generating_pdf_toast">Generando PDF...</string>
+    <string name="pdf_success_toast">PDF guardado en Documentos: %1$s</string>
+    <string name="pdf_error_toast">Error al generar PDF: %1$s</string>
+    <string name="generate_button">Generar</string>
+
     <!-- Create/Edit Page Group Dialog -->
     <string name="dialog_create_group_title">Crear Nuevo Grupo</string>
     <string name="dialog_edit_group_title">Editar Grupo</string>
