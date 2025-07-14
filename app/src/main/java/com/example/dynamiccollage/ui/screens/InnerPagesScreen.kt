@@ -52,7 +52,7 @@ fun InnerPagesScreen(
         factory = InnerPagesViewModelFactory(projectViewModel)
     )
 
-    val pageGroups by innerPagesViewModel.pageGroups.collectAsState()
+    val pageGroups by innerPagesViewModel.pageGroups.collectAsState() // Corregido de .localPageGroups
     val showDialog by innerPagesViewModel.showCreateGroupDialog.collectAsState()
     val editingGroup by innerPagesViewModel.editingGroup.collectAsState()
     val context = LocalContext.current
