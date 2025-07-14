@@ -12,7 +12,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -23,18 +22,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -46,7 +41,6 @@ import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
 import com.example.dynamiccollage.viewmodel.InnerPagesViewModel
 import com.example.dynamiccollage.viewmodel.InnerPagesViewModelFactory
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,27 +52,10 @@ fun InnerPagesScreen(
         factory = InnerPagesViewModelFactory(projectViewModel)
     )
 
-    val pageGroups by innerPagesViewModel.localPageGroups.collectAsState()
+    val pageGroups by innerPagesViewModel.pageGroups.collectAsState()
     val showDialog by innerPagesViewModel.showCreateGroupDialog.collectAsState()
     val editingGroup by innerPagesViewModel.editingGroup.collectAsState()
     val context = LocalContext.current
-    val hasInnerPagesBeenSaved by projectViewModel.hasInnerPagesBeenSaved.collectAsStateWithLifecycle()
-    val scope = rememberCoroutineScope() // Obtener el scope de la corutina
-
-    // Cargar los grupos desde el proyecto una sola vez y marcar que hay cambios sin guardar
-    LaunchedEffect(Unit) {
-        innerPagesViewModel.loadGroupsFromProject()
-        projectViewModel.confirmInnerPagesSaved(false)
-    }
-
-    // Al salir de esta pantalla, si los cambios no se guardaron, se resetean.
-    DisposableEffect(Unit) {
-        onDispose {
-            if (!hasInnerPagesBeenSaved) {
-                projectViewModel.resetPageGroups()
-            }
-        }
-    }
 
     if (showDialog) {
         CreateEditGroupDialog(
@@ -93,26 +70,14 @@ fun InnerPagesScreen(
             CenterAlignedTopAppBar(
                 title = { Text(stringResource(id = R.string.inner_pages_title)) },
                 navigationIcon = {
-                    IconButton(onClick = {
-                        navController.popBackStack()
-                    }) {
+                    IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(id = R.string.cover_setup_navigate_back_description)
                         )
                     }
                 },
-                actions = {
-                    IconButton(onClick = {
-                        innerPagesViewModel.saveChangesToProject()
-                        Toast.makeText(context, context.getString(R.string.page_groups_saved_toast), Toast.LENGTH_SHORT).show()
-                    }) {
-                        Icon(
-                            imageVector = Icons.Filled.Save,
-                            contentDescription = stringResource(id = R.string.save_page_groups_button_description)
-                        )
-                    }
-                },
+                // Se elimina el botón de guardar, ya que las acciones ahora se guardan automáticamente.
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
@@ -150,16 +115,14 @@ fun InnerPagesScreen(
                         PageGroupItem(
                             pageGroup = pageGroup,
                             onAddImagesClicked = { groupId ->
-                                scope.launch {
-                                    projectViewModel.confirmInnerPagesSaved(true)
-                                    navController.navigate(Screen.ImageUpload.createRoute(groupId))
-                                }
+                                navController.navigate(Screen.ImageUpload.createRoute(groupId))
                             },
                             onEditGroupClicked = { groupToEdit ->
                                 innerPagesViewModel.onEditGroupClicked(groupToEdit)
                             },
                             onDeleteGroupClicked = { groupId ->
                                 innerPagesViewModel.removePageGroup(groupId)
+                                Toast.makeText(context, "Grupo eliminado", Toast.LENGTH_SHORT).show() // Feedback inmediato
                             }
                         )
                     }
