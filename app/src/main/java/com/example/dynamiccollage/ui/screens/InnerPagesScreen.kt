@@ -151,7 +151,6 @@ fun InnerPagesScreen(
                             pageGroup = pageGroup,
                             onAddImagesClicked = { groupId ->
                                 scope.launch {
-                                    // Marcamos como "guardado" temporalmente para que onDispose no borre los datos al navegar
                                     projectViewModel.confirmInnerPagesSaved(true)
                                     navController.navigate(Screen.ImageUpload.createRoute(groupId))
                                 }
