@@ -13,7 +13,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -43,6 +42,7 @@ import com.example.dynamiccollage.ui.components.PageGroupItem
 import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
 import com.example.dynamiccollage.viewmodel.InnerPagesViewModel
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
+import com.example.dynamiccollage.viewmodel.ViewModelFactory
 import androidx.activity.ComponentActivity // Para previews, si es necesario
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,7 +51,7 @@ fun InnerPagesScreen(
     navController: NavController,
     projectViewModel: ProjectViewModel // Se recibe como parámetro explícito
 ) {
-    val innerPagesViewModel: InnerPagesViewModel = viewModel() // Se obtiene aquí dentro
+    val innerPagesViewModel: InnerPagesViewModel = viewModel(factory = ViewModelFactory(projectViewModel))
 
     val pageGroups by innerPagesViewModel.pageGroups.collectAsState()
     val showDialog by innerPagesViewModel.showCreateGroupDialog.collectAsState()
@@ -59,15 +59,13 @@ fun InnerPagesScreen(
     val currentGroupAddingImages by innerPagesViewModel.currentGroupAddingImages.collectAsState()
     val context = LocalContext.current
 
-    LaunchedEffect(projectViewModel.currentPageGroups.value) {
-        innerPagesViewModel.loadInitialPageGroups(projectViewModel.currentPageGroups.value)
-    }
-
     val multipleImagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris ->
         if (uris.isNotEmpty()) {
-            innerPagesViewModel.onImagesSelectedForGroup(uris)
+            currentGroupAddingImages?.let { groupId ->
+                innerPagesViewModel.onImagesSelectedForGroup(uris, groupId)
+            }
         }
     }
 
@@ -94,17 +92,6 @@ fun InnerPagesScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(id = R.string.cover_setup_navigate_back_description)
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = {
-                        projectViewModel.setPageGroups(pageGroups)
-                        Toast.makeText(context, context.getString(R.string.page_groups_saved_toast), Toast.LENGTH_SHORT).show()
-                    }) {
-                        Icon(
-                            imageVector = Icons.Filled.Save,
-                            contentDescription = stringResource(id = R.string.save_page_groups_button_description)
                         )
                     }
                 },

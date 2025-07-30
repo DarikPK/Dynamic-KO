@@ -8,6 +8,7 @@ import com.example.dynamiccollage.data.model.PageOrientation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -24,6 +25,9 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
 
     private val _editingGroup = MutableStateFlow<PageGroup?>(null)
     val editingGroup: StateFlow<PageGroup?> = _editingGroup.asStateFlow()
+
+    private val _currentGroupAddingImages = MutableStateFlow<String?>(null)
+    val currentGroupAddingImages: StateFlow<String?> = _currentGroupAddingImages
 
     val isEditingGroupConfigValid: StateFlow<Boolean> = editingGroup.map { group ->
         if (group == null) return@map true
@@ -72,8 +76,7 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
     // La lógica para la carga de imágenes permanece igual, pero opera sobre el grupo
     // que se encuentra en el ProjectViewModel.
     fun onAddImagesClickedForGroup(groupId: String) {
-        // Esta función no es estrictamente necesaria en el ViewModel si la navegación
-        // se maneja completamente en la UI, pero no hace daño tenerla por claridad.
+        _currentGroupAddingImages.value = groupId
     }
 
     fun onImagesSelectedForGroup(uris: List<Uri>, groupId: String) {
