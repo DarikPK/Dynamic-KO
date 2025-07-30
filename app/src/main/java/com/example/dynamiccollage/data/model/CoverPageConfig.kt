@@ -8,9 +8,9 @@ import androidx.compose.ui.unit.sp
 // Valores por defecto para la configuración de la portada
 object DefaultCoverConfig {
     // IDs ya no son necesarios si TextStyleConfig no tiene 'id' y el ViewModel maneja estilos por separado
-    // const val CLIENT_NAME_ID = "clientName"
-    // const val RUC_ID = "ruc"
-    // const val SUBTITLE_ID = "subtitle"
+    const val CLIENT_NAME_ID = "clientName"
+    const val RUC_ID = "ruc"
+    const val SUBTITLE_ID = "subtitle"
 
     val BORDER_COLOR: Color = Color.Black
     const val BORDER_VISIBLE_TOP: Boolean = true
