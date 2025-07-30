@@ -1,7 +1,8 @@
 package com.example.dynamiccollage.ui.screens
 
 import android.widget.Toast
-import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,35 +33,49 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.compose.viewModel // Para obtener ViewModels específicos de pantalla
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.dynamiccollage.R
+import com.example.dynamiccollage.data.model.PageGroup
 import com.example.dynamiccollage.ui.components.CreateEditGroupDialog
 import com.example.dynamiccollage.ui.components.PageGroupItem
-import com.example.dynamiccollage.ui.navigation.Screen
 import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
 import com.example.dynamiccollage.viewmodel.InnerPagesViewModel
-import com.example.dynamiccollage.viewmodel.InnerPagesViewModelFactory
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
+import androidx.activity.ComponentActivity // Para previews, si es necesario
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InnerPagesScreen(
     navController: NavController,
-    projectViewModel: ProjectViewModel
+    projectViewModel: ProjectViewModel // Se recibe como parámetro explícito
 ) {
-    val innerPagesViewModel: InnerPagesViewModel = viewModel(
-        factory = InnerPagesViewModelFactory(projectViewModel)
-    )
+    val innerPagesViewModel: InnerPagesViewModel = viewModel() // Se obtiene aquí dentro
 
     val pageGroups by innerPagesViewModel.pageGroups.collectAsState()
     val showDialog by innerPagesViewModel.showCreateGroupDialog.collectAsState()
     val editingGroup by innerPagesViewModel.editingGroup.collectAsState()
+    val currentGroupAddingImages by innerPagesViewModel.currentGroupAddingImages.collectAsState()
     val context = LocalContext.current
 
-    // La lógica de carga inicial y descarte de cambios se movió al ViewModel o se eliminó
-    // para simplificar y resolver problemas de navegación.
+    LaunchedEffect(projectViewModel.currentPageGroups.value) {
+        innerPagesViewModel.loadInitialPageGroups(projectViewModel.currentPageGroups.value)
+    }
+
+    val multipleImagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetMultipleContents()
+    ) { uris ->
+        if (uris.isNotEmpty()) {
+            innerPagesViewModel.onImagesSelectedForGroup(uris)
+        }
+    }
+
+    LaunchedEffect(currentGroupAddingImages) {
+        if (currentGroupAddingImages != null) {
+            multipleImagePickerLauncher.launch("image/*")
+        }
+    }
 
     if (showDialog) {
         CreateEditGroupDialog(
@@ -82,7 +97,17 @@ fun InnerPagesScreen(
                         )
                     }
                 },
-                // El botón Guardar se elimina porque el guardado ahora es automático para ser más robusto
+                actions = {
+                    IconButton(onClick = {
+                        projectViewModel.setPageGroups(pageGroups)
+                        Toast.makeText(context, context.getString(R.string.page_groups_saved_toast), Toast.LENGTH_SHORT).show()
+                    }) {
+                        Icon(
+                            imageVector = Icons.Filled.Save,
+                            contentDescription = stringResource(id = R.string.save_page_groups_button_description)
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
@@ -120,15 +145,14 @@ fun InnerPagesScreen(
                         PageGroupItem(
                             pageGroup = pageGroup,
                             onAddImagesClicked = { groupId ->
-                                navController.navigate(Screen.ImageUpload.createRoute(groupId))
+                                innerPagesViewModel.onAddImagesClickedForGroup(groupId)
                             },
                             onEditGroupClicked = { groupToEdit ->
                                 innerPagesViewModel.onEditGroupClicked(groupToEdit)
                             },
                             onDeleteGroupClicked = { groupId ->
                                 innerPagesViewModel.removePageGroup(groupId)
-                                Toast.makeText(context, "Grupo eliminado", Toast.LENGTH_SHORT).show()
-                            }
+                            },
                         )
                     }
                 }
@@ -141,10 +165,10 @@ fun InnerPagesScreen(
 @Composable
 fun InnerPagesScreenPreview() {
     DynamicCollageTheme {
-        val fakeProjectViewModel = ProjectViewModel()
+        val context = LocalContext.current
         InnerPagesScreen(
             navController = rememberNavController(),
-            projectViewModel = fakeProjectViewModel
+            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity)
         )
     }
 }
@@ -153,10 +177,10 @@ fun InnerPagesScreenPreview() {
 @Composable
 fun InnerPagesScreenDarkPreview() {
     DynamicCollageTheme(darkTheme = true) {
-        val fakeProjectViewModel = ProjectViewModel()
+        val context = LocalContext.current
         InnerPagesScreen(
             navController = rememberNavController(),
-            projectViewModel = fakeProjectViewModel
+            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity)
         )
     }
 }
