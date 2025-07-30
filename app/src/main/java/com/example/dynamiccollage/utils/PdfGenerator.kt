@@ -1,5 +1,6 @@
 package com.example.dynamiccollage.utils
 
+import androidx.compose.ui.unit.TextUnit
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -14,20 +15,21 @@ import android.os.Environment
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.style.TextAlign
 import com.example.dynamiccollage.data.model.CoverPageConfig
 import com.example.dynamiccollage.data.model.PageGroup
 import com.example.dynamiccollage.data.model.PageOrientation
-import com.example.dynamiccollage.data.model.TextAlign
 import java.io.File
 import java.io.FileOutputStream
 
 object PdfGenerator {
 
-    private fun toLayoutAlignment(textAlign: TextAlign): Layout.Alignment {
+    private fun getAndroidAlignment(textAlign: TextAlign): Layout.Alignment {
         return when (textAlign) {
-            TextAlign.Start -> Layout.Alignment.ALIGN_NORMAL
             TextAlign.Center -> Layout.Alignment.ALIGN_CENTER
             TextAlign.End -> Layout.Alignment.ALIGN_OPPOSITE
+            else -> Layout.Alignment.ALIGN_NORMAL
         }
     }
 
@@ -95,11 +97,10 @@ object PdfGenerator {
 
         for (textField in textFields) {
             if (textField.isVisible) {
-                textPaint.color = textField.fontColor.hashCode()
-                // Asumiendo que fontSize en TextStyleConfig es Int
-                textPaint.textSize = textField.fontSize
+                textPaint.color = textField.fontColor.toArgb()
+                textPaint.textSize = textField.fontSize.value
 
-                val alignment = toLayoutAlignment(textField.textAlign)
+                val alignment = getAndroidAlignment(textField.textAlign)
 
                 val staticLayout = StaticLayout.Builder.obtain(
                     textField.content, 0, textField.content.length, textPaint, contentArea.width().toInt()
@@ -128,7 +129,7 @@ object PdfGenerator {
         }
 
         val borderPaint = Paint().apply {
-            color = config.borderColor.hashCode()
+            color = config.borderColor.toArgb()
             style = Paint.Style.STROKE
             strokeWidth = 1f
         }
@@ -148,9 +149,9 @@ object PdfGenerator {
 
             val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG)
             val optionalTextLayout = if (group.optionalTextStyle.isVisible) {
-                textPaint.color = group.optionalTextStyle.fontColor.hashCode()
-                textPaint.textSize = group.optionalTextStyle.fontSize.toFloat()
-                val alignment = toLayoutAlignment(group.optionalTextStyle.textAlign)
+                textPaint.color = group.optionalTextStyle.fontColor.toArgb()
+                textPaint.textSize = group.optionalTextStyle.fontSize.value
+                val alignment = getAndroidAlignment(group.optionalTextStyle.textAlign)
                 StaticLayout.Builder.obtain(
                     group.optionalTextStyle.content, 0, group.optionalTextStyle.content.length, textPaint, A4_WIDTH - 100
                 ).setAlignment(alignment).build()

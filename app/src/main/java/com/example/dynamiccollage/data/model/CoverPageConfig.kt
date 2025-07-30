@@ -1,10 +1,9 @@
 package com.example.dynamiccollage.data.model
 
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Color
 // Quitar Dp y dp si los márgenes son Float
 // import androidx.compose.ui.unit.Dp
-// import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 // Valores por defecto para la configuración de la portada
 object DefaultCoverConfig {
@@ -33,9 +32,9 @@ object DefaultCoverConfig {
 
 data class CoverPageConfig(
     // Asumiendo que TextStyleConfig no tiene 'id' y fontSize es Int
-    val clientNameStyle: TextStyleConfig = TextStyleConfig(fontSize = 16),
-    val rucStyle: TextStyleConfig = TextStyleConfig(fontSize = 16),
-    val subtitleStyle: TextStyleConfig = TextStyleConfig(fontSize = 14), // Ejemplo de tamaño diferente
+    val clientNameStyle: TextStyleConfig = TextStyleConfig(fontSize = 16.sp),
+    val rucStyle: TextStyleConfig = TextStyleConfig(fontSize = 16.sp),
+    val subtitleStyle: TextStyleConfig = TextStyleConfig(fontSize = 14.sp), // Ejemplo de tamaño diferente
 
     val mainImageUri: String? = null,
 

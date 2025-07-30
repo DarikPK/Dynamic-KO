@@ -116,8 +116,12 @@ fun MainScreen(
             MainButton(
                 text = stringResource(R.string.main_btn_generate_pdf),
                 onClick = {
-                    val pdfGenerator = com.example.dynamiccollage.util.PdfGenerator(context, projectViewModel)
-                    val pdfFile = pdfGenerator.generatePdf()
+                    val pdfFile = com.example.dynamiccollage.utils.PdfGenerator.generate(
+                        context = context,
+                        coverConfig = projectViewModel.currentCoverConfig.value,
+                        pageGroups = projectViewModel.currentPageGroups.value,
+                        fileName = "collage_report"
+                    )
                     if (pdfFile != null) {
                         val encodedPath = java.net.URLEncoder.encode(pdfFile.absolutePath, "UTF-8")
                         navController.navigate(Screen.PdfPreview.withArgs(encodedPath))
