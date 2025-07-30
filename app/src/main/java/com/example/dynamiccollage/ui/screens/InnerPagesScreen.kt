@@ -152,7 +152,7 @@ fun InnerPagesScreen(
                             },
                             onDeleteGroupClicked = { groupId ->
                                 innerPagesViewModel.removePageGroup(groupId)
-                            }
+                            },
                         )
                     }
                 }
