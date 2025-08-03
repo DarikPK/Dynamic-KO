@@ -149,4 +149,20 @@ class CoverSetupViewModel : ViewModel() {
             )
         }
     }
+
+    fun updateRowStyles(
+        clientRowStyle: com.example.dynamiccollage.data.model.RowStyle,
+        rucRowStyle: com.example.dynamiccollage.data.model.RowStyle,
+        addressRowStyle: com.example.dynamiccollage.data.model.RowStyle,
+        photoRowStyle: com.example.dynamiccollage.data.model.RowStyle
+    ) {
+        _coverConfig.update { currentState ->
+            currentState.copy(
+                clientNameStyle = currentState.clientNameStyle.copy(rowStyle = clientRowStyle),
+                rucStyle = currentState.rucStyle.copy(rowStyle = rucRowStyle),
+                subtitleStyle = currentState.subtitleStyle.copy(rowStyle = addressRowStyle),
+                photoStyle = photoRowStyle
+            )
+        }
+    }
 }

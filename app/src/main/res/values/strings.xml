@@ -41,6 +41,8 @@
     <string name="color_blue">Blue</string>
     <string name="color_red">Red</string>
     <string name="color_green">Green</string>
+    <string name="color_transparent">Transparent</string>
+    <string name="color_white">White</string>
     <string name="cover_setup_text_color_label">Text Color:</string>
 
     <!-- Margin Customization -->
