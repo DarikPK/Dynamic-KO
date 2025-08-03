@@ -17,6 +17,7 @@ import com.example.dynamiccollage.ui.screens.PdfPreviewScreen
 import com.example.dynamiccollage.ui.screens.RowStyleScreen
 import com.example.dynamiccollage.viewmodel.CoverSetupViewModel
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
+import com.example.dynamiccollage.viewmodel.RowStyleViewModel
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -25,7 +26,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @Composable
 fun AppNavigation(
     projectViewModel: ProjectViewModel,
-    coverSetupViewModel: CoverSetupViewModel = viewModel()
+    coverSetupViewModel: CoverSetupViewModel = viewModel(),
+    rowStyleViewModel: RowStyleViewModel = viewModel()
 ) {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = Screen.Main.route) {
@@ -51,7 +53,11 @@ fun AppNavigation(
             PdfPreviewScreen(navController = navController, pdfPath = decodedPdfPath)
         }
         composable(Screen.RowStyleEditor.route) {
-            RowStyleScreen(navController = navController)
+            RowStyleScreen(
+                navController = navController,
+                coverSetupViewModel = coverSetupViewModel,
+                rowStyleViewModel = rowStyleViewModel
+            )
         }
     }
 }
