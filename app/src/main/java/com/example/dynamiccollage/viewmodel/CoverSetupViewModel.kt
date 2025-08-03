@@ -55,7 +55,6 @@ class CoverSetupViewModel : ViewModel() {
 
     fun onMainImageSelected(uri: Uri?) {
         _coverConfig.update { currentState ->
-            // Guardar la URI como String para consistencia con el modelo CoverPageConfig
             currentState.copy(mainImageUri = uri?.toString())
         }
     }
