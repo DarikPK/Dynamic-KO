@@ -159,6 +159,17 @@ fun CoverSetupScreen(
                 minLines = 3
             )
 
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Checkbox(
+                    checked = coverConfig.showAddressPrefix,
+                    onCheckedChange = { coverSetupViewModel.onShowAddressPrefixChange(it) }
+                )
+                Text("Incluir prefijo 'Dirección:'")
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
 
             Button(

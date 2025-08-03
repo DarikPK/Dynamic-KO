@@ -98,7 +98,20 @@ fun MainScreen(
             )
             MainButton(
                 text = stringResource(R.string.main_btn_preview_pdf),
-                onClick = { navController.navigate(Screen.PdfPreview.route) }
+                onClick = {
+                    val pdfFile = com.example.dynamiccollage.utils.PdfGenerator.generate(
+                        context = context,
+                        coverConfig = projectViewModel.currentCoverConfig.value,
+                        pageGroups = projectViewModel.currentPageGroups.value,
+                        fileName = "collage_report"
+                    )
+                    if (pdfFile != null) {
+                        val encodedPath = java.net.URLEncoder.encode(pdfFile.absolutePath, "UTF-8")
+                        navController.navigate(Screen.PdfPreview.withArgs(encodedPath))
+                    } else {
+                        Toast.makeText(context, "Error al generar el PDF", Toast.LENGTH_SHORT).show()
+                    }
+                }
             )
             MainButton(
                 text = stringResource(R.string.main_btn_share_pdf),
