@@ -41,6 +41,12 @@ class CoverSetupViewModel : ViewModel() {
         }
     }
 
+    fun onShowAddressPrefixChange(show: Boolean) {
+        _coverConfig.update { currentState ->
+            currentState.copy(showAddressPrefix = show)
+        }
+    }
+
     fun onRucChange(newRuc: String) {
         _coverConfig.update { currentState ->
             currentState.copy(

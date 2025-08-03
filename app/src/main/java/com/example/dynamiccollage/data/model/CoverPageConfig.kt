@@ -35,6 +35,7 @@ data class CoverPageConfig(
     val clientNameStyle: TextStyleConfig = TextStyleConfig(fontSize = 16.sp),
     val rucStyle: TextStyleConfig = TextStyleConfig(fontSize = 16.sp),
     val subtitleStyle: TextStyleConfig = TextStyleConfig(fontSize = 14.sp), // Ejemplo de tamaño diferente
+    val showAddressPrefix: Boolean = false, // Nuevo campo para el prefijo de dirección
 
     val mainImageUri: String? = null,
 
