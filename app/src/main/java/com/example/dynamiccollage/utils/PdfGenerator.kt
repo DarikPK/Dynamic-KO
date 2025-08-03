@@ -83,93 +83,50 @@ object PdfGenerator {
         val page = pdfDocument.startPage(pageInfo)
         val canvas = page.canvas
 
-        // Asumiendo que los márgenes en CoverPageConfig son Float (cm)
         val marginTop = config.marginTop * CM_TO_POINTS
         val marginBottom = config.marginBottom * CM_TO_POINTS
         val marginLeft = config.marginLeft * CM_TO_POINTS
         val marginRight = config.marginRight * CM_TO_POINTS
 
         val contentArea = RectF(marginLeft, marginTop, (pageWidth - marginRight), (pageHeight - marginBottom))
-        var currentY = contentArea.top
 
-        val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG)
+        // 1. Divide content area into 4 rows
+        val rowHeight = contentArea.height() / 4
+        val row1 = RectF(contentArea.left, contentArea.top, contentArea.right, contentArea.top + rowHeight)
+        val row2 = RectF(contentArea.left, row1.bottom, contentArea.right, row1.bottom + rowHeight)
+        val row3 = RectF(contentArea.left, row2.bottom, contentArea.right, row2.bottom + rowHeight)
+        val row4 = RectF(contentArea.left, row3.bottom, contentArea.right, contentArea.bottom)
 
-        // Draw Client Name
-        if (config.clientNameStyle.isVisible) {
-            textPaint.color = config.clientNameStyle.fontColor.toArgb()
-            textPaint.textSize = config.clientNameStyle.fontSize.value
-            val alignment = getAndroidAlignment(config.clientNameStyle.textAlign)
-            var clientContent = config.clientNameStyle.content
-            if (config.allCaps) {
-                clientContent = clientContent.uppercase()
-            }
-            clientContent = "Cliente: $clientContent"
-            val staticLayout = StaticLayout.Builder.obtain(
-                clientContent, 0, clientContent.length, textPaint, contentArea.width().toInt()
-            ).setAlignment(alignment).build()
-            canvas.save()
-            canvas.translate(contentArea.left, currentY)
-            staticLayout.draw(canvas)
-            canvas.restore()
-            currentY += staticLayout.height + 5
+        // 2. Draw content in each row
+        // Client
+        var clientContent = if (config.allCaps) config.clientNameStyle.content.uppercase() else config.clientNameStyle.content
+        clientContent = "Cliente: $clientContent"
+        drawTextInRect(canvas, clientContent, config.clientNameStyle, row1)
+
+        // RUC
+        var rucContent = if (config.allCaps) config.rucStyle.content.uppercase() else config.rucStyle.content
+        rucContent = "RUC: $rucContent"
+        drawTextInRect(canvas, rucContent, config.rucStyle, row2)
+
+        // Address
+        var addressContent = if (config.allCaps) config.subtitleStyle.content.uppercase() else config.subtitleStyle.content
+        if (config.showAddressPrefix) {
+            addressContent = "Dirección: $addressContent"
         }
+        drawTextInRect(canvas, addressContent, config.subtitleStyle, row3)
 
-        // Draw RUC with prefix
-        if (config.rucStyle.isVisible) {
-            textPaint.color = config.rucStyle.fontColor.toArgb()
-            textPaint.textSize = config.rucStyle.fontSize.value
-            val alignment = getAndroidAlignment(config.rucStyle.textAlign)
-            var rucContent = config.rucStyle.content
-            if (config.allCaps) {
-                rucContent = rucContent.uppercase()
-            }
-            rucContent = "RUC: $rucContent"
-            val staticLayout = StaticLayout.Builder.obtain(
-                rucContent, 0, rucContent.length, textPaint, contentArea.width().toInt()
-            ).setAlignment(alignment).build()
-            canvas.save()
-            canvas.translate(contentArea.left, currentY)
-            staticLayout.draw(canvas)
-            canvas.restore()
-            currentY += staticLayout.height + 5
-        }
-
-        // Draw Address with optional prefix
-        if (config.subtitleStyle.isVisible) {
-            textPaint.color = config.subtitleStyle.fontColor.toArgb()
-            textPaint.textSize = config.subtitleStyle.fontSize.value
-            val alignment = getAndroidAlignment(config.subtitleStyle.textAlign)
-            var addressContent = config.subtitleStyle.content
-            if (config.allCaps) {
-                addressContent = addressContent.uppercase()
-            }
-            if (config.showAddressPrefix) {
-                addressContent = "Dirección: $addressContent"
-            }
-            val staticLayout = StaticLayout.Builder.obtain(
-                addressContent, 0, addressContent.length, textPaint, contentArea.width().toInt()
-            ).setAlignment(alignment).build()
-            canvas.save()
-            canvas.translate(contentArea.left, currentY)
-            staticLayout.draw(canvas)
-            canvas.restore()
-            currentY += staticLayout.height + 5
-        }
-
-        // Asumiendo que mainImageUri en CoverPageConfig es String?
+        // Image
         config.mainImageUri?.let { uriString ->
-            val imageRect = RectF(contentArea.left, currentY, contentArea.right, contentArea.bottom)
-            if (imageRect.height() > 0 && imageRect.width() > 0) {
-                try {
-                    val bitmap = decodeSampledBitmapFromUri(context, Uri.parse(uriString), imageRect.width().toInt(), imageRect.height().toInt())
-                    if (bitmap != null) {
-                        drawBitmapToCanvas(canvas, bitmap, imageRect)
-                        bitmap.recycle()
-                    }
-                } catch (e: Exception) { e.printStackTrace() }
-            }
+            try {
+                val bitmap = decodeSampledBitmapFromUri(context, Uri.parse(uriString), row4.width().toInt(), row4.height().toInt())
+                if (bitmap != null) {
+                    drawBitmapToCanvas(canvas, bitmap, row4) // Use the specific rect for the image
+                    bitmap.recycle()
+                }
+            } catch (e: Exception) { e.printStackTrace() }
         }
 
+        // 3. Draw borders (optional, unchanged)
         val borderPaint = Paint().apply {
             color = config.borderColor.toArgb()
             style = Paint.Style.STROKE
@@ -181,6 +138,30 @@ object PdfGenerator {
         if (config.borderVisibleRight) canvas.drawLine(pageWidth.toFloat(), 0f, pageWidth.toFloat(), pageHeight.toFloat(), borderPaint)
 
         pdfDocument.finishPage(page)
+    }
+
+    private fun drawTextInRect(canvas: Canvas, text: String, style: com.example.dynamiccollage.data.model.TextStyleConfig, rect: RectF, padding: Float = 10f) {
+        if (text.isBlank()) return
+
+        val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = style.fontColor.toArgb()
+            textSize = style.fontSize.value
+            // Here you could also apply style.fontFamily if you have a custom Typeface object
+        }
+
+        val paddedRect = RectF(rect.left + padding, rect.top + padding, rect.right - padding, rect.bottom - padding)
+
+        val staticLayout = StaticLayout.Builder.obtain(
+            text, 0, text.length, textPaint, paddedRect.width().toInt()
+        ).setAlignment(getAndroidAlignment(style.textAlign)).build()
+
+        // Center the text vertically within the padded rect
+        val textY = paddedRect.top + (paddedRect.height() - staticLayout.height) / 2
+
+        canvas.save()
+        canvas.translate(paddedRect.left, textY)
+        staticLayout.draw(canvas)
+        canvas.restore()
     }
 
     private fun drawInnerPages(pdfDocument: PdfDocument, context: Context, pageGroups: List<PageGroup>) {
