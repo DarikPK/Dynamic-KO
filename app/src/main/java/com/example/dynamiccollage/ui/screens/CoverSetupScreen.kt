@@ -398,9 +398,8 @@ fun TextCustomizationSection(
     textStyleConfig: TextStyleConfig,
     onTextStyleChange: (newSize: Float?, newAlign: TextAlign?, newColor: Color?) -> Unit
 ) {
-    val fontSizeInt: Int = textStyleConfig.fontSize
-    var currentFontSizeSlider: Float by remember(fontSizeInt) {
-        mutableStateOf(fontSizeInt.toFloat())
+    var currentFontSizeSlider: Float by remember(textStyleConfig.fontSize) {
+        mutableStateOf(textStyleConfig.fontSize.toFloat())
     }
     val colorOptions = mapOf(
         stringResource(R.string.color_black) to Color.Black,

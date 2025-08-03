@@ -36,9 +36,9 @@ object DefaultCoverConfig {
 
 data class CoverPageConfig(
     // Asumiendo que TextStyleConfig no tiene 'id' y fontSize es Int
-    val clientNameStyle: TextStyleConfig = TextStyleConfig(fontFamily = calibriFontFamily, fontSize = 18.sp, fontWeight = FontWeight.Normal, fontColor = DefaultTextConfig.FONT_COLOR),
-    val rucStyle: TextStyleConfig = TextStyleConfig(fontFamily = calibriFontFamily, fontSize = 18.sp, fontWeight = FontWeight.Normal, fontColor = DefaultTextConfig.FONT_COLOR),
-    val subtitleStyle: TextStyleConfig = TextStyleConfig(fontFamily = calibriFontFamily, fontSize = 10.sp, textAlign = TextAlign.End, fontStyle = FontStyle.Italic, fontWeight = FontWeight.Normal, fontColor = DefaultTextConfig.FONT_COLOR),
+    val clientNameStyle: TextStyleConfig = TextStyleConfig(fontFamily = calibriFontFamily, fontSize = 18, fontWeight = FontWeight.Normal, fontColor = DefaultTextConfig.FONT_COLOR),
+    val rucStyle: TextStyleConfig = TextStyleConfig(fontFamily = calibriFontFamily, fontSize = 18, fontWeight = FontWeight.Normal, fontColor = DefaultTextConfig.FONT_COLOR),
+    val subtitleStyle: TextStyleConfig = TextStyleConfig(fontFamily = calibriFontFamily, fontSize = 10, textAlign = TextAlign.End, fontStyle = FontStyle.Italic, fontWeight = FontWeight.Normal, fontColor = DefaultTextConfig.FONT_COLOR),
     val showAddressPrefix: Boolean = true, // Nuevo campo para el prefijo de dirección
     val allCaps: Boolean = true, // Nuevo campo para texto en mayúsculas
 

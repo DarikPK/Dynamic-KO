@@ -182,7 +182,7 @@ object PdfGenerator {
         val padding = style.rowStyle.padding
         val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
             color = style.fontColor.toArgb()
-            textSize = style.fontSize.value
+            textSize = style.fontSize.toFloat()
 
             val isBold = style.fontWeight == FontWeight.Bold
             val isItalic = style.fontStyle == FontStyle.Italic
