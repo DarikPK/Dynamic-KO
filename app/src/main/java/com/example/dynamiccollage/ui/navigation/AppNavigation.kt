@@ -14,6 +14,7 @@ import com.example.dynamiccollage.ui.screens.CoverSetupScreen
 import com.example.dynamiccollage.ui.screens.InnerPagesScreen
 import com.example.dynamiccollage.ui.screens.MainScreen
 import com.example.dynamiccollage.ui.screens.PdfPreviewScreen
+import com.example.dynamiccollage.ui.screens.RowStyleScreen
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
@@ -38,6 +39,9 @@ fun AppNavigation(projectViewModel: ProjectViewModel) {
             val pdfPath = backStackEntry.arguments?.getString("pdfPath")
             val decodedPdfPath = URLDecoder.decode(pdfPath, StandardCharsets.UTF_8.toString())
             PdfPreviewScreen(navController = navController, pdfPath = decodedPdfPath)
+        }
+        composable(Screen.RowStyleEditor.route) {
+            RowStyleScreen(navController = navController)
         }
     }
 }

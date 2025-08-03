@@ -25,6 +25,8 @@ import com.example.dynamiccollage.R
 import com.example.dynamiccollage.data.model.CoverPageConfig
 import com.example.dynamiccollage.data.model.PageGroup
 import com.example.dynamiccollage.data.model.PageOrientation
+import com.example.dynamiccollage.data.model.RowStyle
+import com.example.dynamiccollage.data.model.TextStyleConfig
 import java.io.File
 import java.io.FileOutputStream
 
@@ -95,9 +97,8 @@ object PdfGenerator {
 
         val contentArea = RectF(marginLeft, marginTop, (pageWidth - marginRight), (pageHeight - marginBottom))
 
-        // --- Weighted Layout Logic ---
         val totalWeight = config.clientWeight + config.rucWeight + config.addressWeight + config.photoWeight
-        if (totalWeight <= 0f) { // Avoid division by zero
+        if (totalWeight <= 0f) {
             pdfDocument.finishPage(page)
             return
         }
@@ -108,60 +109,77 @@ object PdfGenerator {
         val photoHeight = contentArea.height() * (config.photoWeight / totalWeight)
 
         var currentY = contentArea.top
-        val rowClient = RectF(contentArea.left, currentY, contentArea.right, currentY + clientHeight)
+
+        // Define Rects
+        val rowClientRect = RectF(contentArea.left, currentY, contentArea.right, currentY + clientHeight)
         currentY += clientHeight
-        val rowRuc = RectF(contentArea.left, currentY, contentArea.right, currentY + rucHeight)
+        val rowRucRect = RectF(contentArea.left, currentY, contentArea.right, currentY + rucHeight)
         currentY += rucHeight
-        val rowAddress = RectF(contentArea.left, currentY, contentArea.right, currentY + addressHeight)
+        val rowAddressRect = RectF(contentArea.left, currentY, contentArea.right, currentY + addressHeight)
         currentY += addressHeight
-        val rowPhoto = RectF(contentArea.left, currentY, contentArea.right, currentY + photoHeight)
+        val rowPhotoRect = RectF(contentArea.left, currentY, contentArea.right, currentY + photoHeight)
 
-        // --- Drawing Logic ---
-        // Client
-        var clientContent = if (config.allCaps) config.clientNameStyle.content.uppercase() else config.clientNameStyle.content
-        clientContent = "Cliente: $clientContent"
-        drawTextInRect(canvas, context, clientContent, config.clientNameStyle, rowClient)
-
-        // RUC
-        var rucContent = if (config.allCaps) config.rucStyle.content.uppercase() else config.rucStyle.content
-        rucContent = "RUC: $rucContent"
-        drawTextInRect(canvas, context, rucContent, config.rucStyle, rowRuc)
-
-        // Address
+        // Prepare Content
+        val clientContent = "Cliente: " + if (config.allCaps) config.clientNameStyle.content.uppercase() else config.clientNameStyle.content
+        val rucContent = "RUC: " + if (config.allCaps) config.rucStyle.content.uppercase() else config.rucStyle.content
         var addressContent = if (config.allCaps) config.subtitleStyle.content.uppercase() else config.subtitleStyle.content
         if (config.showAddressPrefix) {
             addressContent = "Dirección: $addressContent"
         }
-        drawTextInRect(canvas, context, addressContent, config.subtitleStyle, rowAddress)
 
-        // Image
+        // Draw Rows
+        drawRow(canvas, context, clientContent, config.clientNameStyle, rowClientRect)
+        drawRow(canvas, context, rucContent, config.rucStyle, rowRucRect)
+        drawRow(canvas, context, addressContent, config.subtitleStyle, rowAddressRect)
+
+        // Draw Photo Row
+        drawRowBackgroundAndBorders(canvas, config.photoStyle, rowPhotoRect)
         config.mainImageUri?.let { uriString ->
             try {
-                val bitmap = decodeSampledBitmapFromUri(context, Uri.parse(uriString), rowPhoto.width().toInt(), rowPhoto.height().toInt())
+                val padding = config.photoStyle.padding
+                val paddedRect = RectF(rowPhotoRect.left + padding, rowPhotoRect.top + padding, rowPhotoRect.right - padding, rowPhotoRect.bottom - padding)
+                val bitmap = decodeSampledBitmapFromUri(context, Uri.parse(uriString), paddedRect.width().toInt(), paddedRect.height().toInt())
                 if (bitmap != null) {
-                    drawBitmapToCanvas(canvas, bitmap, rowPhoto)
+                    drawBitmapToCanvas(canvas, bitmap, paddedRect)
                     bitmap.recycle()
                 }
             } catch (e: Exception) { e.printStackTrace() }
         }
 
-        // Draw borders (unchanged)
-        val borderPaint = Paint().apply {
-            color = config.borderColor.toArgb()
-            style = Paint.Style.STROKE
-            strokeWidth = 1f
-        }
-        if (config.borderVisibleTop) canvas.drawLine(0f, 0f, pageWidth.toFloat(), 0f, borderPaint)
-        if (config.borderVisibleBottom) canvas.drawLine(0f, pageHeight.toFloat(), pageWidth.toFloat(), pageHeight.toFloat(), borderPaint)
-        if (config.borderVisibleLeft) canvas.drawLine(0f, 0f, 0f, pageHeight.toFloat(), borderPaint)
-        if (config.borderVisibleRight) canvas.drawLine(pageWidth.toFloat(), 0f, pageWidth.toFloat(), pageHeight.toFloat(), borderPaint)
-
         pdfDocument.finishPage(page)
     }
 
-    private fun drawTextInRect(canvas: Canvas, context: Context, text: String, style: com.example.dynamiccollage.data.model.TextStyleConfig, rect: RectF, padding: Float = 10f) {
+    private fun drawRow(canvas: Canvas, context: Context, text: String, style: TextStyleConfig, rect: RectF) {
+        drawRowBackgroundAndBorders(canvas, style.rowStyle, rect)
+        drawTextInRect(canvas, context, text, style, rect)
+    }
+
+    private fun drawRowBackgroundAndBorders(canvas: Canvas, rowStyle: RowStyle, rect: RectF) {
+        // Draw Background
+        val backgroundPaint = Paint().apply {
+            color = rowStyle.backgroundColor.toArgb()
+            style = Paint.Style.FILL
+        }
+        canvas.drawRect(rect, backgroundPaint)
+
+        // Draw Borders
+        val borderPaint = Paint().apply {
+            color = rowStyle.borderProperties.borderColor.toArgb()
+            style = Paint.Style.STROKE
+            strokeWidth = rowStyle.borderProperties.borderWidth
+        }
+        val borders = rowStyle.borderProperties.borderVisibility
+        if (borders.top) canvas.drawLine(rect.left, rect.top, rect.right, rect.top, borderPaint)
+        if (borders.bottom) canvas.drawLine(rect.left, rect.bottom, rect.right, rect.bottom, borderPaint)
+        if (borders.left) canvas.drawLine(rect.left, rect.top, rect.left, rect.bottom, borderPaint)
+        if (borders.right) canvas.drawLine(rect.right, rect.top, rect.right, rect.bottom, borderPaint)
+    }
+
+
+    private fun drawTextInRect(canvas: Canvas, context: Context, text: String, style: TextStyleConfig, rect: RectF) {
         if (text.isBlank()) return
 
+        val padding = style.rowStyle.padding
         val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
             color = style.fontColor.toArgb()
             textSize = style.fontSize.value
@@ -187,6 +205,7 @@ object PdfGenerator {
         }
 
         val paddedRect = RectF(rect.left + padding, rect.top + padding, rect.right - padding, rect.bottom - padding)
+        if (paddedRect.width() <= 0 || paddedRect.height() <= 0) return
 
         val staticLayout = StaticLayout.Builder.obtain(
             text, 0, text.length, textPaint, paddedRect.width().toInt()
