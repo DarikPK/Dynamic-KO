@@ -1,6 +1,7 @@
 package com.example.dynamiccollage.data.model
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 // Quitar Dp y dp si los márgenes son Float
 // import androidx.compose.ui.unit.Dp
@@ -36,7 +37,7 @@ data class CoverPageConfig(
     // Asumiendo que TextStyleConfig no tiene 'id' y fontSize es Int
     val clientNameStyle: TextStyleConfig = TextStyleConfig(fontFamily = calibriFontFamily, fontSize = 18.sp),
     val rucStyle: TextStyleConfig = TextStyleConfig(fontFamily = calibriFontFamily, fontSize = 18.sp),
-    val subtitleStyle: TextStyleConfig = TextStyleConfig(fontFamily = calibriFontFamily, fontSize = 10.sp, textAlign = TextAlign.End),
+    val subtitleStyle: TextStyleConfig = TextStyleConfig(fontFamily = calibriFontFamily, fontSize = 10.sp, textAlign = TextAlign.End, fontStyle = FontStyle.Italic),
     val showAddressPrefix: Boolean = false, // Nuevo campo para el prefijo de dirección
 
     val mainImageUri: String? = null,
