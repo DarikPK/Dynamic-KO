@@ -80,8 +80,8 @@ import androidx.activity.ComponentActivity // Para Preview
 @Composable
 fun CoverSetupScreen(
     navController: NavController,
-    projectViewModel: ProjectViewModel, // Se recibe como parámetro explícito
-    coverSetupViewModel: CoverSetupViewModel = viewModel() // Se obtiene aquí dentro
+    projectViewModel: ProjectViewModel,
+    coverSetupViewModel: CoverSetupViewModel
 ) {
     val coverConfig by coverSetupViewModel.coverConfig.collectAsState()
     val context = LocalContext.current
@@ -637,9 +637,11 @@ fun BorderVisibilityCheckbox(label: String, checked: Boolean, onCheckedChange: (
 fun CoverSetupScreenPreviewWithImage() {
     DynamicCollageTheme {
         val context = LocalContext.current
+        val activity = context as ComponentActivity
         CoverSetupScreen(
             navController = rememberNavController(),
-            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity)
+            projectViewModel = viewModel(viewModelStoreOwner = activity),
+            coverSetupViewModel = viewModel(viewModelStoreOwner = activity)
         )
     }
 }
@@ -649,9 +651,11 @@ fun CoverSetupScreenPreviewWithImage() {
 fun CoverSetupScreenPreviewWithoutImage() {
     DynamicCollageTheme {
         val context = LocalContext.current
+        val activity = context as ComponentActivity
         CoverSetupScreen(
             navController = rememberNavController(),
-            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity)
+            projectViewModel = viewModel(viewModelStoreOwner = activity),
+            coverSetupViewModel = viewModel(viewModelStoreOwner = activity)
         )
     }
 }
@@ -661,9 +665,11 @@ fun CoverSetupScreenPreviewWithoutImage() {
 fun CoverSetupScreenDarkPreview() {
     DynamicCollageTheme(darkTheme = true) {
         val context = LocalContext.current
+        val activity = context as ComponentActivity
         CoverSetupScreen(
             navController = rememberNavController(),
-            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity)
+            projectViewModel = viewModel(viewModelStoreOwner = activity),
+            coverSetupViewModel = viewModel(viewModelStoreOwner = activity)
         )
     }
 }
