@@ -154,25 +154,6 @@ class CoverSetupViewModel : ViewModel() {
         }
     }
 
-    fun onBorderColorChange(newColor: Color) {
-        _coverConfig.update { it.copy(borderColor = newColor) }
-    }
-
-    fun onBorderVisibilityChange(
-        top: Boolean? = null,
-        bottom: Boolean? = null,
-        left: Boolean? = null,
-        right: Boolean? = null
-    ) {
-        _coverConfig.update { currentState ->
-            currentState.copy(
-                borderVisibleTop = top ?: currentState.borderVisibleTop,
-                borderVisibleBottom = bottom ?: currentState.borderVisibleBottom,
-                borderVisibleLeft = left ?: currentState.borderVisibleLeft,
-                borderVisibleRight = right ?: currentState.borderVisibleRight
-            )
-        }
-    }
 
     fun onMarginChange(
         top: String? = null,
