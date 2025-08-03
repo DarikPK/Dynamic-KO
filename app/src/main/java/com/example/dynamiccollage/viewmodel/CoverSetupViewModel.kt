@@ -67,6 +67,12 @@ class CoverSetupViewModel : ViewModel() {
         }
     }
 
+    fun onAllCapsChange(allCaps: Boolean) {
+        _coverConfig.update { currentState ->
+            currentState.copy(allCaps = allCaps)
+        }
+    }
+
     fun onTextStyleChange(
         fieldId: String,
         newSize: Float? = null,
