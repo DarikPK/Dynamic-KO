@@ -15,7 +15,7 @@ object DefaultTextConfig {
 }
 
 data class TextStyleConfig(
-    // val id: String = "default", // Eliminado 'id'
+    val id: String = "default", // Eliminado 'id'
     val fontFamily: FontFamily = DefaultTextConfig.FONT_FAMILY, // Se puede mantener FontFamily.Default directamente
     val fontSize: TextUnit = DefaultTextConfig.FONT_SIZE,
     val textAlign: TextAlign = DefaultTextConfig.TEXT_ALIGN,
