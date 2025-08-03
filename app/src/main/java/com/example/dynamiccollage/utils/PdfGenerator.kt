@@ -164,15 +164,15 @@ object PdfGenerator {
 
         // Draw Borders
         val borderPaint = Paint().apply {
-            color = rowStyle.borderProperties.borderColor.toArgb()
+            color = rowStyle.border.color.toArgb()
             style = Paint.Style.STROKE
-            strokeWidth = rowStyle.borderProperties.borderWidth
+            strokeWidth = rowStyle.border.thickness
         }
-        val borders = rowStyle.borderProperties.borderVisibility
-        if (borders.top) canvas.drawLine(rect.left, rect.top, rect.right, rect.top, borderPaint)
-        if (borders.bottom) canvas.drawLine(rect.left, rect.bottom, rect.right, rect.bottom, borderPaint)
-        if (borders.left) canvas.drawLine(rect.left, rect.top, rect.left, rect.bottom, borderPaint)
-        if (borders.right) canvas.drawLine(rect.right, rect.top, rect.right, rect.bottom, borderPaint)
+        val border = rowStyle.border
+        if (border.top) canvas.drawLine(rect.left, rect.top, rect.right, rect.top, borderPaint)
+        if (border.bottom) canvas.drawLine(rect.left, rect.bottom, rect.right, rect.bottom, borderPaint)
+        if (border.left) canvas.drawLine(rect.left, rect.top, rect.left, rect.bottom, borderPaint)
+        if (border.right) canvas.drawLine(rect.right, rect.top, rect.right, rect.bottom, borderPaint)
     }
 
 
