@@ -70,6 +70,7 @@ import com.example.dynamiccollage.R
 import com.example.dynamiccollage.data.model.DefaultCoverConfig // Usado por onTextStyleChange
 import com.example.dynamiccollage.data.model.PageOrientation // NUEVA IMPORTACIÓN
 import com.example.dynamiccollage.data.model.TextStyleConfig
+import com.example.dynamiccollage.ui.navigation.Screen
 import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
 import com.example.dynamiccollage.viewmodel.CoverSetupViewModel
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
