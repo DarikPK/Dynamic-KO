@@ -2,9 +2,20 @@ package com.example.dynamiccollage.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.example.dynamiccollage.R
+
+// Definición de la familia de fuentes Calibri
+val calibriFontFamily = FontFamily(
+    Font(R.font.calibri_regular, FontWeight.Normal),
+    Font(R.font.calibri_italic, FontWeight.Normal, FontStyle.Italic),
+    Font(R.font.calibri_bold, FontWeight.Bold),
+    Font(R.font.calibri_bold_italic, FontWeight.Bold, FontStyle.Italic)
+)
 
 // Reemplazar con las familias de fuentes deseadas si se tienen fuentes personalizadas.
 // Por ahora, usaremos las fuentes predeterminadas de Material Design.
