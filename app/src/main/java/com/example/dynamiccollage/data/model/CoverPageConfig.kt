@@ -65,5 +65,7 @@ data class CoverPageConfig(
     val addressWeight: Float = 0.6f,
     val photoWeight: Float = 10f,
 
+    val photoStyle: RowStyle = RowStyle(),
+
     val templateName: String? = null
 )
