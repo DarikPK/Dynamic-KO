@@ -33,6 +33,7 @@ import com.example.dynamiccollage.viewmodel.RowType
 @Composable
 fun RowStyleScreen(
     navController: NavController,
+    projectViewModel: com.example.dynamiccollage.viewmodel.ProjectViewModel,
     coverSetupViewModel: CoverSetupViewModel,
     rowStyleViewModel: RowStyleViewModel = viewModel()
 ) {
@@ -69,6 +70,7 @@ fun RowStyleScreen(
                             addressStyle,
                             photoStyle
                         )
+                        projectViewModel.updateCoverConfig(coverConfig)
                         navController.popBackStack()
                     }) {
                         Icon(Icons.Filled.Save, contentDescription = "Guardar")

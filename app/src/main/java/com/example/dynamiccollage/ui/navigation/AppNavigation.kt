@@ -55,6 +55,7 @@ fun AppNavigation(
         composable(Screen.RowStyleEditor.route) {
             RowStyleScreen(
                 navController = navController,
+                projectViewModel = projectViewModel,
                 coverSetupViewModel = coverSetupViewModel,
                 rowStyleViewModel = rowStyleViewModel
             )
