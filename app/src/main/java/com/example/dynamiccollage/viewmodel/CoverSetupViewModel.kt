@@ -195,13 +195,18 @@ class CoverSetupViewModel : ViewModel() {
         }
     }
 
-    fun onSpacingChange(rucAddress: String?, addressImage: String?) {
+    fun onWeightChange(
+        client: String? = null,
+        ruc: String? = null,
+        address: String? = null,
+        photo: String? = null
+    ) {
         _coverConfig.update { currentState ->
-            val newRucAddress = rucAddress?.toFloatOrNull()?.coerceIn(0f, 5f) ?: currentState.spacingRucAddress
-            val newAddressImage = addressImage?.toFloatOrNull()?.coerceIn(0f, 5f) ?: currentState.spacingAddressImage
             currentState.copy(
-                spacingRucAddress = newRucAddress,
-                spacingAddressImage = newAddressImage
+                clientWeight = client?.toFloatOrNull()?.coerceIn(0.1f, 10f) ?: currentState.clientWeight,
+                rucWeight = ruc?.toFloatOrNull()?.coerceIn(0.1f, 10f) ?: currentState.rucWeight,
+                addressWeight = address?.toFloatOrNull()?.coerceIn(0.1f, 10f) ?: currentState.addressWeight,
+                photoWeight = photo?.toFloatOrNull()?.coerceIn(0.1f, 10f) ?: currentState.photoWeight
             )
         }
     }

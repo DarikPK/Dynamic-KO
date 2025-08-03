@@ -94,82 +94,55 @@ object PdfGenerator {
         val marginRight = config.marginRight * CM_TO_POINTS
 
         val contentArea = RectF(marginLeft, marginTop, (pageWidth - marginRight), (pageHeight - marginBottom))
-        var currentY = contentArea.top
 
-        val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG)
-
-        // Helper function to draw a text block and update currentY
-        fun drawTextBlock(style: com.example.dynamiccollage.data.model.TextStyleConfig, rawContent: String, spacingAfter: Float = 0f) {
-            if (rawContent.isBlank()) return
-
-            // --- TYPEFACE AND FONT STYLE LOGIC ---
-            val isBold = style.fontWeight == FontWeight.Bold
-            val isItalic = style.fontStyle == FontStyle.Italic
-
-            val typefaceStyle = when {
-                isBold && isItalic -> Typeface.BOLD_ITALIC
-                isBold -> Typeface.BOLD
-                isItalic -> Typeface.ITALIC
-                else -> Typeface.NORMAL
-            }
-
-            // This assumes a single font family resource is defined in XML
-            val fontFamilyRes = R.font.calibri // Assuming you have calibri.xml
-            val typeface = try {
-                val baseTypeface = ResourcesCompat.getFont(context, fontFamilyRes)
-                Typeface.create(baseTypeface, typefaceStyle)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Typeface.create(Typeface.DEFAULT, typefaceStyle) // Fallback
-            }
-
-            textPaint.typeface = typeface
-            textPaint.color = style.fontColor.toArgb()
-            textPaint.textSize = style.fontSize.value
-
-            val alignment = getAndroidAlignment(style.textAlign)
-            val staticLayout = StaticLayout.Builder.obtain(
-                rawContent, 0, rawContent.length, textPaint, contentArea.width().toInt()
-            ).setAlignment(alignment).build()
-
-            canvas.save()
-            canvas.translate(contentArea.left, currentY)
-            staticLayout.draw(canvas)
-            canvas.restore()
-            currentY += staticLayout.height + spacingAfter
+        // --- Weighted Layout Logic ---
+        val totalWeight = config.clientWeight + config.rucWeight + config.addressWeight + config.photoWeight
+        if (totalWeight <= 0f) { // Avoid division by zero
+            pdfDocument.finishPage(page)
+            return
         }
 
-        // --- Drawing Logic ---
+        val clientHeight = contentArea.height() * (config.clientWeight / totalWeight)
+        val rucHeight = contentArea.height() * (config.rucWeight / totalWeight)
+        val addressHeight = contentArea.height() * (config.addressWeight / totalWeight)
+        val photoHeight = contentArea.height() * (config.photoWeight / totalWeight)
 
+        var currentY = contentArea.top
+        val rowClient = RectF(contentArea.left, currentY, contentArea.right, currentY + clientHeight)
+        currentY += clientHeight
+        val rowRuc = RectF(contentArea.left, currentY, contentArea.right, currentY + rucHeight)
+        currentY += rucHeight
+        val rowAddress = RectF(contentArea.left, currentY, contentArea.right, currentY + addressHeight)
+        currentY += addressHeight
+        val rowPhoto = RectF(contentArea.left, currentY, contentArea.right, currentY + photoHeight)
+
+        // --- Drawing Logic ---
         // Client
         var clientContent = if (config.allCaps) config.clientNameStyle.content.uppercase() else config.clientNameStyle.content
         clientContent = "Cliente: $clientContent"
-        drawTextBlock(config.clientNameStyle, clientContent)
+        drawTextInRect(canvas, context, clientContent, config.clientNameStyle, rowClient)
 
         // RUC
         var rucContent = if (config.allCaps) config.rucStyle.content.uppercase() else config.rucStyle.content
         rucContent = "RUC: $rucContent"
-        drawTextBlock(config.rucStyle, rucContent, spacingAfter = config.spacingRucAddress * CM_TO_POINTS)
+        drawTextInRect(canvas, context, rucContent, config.rucStyle, rowRuc)
 
         // Address
         var addressContent = if (config.allCaps) config.subtitleStyle.content.uppercase() else config.subtitleStyle.content
         if (config.showAddressPrefix) {
             addressContent = "Dirección: $addressContent"
         }
-        drawTextBlock(config.subtitleStyle, addressContent, spacingAfter = config.spacingAddressImage * CM_TO_POINTS)
+        drawTextInRect(canvas, context, addressContent, config.subtitleStyle, rowAddress)
 
-        // Image takes the rest of the space
+        // Image
         config.mainImageUri?.let { uriString ->
-            val imageRect = RectF(contentArea.left, currentY, contentArea.right, contentArea.bottom)
-            if (imageRect.height() > 0) { // Only draw if there's space
-                try {
-                    val bitmap = decodeSampledBitmapFromUri(context, Uri.parse(uriString), imageRect.width().toInt(), imageRect.height().toInt())
-                    if (bitmap != null) {
-                        drawBitmapToCanvas(canvas, bitmap, imageRect)
-                        bitmap.recycle()
-                    }
-                } catch (e: Exception) { e.printStackTrace() }
-            }
+            try {
+                val bitmap = decodeSampledBitmapFromUri(context, Uri.parse(uriString), rowPhoto.width().toInt(), rowPhoto.height().toInt())
+                if (bitmap != null) {
+                    drawBitmapToCanvas(canvas, bitmap, rowPhoto)
+                    bitmap.recycle()
+                }
+            } catch (e: Exception) { e.printStackTrace() }
         }
 
         // Draw borders (unchanged)
@@ -184,6 +157,47 @@ object PdfGenerator {
         if (config.borderVisibleRight) canvas.drawLine(pageWidth.toFloat(), 0f, pageWidth.toFloat(), pageHeight.toFloat(), borderPaint)
 
         pdfDocument.finishPage(page)
+    }
+
+    private fun drawTextInRect(canvas: Canvas, context: Context, text: String, style: com.example.dynamiccollage.data.model.TextStyleConfig, rect: RectF, padding: Float = 10f) {
+        if (text.isBlank()) return
+
+        val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = style.fontColor.toArgb()
+            textSize = style.fontSize.value
+
+            val isBold = style.fontWeight == FontWeight.Bold
+            val isItalic = style.fontStyle == FontStyle.Italic
+
+            val typefaceStyle = when {
+                isBold && isItalic -> Typeface.BOLD_ITALIC
+                isBold -> Typeface.BOLD
+                isItalic -> Typeface.ITALIC
+                else -> Typeface.NORMAL
+            }
+
+            val fontFamilyRes = R.font.calibri
+            typeface = try {
+                val baseTypeface = ResourcesCompat.getFont(context, fontFamilyRes)
+                Typeface.create(baseTypeface, typefaceStyle)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Typeface.create(Typeface.DEFAULT, typefaceStyle)
+            }
+        }
+
+        val paddedRect = RectF(rect.left + padding, rect.top + padding, rect.right - padding, rect.bottom - padding)
+
+        val staticLayout = StaticLayout.Builder.obtain(
+            text, 0, text.length, textPaint, paddedRect.width().toInt()
+        ).setAlignment(getAndroidAlignment(style.textAlign)).build()
+
+        val textY = paddedRect.top + (paddedRect.height() - staticLayout.height) / 2
+
+        canvas.save()
+        canvas.translate(paddedRect.left, textY)
+        staticLayout.draw(canvas)
+        canvas.restore()
     }
 
     private fun drawInnerPages(pdfDocument: PdfDocument, context: Context, pageGroups: List<PageGroup>) {

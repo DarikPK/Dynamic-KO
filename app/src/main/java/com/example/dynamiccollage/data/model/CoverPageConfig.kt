@@ -39,7 +39,8 @@ data class CoverPageConfig(
     val clientNameStyle: TextStyleConfig = TextStyleConfig(fontFamily = calibriFontFamily, fontSize = 18.sp, fontWeight = FontWeight.Normal, fontColor = DefaultTextConfig.FONT_COLOR),
     val rucStyle: TextStyleConfig = TextStyleConfig(fontFamily = calibriFontFamily, fontSize = 18.sp, fontWeight = FontWeight.Normal, fontColor = DefaultTextConfig.FONT_COLOR),
     val subtitleStyle: TextStyleConfig = TextStyleConfig(fontFamily = calibriFontFamily, fontSize = 10.sp, textAlign = TextAlign.End, fontStyle = FontStyle.Italic, fontWeight = FontWeight.Normal, fontColor = DefaultTextConfig.FONT_COLOR),
-    val showAddressPrefix: Boolean = false, // Nuevo campo para el prefijo de dirección
+    val showAddressPrefix: Boolean = true, // Nuevo campo para el prefijo de dirección
+    val allCaps: Boolean = true, // Nuevo campo para texto en mayúsculas
 
     val mainImageUri: String? = null,
 
@@ -56,10 +57,12 @@ data class CoverPageConfig(
     val marginRight: Float = DefaultCoverConfig.MARGIN_RIGHT_CM,
 
     val pageOrientation: PageOrientation = DefaultCoverConfig.PAGE_ORIENTATION, // Nuevo campo
-    val allCaps: Boolean = false, // Nuevo campo para texto en mayúsculas
 
-    val spacingRucAddress: Float = 0.5f, // Espaciado en cm
-    val spacingAddressImage: Float = 0.5f, // Espaciado en cm
+    // Pesos para el diseño de la portada
+    val clientWeight: Float = 1f,
+    val rucWeight: Float = 1f,
+    val addressWeight: Float = 1f,
+    val photoWeight: Float = 4f, // Aprox 80% si los otros son 1f
 
     val templateName: String? = null
 )
