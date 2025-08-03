@@ -15,19 +15,29 @@ import com.example.dynamiccollage.ui.screens.InnerPagesScreen
 import com.example.dynamiccollage.ui.screens.MainScreen
 import com.example.dynamiccollage.ui.screens.PdfPreviewScreen
 import com.example.dynamiccollage.ui.screens.RowStyleScreen
+import com.example.dynamiccollage.viewmodel.CoverSetupViewModel
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import androidx.lifecycle.viewmodel.compose.viewModel
+
 
 @Composable
-fun AppNavigation(projectViewModel: ProjectViewModel) {
+fun AppNavigation(
+    projectViewModel: ProjectViewModel,
+    coverSetupViewModel: CoverSetupViewModel = viewModel()
+) {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = Screen.Main.route) {
         composable(Screen.Main.route) {
             MainScreen(navController = navController, projectViewModel = projectViewModel)
         }
         composable(Screen.CoverSetup.route) {
-            CoverSetupScreen(navController = navController, projectViewModel = projectViewModel)
+            CoverSetupScreen(
+                navController = navController,
+                projectViewModel = projectViewModel,
+                coverSetupViewModel = coverSetupViewModel
+            )
         }
         composable(Screen.InnerPages.route) {
             InnerPagesScreen(navController = navController, projectViewModel = projectViewModel)
