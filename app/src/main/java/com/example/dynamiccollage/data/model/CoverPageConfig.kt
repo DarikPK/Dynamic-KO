@@ -36,9 +36,9 @@ object DefaultCoverConfig {
 
 data class CoverPageConfig(
     // Asumiendo que TextStyleConfig no tiene 'id' y fontSize es Int
-    val clientNameStyle: TextStyleConfig = TextStyleConfig(fontFamily = calibriFontFamily, fontSize = 18.sp, fontWeight = FontWeight.Normal),
-    val rucStyle: TextStyleConfig = TextStyleConfig(fontFamily = calibriFontFamily, fontSize = 18.sp, fontWeight = FontWeight.Normal),
-    val subtitleStyle: TextStyleConfig = TextStyleConfig(fontFamily = calibriFontFamily, fontSize = 10.sp, textAlign = TextAlign.End, fontStyle = FontStyle.Italic, fontWeight = FontWeight.Normal),
+    val clientNameStyle: TextStyleConfig = TextStyleConfig(fontFamily = calibriFontFamily, fontSize = 18.sp, fontWeight = FontWeight.Normal, fontColor = DefaultTextConfig.FONT_COLOR),
+    val rucStyle: TextStyleConfig = TextStyleConfig(fontFamily = calibriFontFamily, fontSize = 18.sp, fontWeight = FontWeight.Normal, fontColor = DefaultTextConfig.FONT_COLOR),
+    val subtitleStyle: TextStyleConfig = TextStyleConfig(fontFamily = calibriFontFamily, fontSize = 10.sp, textAlign = TextAlign.End, fontStyle = FontStyle.Italic, fontWeight = FontWeight.Normal, fontColor = DefaultTextConfig.FONT_COLOR),
     val showAddressPrefix: Boolean = false, // Nuevo campo para el prefijo de dirección
 
     val mainImageUri: String? = null,
@@ -58,8 +58,8 @@ data class CoverPageConfig(
     val pageOrientation: PageOrientation = DefaultCoverConfig.PAGE_ORIENTATION, // Nuevo campo
     val allCaps: Boolean = false, // Nuevo campo para texto en mayúsculas
 
-    val spacingRucAddress: Float = 1.0f, // Espaciado en cm
-    val spacingAddressImage: Float = 1.0f, // Espaciado en cm
+    val spacingRucAddress: Float = 0.5f, // Espaciado en cm
+    val spacingAddressImage: Float = 0.5f, // Espaciado en cm
 
     val templateName: String? = null
 )
