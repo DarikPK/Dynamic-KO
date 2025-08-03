@@ -15,8 +15,13 @@ import android.os.Environment
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
+import android.graphics.Typeface
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.core.content.res.ResourcesCompat
+import com.example.dynamiccollage.R
 import com.example.dynamiccollage.data.model.CoverPageConfig
 import com.example.dynamiccollage.data.model.PageGroup
 import com.example.dynamiccollage.data.model.PageOrientation
@@ -92,15 +97,35 @@ object PdfGenerator {
         var currentY = contentArea.top
 
         val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG)
-        val spacing = 1f // 1-point spacing as requested
 
         // Helper function to draw a text block and update currentY
-        fun drawTextBlock(style: com.example.dynamiccollage.data.model.TextStyleConfig, rawContent: String) {
+        fun drawTextBlock(style: com.example.dynamiccollage.data.model.TextStyleConfig, rawContent: String, spacingAfter: Float = 0f) {
             if (rawContent.isBlank()) return
 
+            // --- TYPEFACE AND FONT STYLE LOGIC ---
+            val isBold = style.fontFamily.any { it.weight == FontWeight.Bold }
+            val isItalic = style.fontStyle == FontStyle.Italic
+
+            val typefaceStyle = when {
+                isBold && isItalic -> Typeface.BOLD_ITALIC
+                isBold -> Typeface.BOLD
+                isItalic -> Typeface.ITALIC
+                else -> Typeface.NORMAL
+            }
+
+            // This assumes a single font family resource is defined in XML
+            val fontFamilyRes = R.font.calibri // Assuming you have calibri.xml
+            val typeface = try {
+                val baseTypeface = ResourcesCompat.getFont(context, fontFamilyRes)
+                Typeface.create(baseTypeface, typefaceStyle)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Typeface.create(Typeface.DEFAULT, typefaceStyle) // Fallback
+            }
+
+            textPaint.typeface = typeface
             textPaint.color = style.fontColor.toArgb()
             textPaint.textSize = style.fontSize.value
-            // Font style (italic) and family would be applied here if a Typeface object was created
 
             val alignment = getAndroidAlignment(style.textAlign)
             val staticLayout = StaticLayout.Builder.obtain(
@@ -111,7 +136,7 @@ object PdfGenerator {
             canvas.translate(contentArea.left, currentY)
             staticLayout.draw(canvas)
             canvas.restore()
-            currentY += staticLayout.height + spacing
+            currentY += staticLayout.height + spacingAfter
         }
 
         // --- Drawing Logic ---
@@ -124,14 +149,14 @@ object PdfGenerator {
         // RUC
         var rucContent = if (config.allCaps) config.rucStyle.content.uppercase() else config.rucStyle.content
         rucContent = "RUC: $rucContent"
-        drawTextBlock(config.rucStyle, rucContent)
+        drawTextBlock(config.rucStyle, rucContent, spacingAfter = config.spacingRucAddress * CM_TO_POINTS)
 
         // Address
         var addressContent = if (config.allCaps) config.subtitleStyle.content.uppercase() else config.subtitleStyle.content
         if (config.showAddressPrefix) {
             addressContent = "Dirección: $addressContent"
         }
-        drawTextBlock(config.subtitleStyle, addressContent)
+        drawTextBlock(config.subtitleStyle, addressContent, spacingAfter = config.spacingAddressImage * CM_TO_POINTS)
 
         // Image takes the rest of the space
         config.mainImageUri?.let { uriString ->

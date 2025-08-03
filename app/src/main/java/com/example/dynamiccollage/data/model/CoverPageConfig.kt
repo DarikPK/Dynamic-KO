@@ -22,10 +22,10 @@ object DefaultCoverConfig {
     const val BORDER_VISIBLE_RIGHT: Boolean = true
 
     // Márgenes como Float (cm)
-    const val MARGIN_TOP_CM: Float = 2.54f
-    const val MARGIN_BOTTOM_CM: Float = 2.54f
-    const val MARGIN_LEFT_CM: Float = 3.18f
-    const val MARGIN_RIGHT_CM: Float = 3.18f
+    const val MARGIN_TOP_CM: Float = 0.5f
+    const val MARGIN_BOTTOM_CM: Float = 0.5f
+    const val MARGIN_LEFT_CM: Float = 0.5f
+    const val MARGIN_RIGHT_CM: Float = 0.5f
 
     val PAGE_ORIENTATION: PageOrientation = PageOrientation.Vertical
 
@@ -56,6 +56,9 @@ data class CoverPageConfig(
 
     val pageOrientation: PageOrientation = DefaultCoverConfig.PAGE_ORIENTATION, // Nuevo campo
     val allCaps: Boolean = false, // Nuevo campo para texto en mayúsculas
+
+    val spacingRucAddress: Float = 1.0f, // Espaciado en cm
+    val spacingAddressImage: Float = 1.0f, // Espaciado en cm
 
     val templateName: String? = null
 )

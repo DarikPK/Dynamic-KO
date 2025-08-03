@@ -329,7 +329,65 @@ fun CoverSetupScreen(
                     coverSetupViewModel.onMarginChange(top, bottom, left, right)
                 }
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
+            Divider()
+            Spacer(modifier = Modifier.height(8.dp))
+
+            SpacingCustomizationSection(
+                spacingRucAddress = coverConfig.spacingRucAddress,
+                spacingAddressImage = coverConfig.spacingAddressImage,
+                onSpacingChange = { rucAddress, addressImage ->
+                    coverSetupViewModel.onSpacingChange(rucAddress, addressImage)
+                }
+            )
             Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+}
+
+@Composable
+fun SpacingCustomizationSection(
+    spacingRucAddress: Float,
+    spacingAddressImage: Float,
+    onSpacingChange: (rucAddress: String?, addressImage: String?) -> Unit
+) {
+    var rucAddressInput by remember(spacingRucAddress) { mutableStateOf(spacingRucAddress.toString()) }
+    var addressImageInput by remember(spacingAddressImage) { mutableStateOf(spacingAddressImage.toString()) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            "Configuración de Espaciado (cm)",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            MarginTextField(
+                label = "Espacio RUC - Dirección",
+                value = rucAddressInput,
+                onValueChange = {
+                    rucAddressInput = it
+                    onSpacingChange(it, null)
+                },
+                modifier = Modifier.weight(1f)
+            )
+            Spacer(Modifier.width(8.dp))
+            MarginTextField(
+                label = "Espacio Dirección - Foto",
+                value = addressImageInput,
+                onValueChange = {
+                    addressImageInput = it
+                    onSpacingChange(null, it)
+                },
+                modifier = Modifier.weight(1f)
+            )
         }
     }
 }

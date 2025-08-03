@@ -194,4 +194,15 @@ class CoverSetupViewModel : ViewModel() {
             )
         }
     }
+
+    fun onSpacingChange(rucAddress: String?, addressImage: String?) {
+        _coverConfig.update { currentState ->
+            val newRucAddress = rucAddress?.toFloatOrNull()?.coerceIn(0f, 5f) ?: currentState.spacingRucAddress
+            val newAddressImage = addressImage?.toFloatOrNull()?.coerceIn(0f, 5f) ?: currentState.spacingAddressImage
+            currentState.copy(
+                spacingRucAddress = newRucAddress,
+                spacingAddressImage = newAddressImage
+            )
+        }
+    }
 }
