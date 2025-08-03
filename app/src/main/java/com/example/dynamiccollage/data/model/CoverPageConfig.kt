@@ -52,6 +52,7 @@ data class CoverPageConfig(
     val marginRight: Float = DefaultCoverConfig.MARGIN_RIGHT_CM,
 
     val pageOrientation: PageOrientation = DefaultCoverConfig.PAGE_ORIENTATION, // Nuevo campo
+    val allCaps: Boolean = false, // Nuevo campo para texto en mayúsculas
 
     val templateName: String? = null
 )

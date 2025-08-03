@@ -99,8 +99,13 @@ object PdfGenerator {
             textPaint.color = config.clientNameStyle.fontColor.toArgb()
             textPaint.textSize = config.clientNameStyle.fontSize.value
             val alignment = getAndroidAlignment(config.clientNameStyle.textAlign)
+            var clientContent = config.clientNameStyle.content
+            if (config.allCaps) {
+                clientContent = clientContent.uppercase()
+            }
+            clientContent = "Cliente: $clientContent"
             val staticLayout = StaticLayout.Builder.obtain(
-                config.clientNameStyle.content, 0, config.clientNameStyle.content.length, textPaint, contentArea.width().toInt()
+                clientContent, 0, clientContent.length, textPaint, contentArea.width().toInt()
             ).setAlignment(alignment).build()
             canvas.save()
             canvas.translate(contentArea.left, currentY)
@@ -114,7 +119,11 @@ object PdfGenerator {
             textPaint.color = config.rucStyle.fontColor.toArgb()
             textPaint.textSize = config.rucStyle.fontSize.value
             val alignment = getAndroidAlignment(config.rucStyle.textAlign)
-            val rucContent = "RUC: ${config.rucStyle.content}"
+            var rucContent = config.rucStyle.content
+            if (config.allCaps) {
+                rucContent = rucContent.uppercase()
+            }
+            rucContent = "RUC: $rucContent"
             val staticLayout = StaticLayout.Builder.obtain(
                 rucContent, 0, rucContent.length, textPaint, contentArea.width().toInt()
             ).setAlignment(alignment).build()
@@ -130,10 +139,12 @@ object PdfGenerator {
             textPaint.color = config.subtitleStyle.fontColor.toArgb()
             textPaint.textSize = config.subtitleStyle.fontSize.value
             val alignment = getAndroidAlignment(config.subtitleStyle.textAlign)
-            val addressContent = if (config.showAddressPrefix) {
-                "Dirección: ${config.subtitleStyle.content}"
-            } else {
-                config.subtitleStyle.content
+            var addressContent = config.subtitleStyle.content
+            if (config.allCaps) {
+                addressContent = addressContent.uppercase()
+            }
+            if (config.showAddressPrefix) {
+                addressContent = "Dirección: $addressContent"
             }
             val staticLayout = StaticLayout.Builder.obtain(
                 addressContent, 0, addressContent.length, textPaint, contentArea.width().toInt()

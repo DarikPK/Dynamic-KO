@@ -254,6 +254,17 @@ fun CoverSetupScreen(
             }
             // Fin Selector de Orientación
 
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Checkbox(
+                    checked = coverConfig.allCaps,
+                    onCheckedChange = { coverSetupViewModel.onAllCapsChange(it) }
+                )
+                Text("Poner todo el texto en mayúsculas")
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
             Divider()
             Spacer(modifier = Modifier.height(8.dp))
