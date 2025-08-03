@@ -5,6 +5,7 @@ sealed class Screen(val route: String) {
     object CoverSetup : Screen("cover_setup_screen")
     object InnerPages : Screen("inner_pages_screen")
     object PdfPreview : Screen("pdf_preview_screen")
+    object RowStyleEditor : Screen("row_style_editor_screen")
     // object Settings : Screen("settings_screen") // Ejemplo si se necesitara
 
     fun withArgs(vararg args: String): String {

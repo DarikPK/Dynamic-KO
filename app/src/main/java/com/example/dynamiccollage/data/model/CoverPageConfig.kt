@@ -16,11 +16,11 @@ object DefaultCoverConfig {
     const val RUC_ID = "ruc"
     const val SUBTITLE_ID = "subtitle"
 
-    val BORDER_COLOR: Color = Color.Black
-    const val BORDER_VISIBLE_TOP: Boolean = true
-    const val BORDER_VISIBLE_BOTTOM: Boolean = true
-    const val BORDER_VISIBLE_LEFT: Boolean = true
-    const val BORDER_VISIBLE_RIGHT: Boolean = true
+    // val BORDER_COLOR: Color = Color.Black
+    // const val BORDER_VISIBLE_TOP: Boolean = true
+    // const val BORDER_VISIBLE_BOTTOM: Boolean = true
+    // const val BORDER_VISIBLE_LEFT: Boolean = true
+    // const val BORDER_VISIBLE_RIGHT: Boolean = true
 
     // Márgenes como Float (cm)
     const val MARGIN_TOP_CM: Float = 0.5f
@@ -44,11 +44,12 @@ data class CoverPageConfig(
 
     val mainImageUri: String? = null,
 
-    val borderColor: Color = DefaultCoverConfig.BORDER_COLOR,
-    val borderVisibleTop: Boolean = DefaultCoverConfig.BORDER_VISIBLE_TOP,
-    val borderVisibleBottom: Boolean = DefaultCoverConfig.BORDER_VISIBLE_BOTTOM,
-    val borderVisibleLeft: Boolean = DefaultCoverConfig.BORDER_VISIBLE_LEFT,
-    val borderVisibleRight: Boolean = DefaultCoverConfig.BORDER_VISIBLE_RIGHT,
+    // Border properties are now part of RowStyle inside TextStyleConfig
+    // val borderColor: Color = DefaultCoverConfig.BORDER_COLOR,
+    // val borderVisibleTop: Boolean = DefaultCoverConfig.BORDER_VISIBLE_TOP,
+    // val borderVisibleBottom: Boolean = DefaultCoverConfig.BORDER_VISIBLE_BOTTOM,
+    // val borderVisibleLeft: Boolean = DefaultCoverConfig.BORDER_VISIBLE_LEFT,
+    // val borderVisibleRight: Boolean = DefaultCoverConfig.BORDER_VISIBLE_RIGHT,
 
     // Márgenes como Float (cm)
     val marginTop: Float = DefaultCoverConfig.MARGIN_TOP_CM,
@@ -59,10 +60,10 @@ data class CoverPageConfig(
     val pageOrientation: PageOrientation = DefaultCoverConfig.PAGE_ORIENTATION, // Nuevo campo
 
     // Pesos para el diseño de la portada
-    val clientWeight: Float = 1f,
-    val rucWeight: Float = 1f,
-    val addressWeight: Float = 1f,
-    val photoWeight: Float = 4f, // Aprox 80% si los otros son 1f
+    val clientWeight: Float = 0.4f,
+    val rucWeight: Float = 0.4f,
+    val addressWeight: Float = 0.6f,
+    val photoWeight: Float = 10f,
 
     val templateName: String? = null
 )

@@ -304,17 +304,14 @@ fun CoverSetupScreen(
             Divider()
             Spacer(modifier = Modifier.height(8.dp))
 
-            BorderCustomizationSection(
-                borderColor = coverConfig.borderColor,
-                borderVisibleTop = coverConfig.borderVisibleTop,
-                borderVisibleBottom = coverConfig.borderVisibleBottom,
-                borderVisibleLeft = coverConfig.borderVisibleLeft,
-                borderVisibleRight = coverConfig.borderVisibleRight,
-                onBorderColorChange = { coverSetupViewModel.onBorderColorChange(it) },
-                onBorderVisibilityChange = { top, bottom, left, right ->
-                    coverSetupViewModel.onBorderVisibilityChange(top, bottom, left, right)
-                }
-            )
+            Button(
+                onClick = { /* TODO: Navigate to new RowStyleEditor screen */
+                          navController.navigate(Screen.RowStyleEditor.route)
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Personalizar Estilos de Fila (Bordes, Fondos)")
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
             Divider()
