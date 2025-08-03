@@ -64,13 +64,13 @@ fun RowStyleScreen(
                 },
                 actions = {
                     IconButton(onClick = {
-                        coverSetupViewModel.updateRowStyles(
-                            clientStyle,
-                            rucStyle,
-                            addressStyle,
-                            photoStyle
+                        val updatedConfig = coverConfig.copy(
+                            clientNameStyle = coverConfig.clientNameStyle.copy(rowStyle = clientStyle),
+                            rucStyle = coverConfig.rucStyle.copy(rowStyle = rucStyle),
+                            subtitleStyle = coverConfig.subtitleStyle.copy(rowStyle = addressStyle),
+                            photoStyle = photoStyle
                         )
-                        projectViewModel.updateCoverConfig(coverConfig)
+                        projectViewModel.updateCoverConfig(updatedConfig)
                         navController.popBackStack()
                     }) {
                         Icon(Icons.Filled.Save, contentDescription = "Guardar")
