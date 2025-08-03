@@ -320,11 +320,13 @@ fun CoverSetupScreen(
             Divider()
             Spacer(modifier = Modifier.height(8.dp))
 
-            SpacingCustomizationSection(
-                spacingRucAddress = coverConfig.spacingRucAddress,
-                spacingAddressImage = coverConfig.spacingAddressImage,
-                onSpacingChange = { rucAddress, addressImage ->
-                    coverSetupViewModel.onSpacingChange(rucAddress, addressImage)
+            LayoutWeightsCustomizationSection(
+                clientWeight = coverConfig.clientWeight,
+                rucWeight = coverConfig.rucWeight,
+                addressWeight = coverConfig.addressWeight,
+                photoWeight = coverConfig.photoWeight,
+                onWeightChange = { client, ruc, address, photo ->
+                    coverSetupViewModel.onWeightChange(client, ruc, address, photo)
                 }
             )
             Spacer(modifier = Modifier.height(24.dp))
@@ -333,13 +335,17 @@ fun CoverSetupScreen(
 }
 
 @Composable
-fun SpacingCustomizationSection(
-    spacingRucAddress: Float,
-    spacingAddressImage: Float,
-    onSpacingChange: (rucAddress: String?, addressImage: String?) -> Unit
+fun LayoutWeightsCustomizationSection(
+    clientWeight: Float,
+    rucWeight: Float,
+    addressWeight: Float,
+    photoWeight: Float,
+    onWeightChange: (client: String?, ruc: String?, address: String?, photo: String?) -> Unit
 ) {
-    var rucAddressInput by remember(spacingRucAddress) { mutableStateOf(spacingRucAddress.toString()) }
-    var addressImageInput by remember(spacingAddressImage) { mutableStateOf(spacingAddressImage.toString()) }
+    var clientInput by remember(clientWeight) { mutableStateOf(clientWeight.toString()) }
+    var rucInput by remember(rucWeight) { mutableStateOf(rucWeight.toString()) }
+    var addressInput by remember(addressWeight) { mutableStateOf(addressWeight.toString()) }
+    var photoInput by remember(photoWeight) { mutableStateOf(photoWeight.toString()) }
 
     Column(
         modifier = Modifier
@@ -350,28 +356,37 @@ fun SpacingCustomizationSection(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
-            "Configuración de Espaciado (cm)",
+            "Pesos de Diseño de Portada",
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.align(Alignment.CenterHorizontally)
         )
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             MarginTextField(
-                label = "Espacio RUC - Dirección",
-                value = rucAddressInput,
-                onValueChange = {
-                    rucAddressInput = it
-                    onSpacingChange(it, null)
-                },
+                label = "Peso Cliente",
+                value = clientInput,
+                onValueChange = { clientInput = it; onWeightChange(it, null, null, null) },
                 modifier = Modifier.weight(1f)
             )
             Spacer(Modifier.width(8.dp))
             MarginTextField(
-                label = "Espacio Dirección - Foto",
-                value = addressImageInput,
-                onValueChange = {
-                    addressImageInput = it
-                    onSpacingChange(null, it)
-                },
+                label = "Peso RUC",
+                value = rucInput,
+                onValueChange = { rucInput = it; onWeightChange(null, it, null, null) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            MarginTextField(
+                label = "Peso Dirección",
+                value = addressInput,
+                onValueChange = { addressInput = it; onWeightChange(null, null, it, null) },
+                modifier = Modifier.weight(1f)
+            )
+            Spacer(Modifier.width(8.dp))
+            MarginTextField(
+                label = "Peso Foto",
+                value = photoInput,
+                onValueChange = { photoInput = it; onWeightChange(null, null, null, it) },
                 modifier = Modifier.weight(1f)
             )
         }
