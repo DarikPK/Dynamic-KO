@@ -228,7 +228,7 @@ object PdfGenerator {
             val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG)
             val optionalTextLayout = if (group.optionalTextStyle.isVisible) {
                 textPaint.color = group.optionalTextStyle.fontColor.toArgb()
-                textPaint.textSize = group.optionalTextStyle.fontSize.value
+                textPaint.textSize = group.optionalTextStyle.fontSize.toFloat()
                 val alignment = getAndroidAlignment(group.optionalTextStyle.textAlign)
                 StaticLayout.Builder.obtain(
                     group.optionalTextStyle.content, 0, group.optionalTextStyle.content.length, textPaint, A4_WIDTH - 100
