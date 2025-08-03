@@ -3,6 +3,7 @@ package com.example.dynamiccollage.data.model
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
@@ -19,6 +20,7 @@ data class TextStyleConfig(
     val id: String = "default", // Eliminado 'id'
     val fontFamily: FontFamily = DefaultTextConfig.FONT_FAMILY, // Se puede mantener FontFamily.Default directamente
     val fontSize: TextUnit = DefaultTextConfig.FONT_SIZE,
+    val fontWeight: FontWeight? = null,
     val fontStyle: FontStyle? = null,
     val textAlign: TextAlign = DefaultTextConfig.TEXT_ALIGN,
     val fontColor: Color = DefaultTextConfig.FONT_COLOR,

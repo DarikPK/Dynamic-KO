@@ -103,7 +103,7 @@ object PdfGenerator {
             if (rawContent.isBlank()) return
 
             // --- TYPEFACE AND FONT STYLE LOGIC ---
-            val isBold = style.fontFamily.any { it.weight == FontWeight.Bold }
+            val isBold = style.fontWeight == FontWeight.Bold
             val isItalic = style.fontStyle == FontStyle.Italic
 
             val typefaceStyle = when {
