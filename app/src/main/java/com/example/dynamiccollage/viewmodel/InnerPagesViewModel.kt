@@ -10,9 +10,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
-class InnerPagesViewModel : ViewModel() {
+class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : ViewModel() {
 
-    private val _pageGroups = MutableStateFlow<List<PageGroup>>(emptyList())
+    private val _pageGroups = projectViewModel.currentPageGroups
     val pageGroups: StateFlow<List<PageGroup>> = _pageGroups.asStateFlow()
 
     private val _editingGroup = MutableStateFlow<PageGroup?>(null)
@@ -28,6 +28,18 @@ class InnerPagesViewModel : ViewModel() {
 
     fun onEditGroup(group: PageGroup) {
         _editingGroup.value = group
+    }
+
+    fun onImagesSelectedForGroup(uris: List<String>, groupId: String) {
+        projectViewModel.updatePageGroup(groupId) { group ->
+            group.copy(imageUris = group.imageUris + uris.map { it.toString() })
+        }
+    }
+
+    fun removeImageFromGroup(groupId: String, uri: String) {
+        projectViewModel.updatePageGroup(groupId) { group ->
+            group.copy(imageUris = group.imageUris.toMutableList().apply { remove(uri) })
+        }
     }
 
     fun onDismissDialog() {
@@ -61,33 +73,16 @@ class InnerPagesViewModel : ViewModel() {
         _editingGroup.value = _editingGroup.value?.copy(imageSpacing = spacing)
     }
 
-    fun addImageUrisToEditingGroup(uris: List<String>) {
-        _editingGroup.value?.let { group ->
-            val updatedUris = group.imageUris + uris
-            _editingGroup.value = group.copy(imageUris = updatedUris)
-        }
-    }
-
-    fun removeImageUriFromEditingGroup(uri: String) {
-        _editingGroup.value?.let { group ->
-            val updatedUris = group.imageUris.toMutableList().apply { remove(uri) }
-            _editingGroup.value = group.copy(imageUris = updatedUris)
-        }
-    }
-
     fun saveEditingGroup() {
         viewModelScope.launch {
             _editingGroup.value?.let { groupToSave ->
-                val currentList = _pageGroups.value.toMutableList()
-                val index = currentList.indexOfFirst { it.id == groupToSave.id }
-                if (index != -1) {
-                    currentList[index] = groupToSave
-                } else {
-                    currentList.add(groupToSave)
-                }
-                _pageGroups.value = currentList
+                projectViewModel.updatePageGroup(groupToSave.id) { groupToSave }
                 onDismissDialog()
             }
         }
+    }
+
+    fun deleteGroup(groupId: String) {
+        projectViewModel.deletePageGroup(groupId)
     }
 }
