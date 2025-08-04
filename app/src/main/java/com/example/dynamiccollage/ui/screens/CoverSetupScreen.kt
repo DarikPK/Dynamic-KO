@@ -322,9 +322,10 @@ fun CoverSetupScreen(
                 clientWeight = coverConfig.clientWeight,
                 rucWeight = coverConfig.rucWeight,
                 addressWeight = coverConfig.addressWeight,
+                separationWeight = coverConfig.separationWeight,
                 photoWeight = coverConfig.photoWeight,
-                onWeightChange = { client, ruc, address, photo ->
-                    coverSetupViewModel.onWeightChange(client, ruc, address, photo)
+                onWeightChange = { client, ruc, address, separation, photo ->
+                    coverSetupViewModel.onWeightChange(client, ruc, address, separation, photo)
                 }
             )
             Spacer(modifier = Modifier.height(24.dp))
@@ -337,12 +338,14 @@ fun LayoutWeightsCustomizationSection(
     clientWeight: Float,
     rucWeight: Float,
     addressWeight: Float,
+    separationWeight: Float,
     photoWeight: Float,
-    onWeightChange: (client: String?, ruc: String?, address: String?, photo: String?) -> Unit
+    onWeightChange: (client: String?, ruc: String?, address: String?, separation: String?, photo: String?) -> Unit
 ) {
     var clientInput by remember(clientWeight) { mutableStateOf(clientWeight.toString()) }
     var rucInput by remember(rucWeight) { mutableStateOf(rucWeight.toString()) }
     var addressInput by remember(addressWeight) { mutableStateOf(addressWeight.toString()) }
+    var separationInput by remember(separationWeight) { mutableStateOf(separationWeight.toString()) }
     var photoInput by remember(photoWeight) { mutableStateOf(photoWeight.toString()) }
 
     Column(
@@ -377,14 +380,22 @@ fun LayoutWeightsCustomizationSection(
             MarginTextField(
                 label = "Peso Dirección",
                 value = addressInput,
-                onValueChange = { addressInput = it; onWeightChange(null, null, it, null) },
+                onValueChange = { addressInput = it; onWeightChange(null, null, it, null, null) },
                 modifier = Modifier.weight(1f)
             )
             Spacer(Modifier.width(8.dp))
             MarginTextField(
+                label = "Peso Separación",
+                value = separationInput,
+                onValueChange = { separationInput = it; onWeightChange(null, null, null, it, null) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            MarginTextField(
                 label = "Peso Foto",
                 value = photoInput,
-                onValueChange = { photoInput = it; onWeightChange(null, null, null, it) },
+                onValueChange = { photoInput = it; onWeightChange(null, null, null, null, it) },
                 modifier = Modifier.weight(1f)
             )
         }

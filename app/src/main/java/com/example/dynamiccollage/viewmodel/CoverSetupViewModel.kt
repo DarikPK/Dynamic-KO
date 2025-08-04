@@ -138,6 +138,7 @@ class CoverSetupViewModel : ViewModel() {
         client: String? = null,
         ruc: String? = null,
         address: String? = null,
+        separation: String? = null,
         photo: String? = null
     ) {
         _coverConfig.update { currentState ->
@@ -145,6 +146,7 @@ class CoverSetupViewModel : ViewModel() {
                 clientWeight = client?.toFloatOrNull()?.coerceIn(0.1f, 10f) ?: currentState.clientWeight,
                 rucWeight = ruc?.toFloatOrNull()?.coerceIn(0.1f, 10f) ?: currentState.rucWeight,
                 addressWeight = address?.toFloatOrNull()?.coerceIn(0.1f, 10f) ?: currentState.addressWeight,
+                separationWeight = separation?.toFloatOrNull()?.coerceIn(0.1f, 10f) ?: currentState.separationWeight,
                 photoWeight = photo?.toFloatOrNull()?.coerceIn(0.1f, 10f) ?: currentState.photoWeight
             )
         }

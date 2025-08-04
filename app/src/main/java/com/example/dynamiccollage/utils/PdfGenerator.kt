@@ -97,7 +97,7 @@ object PdfGenerator {
 
         val contentArea = RectF(marginLeft, marginTop, (pageWidth - marginRight), (pageHeight - marginBottom))
 
-        val totalWeight = config.clientWeight + config.rucWeight + config.addressWeight + config.photoWeight
+        val totalWeight = config.clientWeight + config.rucWeight + config.addressWeight + (config.separationWeight * 2) + config.photoWeight
         if (totalWeight <= 0f) {
             pdfDocument.finishPage(page)
             return
@@ -106,6 +106,7 @@ object PdfGenerator {
         val clientHeight = contentArea.height() * (config.clientWeight / totalWeight)
         val rucHeight = contentArea.height() * (config.rucWeight / totalWeight)
         val addressHeight = contentArea.height() * (config.addressWeight / totalWeight)
+        val separationHeight = contentArea.height() * (config.separationWeight / totalWeight)
         val photoHeight = contentArea.height() * (config.photoWeight / totalWeight)
 
         var currentY = contentArea.top
@@ -115,8 +116,10 @@ object PdfGenerator {
         currentY += clientHeight
         val rowRucRect = RectF(contentArea.left, currentY, contentArea.right, currentY + rucHeight)
         currentY += rucHeight
+        currentY += separationHeight // Separation
         val rowAddressRect = RectF(contentArea.left, currentY, contentArea.right, currentY + addressHeight)
         currentY += addressHeight
+        currentY += separationHeight // Separation
         val rowPhotoRect = RectF(contentArea.left, currentY, contentArea.right, currentY + photoHeight)
 
         // Prepare Content
