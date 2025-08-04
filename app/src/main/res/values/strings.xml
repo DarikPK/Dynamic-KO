@@ -1,4 +1,5 @@
 <resources>
+    <!-- General & Main Screen -->
     <string name="app_name">Dynamic Collage</string>
     <string name="main_btn_cover_setup">Cover Setup</string>
     <string name="main_btn_inner_pages">Manage Content</string>
@@ -13,6 +14,8 @@
     <string name="delete_button">Delete</string>
     <string name="cancel_button">Cancel</string>
     <string name="save_button">Save</string>
+
+    <!-- Create/Edit Group Dialog -->
     <string name="dialog_create_group_title">Create New Group</string>
     <string name="dialog_edit_group_title">Edit Group</string>
     <string name="group_name_label">Group Name</string>
@@ -27,10 +30,52 @@
     <string name="optional_text_label">Optional Text</string>
     <string name="warning_photo_quota_mismatch">Warning: The new settings require %1$d photos, but you have %2$d loaded. Some photos will not be shown.</string>
     <string name="image_spacing_label">Image Spacing: %.1f pt</string>
+
+    <!-- Page Group Item -->
     <string name="group_item_unnamed_group">Unnamed Group</string>
     <string name="group_item_total_photos_required">Required: %d</string>
     <string name="group_item_photos_loaded">Loaded: %d</string>
     <string name="group_item_add_images_button">Add/Manage Images</string>
     <string name="group_item_edit_button_description">Edit group</string>
     <string name="group_item_delete_button_description">Delete group</string>
+
+    <!-- Cover Setup Screen -->
+    <string name="cover_setup_title">Cover Setup</string>
+    <string name="cover_setup_navigate_back_description">Back</string>
+    <string name="save_cover_config_button_description">Save cover configuration</string>
+    <string name="cover_config_saved_toast">Cover settings saved</string>
+    <string name="cover_setup_client_name_label">Client Name</string>
+    <string name="cover_setup_ruc_label">RUC/ID</string>
+    <string name="cover_setup_address_label">Address/Subtitle</string>
+    <string name="cover_setup_select_image_button">Select Main Image</string>
+    <string name="cover_image_selected_description">Selected main cover image</string>
+    <string name="cover_no_image_selected">No image selected</string>
+    <string name="cover_setup_page_orientation_label">Page Orientation</string>
+    <string name="cover_setup_text_customization_title">Text Customization</string>
+    <string name="field_client_name">Client Name</string>
+    <string name="field_ruc">RUC/ID</string>
+    <string name="field_address">Address/Subtitle</string>
+    <string name="cover_setup_font_size_label">Font Size: %.0fpt</string>
+    <string name="cover_setup_alignment_label">Alignment</string>
+    <string name="cover_setup_align_start">Start</string>
+    <string name="cover_setup_align_center">Center</string>
+    <string name="cover_setup_align_end">End</string>
+    <string name="cover_setup_text_color_label">Text Color</string>
+    <string name="color_black">Black</string>
+    <string name="color_gray">Gray</string>
+    <string name="color_blue">Blue</string>
+    <string name="color_red">Red</string>
+    <string name="color_green">Green</string>
+    <string name="cover_setup_margins_customization_title">Margins (cm)</string>
+    <string name="cover_setup_margin_top">Top</string>
+    <string name="cover_setup_margin_bottom">Bottom</string>
+    <string name="cover_setup_margin_left">Left</string>
+    <string name="cover_setup_margin_right">Right</string>
+    <string name="cover_setup_border_customization_title">Border Customization</string>
+    <string name="cover_setup_border_color_label">Border Color</string>
+    <string name="cover_setup_border_visibility_label">Visible Borders</string>
+    <string name="cover_setup_border_top">Top</string>
+    <string name="cover_setup_border_bottom">Bottom</string>
+    <string name="cover_setup_border_left">Left</string>
+    <string name="cover_setup_border_right">Right</string>
 </resources>
