@@ -1,19 +1,21 @@
 package com.example.dynamiccollage.utils
 
+import androidx.compose.ui.unit.TextUnit
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.Paint
+import android.graphics.Rect
 import android.graphics.RectF
-import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import android.net.Uri
 import android.os.Environment
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
+import android.graphics.Typeface
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -67,6 +69,11 @@ object PdfGenerator {
         }
     }
 
+    /**
+     * Genera una lista de Bitmaps para previsualizar las páginas del PDF.
+     * NOTA: Esta funcionalidad es compleja y se deja pendiente.
+     * Retorna una lista vacía para evitar errores de compilación.
+     */
     fun generatePreviewBitmaps(
         context: Context,
         coverConfig: CoverPageConfig,
@@ -165,12 +172,14 @@ object PdfGenerator {
     }
 
     private fun drawRowBackgroundAndBorders(canvas: Canvas, rowStyle: RowStyle, rect: RectF) {
+        // Draw Background
         val backgroundPaint = Paint().apply {
             color = rowStyle.backgroundColor.toArgb()
             style = Paint.Style.FILL
         }
         canvas.drawRect(rect, backgroundPaint)
 
+        // Draw Borders
         val borderPaint = Paint().apply {
             color = rowStyle.border.color.toArgb()
             style = Paint.Style.STROKE
@@ -182,6 +191,7 @@ object PdfGenerator {
         if (border.left) canvas.drawLine(rect.left, rect.top, rect.left, rect.bottom, borderPaint)
         if (border.right) canvas.drawLine(rect.right, rect.top, rect.right, rect.bottom, borderPaint)
     }
+
 
     private fun drawTextInRect(canvas: Canvas, context: Context, text: String, style: TextStyleConfig, rect: RectF) {
         if (text.isBlank()) return
@@ -233,7 +243,7 @@ object PdfGenerator {
             if (group.imageUris.isEmpty()) return@forEach
 
             val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG)
-            val optionalTextLayout = if (group.optionalTextStyle.content.isNotBlank()) {
+            val optionalTextLayout = if (group.optionalTextStyle.isVisible) {
                 textPaint.color = group.optionalTextStyle.fontColor.toArgb()
                 textPaint.textSize = group.optionalTextStyle.fontSize.toFloat()
                 val alignment = getAndroidAlignment(group.optionalTextStyle.textAlign)
@@ -248,12 +258,11 @@ object PdfGenerator {
 
                 val pageWidth = if (group.orientation == PageOrientation.Vertical) A4_WIDTH else A4_HEIGHT
                 val pageHeight = if (group.orientation == PageOrientation.Vertical) A4_HEIGHT else A4_WIDTH
-                val pageMargin = 20f
 
                 val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber++).create()
                 val page = pdfDocument.startPage(pageInfo)
                 val canvas = page.canvas
-                var currentY = pageMargin
+                var currentY = 20f
 
                 if (sheetIndex == 0 && optionalTextLayout != null) {
                     canvas.save()
@@ -263,9 +272,7 @@ object PdfGenerator {
                     currentY += optionalTextLayout.height + 20f
                 }
 
-                val cols = 1
-                val rows = if (group.photosPerSheet > 0) group.photosPerSheet else 1
-                val rects = getRectsForPage(pageWidth, pageHeight, currentY, cols, rows, pageMargin, group.imageSpacing)
+                val rects = getRectsForPage(pageWidth, pageHeight, currentY, group.tableLayout.first, group.tableLayout.second)
 
                 for (rect in rects) {
                     if (imageUriIndex < group.imageUris.size) {
@@ -284,19 +291,15 @@ object PdfGenerator {
         }
     }
 
-    private fun getRectsForPage(pageWidth: Int, pageHeight: Int, startY: Float, cols: Int, rows: Int, margin: Float, spacing: Float): List<RectF> {
+    private fun getRectsForPage(pageWidth: Int, pageHeight: Int, startY: Float, cols: Int, rows: Int): List<RectF> {
         val rects = mutableListOf<RectF>()
-        val contentWidth = pageWidth - (2 * margin)
-        val contentHeight = pageHeight - startY - margin
-        val totalSpacingX = spacing * (cols - 1)
-        val totalSpacingY = spacing * (rows - 1)
-        val cellWidth = (contentWidth - totalSpacingX) / cols
-        val cellHeight = (contentHeight - totalSpacingY) / rows
+        val cellWidth = pageWidth.toFloat() / cols
+        val cellHeight = (pageHeight - startY) / rows
 
         for (row in 0 until rows) {
             for (col in 0 until cols) {
-                val left = margin + (col * (cellWidth + spacing))
-                val top = startY + (row * (cellHeight + spacing))
+                val left = col * cellWidth
+                val top = startY + (row * cellHeight)
                 val right = left + cellWidth
                 val bottom = top + cellHeight
                 rects.add(RectF(left, top, right, bottom))
