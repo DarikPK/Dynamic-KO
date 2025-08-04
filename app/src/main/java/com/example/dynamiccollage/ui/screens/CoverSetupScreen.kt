@@ -365,14 +365,14 @@ fun LayoutWeightsCustomizationSection(
             MarginTextField(
                 label = "Peso Cliente",
                 value = clientInput,
-                onValueChange = { clientInput = it; onWeightChange(it, null, null, null) },
+                onValueChange = { clientInput = it; onWeightChange(it, null, null, null, null) },
                 modifier = Modifier.weight(1f)
             )
             Spacer(Modifier.width(8.dp))
             MarginTextField(
                 label = "Peso RUC",
                 value = rucInput,
-                onValueChange = { rucInput = it; onWeightChange(null, it, null, null) },
+                onValueChange = { rucInput = it; onWeightChange(null, it, null, null, null) },
                 modifier = Modifier.weight(1f)
             )
         }
