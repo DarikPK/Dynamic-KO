@@ -5,8 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.dynamiccollage.data.model.PageGroup
 import com.example.dynamiccollage.data.model.PageOrientation
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,8 +16,7 @@ import kotlinx.coroutines.launch
 class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : ViewModel() {
 
     // Page Groups
-    private val _pageGroups = projectViewModel.currentPageGroups
-    val pageGroups: StateFlow<List<PageGroup>> = _pageGroups.asStateFlow()
+    val pageGroups: StateFlow<List<PageGroup>> = projectViewModel.currentPageGroups
 
     // Create/Edit Dialog
     private val _editingGroup = MutableStateFlow<PageGroup?>(null)
@@ -50,15 +47,19 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         _currentGroupAddingImages.value = groupId
     }
     fun onImagesSelectedForGroup(uris: List<String>, groupId: String) {
-        projectViewModel.updatePageGroup(groupId) { group ->
-            group.copy(imageUris = group.imageUris + uris.map { it.toString() })
+        val group = _pageGroups.value.find { it.id == groupId }
+        if (group != null) {
+            val updatedGroup = group.copy(imageUris = group.imageUris + uris)
+            projectViewModel.updatePageGroupInProject(updatedGroup)
         }
         _currentGroupAddingImages.value = null
     }
 
     fun removeImageFromGroup(groupId: String, uri: String) {
-        projectViewModel.updatePageGroup(groupId) { group ->
-            group.copy(imageUris = group.imageUris.toMutableList().apply { remove(uri) })
+        val group = _pageGroups.value.find { it.id == groupId }
+        if (group != null) {
+            val updatedGroup = group.copy(imageUris = group.imageUris.toMutableList().apply { remove(uri) })
+            projectViewModel.updatePageGroupInProject(updatedGroup)
         }
     }
 
@@ -99,9 +100,9 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
                 // If it's a new group, add it. Otherwise, update it.
                 val isNewGroup = pageGroups.value.none { it.id == groupToSave.id }
                 if (isNewGroup) {
-                    projectViewModel.addPageGroup(groupToSave)
+                    projectViewModel.addPageGroupToProject(groupToSave)
                 } else {
-                    projectViewModel.updatePageGroup(groupToSave.id) { groupToSave }
+                    projectViewModel.updatePageGroupInProject(groupToSave)
                 }
                 onDismissCreateGroupDialog()
             }
@@ -109,6 +110,6 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
     }
 
     fun removePageGroup(groupId: String) {
-        projectViewModel.deletePageGroup(groupId)
+        projectViewModel.removePageGroupFromProject(groupId)
     }
 }
