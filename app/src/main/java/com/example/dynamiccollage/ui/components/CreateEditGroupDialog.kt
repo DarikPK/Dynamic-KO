@@ -48,7 +48,7 @@ fun CreateEditGroupDialog(
     val allGroups by viewModel.pageGroups.collectAsState()
 
     val originalGroup = remember(editingGroup.id, allGroups) {
-        allGroups.find { group -> group.id == editingGroup.id }
+        allGroups.find { group: PageGroup -> group.id == editingGroup.id }
     }
 
     AlertDialog(
