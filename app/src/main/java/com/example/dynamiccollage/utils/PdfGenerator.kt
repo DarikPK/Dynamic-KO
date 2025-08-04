@@ -210,9 +210,6 @@ object PdfGenerator {
             }
         }
 
-        val paddedRect = RectF(rect.left + padding, rect.top + padding, rect.right - padding, rect.bottom - padding)
-        if (paddedRect.width() <= 0 || paddedRect.height() <= 0) return
-
         val staticLayout = StaticLayout.Builder.obtain(
             text, 0, text.length, textPaint, paddedRect.width().toInt()
         ).setAlignment(getAndroidAlignment(style.textAlign)).build()
