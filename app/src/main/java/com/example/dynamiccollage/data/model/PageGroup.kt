@@ -14,4 +14,7 @@ data class PageGroup(
 ) {
     val totalPhotosRequired: Int
         get() = photosPerSheet * sheetCount
+
+    val isPhotoQuotaMet: Boolean
+        get() = imageUris.size == totalPhotosRequired
 }
