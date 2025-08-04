@@ -1,12 +1,14 @@
 package com.example.dynamiccollage.data.model
 
+import java.util.UUID
+
 data class PageGroup(
-    val id: String,
-    val name: String,
-    val sheetCount: Int,
-    val imageUris: List<String>,
-    val tableLayout: Pair<Int, Int>, // Columns, Rows
-    val orientation: PageOrientation,
-    val optionalTextStyle: TextStyleConfig,
+    val id: String = UUID.randomUUID().toString(),
+    var groupName: String = "Nuevo Grupo",
+    var sheetCount: Int = 1,
+    var photosPerSheet: Pair<Int, Int> = Pair(2, 2), // (Columnas, Filas)
+    var imageUris: List<String> = emptyList(),
+    var orientation: PageOrientation = PageOrientation.Vertical,
+    var optionalTextStyle: TextStyleConfig = TextStyleConfig(isVisible = false),
     val imageSpacing: Float = 2f
 )
