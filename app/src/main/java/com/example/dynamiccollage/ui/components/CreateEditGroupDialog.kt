@@ -132,6 +132,15 @@ fun CreateEditGroupDialog(
                     minLines = 2
                 )
 
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(stringResource(R.string.image_spacing_label, editingGroup.imageSpacing), style = MaterialTheme.typography.labelMedium)
+                Slider(
+                    value = editingGroup.imageSpacing,
+                    onValueChange = { viewModel.onEditingGroupImageSpacingChange(it) },
+                    valueRange = 0f..10f,
+                    steps = 9
+                )
+
                 // Mostrar advertencia si la configuración no coincide con las fotos cargadas (solo en edición)
                 if (originalGroup != null && originalGroup.imageUris.isNotEmpty() && !isConfigValid && editingGroup.sheetCount > 0) {
                     Spacer(modifier = Modifier.height(4.dp))

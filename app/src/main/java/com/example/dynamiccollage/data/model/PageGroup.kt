@@ -10,7 +10,7 @@ data class PageGroup(
     var imageUris: List<String> = emptyList(),
     var orientation: PageOrientation = PageOrientation.Vertical,
     var optionalTextStyle: TextStyleConfig = TextStyleConfig(),
-    val imageSpacing: Float = 2f
+    val imageSpacing: Float = 4f
 ) {
     val totalPhotosRequired: Int
         get() = photosPerSheet * sheetCount
