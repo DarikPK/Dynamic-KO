@@ -2,7 +2,6 @@ package com.example.dynamiccollage.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,18 +17,16 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState // Importar collectAsState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.graphics.Color // Para el texto de error
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
@@ -38,28 +35,27 @@ import com.example.dynamiccollage.data.model.PageGroup
 import com.example.dynamiccollage.data.model.PageOrientation
 import com.example.dynamiccollage.viewmodel.InnerPagesViewModel
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateEditGroupDialog(
-    editingGroup: PageGroup?, // Null si es creación, no null si es edición
+    editingGroup: PageGroup?,
     viewModel: InnerPagesViewModel,
     onDismiss: () -> Unit
 ) {
     if (editingGroup == null) return
 
     val isConfigValid by viewModel.isEditingGroupConfigValid.collectAsState()
-    val pageGroupsFromVM by viewModel.pageGroups.collectAsState() // Para obtener imageUris.size del grupo original
+    val allGroups by viewModel.pageGroups.collectAsState()
 
-    val originalGroup = remember(editingGroup.id, pageGroupsFromVM) {
-        pageGroupsFromVM.find { it.id == editingGroup.id }
+    val originalGroup = remember(editingGroup.id, allGroups) {
+        allGroups.find { it.id == editingGroup.id }
     }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = if (originalGroup == null) // Es un grupo nuevo si no está en la lista del VM
+                text = if (originalGroup == null)
                     stringResource(R.string.dialog_create_group_title)
                 else stringResource(R.string.dialog_edit_group_title)
             )
@@ -112,7 +108,7 @@ fun CreateEditGroupDialog(
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
-                    isError = editingGroup.sheetCount <= 0 // Validación simple para Nro Hojas
+                    isError = editingGroup.sheetCount <= 0
                 )
                 if (editingGroup.sheetCount <= 0) {
                     Text(
@@ -122,7 +118,6 @@ fun CreateEditGroupDialog(
                         modifier = Modifier.padding(start = 16.dp)
                     )
                 }
-
 
                 OutlinedTextField(
                     value = editingGroup.optionalTextStyle.content,
@@ -141,7 +136,6 @@ fun CreateEditGroupDialog(
                     steps = 9
                 )
 
-                // Mostrar advertencia si la configuración no coincide con las fotos cargadas (solo en edición)
                 if (originalGroup != null && originalGroup.imageUris.isNotEmpty() && !isConfigValid && editingGroup.sheetCount > 0) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
@@ -150,7 +144,7 @@ fun CreateEditGroupDialog(
                             editingGroup.totalPhotosRequired,
                             originalGroup.imageUris.size
                         ),
-                        color = MaterialTheme.colorScheme.error, // O un color de advertencia
+                        color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -159,7 +153,7 @@ fun CreateEditGroupDialog(
         confirmButton = {
             Button(
                 onClick = { viewModel.saveEditingGroup() },
-                enabled = isConfigValid && editingGroup.sheetCount > 0 // Deshabilitar si no es válido
+                enabled = isConfigValid && editingGroup.sheetCount > 0
             ) { Text(stringResource(R.string.save_button)) }
         },
         dismissButton = {
