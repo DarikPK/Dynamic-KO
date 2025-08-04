@@ -1,121 +1,30 @@
 <resources>
     <string name="app_name">Dynamic Collage</string>
-
-    <!-- MainScreen Buttons -->
     <string name="main_btn_cover_setup">Cover Setup</string>
-    <string name="main_btn_inner_pages">Manage Inner Pages</string>
-    <string name="main_btn_preview_pdf">PDF Preview</string>
-    <string name="main_btn_share_pdf">Share PDF</string>
-    <string name="main_btn_templates">Save/Load Template</string>
+    <string name="main_btn_inner_pages">Manage Content</string>
+    <string name="main_btn_preview_pdf">Preview PDF</string>
     <string name="main_btn_generate_pdf">Generate PDF</string>
-
-    <!-- CoverSetupScreen -->
-    <string name="cover_setup_title">Cover Setup</string>
-    <string name="cover_setup_client_name_label">Client Name</string>
-    <string name="cover_setup_ruc_label">RUC</string>
-    <string name="cover_setup_address_label">Address</string>
-    <string name="cover_setup_select_image_button">Select Main Image</string>
-    <string name="cover_setup_navigate_back_description">Navigate Back</string>
-    <string name="cover_setup_text_customization_title">Text Customization</string>
-    <string name="cover_setup_font_size_label">Font Size: %1$.0f sp</string>
-    <string name="cover_setup_alignment_label">Alignment</string>
-    <string name="cover_setup_align_start">Start</string>
-    <string name="cover_setup_align_center">Center</string>
-    <string name="cover_setup_align_end">End</string>
-    <string name="field_client_name">Client</string>
-    <string name="field_ruc">RUC</string>
-    <string name="field_address">Address</string>
-    <string name="cover_image_selected_description">Selected main image</string>
-    <string name="cover_no_image_selected">No image selected</string>
-
-    <!-- Border Customization -->
-    <string name="cover_setup_border_customization_title">Border Customization</string>
-    <string name="cover_setup_border_color_label">Border Color:</string>
-    <string name="cover_setup_border_visibility_label">Border Side Visibility:</string>
-    <string name="cover_setup_border_top">Top</string>
-    <string name="cover_setup_border_bottom">Bottom</string>
-    <string name="cover_setup_border_left">Left</string>
-    <string name="cover_setup_border_right">Right</string>
-    <string name="color_black">Black</string>
-    <string name="color_gray">Gray</string>
-    <string name="color_blue">Blue</string>
-    <string name="color_red">Red</string>
-    <string name="color_green">Green</string>
-    <string name="color_transparent">Transparent</string>
-    <string name="color_white">White</string>
-    <string name="cover_setup_text_color_label">Text Color:</string>
-
-    <!-- Margin Customization -->
-    <string name="cover_setup_margins_customization_title">Margins Customization (cm)</string>
-    <string name="cover_setup_margin_top">Top:</string>
-    <string name="cover_setup_margin_bottom">Bottom:</string>
-    <string name="cover_setup_margin_left">Left:</string>
-    <string name="cover_setup_margin_right">Right:</string>
-    <string name="save_cover_config_button_description">Save cover configuration</string>
-    <string name="cover_config_saved_toast">Cover configuration saved.</string>
-    <string name="cover_setup_page_orientation_label">Cover Page Orientation</string>
-    <string name="cover_photo_orientation_detected">Detected photo orientation: %1$s</string>
-    <string name="cover_photo_orientation_not_detected">Could not detect photo orientation.</string>
-    <string name="cover_photo_orientation_none_selected">No photo selected to detect orientation.</string>
-    <!-- orientation_vertical and orientation_horizontal already exist and can be reused -->
-
-    <!-- InnerPagesScreen -->
-    <string name="inner_pages_title">Inner Pages</string>
-    <string name="inner_pages_add_group_fab_description">Add Group</string>
-    <string name="inner_pages_content_in_development">Inner Pages content in development.</string>
-    <string name="inner_pages_no_groups">No page groups. Add a new one.</string>
-    <string name="save_page_groups_button_description">Save page groups</string>
-    <string name="page_groups_saved_toast">Page groups saved.</string>
-
-    <!-- MainScreen - Delete Project -->
-    <string name="main_btn_delete_project">Delete Current Project</string>
-    <string name="delete_project_dialog_title">Confirm Deletion</string>
-    <string name="delete_project_dialog_message">Are you sure you want to delete all data for the current project? This action cannot be undone.</string>
+    <string name="main_btn_share_pdf">Share PDF</string>
+    <string name="main_btn_templates">Templates</string>
+    <string name="main_btn_delete_project">Delete Project</string>
+    <string name="delete_project_dialog_title">Delete Project</string>
+    <string name="delete_project_dialog_message">Are you sure you want to delete the current project? This action cannot be undone.</string>
+    <string name="project_deleted_toast">Project deleted</string>
     <string name="delete_button">Delete</string>
-    <string name="project_deleted_toast">Project deleted.</string>
-
-    <!-- PDF Generation -->
-    <string name="generate_pdf_dialog_title">Name and Generate PDF</string>
-    <string name="pdf_filename_label">File name (without .pdf)</string>
-    <string name="generating_pdf_toast">Generating PDF...</string>
-    <string name="pdf_success_toast">PDF saved in Documents: %1$s</string>
-    <string name="pdf_error_toast">Error generating PDF: %1$s</string>
-    <string name="generate_button">Generate</string>
-
-    <!-- Create/Edit Page Group Dialog -->
+    <string name="cancel_button">Cancel</string>
+    <string name="save_button">Save</string>
     <string name="dialog_create_group_title">Create New Group</string>
     <string name="dialog_edit_group_title">Edit Group</string>
-    <string name="group_name_label">Group Name (Optional)</string>
+    <string name="group_name_label">Group Name</string>
     <string name="group_orientation_label">Orientation</string>
     <string name="orientation_vertical">Vertical</string>
     <string name="orientation_horizontal">Horizontal</string>
     <string name="photos_per_sheet_label">Photos per Sheet</string>
-    <string name="one_photo">1 Photo</string>
-    <string name="two_photos">2 Photos</string>
+    <string name="one_photo">One</string>
+    <string name="two_photos">Two</string>
     <string name="sheet_count_label">Number of Sheets</string>
-    <string name="optional_text_label">Optional Text (1st page of group)</string>
-    <string name="save_button">Save</string>
-    <string name="cancel_button">Cancel</string>
-    <string name="error_sheet_count_invalid">Number of sheets must be at least 1.</string>
-    <string name="warning_photo_quota_mismatch">Warning: Configuration requires %1$d photos, but the group has %2$d loaded. Adjust settings or images.</string>
-
-    <!-- PdfPreviewScreen -->
-    <string name="pdf_preview_title">PDF Preview</string>
-    <string name="pdf_preview_generation_error">Could not generate preview.\nPDF rendering functionality is pending.</string>
-    <string name="pdf_preview_page_x">Page %1$d</string>
-    <string name="pdf_preview_page_content_description">Page %1$d preview</string>
-
-    <!-- ImageUploadScreen -->
-    <string name="image_upload_title">Upload Images</string>
-    <string name="image_upload_quota_message">Required: %1$d | Loaded: %2$d</string>
-    <string name="image_upload_add_photos_button">Add Photos</string>
-    <string name="image_upload_done_button">Done</string>
-
-    <!-- PageGroupItem -->
-    <string name="group_item_unnamed_group">Unnamed Group (ID: %1$s…)</string>
-    <string name="group_item_total_photos_required">Total Photos Required</string>
-    <string name="group_item_photos_loaded">Photos Loaded</string>
-    <string name="group_item_add_images_button">Images</string>
-    <string name="group_item_edit_button_description">Edit Group</string>
-    <string name="group_item_delete_button_description">Delete Group</string>
+    <string name="error_sheet_count_invalid">Must be greater than 0</string>
+    <string name="optional_text_label">Optional Text</string>
+    <string name="warning_photo_quota_mismatch">Warning: The new settings require %1$d photos, but you have %2$d loaded. Some photos will not be shown.</string>
+    <string name="image_spacing_label">Image Spacing: %.1f pt</string>
 </resources>
