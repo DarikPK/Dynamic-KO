@@ -39,6 +39,11 @@
     <string name="group_item_edit_button_description">Edit group</string>
     <string name="group_item_delete_button_description">Delete group</string>
 
+    <!-- Inner Pages Screen -->
+    <string name="inner_pages_title">Photo Groups</string>
+    <string name="inner_pages_add_group_fab_description">Add new photo group</string>
+    <string name="inner_pages_no_groups">No groups created yet. Press the + button to add one.</string>
+
     <!-- Image Upload Screen -->
     <string name="image_upload_title">Manage Images</string>
     <string name="image_upload_quota_message">Required: %1$d / Loaded: %2$d</string>
