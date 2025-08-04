@@ -36,9 +36,47 @@ object DefaultCoverConfig {
 
 data class CoverPageConfig(
     // Asumiendo que TextStyleConfig no tiene 'id' y fontSize es Int
-    val clientNameStyle: TextStyleConfig = TextStyleConfig(fontFamily = calibriFontFamily, fontSize = 18, fontWeight = FontWeight.Normal, fontColor = DefaultTextConfig.FONT_COLOR),
-    val rucStyle: TextStyleConfig = TextStyleConfig(fontFamily = calibriFontFamily, fontSize = 18, fontWeight = FontWeight.Normal, fontColor = DefaultTextConfig.FONT_COLOR),
-    val subtitleStyle: TextStyleConfig = TextStyleConfig(fontFamily = calibriFontFamily, fontSize = 10, textAlign = TextAlign.End, fontStyle = FontStyle.Italic, fontWeight = FontWeight.Normal, fontColor = DefaultTextConfig.FONT_COLOR),
+    val clientNameStyle: TextStyleConfig = TextStyleConfig(
+        fontFamily = calibriFontFamily,
+        fontSize = 18,
+        fontWeight = FontWeight.Normal,
+        fontColor = DefaultTextConfig.FONT_COLOR,
+        rowStyle = RowStyle(
+            border = BorderProperties(
+                color = Color(0xFF73A1D3),
+                top = true,
+                bottom = true
+            )
+        )
+    ),
+    val rucStyle: TextStyleConfig = TextStyleConfig(
+        fontFamily = calibriFontFamily,
+        fontSize = 18,
+        fontWeight = FontWeight.Normal,
+        fontColor = DefaultTextConfig.FONT_COLOR,
+        rowStyle = RowStyle(
+            backgroundColor = Color(0xFFDBE5F1),
+            border = BorderProperties(
+                color = Color(0xFF73A1D3),
+                top = true,
+                bottom = true
+            )
+        )
+    ),
+    val subtitleStyle: TextStyleConfig = TextStyleConfig(
+        fontFamily = calibriFontFamily,
+        fontSize = 10,
+        textAlign = TextAlign.End,
+        fontStyle = FontStyle.Italic,
+        fontWeight = FontWeight.Normal,
+        fontColor = DefaultTextConfig.FONT_COLOR,
+        rowStyle = RowStyle(
+            border = BorderProperties(
+                color = Color(0xFF73A1D3),
+                bottom = true
+            )
+        )
+    ),
     val showAddressPrefix: Boolean = true, // Nuevo campo para el prefijo de dirección
     val allCaps: Boolean = true, // Nuevo campo para texto en mayúsculas
 
