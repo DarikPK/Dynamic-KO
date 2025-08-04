@@ -39,6 +39,12 @@
     <string name="group_item_edit_button_description">Edit group</string>
     <string name="group_item_delete_button_description">Delete group</string>
 
+    <!-- Image Upload Screen -->
+    <string name="image_upload_title">Manage Images</string>
+    <string name="image_upload_quota_message">Required: %1$d / Loaded: %2$d</string>
+    <string name="image_upload_add_photos_button">Add Photos</string>
+    <string name="image_upload_done_button">Done</string>
+
     <!-- Cover Setup Screen -->
     <string name="cover_setup_title">Cover Setup</string>
     <string name="cover_setup_navigate_back_description">Back</string>
