@@ -255,7 +255,7 @@ object PdfGenerator {
             if (group.imageUris.isEmpty()) return@forEach
 
             val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG)
-            val optionalTextLayout = if (group.optionalTextStyle.isVisible) {
+            val optionalTextLayout = if (group.optionalTextStyle.content.isNotBlank()) {
                 textPaint.color = group.optionalTextStyle.fontColor.toArgb()
                 textPaint.textSize = group.optionalTextStyle.fontSize.toFloat()
                 val alignment = getAndroidAlignment(group.optionalTextStyle.textAlign)
