@@ -11,8 +11,15 @@ data class BorderProperties(
     val right: Boolean = false
 )
 
+data class PaddingValues(
+    val top: Float = 10f,
+    val bottom: Float = 10f,
+    val left: Float = 10f,
+    val right: Float = 10f
+)
+
 data class RowStyle(
     val backgroundColor: Color = Color.Transparent,
-    val padding: Float = 10f, // in points
+    val padding: PaddingValues = PaddingValues(),
     val border: BorderProperties = BorderProperties()
 )

@@ -95,7 +95,7 @@ fun RowStyleScreen(
                 title = "Fila Cliente",
                 rowStyle = clientStyle,
                 onBackgroundColorChange = { color -> rowStyleViewModel.updateBackgroundColor(RowType.CLIENT, color) },
-                onPaddingChange = { padding -> rowStyleViewModel.updatePadding(RowType.CLIENT, padding) },
+                onPaddingChange = { top, bottom, left, right -> rowStyleViewModel.updatePadding(RowType.CLIENT, top, bottom, left, right) },
                 onBorderColorChange = { color -> rowStyleViewModel.updateBorderColor(RowType.CLIENT, color) },
                 onBorderThicknessChange = { thickness -> rowStyleViewModel.updateBorderThickness(RowType.CLIENT, thickness) },
                 onBorderVisibilityChange = { t, b, l, r -> rowStyleViewModel.updateBorderVisibility(RowType.CLIENT, t, b, l, r) }
@@ -104,7 +104,7 @@ fun RowStyleScreen(
                 title = "Fila RUC",
                 rowStyle = rucStyle,
                 onBackgroundColorChange = { color -> rowStyleViewModel.updateBackgroundColor(RowType.RUC, color) },
-                onPaddingChange = { padding -> rowStyleViewModel.updatePadding(RowType.RUC, padding) },
+                onPaddingChange = { top, bottom, left, right -> rowStyleViewModel.updatePadding(RowType.RUC, top, bottom, left, right) },
                 onBorderColorChange = { color -> rowStyleViewModel.updateBorderColor(RowType.RUC, color) },
                 onBorderThicknessChange = { thickness -> rowStyleViewModel.updateBorderThickness(RowType.RUC, thickness) },
                 onBorderVisibilityChange = { t, b, l, r -> rowStyleViewModel.updateBorderVisibility(RowType.RUC, t, b, l, r) }
@@ -113,7 +113,7 @@ fun RowStyleScreen(
                 title = "Fila Dirección",
                 rowStyle = addressStyle,
                 onBackgroundColorChange = { color -> rowStyleViewModel.updateBackgroundColor(RowType.ADDRESS, color) },
-                onPaddingChange = { padding -> rowStyleViewModel.updatePadding(RowType.ADDRESS, padding) },
+                onPaddingChange = { top, bottom, left, right -> rowStyleViewModel.updatePadding(RowType.ADDRESS, top, bottom, left, right) },
                 onBorderColorChange = { color -> rowStyleViewModel.updateBorderColor(RowType.ADDRESS, color) },
                 onBorderThicknessChange = { thickness -> rowStyleViewModel.updateBorderThickness(RowType.ADDRESS, thickness) },
                 onBorderVisibilityChange = { t, b, l, r -> rowStyleViewModel.updateBorderVisibility(RowType.ADDRESS, t, b, l, r) }
@@ -122,7 +122,7 @@ fun RowStyleScreen(
                 title = "Fila Foto",
                 rowStyle = photoStyle,
                 onBackgroundColorChange = { color -> rowStyleViewModel.updateBackgroundColor(RowType.PHOTO, color) },
-                onPaddingChange = { padding -> rowStyleViewModel.updatePadding(RowType.PHOTO, padding) },
+                onPaddingChange = { top, bottom, left, right -> rowStyleViewModel.updatePadding(RowType.PHOTO, top, bottom, left, right) },
                 onBorderColorChange = { color -> rowStyleViewModel.updateBorderColor(RowType.PHOTO, color) },
                 onBorderThicknessChange = { thickness -> rowStyleViewModel.updateBorderThickness(RowType.PHOTO, thickness) },
                 onBorderVisibilityChange = { t, b, l, r -> rowStyleViewModel.updateBorderVisibility(RowType.PHOTO, t, b, l, r) }
@@ -136,11 +136,16 @@ fun RowStyleCustomizationSection(
     title: String,
     rowStyle: RowStyle,
     onBackgroundColorChange: (Color) -> Unit,
-    onPaddingChange: (String) -> Unit,
+    onPaddingChange: (top: String?, bottom: String?, left: String?, right: String?) -> Unit,
     onBorderColorChange: (Color) -> Unit,
     onBorderThicknessChange: (String) -> Unit,
     onBorderVisibilityChange: (top: Boolean?, bottom: Boolean?, left: Boolean?, right: Boolean?) -> Unit
 ) {
+    var topPaddingInput by remember(rowStyle.padding.top) { mutableStateOf(rowStyle.padding.top.toString()) }
+    var bottomPaddingInput by remember(rowStyle.padding.bottom) { mutableStateOf(rowStyle.padding.bottom.toString()) }
+    var leftPaddingInput by remember(rowStyle.padding.left) { mutableStateOf(rowStyle.padding.left.toString()) }
+    var rightPaddingInput by remember(rowStyle.padding.right) { mutableStateOf(rowStyle.padding.right.toString()) }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -158,17 +163,54 @@ fun RowStyleCustomizationSection(
         )
 
         // Padding
-        var paddingInput by remember(rowStyle.padding) { mutableStateOf(rowStyle.padding.toString()) }
-        OutlinedTextField(
-            value = paddingInput,
-            onValueChange = {
-                paddingInput = it
-                onPaddingChange(it)
-            },
-            label = { Text("Padding (puntos)") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth()
-        )
+        Text("Padding (puntos)", style = MaterialTheme.typography.titleMedium)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            OutlinedTextField(
+                value = topPaddingInput,
+                onValueChange = {
+                    topPaddingInput = it
+                    onPaddingChange(it, null, null, null)
+                },
+                label = { Text("Superior") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.weight(1f)
+            )
+            Spacer(Modifier.width(8.dp))
+            OutlinedTextField(
+                value = bottomPaddingInput,
+                onValueChange = {
+                    bottomPaddingInput = it
+                    onPaddingChange(null, it, null, null)
+                },
+                label = { Text("Inferior") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            OutlinedTextField(
+                value = leftPaddingInput,
+                onValueChange = {
+                    leftPaddingInput = it
+                    onPaddingChange(null, null, it, null)
+                },
+                label = { Text("Izquierdo") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.weight(1f)
+            )
+            Spacer(Modifier.width(8.dp))
+            OutlinedTextField(
+                value = rightPaddingInput,
+                onValueChange = {
+                    rightPaddingInput = it
+                    onPaddingChange(null, null, null, it)
+                },
+                label = { Text("Derecho") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.weight(1f)
+            )
+        }
+
 
         Divider()
 
