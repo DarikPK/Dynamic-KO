@@ -84,11 +84,12 @@ fun CoverSetupScreen(
     coverSetupViewModel: CoverSetupViewModel
 ) {
     val coverConfig by coverSetupViewModel.coverConfig.collectAsState()
+    val projectCoverConfig by projectViewModel.currentCoverConfig.collectAsState()
     val context = LocalContext.current
     // val detectedPhotoOrientation by coverSetupViewModel.detectedPhotoOrientation.collectAsState() // Para Paso 2
 
-    LaunchedEffect(projectViewModel.currentCoverConfig.value) {
-        coverSetupViewModel.loadInitialConfig(projectViewModel.currentCoverConfig.value)
+    LaunchedEffect(projectCoverConfig) {
+        coverSetupViewModel.loadInitialConfig(projectCoverConfig)
     }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
