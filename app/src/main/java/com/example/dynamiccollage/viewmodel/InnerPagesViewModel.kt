@@ -45,7 +45,7 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         _currentGroupAddingImages.value = groupId
     }
 
-    fun onImagesSelectedForGroup(uris: List<Uri>, groupId: String) {
+    fun onImagesSelectedForGroup(uris: List<android.net.Uri>, groupId: String) {
         val uriStrings = uris.map { it.toString() }
         projectViewModel.updatePageGroup(groupId) { group ->
             group.copy(imageUris = group.imageUris + uriStrings)
