@@ -97,27 +97,62 @@ object PdfGenerator {
 
         val contentArea = RectF(marginLeft, marginTop, (pageWidth - marginRight), (pageHeight - marginBottom))
 
-        // Determine which items are visible
         val clientVisible = config.clientNameStyle.content.isNotBlank()
         val rucVisible = config.rucStyle.content.isNotBlank()
         val addressVisible = config.subtitleStyle.content.isNotBlank()
         val photoVisible = config.mainImageUri != null
 
-        // Calculate total weight only for visible items
+        val visibleItems = mutableListOf<() -> Unit>()
         var totalWeight = 0f
-        if (clientVisible) totalWeight += config.clientWeight
-        if (rucVisible) totalWeight += config.rucWeight
-        if (addressVisible) totalWeight += config.addressWeight
-        if (photoVisible) totalWeight += config.photoWeight
 
-        val visibleTextRows = listOf(clientVisible, rucVisible, addressVisible).count { it }
-        if (visibleTextRows > 1) {
-            totalWeight += config.separationWeight * (visibleTextRows - 1)
+        if (clientVisible) {
+            totalWeight += config.clientWeight
+            visibleItems.add {
+                val height = contentArea.height() * (config.clientWeight / totalWeight)
+                val content = "Cliente: " + if (config.allCaps) config.clientNameStyle.content.uppercase() else config.clientNameStyle.content
+                drawRow(canvas, context, content, config.clientNameStyle, RectF(contentArea.left, 0f, contentArea.right, height))
+            }
         }
-         if (visibleTextRows > 0 && photoVisible) {
-            totalWeight += config.separationWeight
+        if (rucVisible) {
+            totalWeight += config.rucWeight
+            visibleItems.add {
+                val height = contentArea.height() * (config.rucWeight / totalWeight)
+                val content = "RUC: " + if (config.allCaps) config.rucStyle.content.uppercase() else config.rucStyle.content
+                drawRow(canvas, context, content, config.rucStyle, RectF(contentArea.left, 0f, contentArea.right, height))
+            }
+        }
+        if (addressVisible) {
+            totalWeight += config.addressWeight
+            visibleItems.add {
+                val height = contentArea.height() * (config.addressWeight / totalWeight)
+                var content = if (config.allCaps) config.subtitleStyle.content.uppercase() else config.subtitleStyle.content
+                if (config.showAddressPrefix) content = "Dirección: $content"
+                drawRow(canvas, context, content, config.subtitleStyle, RectF(contentArea.left, 0f, contentArea.right, height))
+            }
+        }
+        if (photoVisible) {
+            totalWeight += config.photoWeight
+            visibleItems.add {
+                val height = contentArea.height() * (config.photoWeight / totalWeight)
+                val rowPhotoRect = RectF(contentArea.left, 0f, contentArea.right, height)
+                drawRowBackgroundAndBorders(canvas, config.photoStyle, rowPhotoRect)
+                config.mainImageUri?.let { uriString ->
+                    try {
+                        val padding = config.photoStyle.padding
+                        val paddedRect = RectF(rowPhotoRect.left + padding.left, rowPhotoRect.top + padding.top, rowPhotoRect.right - padding.right, rowPhotoRect.bottom - padding.bottom)
+                        val bitmap = decodeSampledBitmapFromUri(context, Uri.parse(uriString), paddedRect.width().toInt(), paddedRect.height().toInt())
+                        bitmap?.let {
+                            drawBitmapToCanvas(canvas, it, paddedRect)
+                            it.recycle()
+                        }
+                    } catch (e: Exception) { e.printStackTrace() }
+                }
+            }
         }
 
+        if (visibleItems.size > 1) {
+            totalWeight += config.separationWeight * (visibleItems.size - 1)
+        }
 
         if (totalWeight <= 0f) {
             pdfDocument.finishPage(page)
@@ -125,68 +160,26 @@ object PdfGenerator {
         }
 
         var currentY = contentArea.top
-        var firstElement = true
+        visibleItems.forEachIndexed { index, drawItem ->
+            canvas.save()
+            canvas.translate(0f, currentY)
+            drawItem()
+            canvas.restore()
 
-        // Draw Client Row if visible
-        if (clientVisible) {
-            val clientHeight = contentArea.height() * (config.clientWeight / totalWeight)
-            val rowClientRect = RectF(contentArea.left, currentY, contentArea.right, currentY + clientHeight)
-            val clientContent = "Cliente: " + if (config.allCaps) config.clientNameStyle.content.uppercase() else config.clientNameStyle.content
-            drawRow(canvas, context, clientContent, config.clientNameStyle, rowClientRect)
-            currentY += clientHeight
-            firstElement = false
-        }
+            // Calculate the height of the drawn item to advance currentY
+            val weight = when(index) {
+                0 -> if(clientVisible) config.clientWeight else if(rucVisible) config.rucWeight else if(addressVisible) config.addressWeight else config.photoWeight
+                1 -> if(clientVisible && rucVisible) config.rucWeight else if(addressVisible) config.addressWeight else config.photoWeight
+                2 -> if(addressVisible) config.addressWeight else config.photoWeight
+                3 -> config.photoWeight
+                else -> 0f
+            }
+            currentY += contentArea.height() * (weight / totalWeight)
 
-        // Draw RUC Row if visible
-        if (rucVisible) {
-            if (!firstElement) {
+            if (index < visibleItems.size - 1) {
                 currentY += contentArea.height() * (config.separationWeight / totalWeight)
             }
-            val rucHeight = contentArea.height() * (config.rucWeight / totalWeight)
-            val rowRucRect = RectF(contentArea.left, currentY, contentArea.right, currentY + rucHeight)
-            val rucContent = "RUC: " + if (config.allCaps) config.rucStyle.content.uppercase() else config.rucStyle.content
-            drawRow(canvas, context, rucContent, config.rucStyle, rowRucRect)
-            currentY += rucHeight
-            firstElement = false
         }
-
-        // Draw Address Row if visible
-        if (addressVisible) {
-            if (!firstElement) {
-                currentY += contentArea.height() * (config.separationWeight / totalWeight)
-            }
-            val addressHeight = contentArea.height() * (config.addressWeight / totalWeight)
-            val rowAddressRect = RectF(contentArea.left, currentY, contentArea.right, currentY + addressHeight)
-            var addressContent = if (config.allCaps) config.subtitleStyle.content.uppercase() else config.subtitleStyle.content
-            if (config.showAddressPrefix) {
-                addressContent = "Dirección: $addressContent"
-            }
-            drawRow(canvas, context, addressContent, config.subtitleStyle, rowAddressRect)
-            currentY += addressHeight
-            firstElement = false
-        }
-
-        // Draw Photo Row if visible
-        if (photoVisible) {
-             if (!firstElement) {
-                currentY += contentArea.height() * (config.separationWeight / totalWeight)
-            }
-            val photoHeight = contentArea.height() * (config.photoWeight / totalWeight)
-            val rowPhotoRect = RectF(contentArea.left, currentY, contentArea.right, currentY + photoHeight)
-            drawRowBackgroundAndBorders(canvas, config.photoStyle, rowPhotoRect)
-            config.mainImageUri?.let { uriString ->
-                try {
-                    val padding = config.photoStyle.padding
-                    val paddedRect = RectF(rowPhotoRect.left + padding.left, rowPhotoRect.top + padding.top, rowPhotoRect.right - padding.right, rowPhotoRect.bottom - padding.bottom)
-                    val bitmap = decodeSampledBitmapFromUri(context, Uri.parse(uriString), paddedRect.width().toInt(), paddedRect.height().toInt())
-                    if (bitmap != null) {
-                        drawBitmapToCanvas(canvas, bitmap, paddedRect)
-                        bitmap.recycle()
-                    }
-                } catch (e: Exception) { e.printStackTrace() }
-            }
-        }
-
         pdfDocument.finishPage(page)
     }
 
@@ -282,11 +275,12 @@ object PdfGenerator {
 
                 val pageWidth = if (group.orientation == PageOrientation.Vertical) A4_WIDTH else A4_HEIGHT
                 val pageHeight = if (group.orientation == PageOrientation.Vertical) A4_HEIGHT else A4_WIDTH
+                val pageMargin = 20f // Margin for inner pages
 
                 val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber++).create()
                 val page = pdfDocument.startPage(pageInfo)
                 val canvas = page.canvas
-                var currentY = 20f
+                var currentY = pageMargin
 
                 if (sheetIndex == 0 && optionalTextLayout != null) {
                     canvas.save()
@@ -296,7 +290,7 @@ object PdfGenerator {
                     currentY += optionalTextLayout.height + 20f
                 }
 
-                val rects = getRectsForPage(pageWidth, pageHeight, currentY, group.tableLayout.first, group.tableLayout.second)
+                val rects = getRectsForPage(pageWidth, pageHeight, currentY, group.tableLayout.first, group.tableLayout.second, pageMargin)
 
                 for (rect in rects) {
                     if (imageUriIndex < group.imageUris.size) {
@@ -315,14 +309,16 @@ object PdfGenerator {
         }
     }
 
-    private fun getRectsForPage(pageWidth: Int, pageHeight: Int, startY: Float, cols: Int, rows: Int): List<RectF> {
+    private fun getRectsForPage(pageWidth: Int, pageHeight: Int, startY: Float, cols: Int, rows: Int, margin: Float): List<RectF> {
         val rects = mutableListOf<RectF>()
-        val cellWidth = pageWidth.toFloat() / cols
-        val cellHeight = (pageHeight - startY) / rows
+        val contentWidth = pageWidth - (2 * margin)
+        val contentHeight = pageHeight - startY - margin
+        val cellWidth = contentWidth / cols
+        val cellHeight = contentHeight / rows
 
         for (row in 0 until rows) {
             for (col in 0 until cols) {
-                val left = col * cellWidth
+                val left = margin + (col * cellWidth)
                 val top = startY + (row * cellHeight)
                 val right = left + cellWidth
                 val bottom = top + cellHeight
