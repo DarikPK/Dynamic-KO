@@ -285,7 +285,9 @@ object PdfGenerator {
                     currentY += optionalTextLayout.height + 20f
                 }
 
-                val rects = getRectsForPage(pageWidth, pageHeight, currentY, group.columns, group.rows, pageMargin, group.imageSpacing)
+                val cols = 1
+                val rows = if (group.photosPerSheet > 0) group.photosPerSheet else 1
+                val rects = getRectsForPage(pageWidth, pageHeight, currentY, cols, rows, pageMargin, group.imageSpacing)
 
                 for (rect in rects) {
                     if (imageUriIndex < group.imageUris.size) {
