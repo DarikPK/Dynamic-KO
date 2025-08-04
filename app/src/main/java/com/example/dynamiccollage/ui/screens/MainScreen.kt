@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel // Para la preview
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -116,7 +117,27 @@ fun MainScreen(
             MainButton(
                 text = stringResource(R.string.main_btn_share_pdf),
                 onClick = {
-                    Toast.makeText(context, "Compartir PDF: Próximamente", Toast.LENGTH_SHORT).show()
+                    val pdfFile = com.example.dynamiccollage.utils.PdfGenerator.generate(
+                        context = context,
+                        coverConfig = projectViewModel.currentCoverConfig.value,
+                        pageGroups = projectViewModel.currentPageGroups.value,
+                        fileName = "collage_report_for_sharing"
+                    )
+                    if (pdfFile != null) {
+                        val uri = FileProvider.getUriForFile(
+                            context,
+                            "${context.packageName}.provider",
+                            pdfFile
+                        )
+                        val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                            type = "application/pdf"
+                            putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+                        context.startActivity(android.content.Intent.createChooser(intent, "Compartir PDF"))
+                    } else {
+                        Toast.makeText(context, "Error al generar el PDF para compartir", Toast.LENGTH_SHORT).show()
+                    }
                 }
             )
             MainButton(
@@ -136,8 +157,7 @@ fun MainScreen(
                         fileName = "collage_report"
                     )
                     if (pdfFile != null) {
-                        val encodedPath = java.net.URLEncoder.encode(pdfFile.absolutePath, "UTF-8")
-                        navController.navigate(Screen.PdfPreview.withArgs(encodedPath))
+                        Toast.makeText(context, "PDF guardado en ${pdfFile.absolutePath}", Toast.LENGTH_LONG).show()
                     } else {
                         Toast.makeText(context, "Error al generar el PDF", Toast.LENGTH_SHORT).show()
                     }
