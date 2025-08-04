@@ -140,7 +140,7 @@ object PdfGenerator {
         config.mainImageUri?.let { uriString ->
             try {
                 val padding = config.photoStyle.padding
-                val paddedRect = RectF(rowPhotoRect.left + padding, rowPhotoRect.top + padding, rowPhotoRect.right - padding, rowPhotoRect.bottom - padding)
+                val paddedRect = RectF(rowPhotoRect.left + padding.left, rowPhotoRect.top + padding.top, rowPhotoRect.right - padding.right, rowPhotoRect.bottom - padding.bottom)
                 val bitmap = decodeSampledBitmapFromUri(context, Uri.parse(uriString), paddedRect.width().toInt(), paddedRect.height().toInt())
                 if (bitmap != null) {
                     drawBitmapToCanvas(canvas, bitmap, paddedRect)
@@ -183,6 +183,9 @@ object PdfGenerator {
         if (text.isBlank()) return
 
         val padding = style.rowStyle.padding
+        val paddedRect = RectF(rect.left + padding.left, rect.top + padding.top, rect.right - padding.right, rect.bottom - padding.bottom)
+        if (paddedRect.width() <= 0 || paddedRect.height() <= 0) return
+
         val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
             color = style.fontColor.toArgb()
             textSize = style.fontSize.toFloat()

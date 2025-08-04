@@ -43,9 +43,17 @@ class RowStyleViewModel : ViewModel() {
         getMutableStateFlow(rowType).update { it.copy(backgroundColor = color) }
     }
 
-    fun updatePadding(rowType: RowType, padding: String) {
-        val floatPadding = padding.toFloatOrNull() ?: return
-        getMutableStateFlow(rowType).update { it.copy(padding = floatPadding) }
+    fun updatePadding(rowType: RowType, top: String?, bottom: String?, left: String?, right: String?) {
+        getMutableStateFlow(rowType).update { style ->
+            style.copy(
+                padding = style.padding.copy(
+                    top = top?.toFloatOrNull() ?: style.padding.top,
+                    bottom = bottom?.toFloatOrNull() ?: style.padding.bottom,
+                    left = left?.toFloatOrNull() ?: style.padding.left,
+                    right = right?.toFloatOrNull() ?: style.padding.right
+                )
+            )
+        }
     }
 
     fun updateBorderColor(rowType: RowType, color: Color) {
