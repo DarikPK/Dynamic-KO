@@ -57,7 +57,6 @@
     <string name="cover_photo_orientation_detected">Orientación de foto detectada: %1$s</string>
     <string name="cover_photo_orientation_not_detected">No se pudo detectar la orientación de la foto.</string>
     <string name="cover_photo_orientation_none_selected">Ninguna foto seleccionada para detectar orientación.</string>
-    <!-- orientation_vertical y orientation_horizontal ya existen y pueden ser reutilizadas -->
 
     <!-- InnerPagesScreen -->
     <string name="inner_pages_title">Páginas Interiores</string>
@@ -98,4 +97,10 @@
     <string name="group_item_add_images_button">Imágenes</string>
     <string name="group_item_edit_button_description">Editar Grupo</string>
     <string name="group_item_delete_button_description">Eliminar Grupo</string>
+
+    <!-- Image Upload Screen -->
+    <string name="image_upload_title">Gestionar Imágenes</string>
+    <string name="image_upload_quota_message">Requeridas: %1$d / Cargadas: %2$d</string>
+    <string name="image_upload_add_photos_button">Añadir Fotos</string>
+    <string name="image_upload_done_button">Hecho</string>
 </resources>
