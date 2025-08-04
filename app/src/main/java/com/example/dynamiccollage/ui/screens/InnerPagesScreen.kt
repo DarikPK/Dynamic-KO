@@ -1,6 +1,5 @@
 package com.example.dynamiccollage.ui.screens
 
-import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -62,7 +61,7 @@ fun InnerPagesScreen(
 
     val multipleImagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
-    ) { uris: List<Uri> ->
+    ) { uris ->
         if (uris.isNotEmpty()) {
             currentGroupAddingImages?.let { groupId ->
                 innerPagesViewModel.onImagesSelectedForGroup(uris, groupId)
