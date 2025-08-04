@@ -25,6 +25,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.dynamiccollage.R
 import com.example.dynamiccollage.data.model.RowStyle
+import com.example.dynamiccollage.ui.components.ColorPickerDialog
 import com.example.dynamiccollage.viewmodel.CoverSetupViewModel
 import com.example.dynamiccollage.viewmodel.RowStyleViewModel
 import com.example.dynamiccollage.viewmodel.RowType
@@ -203,42 +204,29 @@ fun RowStyleCustomizationSection(
 
 @Composable
 fun ColorSelector(label: String, selectedColor: Color, onColorSelected: (Color) -> Unit) {
-    val context = LocalContext.current
-    val colorOptions = remember {
-        mapOf(
-            context.getString(R.string.color_transparent) to Color.Transparent,
-            context.getString(R.string.color_white) to Color.White,
-            context.getString(R.string.color_black) to Color.Black,
-            context.getString(R.string.color_gray) to Color.Gray,
-            context.getString(R.string.color_blue) to Color.Blue,
-            context.getString(R.string.color_red) to Color.Red,
-            context.getString(R.string.color_green) to Color.Green
+    var showDialog by remember { mutableStateOf(false) }
+
+    if (showDialog) {
+        ColorPickerDialog(
+            onDismissRequest = { showDialog = false },
+            onColorSelected = {
+                onColorSelected(it)
+                showDialog = false
+            }
         )
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(label, style = MaterialTheme.typography.labelLarge)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-        ) {
-            colorOptions.forEach { (_, colorValue) ->
-                OutlinedButton(
-                    onClick = { onColorSelected(colorValue) },
-                    modifier = Modifier.padding(horizontal = 4.dp),
-                    border = if (selectedColor == colorValue) ButtonDefaults.outlinedButtonBorder.copy(
-                        width = 2.dp,
-                        brush = SolidColor(MaterialTheme.colorScheme.primary)
-                    ) else ButtonDefaults.outlinedButtonBorder,
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .background(colorValue)
-                            .border(1.dp, Color.Black)
-                    )
-                }
+        Button(onClick = { showDialog = true }) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .background(selectedColor)
+                        .border(1.dp, MaterialTheme.colorScheme.onSurface)
+                )
+                Text("Cambiar Color")
             }
         }
     }
