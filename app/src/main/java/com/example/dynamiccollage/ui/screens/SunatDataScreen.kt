@@ -34,13 +34,6 @@ fun SunatDataScreen(
 
     LaunchedEffect(sunatDataState) {
         when (val state = sunatDataState) {
-            is SunatDataState.Success -> {
-                projectViewModel.updateSunatData(state.data)
-                sunatDataViewModel.resetState()
-                navController.navigate(Screen.CoverSetup.route) {
-                    popUpTo(Screen.Main.route) // Go back to main, not just one screen
-                }
-            }
             is SunatDataState.Error -> {
                 Toast.makeText(context, "Error: ${state.message}", Toast.LENGTH_LONG).show()
                 sunatDataViewModel.resetState()
@@ -111,7 +104,13 @@ fun SunatDataScreen(
             OutlinedTextField(
                 value = documentNumber,
                 onValueChange = { newValue ->
-                    documentNumber = newValue.filter { it.isDigit() }
+                    if (documentType == "RUC") {
+                        if (newValue.startsWith("20")) {
+                            documentNumber = newValue.filter { it.isDigit() }
+                        }
+                    } else {
+                        documentNumber = newValue.filter { it.isDigit() }
+                    }
                 },
                 label = { Text("Número de ${documentType}") },
                 modifier = Modifier.fillMaxWidth(0.8f),
@@ -125,15 +124,49 @@ fun SunatDataScreen(
                 } else {
                     Button(
                         onClick = {
-                            if (documentNumber.isNotBlank()) {
+                            val isValid = when (documentType) {
+                                "DNI" -> documentNumber.length == 8
+                                "RUC" -> documentNumber.length == 11
+                                else -> false
+                            }
+
+                            if (isValid) {
                                 sunatDataViewModel.getSunatData(documentType, documentNumber)
                             } else {
-                                Toast.makeText(context, "Por favor, ingrese un número", Toast.LENGTH_SHORT).show()
+                                val requiredLength = if (documentType == "DNI") 8 else 11
+                                Toast.makeText(context, "El $documentType debe tener $requiredLength dígitos", Toast.LENGTH_SHORT).show()
                             }
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Buscar")
+                    }
+                }
+            }
+
+            if (sunatDataState is SunatDataState.Success) {
+                val data = (sunatDataState as SunatDataState.Success).data
+                Column(
+                    modifier = Modifier.padding(top = 16.dp),
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    Text("Datos encontrados:", style = MaterialTheme.typography.titleMedium)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Nombre: ${data.nombre}")
+                    if (data is com.example.dynamiccollage.remote.RucData) {
+                        Text("Dirección: ${data.direccion}")
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = {
+                            projectViewModel.updateSunatData(data)
+                            sunatDataViewModel.resetState()
+                            navController.navigate(Screen.CoverSetup.route) {
+                                popUpTo(Screen.Main.route)
+                            }
+                        }
+                    ) {
+                        Text("Usar estos datos")
                     }
                 }
             }
