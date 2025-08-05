@@ -63,72 +63,79 @@ fun SunatDataScreen(
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                RadioButton(
-                    selected = documentType == "DNI",
-                    onClick = {
-                        documentType = "DNI"
-                        documentNumber = ""
-                        sunatDataViewModel.resetState()
-                    }
-                )
-                Text(
-                    text = "DNI",
-                    modifier = Modifier.selectable(
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
                         selected = documentType == "DNI",
                         onClick = {
                             documentType = "DNI"
                             documentNumber = ""
                             sunatDataViewModel.resetState()
                         }
-                    ).padding(start = 4.dp)
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                RadioButton(
-                    selected = documentType == "RUC20",
-                    onClick = {
-                        documentType = "RUC20"
-                        documentNumber = ""
-                        sunatDataViewModel.resetState()
-                    }
-                )
-                Text(
-                    text = "RUC (Empresa)",
-                    modifier = Modifier.selectable(
+                    )
+                    Text(
+                        text = "DNI",
+                        modifier = Modifier.selectable(
+                            selected = documentType == "DNI",
+                            onClick = {
+                                documentType = "DNI"
+                                documentNumber = ""
+                                sunatDataViewModel.resetState()
+                            }
+                        ).padding(start = 4.dp)
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    RadioButton(
                         selected = documentType == "RUC20",
                         onClick = {
                             documentType = "RUC20"
                             documentNumber = ""
                             sunatDataViewModel.resetState()
                         }
-                    ).padding(start = 4.dp)
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                RadioButton(
-                    selected = documentType == "RUC10",
-                    onClick = {
-                        documentType = "RUC10"
-                        documentNumber = ""
-                        sunatDataViewModel.resetState()
-                    }
-                )
-                Text(
-                    text = "RUC (Persona)",
-                    modifier = Modifier.selectable(
+                    )
+                    Text(
+                        text = "RUC (Empresa)",
+                        modifier = Modifier.selectable(
+                            selected = documentType == "RUC20",
+                            onClick = {
+                                documentType = "RUC20"
+                                documentNumber = ""
+                                sunatDataViewModel.resetState()
+                            }
+                        ).padding(start = 4.dp)
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
                         selected = documentType == "RUC10",
                         onClick = {
                             documentType = "RUC10"
                             documentNumber = ""
                             sunatDataViewModel.resetState()
                         }
-                    ).padding(start = 4.dp)
-                )
+                    )
+                    Text(
+                        text = "RUC (Persona)",
+                        modifier = Modifier.selectable(
+                            selected = documentType == "RUC10",
+                            onClick = {
+                                documentType = "RUC10"
+                                documentNumber = ""
+                                sunatDataViewModel.resetState()
+                            }
+                        ).padding(start = 4.dp)
+                    )
+                }
             }
 
             val visualTransformation = when (documentType) {
