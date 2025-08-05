@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.dynamiccollage.R
+import com.example.dynamiccollage.data.model.SelectedSunatData
 import com.example.dynamiccollage.ui.navigation.Screen
 import com.example.dynamiccollage.ui.util.RucVisualTransformation
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
@@ -71,6 +72,7 @@ fun SunatDataScreen(
                     onClick = {
                         documentType = "DNI"
                         documentNumber = ""
+                        sunatDataViewModel.resetState()
                     }
                 )
                 Text(
@@ -80,6 +82,7 @@ fun SunatDataScreen(
                         onClick = {
                             documentType = "DNI"
                             documentNumber = ""
+                            sunatDataViewModel.resetState()
                         }
                     ).padding(start = 4.dp)
                 )
@@ -89,6 +92,7 @@ fun SunatDataScreen(
                     onClick = {
                         documentType = "RUC"
                         documentNumber = ""
+                        sunatDataViewModel.resetState()
                     }
                 )
                 Text(
@@ -98,6 +102,7 @@ fun SunatDataScreen(
                         onClick = {
                             documentType = "RUC"
                             documentNumber = ""
+                            sunatDataViewModel.resetState()
                         }
                     ).padding(start = 4.dp)
                 )
@@ -107,7 +112,11 @@ fun SunatDataScreen(
             OutlinedTextField(
                 value = documentNumber,
                 onValueChange = { newValue ->
-                    documentNumber = newValue.filter { it.isDigit() }
+                    val filtered = newValue.filter { it.isDigit() }
+                    val maxLength = if (documentType == "DNI") 8 else 9
+                    if (filtered.length <= maxLength) {
+                        documentNumber = filtered
+                    }
                 },
                 label = { Text("Número de ${documentType}") },
                 modifier = Modifier.fillMaxWidth(0.8f),
@@ -145,21 +154,34 @@ fun SunatDataScreen(
 
             if (sunatDataState is SunatDataState.Success) {
                 val data = (sunatDataState as SunatDataState.Success).data
+                var useName by remember { mutableStateOf(true) }
+                var useAddress by remember { mutableStateOf(data is com.example.dynamiccollage.remote.RucData) }
+
                 Column(
                     modifier = Modifier.padding(top = 16.dp),
                     horizontalAlignment = Alignment.Start
                 ) {
                     Text("Datos encontrados:", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Nombre: ${data.nombre}")
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = useName, onCheckedChange = { useName = it })
+                        Text("Nombre: ${data.nombre}")
+                    }
                     if (data is com.example.dynamiccollage.remote.RucData) {
-                        val fullAddress = "${data.direccion} - ${data.distrito}"
-                        Text("Dirección: $fullAddress")
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(checked = useAddress, onCheckedChange = { useAddress = it })
+                            Text("Dirección: ${data.direccion} - ${data.distrito}")
+                        }
                     }
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
                         onClick = {
-                            projectViewModel.updateSunatData(data)
+                            val selectedData = SelectedSunatData(
+                                nombre = if (useName) data.nombre else null,
+                                numeroDocumento = data.numeroDocumento,
+                                direccion = if (useAddress && data is com.example.dynamiccollage.remote.RucData) "${data.direccion} - ${data.distrito}" else null
+                            )
+                            projectViewModel.updateSunatData(selectedData)
                             sunatDataViewModel.resetState()
                             navController.navigate(Screen.CoverSetup.route) {
                                 popUpTo(Screen.Main.route)

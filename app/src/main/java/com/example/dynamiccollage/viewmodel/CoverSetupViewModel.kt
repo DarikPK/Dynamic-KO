@@ -8,6 +8,7 @@ import com.example.dynamiccollage.data.model.CoverPageConfig
 import com.example.dynamiccollage.data.model.DefaultCoverConfig // Sigue siendo usado por fieldId
 import com.example.dynamiccollage.data.model.PageOrientation // NUEVA IMPORTACIÓN
 import com.example.dynamiccollage.data.model.DocumentType
+import com.example.dynamiccollage.data.model.SelectedSunatData
 import com.example.dynamiccollage.remote.DniData
 import com.example.dynamiccollage.remote.RucData
 import com.example.dynamiccollage.remote.SunatData
@@ -61,19 +62,11 @@ class CoverSetupViewModel : ViewModel() {
         }
     }
 
-    fun onSunatDataReceived(data: SunatData) {
+    fun onSunatDataReceived(data: SelectedSunatData) {
         _coverConfig.update { currentState ->
-            val address = if (data is RucData) {
-                "${data.direccion} - ${data.distrito}"
-            } else {
-                ""
-            }
-            val clientName = if (data is DniData) {
-                "${data.nombres} ${data.apellidoPaterno} ${data.apellidoMaterno}"
-            } else {
-                data.nombre
-            }
-            val docType = if (data is DniData) DocumentType.DNI else DocumentType.RUC
+            val address = data.direccion ?: currentState.subtitleStyle.content
+            val clientName = data.nombre ?: currentState.clientNameStyle.content
+            val docType = if (data.numeroDocumento.length == 8) DocumentType.DNI else DocumentType.RUC
             currentState.copy(
                 documentType = docType,
                 clientNameStyle = currentState.clientNameStyle.copy(content = clientName),
