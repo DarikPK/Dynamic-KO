@@ -284,7 +284,7 @@ object PdfGenerator {
                     currentY += optionalTextLayout.height + 20f
                 }
 
-                val rects = getRectsForPage(pageWidth, pageHeight, currentY, group.tableLayout.first, group.tableLayout.second)
+                val rects = getRectsForPage(pageWidth, pageHeight, currentY, group.tableLayout.first, group.tableLayout.second, group.imageSpacing)
 
                 for (rect in rects) {
                     if (imageUriIndex < group.imageUris.size) {
@@ -303,15 +303,17 @@ object PdfGenerator {
         }
     }
 
-    private fun getRectsForPage(pageWidth: Int, pageHeight: Int, startY: Float, cols: Int, rows: Int): List<RectF> {
+    private fun getRectsForPage(pageWidth: Int, pageHeight: Int, startY: Float, cols: Int, rows: Int, spacing: Float): List<RectF> {
         val rects = mutableListOf<RectF>()
-        val cellWidth = pageWidth.toFloat() / cols
-        val cellHeight = (pageHeight - startY) / rows
+        val totalSpacingX = spacing * (cols + 1)
+        val totalSpacingY = spacing * (rows + 1)
+        val cellWidth = (pageWidth - totalSpacingX) / cols
+        val cellHeight = (pageHeight - startY - totalSpacingY) / rows
 
         for (row in 0 until rows) {
             for (col in 0 until cols) {
-                val left = col * cellWidth
-                val top = startY + (row * cellHeight)
+                val left = totalSpacingX / (cols + 1) + col * (cellWidth + spacing)
+                val top = startY + totalSpacingY / (rows + 1) + row * (cellHeight + spacing)
                 val right = left + cellWidth
                 val bottom = top + cellHeight
                 rects.add(RectF(left, top, right, bottom))
