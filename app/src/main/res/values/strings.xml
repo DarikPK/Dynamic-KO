@@ -86,7 +86,6 @@
     <string name="sheet_count_label">Number of Sheets</string>
     <string name="optional_text_label">Optional Text (1st page of group)</string>
     <string name="all_caps_label">Mayúscula</string>
-    <string name="apply_style_to_all_button">Apply Style to All Groups</string>
     <string name="save_button">Save</string>
     <string name="cancel_button">Cancel</string>
     <string name="error_sheet_count_invalid">Number of sheets must be at least 1.</string>

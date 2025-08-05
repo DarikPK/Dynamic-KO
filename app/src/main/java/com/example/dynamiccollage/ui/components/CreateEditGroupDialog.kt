@@ -166,14 +166,6 @@ fun CreateEditGroupDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
-                Button(
-                    onClick = { viewModel.onApplyStyleToAllGroups(editingGroup.id) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(stringResource(R.string.apply_style_to_all_button))
-                }
-
                 // Mostrar advertencia si la configuración no coincide con las fotos cargadas (solo en edición)
                 if (originalGroup != null && originalGroup.imageUris.isNotEmpty() && !isConfigValid && editingGroup.sheetCount > 0) {
                     Spacer(modifier = Modifier.height(4.dp))

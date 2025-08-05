@@ -146,21 +146,6 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         _editingGroup.value = _editingGroup.value?.copy(imageSpacing = spacing)
     }
 
-    fun onApplyStyleToAllGroups(groupId: String) {
-        viewModelScope.launch {
-            val groups = pageGroups.value
-            val styleToApply = groups.find { it.id == groupId }?.optionalTextStyle ?: return@launch
-
-            groups.forEach { group ->
-                if (group.id != groupId) {
-                    projectViewModel.updatePageGroup(group.id) {
-                        it.copy(optionalTextStyle = styleToApply.copy(content = it.optionalTextStyle.content))
-                    }
-                }
-            }
-        }
-    }
-
     fun saveEditingGroup() {
         viewModelScope.launch {
             _editingGroup.value?.let { groupToSave ->
