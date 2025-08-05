@@ -65,76 +65,82 @@ fun SunatDataScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RadioButton(
-                        selected = documentType == "DNI",
-                        onClick = {
-                            documentType = "DNI"
-                            documentNumber = ""
-                            sunatDataViewModel.resetState()
-                        }
-                    )
-                    Text(
-                        text = "DNI",
-                        modifier = Modifier.selectable(
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Top
+            ) {
+                // DNI Option
+                Box(modifier = Modifier.weight(1f)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        RadioButton(
                             selected = documentType == "DNI",
                             onClick = {
                                 documentType = "DNI"
                                 documentNumber = ""
                                 sunatDataViewModel.resetState()
                             }
-                        ).padding(start = 4.dp)
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    RadioButton(
-                        selected = documentType == "RUC20",
-                        onClick = {
-                            documentType = "RUC20"
-                            documentNumber = ""
-                            sunatDataViewModel.resetState()
-                        }
-                    )
-                    Text(
-                        text = "RUC (Empresa)",
-                        modifier = Modifier.selectable(
+                        )
+                        Text(
+                            text = "DNI",
+                            modifier = Modifier.selectable(
+                                selected = documentType == "DNI",
+                                onClick = {
+                                    documentType = "DNI"
+                                    documentNumber = ""
+                                    sunatDataViewModel.resetState()
+                                }
+                            ).padding(start = 4.dp)
+                        )
+                    }
+                }
+
+                // RUC Options
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(
                             selected = documentType == "RUC20",
                             onClick = {
                                 documentType = "RUC20"
                                 documentNumber = ""
                                 sunatDataViewModel.resetState()
                             }
-                        ).padding(start = 4.dp)
-                    )
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RadioButton(
-                        selected = documentType == "RUC10",
-                        onClick = {
-                            documentType = "RUC10"
-                            documentNumber = ""
-                            sunatDataViewModel.resetState()
-                        }
-                    )
-                    Text(
-                        text = "RUC (Persona)",
-                        modifier = Modifier.selectable(
+                        )
+                        Text(
+                            text = "RUC (Empresa)",
+                            modifier = Modifier.selectable(
+                                selected = documentType == "RUC20",
+                                onClick = {
+                                    documentType = "RUC20"
+                                    documentNumber = ""
+                                    sunatDataViewModel.resetState()
+                                }
+                            ).padding(start = 4.dp)
+                        )
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(
                             selected = documentType == "RUC10",
                             onClick = {
                                 documentType = "RUC10"
                                 documentNumber = ""
                                 sunatDataViewModel.resetState()
                             }
-                        ).padding(start = 4.dp)
-                    )
+                        )
+                        Text(
+                            text = "RUC (Persona)",
+                            modifier = Modifier.selectable(
+                                selected = documentType == "RUC10",
+                                onClick = {
+                                    documentType = "RUC10"
+                                    documentNumber = ""
+                                    sunatDataViewModel.resetState()
+                                }
+                            ).padding(start = 4.dp)
+                        )
+                    }
                 }
             }
 
@@ -195,9 +201,10 @@ fun SunatDataScreen(
             if (sunatDataState is SunatDataState.Success) {
                 val data = (sunatDataState as SunatDataState.Success).data
                 var useName by remember { mutableStateOf(true) }
-                var useAddress by remember { mutableStateOf(data is com.example.dynamiccollage.remote.RucData) }
+                var useAddress by remember { mutableState of(data is com.example.dynamiccollage.remote.RucData) }
                 var manualAddress by remember { mutableStateOf("") }
                 var manualDistrict by remember { mutableStateOf("") }
+                var addAnotherAddress by remember { mutableStateOf(false) }
 
                 Column(
                     modifier = Modifier.padding(top = 16.dp),
@@ -216,8 +223,72 @@ fun SunatDataScreen(
                     }
                     if (data is com.example.dynamiccollage.remote.RucData && data.numeroDocumento.startsWith("20")) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(checked = useAddress, onCheckedChange = { useAddress = it })
+                            Checkbox(
+                                checked = useAddress,
+                                onCheckedChange = {
+                                    useAddress = it
+                                    if (it) {
+                                        addAnotherAddress = false
+                                    }
+                                }
+                            )
                             Text("Dirección: ${data.direccion} - ${data.distrito}")
+                        }
+                        if (!useAddress) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Checkbox(
+                                    checked = addAnotherAddress,
+                                    onCheckedChange = { addAnotherAddress = it }
+                                )
+                                Text("Agregar otra dirección")
+                            }
+                            if (addAnotherAddress) {
+                                OutlinedTextField(
+                                    value = manualAddress,
+                                    onValueChange = { manualAddress = it.uppercase() },
+                                    label = { Text("Dirección") },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                val districts = listOf(
+                                    "Ancón", "Ate", "Barranco", "Breña", "Callao", "Carabayllo", "Cercado de Lima",
+                                    "Chaclacayo", "Chorrillos", "Cieneguilla", "Comas", "El agustino", "Independencia",
+                                    "Jesús maría", "La molina", "La victoria", "Lince", "Los olivos", "Lurigancho",
+                                    "Lurín", "Magdalena del mar", "Miraflores", "Pachacámac", "Pucusana", "Pueblo libre",
+                                    "Puente piedra", "Punta hermosa", "Punta negra", "Rímac", "San bartolo", "San borja",
+                                    "San isidro", "San Juan de Lurigancho", "San Juan de Miraflores", "San Luis",
+                                    "San Martin de Porres", "San Miguel", "Santa Anita", "Santa María del Mar",
+                                    "Santa Rosa", "Santiago de Surco", "Surquillo", "Villa el Salvador",
+                                    "Villa Maria del Triunfo"
+                                )
+                                var expanded by remember { mutableStateOf(false) }
+                                val filteredDistricts = districts.filter { it.contains(manualDistrict, ignoreCase = true) }
+
+                                ExposedDropdownMenuBox(
+                                    expanded = expanded,
+                                    onExpandedChange = { expanded = !expanded }
+                                ) {
+                                    OutlinedTextField(
+                                        value = manualDistrict,
+                                        onValueChange = { manualDistrict = it.uppercase() },
+                                        label = { Text("Distrito (Opcional)") },
+                                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                                    )
+                                    ExposedDropdownMenu(
+                                        expanded = expanded,
+                                        onDismissRequest = { expanded = false }
+                                    ) {
+                                        filteredDistricts.forEach { district ->
+                                            DropdownMenuItem(
+                                                text = { Text(district) },
+                                                onClick = {
+                                                    manualDistrict = district.uppercase()
+                                                    expanded = false
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
                     } else {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -263,7 +334,7 @@ fun SunatDataScreen(
                                         DropdownMenuItem(
                                             text = { Text(district) },
                                             onClick = {
-                                                manualDistrict = district
+                                                manualDistrict = district.uppercase()
                                                 expanded = false
                                             }
                                         )
@@ -277,6 +348,13 @@ fun SunatDataScreen(
                         onClick = {
                             val finalAddress = when {
                                 useAddress && data is com.example.dynamiccollage.remote.RucData && data.numeroDocumento.startsWith("20") -> "${data.direccion.uppercase()} - ${data.distrito.uppercase()}"
+                                addAnotherAddress && data is com.example.dynamiccollage.remote.RucData && data.numeroDocumento.startsWith("20") -> {
+                                    if (manualDistrict.isNotBlank()) {
+                                        "${manualAddress.uppercase()} - ${manualDistrict.uppercase()}"
+                                    } else {
+                                        manualAddress.uppercase()
+                                    }
+                                }
                                 useAddress && (data is com.example.dynamiccollage.remote.DniData || (data is com.example.dynamiccollage.remote.RucData && data.numeroDocumento.startsWith("10"))) -> {
                                     if (manualDistrict.isNotBlank()) {
                                         "${manualAddress.uppercase()} - ${manualDistrict.uppercase()}"
