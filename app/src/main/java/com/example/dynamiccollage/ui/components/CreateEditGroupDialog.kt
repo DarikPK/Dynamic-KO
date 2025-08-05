@@ -133,6 +133,18 @@ fun CreateEditGroupDialog(
                     minLines = 2
                 )
 
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Text(stringResource(R.string.all_caps_label))
+                    androidx.compose.material3.Switch(
+                        checked = editingGroup.optionalTextStyle.allCaps,
+                        onCheckedChange = { viewModel.onEditingGroupOptionalTextAllCapsChange(it) }
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("Separación entre fotos", style = MaterialTheme.typography.labelMedium)
                 Slider(
@@ -146,6 +158,14 @@ fun CreateEditGroupDialog(
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = { viewModel.onApplyStyleToAllGroups(editingGroup.id) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.apply_style_to_all_button))
+                }
 
                 // Mostrar advertencia si la configuración no coincide con las fotos cargadas (solo en edición)
                 if (originalGroup != null && originalGroup.imageUris.isNotEmpty() && !isConfigValid && editingGroup.sheetCount > 0) {

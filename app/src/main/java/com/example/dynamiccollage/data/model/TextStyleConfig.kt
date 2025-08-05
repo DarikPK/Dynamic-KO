@@ -25,6 +25,7 @@ data class TextStyleConfig(
     val textAlign: TextAlign = DefaultTextConfig.TEXT_ALIGN,
     val fontColor: Color = DefaultTextConfig.FONT_COLOR,
     val content: String = "",
+    val allCaps: Boolean = true,
     val rowStyle: RowStyle = RowStyle()
 ) {
     val isVisible: Boolean
