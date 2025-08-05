@@ -51,7 +51,7 @@ fun InnerPagesScreen(
     navController: NavController,
     projectViewModel: ProjectViewModel // Se recibe como parámetro explícito
 ) {
-    val innerPagesViewModel: InnerPagesViewModel = viewModel(factory = ViewModelFactory(projectViewModel))
+    val innerPagesViewModel: InnerPagesViewModel = viewModel(factory = InnerPagesViewModelFactory(projectViewModel))
 
     val pageGroups by innerPagesViewModel.pageGroups.collectAsState()
     val showDialog by innerPagesViewModel.showCreateGroupDialog.collectAsState()
@@ -152,10 +152,12 @@ fun InnerPagesScreen(
 @Composable
 fun InnerPagesScreenPreview() {
     DynamicCollageTheme {
-        val context = LocalContext.current
+        // Previews with ViewModels that have dependencies are complex.
+        // This will likely require a mock or a different setup for a real app.
+        // For now, we remove the dependency to make the preview build.
         InnerPagesScreen(
             navController = rememberNavController(),
-            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity)
+            projectViewModel = viewModel() // Simplified for preview
         )
     }
 }
@@ -164,10 +166,9 @@ fun InnerPagesScreenPreview() {
 @Composable
 fun InnerPagesScreenDarkPreview() {
     DynamicCollageTheme(darkTheme = true) {
-        val context = LocalContext.current
         InnerPagesScreen(
             navController = rememberNavController(),
-            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity)
+            projectViewModel = viewModel() // Simplified for preview
         )
     }
 }
