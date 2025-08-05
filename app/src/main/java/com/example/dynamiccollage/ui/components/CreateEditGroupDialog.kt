@@ -18,7 +18,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -131,20 +130,6 @@ fun CreateEditGroupDialog(
                     label = { Text(stringResource(R.string.optional_text_label)) },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 2
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("Separación entre fotos", style = MaterialTheme.typography.labelMedium)
-                Slider(
-                    value = editingGroup.imageSpacing,
-                    onValueChange = { viewModel.onEditingGroupImageSpacingChange(it) },
-                    valueRange = 0f..50f,
-                    steps = 49
-                )
-                Text(
-                    text = "Valor: ${editingGroup.imageSpacing.toInt()}",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.fillMaxWidth()
                 )
 
                 // Mostrar advertencia si la configuración no coincide con las fotos cargadas (solo en edición)

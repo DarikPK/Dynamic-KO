@@ -135,7 +135,7 @@ fun ImageUploadScreen(
                             contentScale = ContentScale.Crop
                         )
                         IconButton(
-                            onClick = { innerPagesViewModel.removeSingleImageFromGroup(groupId, uriString) },
+                            onClick = { innerPagesViewModel.removeImageFromGroup(groupId, uriString) },
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
                                 .padding(4.dp)

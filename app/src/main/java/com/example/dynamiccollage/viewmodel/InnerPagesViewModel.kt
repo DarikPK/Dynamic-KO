@@ -41,19 +41,7 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         )
 
     fun onAddNewGroupClicked() {
-        val coverConfig = projectViewModel.currentCoverConfig.value
-        val newGroup = PageGroup(
-            optionalTextStyle = coverConfig.subtitleStyle.copy(
-                content = "",
-                rowStyle = coverConfig.subtitleStyle.rowStyle.copy(
-                    border = coverConfig.subtitleStyle.rowStyle.border.copy(
-                        top = false,
-                        bottom = true
-                    )
-                )
-            )
-        )
-        _editingGroup.value = newGroup
+        _editingGroup.value = PageGroup()
         _showCreateGroupDialog.value = true
     }
 
@@ -74,15 +62,9 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         _currentGroupAddingImages.value = null
     }
 
-    fun removeSingleImageFromGroup(groupId: String, uri: String) {
+    fun removeImageFromGroup(groupId: String, uri: String) {
         projectViewModel.updatePageGroup(groupId) { group ->
             group.copy(imageUris = group.imageUris.toMutableList().apply { remove(uri) })
-        }
-    }
-
-    fun removeImagesFromGroup(groupId: String) {
-        projectViewModel.updatePageGroup(groupId) { group ->
-            group.copy(imageUris = emptyList())
         }
     }
 

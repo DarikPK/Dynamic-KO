@@ -52,8 +52,15 @@ object PdfGenerator {
     ): File? {
         val pdfDocument = PdfDocument()
 
-        drawCoverPage(pdfDocument, context, coverConfig)
-        drawInnerPages(pdfDocument, context, pageGroups)
+        val shouldDrawCover = coverConfig.clientNameStyle.content.isNotBlank() ||
+                coverConfig.rucStyle.content.isNotBlank() ||
+                coverConfig.subtitleStyle.content.isNotBlank() ||
+                coverConfig.mainImageUri != null
+
+        if (shouldDrawCover) {
+            drawCoverPage(pdfDocument, context, coverConfig)
+        }
+        drawInnerPages(pdfDocument, context, pageGroups, if (shouldDrawCover) 2 else 1)
 
         try {
             val storageDir: File? = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
@@ -97,26 +104,26 @@ object PdfGenerator {
 
         val contentArea = RectF(marginLeft, marginTop, (pageWidth - marginRight), (pageHeight - marginBottom))
 
-        val visibleRows = mutableListOf<Triple<String, Float, (RectF) -> Unit>>()
+        val visibleRows = mutableListOf<Pair<Float, (RectF) -> Unit>>()
         var totalWeight = 0f
 
         if (config.clientNameStyle.content.isNotBlank()) {
             totalWeight += config.clientWeight
-            visibleRows.add(Triple("client", config.clientWeight) { rect ->
+            visibleRows.add(config.clientWeight to { rect ->
                 val content = "Cliente: " + if (config.allCaps) config.clientNameStyle.content.uppercase() else config.clientNameStyle.content
                 drawRow(canvas, context, content, config.clientNameStyle, rect)
             })
         }
         if (config.rucStyle.content.isNotBlank()) {
             totalWeight += config.rucWeight
-            visibleRows.add(Triple("ruc", config.rucWeight) { rect ->
+            visibleRows.add(config.rucWeight to { rect ->
                 val content = "RUC: " + if (config.allCaps) config.rucStyle.content.uppercase() else config.rucStyle.content
                 drawRow(canvas, context, content, config.rucStyle, rect)
             })
         }
         if (config.subtitleStyle.content.isNotBlank()) {
             totalWeight += config.addressWeight
-            visibleRows.add(Triple("address", config.addressWeight) { rect ->
+            visibleRows.add(config.addressWeight to { rect ->
                 var content = if (config.allCaps) config.subtitleStyle.content.uppercase() else config.subtitleStyle.content
                 if (config.showAddressPrefix) content = "Dirección: $content"
                 drawRow(canvas, context, content, config.subtitleStyle, rect)
@@ -124,7 +131,7 @@ object PdfGenerator {
         }
         if (config.mainImageUri != null) {
             totalWeight += config.photoWeight
-            visibleRows.add(Triple("photo", config.photoWeight) { rect ->
+            visibleRows.add(config.photoWeight to { rect ->
                 drawRowBackgroundAndBorders(canvas, config.photoStyle, rect)
                 config.mainImageUri?.let { uriString ->
                     try {
@@ -140,17 +147,8 @@ object PdfGenerator {
             })
         }
 
-        var separations = 0
-        for (i in 0 until visibleRows.size - 1) {
-            val currentId = visibleRows[i].first
-            val nextId = visibleRows[i+1].first
-            if (!(currentId == "client" && nextId == "ruc")) {
-                separations++
-            }
-        }
-
         if (visibleRows.size > 1) {
-            totalWeight += config.separationWeight * separations
+            totalWeight += config.separationWeight * (visibleRows.size - 1)
         }
 
         if (totalWeight <= 0f) {
@@ -161,17 +159,14 @@ object PdfGenerator {
         var currentY = contentArea.top
         val separationHeight = contentArea.height() * (config.separationWeight / totalWeight)
 
-        visibleRows.forEachIndexed { index, (id, weight, drawFunc) ->
+        visibleRows.forEachIndexed { index, (weight, drawFunc) ->
             val itemHeight = contentArea.height() * (weight / totalWeight)
             val rect = RectF(contentArea.left, currentY, contentArea.right, currentY + itemHeight)
             drawFunc(rect)
             currentY += itemHeight
 
             if (index < visibleRows.size - 1) {
-                val nextId = visibleRows[index + 1].first
-                if (!(id == "client" && nextId == "ruc")) {
-                    currentY += separationHeight
-                }
+                currentY += separationHeight
             }
         }
 
@@ -248,8 +243,8 @@ object PdfGenerator {
         canvas.restore()
     }
 
-    private fun drawInnerPages(pdfDocument: PdfDocument, context: Context, pageGroups: List<PageGroup>) {
-        var pageNumber = 2
+    private fun drawInnerPages(pdfDocument: PdfDocument, context: Context, pageGroups: List<PageGroup>, startPageNumber: Int) {
+        var pageNumber = startPageNumber
 
         pageGroups.forEach { group ->
             if (group.imageUris.isEmpty()) return@forEach
@@ -269,7 +264,7 @@ object PdfGenerator {
                 if (sheetIndex == 0 && group.optionalTextStyle.isVisible && group.isPhotoQuotaMet) {
                     val textRect = RectF(50f, startY, pageWidth - 50f, startY + 50f) // Height is arbitrary, will be calculated by drawRow
                     drawRow(canvas, context, group.optionalTextStyle.content, group.optionalTextStyle, textRect)
-                    startY += 70f // Approximate height of the text row + spacing
+                    startY += 21f // Approximate height of the text row + spacing
                 }
 
                 val rects = getRectsForPage(pageWidth, pageHeight, startY, group.tableLayout.first, group.tableLayout.second, group.imageSpacing)
@@ -296,12 +291,13 @@ object PdfGenerator {
         val totalSpacingX = spacing * (cols + 1)
         val totalSpacingY = spacing * (rows + 1)
         val cellWidth = (pageWidth - totalSpacingX) / cols
-        val cellHeight = (pageHeight - startY - totalSpacingY) / rows
+        val availableHeight = if (cols > rows) pageHeight.toFloat() else pageHeight - startY
+        val cellHeight = (availableHeight - totalSpacingY) / rows
 
         for (row in 0 until rows) {
             for (col in 0 until cols) {
                 val left = totalSpacingX / (cols + 1) + col * (cellWidth + spacing)
-                val top = startY + totalSpacingY / (rows + 1) + row * (cellHeight + spacing)
+                val top = (if (cols > rows) 0f else startY) + totalSpacingY / (rows + 1) + row * (cellHeight + spacing)
                 val right = left + cellWidth
                 val bottom = top + cellHeight
                 rects.add(RectF(left, top, right, bottom))

@@ -38,7 +38,6 @@ fun PageGroupItem(
     onAddImagesClicked: (String) -> Unit,
     onEditGroupClicked: (PageGroup) -> Unit,
     onDeleteGroupClicked: (String) -> Unit,
-    onDeleteImagesClicked: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -99,25 +98,17 @@ fun PageGroupItem(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                OutlinedButton(
-                    onClick = { onAddImagesClicked(pageGroup.id) },
-                    enabled = !pageGroup.isPhotoQuotaMet
-                ) {
-                    Icon(Icons.Filled.PhotoLibrary, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
+                OutlinedButton(onClick = { onAddImagesClicked(pageGroup.id) }) {
+                    Icon(Icons.Filled.PhotoLibrary, contentDescription = null, modifier = Modifier.padding(end = 4.dp)) // Re-asegurando el uso de Icons.Filled
                     Text(stringResource(R.string.group_item_add_images_button))
                 }
                 Row {
-                    if (pageGroup.imageUris.isNotEmpty()) {
-                        IconButton(onClick = { onDeleteImagesClicked(pageGroup.id) }) {
-                            Icon(Icons.Filled.Delete, contentDescription = "Delete Loaded Images", tint = MaterialTheme.colorScheme.error)
-                        }
-                    }
                     IconButton(onClick = { onEditGroupClicked(pageGroup) }) {
-                        Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.group_item_edit_button_description))
+                        Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.group_item_edit_button_description)) // Usar Icons.Filled consistentemente
                     }
                     Spacer(modifier = Modifier.width(4.dp))
                     IconButton(onClick = { onDeleteGroupClicked(pageGroup.id) }) {
-                        Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.group_item_delete_button_description), tint = MaterialTheme.colorScheme.error)
+                        Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.group_item_delete_button_description), tint = MaterialTheme.colorScheme.error) // Usar Icons.Filled consistentemente
                     }
                 }
             }
@@ -160,8 +151,7 @@ fun PageGroupItemPreview() {
             ),
             onAddImagesClicked = {},
             onEditGroupClicked = {},
-            onDeleteGroupClicked = {},
-            onDeleteImagesClicked = {}
+            onDeleteGroupClicked = {}
         )
     }
 }
@@ -180,8 +170,7 @@ fun PageGroupItemUnnamedPreview() {
             ),
             onAddImagesClicked = {},
             onEditGroupClicked = {},
-            onDeleteGroupClicked = {},
-            onDeleteImagesClicked = {}
+            onDeleteGroupClicked = {}
         )
     }
 }
