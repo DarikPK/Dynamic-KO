@@ -88,19 +88,39 @@ fun SunatDataScreen(
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 RadioButton(
-                    selected = documentType == "RUC",
+                    selected = documentType == "RUC20",
                     onClick = {
-                        documentType = "RUC"
+                        documentType = "RUC20"
                         documentNumber = ""
                         sunatDataViewModel.resetState()
                     }
                 )
                 Text(
-                    text = "RUC",
+                    text = "RUC (Empresa)",
                     modifier = Modifier.selectable(
-                        selected = documentType == "RUC",
+                        selected = documentType == "RUC20",
                         onClick = {
-                            documentType = "RUC"
+                            documentType = "RUC20"
+                            documentNumber = ""
+                            sunatDataViewModel.resetState()
+                        }
+                    ).padding(start = 4.dp)
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                RadioButton(
+                    selected = documentType == "RUC10",
+                    onClick = {
+                        documentType = "RUC10"
+                        documentNumber = ""
+                        sunatDataViewModel.resetState()
+                    }
+                )
+                Text(
+                    text = "RUC (Persona)",
+                    modifier = Modifier.selectable(
+                        selected = documentType == "RUC10",
+                        onClick = {
+                            documentType = "RUC10"
                             documentNumber = ""
                             sunatDataViewModel.resetState()
                         }
@@ -108,7 +128,11 @@ fun SunatDataScreen(
                 )
             }
 
-            val rucVisualTransformation = remember { RucVisualTransformation() }
+            val visualTransformation = when (documentType) {
+                "RUC10" -> RucVisualTransformation("10")
+                "RUC20" -> RucVisualTransformation("20")
+                else -> VisualTransformation.None
+            }
             OutlinedTextField(
                 value = documentNumber,
                 onValueChange = { newValue ->
@@ -118,11 +142,11 @@ fun SunatDataScreen(
                         documentNumber = filtered
                     }
                 },
-                label = { Text("Número de ${documentType}") },
+                label = { Text("Número de ${documentType.replace("RUC20", "RUC").replace("RUC10", "RUC")}") },
                 modifier = Modifier.fillMaxWidth(0.8f),
                 enabled = sunatDataState !is SunatDataState.Loading,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                visualTransformation = if (documentType == "RUC") rucVisualTransformation else VisualTransformation.None
+                visualTransformation = visualTransformation
             )
 
             Box(modifier = Modifier.fillMaxWidth(0.8f), contentAlignment = Alignment.Center) {
@@ -131,18 +155,24 @@ fun SunatDataScreen(
                 } else {
                     Button(
                         onClick = {
-                            val numberToValidate = if (documentType == "RUC") "20$documentNumber" else documentNumber
+                            val prefix = when (documentType) {
+                                "RUC10" -> "10"
+                                "RUC20" -> "20"
+                                else -> ""
+                            }
+                            val numberToValidate = prefix + documentNumber
                             val isValid = when (documentType) {
                                 "DNI" -> numberToValidate.length == 8
-                                "RUC" -> numberToValidate.length == 11
+                                "RUC10", "RUC20" -> numberToValidate.length == 11
                                 else -> false
                             }
 
                             if (isValid) {
                                 sunatDataViewModel.getSunatData(documentType, numberToValidate)
                             } else {
+                                val docName = documentType.replace("RUC20", "RUC").replace("RUC10", "RUC")
                                 val requiredLength = if (documentType == "DNI") 8 else 11
-                                Toast.makeText(context, "El $documentType debe tener $requiredLength dígitos", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "El $docName debe tener $requiredLength dígitos", Toast.LENGTH_SHORT).show()
                             }
                         },
                         modifier = Modifier.fillMaxWidth()
@@ -174,12 +204,12 @@ fun SunatDataScreen(
                         Checkbox(checked = useName, onCheckedChange = { useName = it })
                         Text("Nombre: $displayName")
                     }
-                    if (data is com.example.dynamiccollage.remote.RucData) {
+                    if (data is com.example.dynamiccollage.remote.RucData && data.numeroDocumento.startsWith("20")) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Checkbox(checked = useAddress, onCheckedChange = { useAddress = it })
                             Text("Dirección: ${data.direccion} - ${data.distrito}")
                         }
-                    } else if (data is com.example.dynamiccollage.remote.DniData) {
+                    } else {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Checkbox(checked = useAddress, onCheckedChange = { useAddress = it })
                             Text("Añadir dirección")
@@ -187,7 +217,7 @@ fun SunatDataScreen(
                         if (useAddress) {
                             OutlinedTextField(
                                 value = manualAddress,
-                                onValueChange = { manualAddress = it },
+                                onValueChange = { manualAddress = it.uppercase() },
                                 label = { Text("Dirección") },
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -211,8 +241,8 @@ fun SunatDataScreen(
                             ) {
                                 OutlinedTextField(
                                     value = manualDistrict,
-                                    onValueChange = { manualDistrict = it },
-                                    label = { Text("Distrito") },
+                                    onValueChange = { manualDistrict = it.uppercase() },
+                                    label = { Text("Distrito (Opcional)") },
                                     modifier = Modifier.menuAnchor().fillMaxWidth()
                                 )
                                 ExposedDropdownMenu(
@@ -236,12 +266,12 @@ fun SunatDataScreen(
                     Button(
                         onClick = {
                             val finalAddress = when {
-                                useAddress && data is com.example.dynamiccollage.remote.RucData -> "${data.direccion} - ${data.distrito}"
-                                useAddress && data is com.example.dynamiccollage.remote.DniData -> {
+                                useAddress && data is com.example.dynamiccollage.remote.RucData && data.numeroDocumento.startsWith("20") -> "${data.direccion.uppercase()} - ${data.distrito.uppercase()}"
+                                useAddress && (data is com.example.dynamiccollage.remote.DniData || (data is com.example.dynamiccollage.remote.RucData && data.numeroDocumento.startsWith("10"))) -> {
                                     if (manualDistrict.isNotBlank()) {
-                                        "$manualAddress - $manualDistrict"
+                                        "${manualAddress.uppercase()} - ${manualDistrict.uppercase()}"
                                     } else {
-                                        manualAddress
+                                        manualAddress.uppercase()
                                     }
                                 }
                                 else -> null
