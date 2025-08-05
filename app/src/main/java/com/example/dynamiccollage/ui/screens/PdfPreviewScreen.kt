@@ -126,8 +126,11 @@ fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
         }
     }
 
-    LazyColumn(modifier = modifier.fillMaxSize()) {
-        itemsIndexed(bitmaps) { _, bitmap ->
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        itemsIndexed(bitmaps) { index, bitmap ->
             Image(
                 bitmap = bitmap.asImageBitmap(),
                 contentDescription = null,
@@ -137,6 +140,13 @@ fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
                     .padding(8.dp),
                 contentScale = ContentScale.Fit
             )
+            if (index < bitmaps.size - 1) {
+                Divider(
+                    color = Color.Gray,
+                    thickness = 1.dp,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+            }
         }
     }
 }

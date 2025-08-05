@@ -264,15 +264,14 @@ object PdfGenerator {
                 val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber++).create()
                 val page = pdfDocument.startPage(pageInfo)
                 val canvas = page.canvas
-                var currentY = 20f
+                val startY = 20f
 
                 if (sheetIndex == 0 && group.optionalTextStyle.isVisible) {
-                    val textRect = RectF(50f, currentY, pageWidth - 50f, currentY + 50f) // Height is arbitrary, will be calculated by drawRow
+                    val textRect = RectF(50f, startY, pageWidth - 50f, startY + 50f) // Height is arbitrary, will be calculated by drawRow
                     drawRow(canvas, context, group.optionalTextStyle.content, group.optionalTextStyle, textRect)
-                    currentY += textRect.height() + 20f
                 }
 
-                val rects = getRectsForPage(pageWidth, pageHeight, currentY, group.tableLayout.first, group.tableLayout.second, group.imageSpacing)
+                val rects = getRectsForPage(pageWidth, pageHeight, startY, group.tableLayout.first, group.tableLayout.second, group.imageSpacing)
 
                 for (rect in rects) {
                     if (imageUriIndex < group.imageUris.size) {

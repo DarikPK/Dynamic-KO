@@ -44,6 +44,7 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         val coverConfig = projectViewModel.currentCoverConfig.value
         val newGroup = PageGroup(
             optionalTextStyle = coverConfig.subtitleStyle.copy(
+                content = "",
                 rowStyle = coverConfig.subtitleStyle.rowStyle.copy(
                     border = coverConfig.subtitleStyle.rowStyle.border.copy(
                         top = false,
