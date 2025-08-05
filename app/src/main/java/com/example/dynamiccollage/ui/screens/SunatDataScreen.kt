@@ -16,6 +16,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.dynamiccollage.R
 import com.example.dynamiccollage.ui.navigation.Screen
+import com.example.dynamiccollage.ui.util.RucVisualTransformation
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 import com.example.dynamiccollage.viewmodel.SunatDataState
 import com.example.dynamiccollage.viewmodel.SunatDataViewModel
@@ -86,7 +87,7 @@ fun SunatDataScreen(
                     selected = documentType == "RUC",
                     onClick = {
                         documentType = "RUC"
-                        documentNumber = "20"
+                        documentNumber = ""
                     }
                 )
                 Text(
@@ -95,27 +96,23 @@ fun SunatDataScreen(
                         selected = documentType == "RUC",
                         onClick = {
                             documentType = "RUC"
-                            documentNumber = "20"
+                            documentNumber = ""
                         }
                     ).padding(start = 4.dp)
                 )
             }
 
+            val rucVisualTransformation = remember { RucVisualTransformation() }
             OutlinedTextField(
                 value = documentNumber,
                 onValueChange = { newValue ->
-                    if (documentType == "RUC") {
-                        if (newValue.startsWith("20")) {
-                            documentNumber = newValue.filter { it.isDigit() }
-                        }
-                    } else {
-                        documentNumber = newValue.filter { it.isDigit() }
-                    }
+                    documentNumber = newValue.filter { it.isDigit() }
                 },
                 label = { Text("Número de ${documentType}") },
                 modifier = Modifier.fillMaxWidth(0.8f),
                 enabled = sunatDataState !is SunatDataState.Loading,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                visualTransformation = if (documentType == "RUC") rucVisualTransformation else VisualTransformation.None
             )
 
             Box(modifier = Modifier.fillMaxWidth(0.8f), contentAlignment = Alignment.Center) {
@@ -124,14 +121,15 @@ fun SunatDataScreen(
                 } else {
                     Button(
                         onClick = {
+                            val numberToValidate = if (documentType == "RUC") "20$documentNumber" else documentNumber
                             val isValid = when (documentType) {
-                                "DNI" -> documentNumber.length == 8
-                                "RUC" -> documentNumber.length == 11
+                                "DNI" -> numberToValidate.length == 8
+                                "RUC" -> numberToValidate.length == 11
                                 else -> false
                             }
 
                             if (isValid) {
-                                sunatDataViewModel.getSunatData(documentType, documentNumber)
+                                sunatDataViewModel.getSunatData(documentType, numberToValidate)
                             } else {
                                 val requiredLength = if (documentType == "DNI") 8 else 11
                                 Toast.makeText(context, "El $documentType debe tener $requiredLength dígitos", Toast.LENGTH_SHORT).show()
@@ -154,7 +152,8 @@ fun SunatDataScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("Nombre: ${data.nombre}")
                     if (data is com.example.dynamiccollage.remote.RucData) {
-                        Text("Dirección: ${data.direccion}")
+                        val fullAddress = "${data.direccion} - ${data.distrito}"
+                        Text("Dirección: $fullAddress")
                     }
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
