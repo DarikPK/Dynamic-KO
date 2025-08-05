@@ -60,6 +60,20 @@ class ProjectViewModel : ViewModel() {
     val pdfGenerationState: StateFlow<PdfGenerationState> = _pdfGenerationState.asStateFlow()
 
     fun generatePdf(context: Context, fileName: String) {
+        val coverConfig = _currentCoverConfig.value
+        val pageGroups = _currentPageGroups.value
+
+        val isCoverEmpty = coverConfig.clientNameStyle.content.isBlank() &&
+                coverConfig.rucStyle.content.isBlank() &&
+                coverConfig.subtitleStyle.content.isBlank() &&
+                coverConfig.mainImageUri == null
+        val areInnerPagesEmpty = pageGroups.all { it.imageUris.isEmpty() }
+
+        if (isCoverEmpty && areInnerPagesEmpty) {
+            _pdfGenerationState.value = PdfGenerationState.Error("No hay contenido para generar un PDF.")
+            return
+        }
+
         viewModelScope.launch {
             Log.d("ProjectViewModel", "generatePdf: Iniciando...")
             _pdfGenerationState.value = PdfGenerationState.Loading
