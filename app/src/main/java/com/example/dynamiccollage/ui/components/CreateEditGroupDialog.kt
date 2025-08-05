@@ -134,7 +134,7 @@ fun CreateEditGroupDialog(
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(stringResource(R.string.photo_separation_label), style = MaterialTheme.typography.labelMedium)
+                Text("Separación entre fotos", style = MaterialTheme.typography.labelMedium)
                 Slider(
                     value = editingGroup.imageSpacing,
                     onValueChange = { viewModel.onEditingGroupImageSpacingChange(it) },
