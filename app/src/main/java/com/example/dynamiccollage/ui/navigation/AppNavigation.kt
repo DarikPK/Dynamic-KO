@@ -50,7 +50,7 @@ fun AppNavigation(
         ) { backStackEntry ->
             val pdfPath = backStackEntry.arguments?.getString("pdfPath")
             val decodedPdfPath = URLDecoder.decode(pdfPath, StandardCharsets.UTF_8.toString())
-            PdfPreviewScreen(navController = navController, pdfPath = decodedPdfPath)
+            PdfPreviewScreen(navController = navController, pdfPath = decodedPdfPath, projectViewModel = projectViewModel)
         }
         composable(Screen.RowStyleEditor.route) {
             RowStyleScreen(

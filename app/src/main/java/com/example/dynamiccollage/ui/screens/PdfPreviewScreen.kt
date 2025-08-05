@@ -23,16 +23,33 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
 import androidx.navigation.NavController
 import com.example.dynamiccollage.R
+import com.example.dynamiccollage.viewmodel.ProjectViewModel
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PdfPreviewScreen(navController: NavController, pdfPath: String?) {
+fun PdfPreviewScreen(
+    navController: NavController,
+    pdfPath: String?,
+    projectViewModel: ProjectViewModel
+) {
     val context = LocalContext.current
     val file = pdfPath?.let { File(it) }
+    val shareablePdfUri by projectViewModel.shareablePdfUri.collectAsState()
+
+    LaunchedEffect(shareablePdfUri) {
+        shareablePdfUri?.let { uri ->
+            val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                type = "application/pdf"
+                putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            context.startActivity(android.content.Intent.createChooser(intent, "Share PDF"))
+            projectViewModel.resetShareableUri()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -49,17 +66,7 @@ fun PdfPreviewScreen(navController: NavController, pdfPath: String?) {
                 actions = {
                     if (file != null) {
                         IconButton(onClick = {
-                            val uri = FileProvider.getUriForFile(
-                                context,
-                                "${context.packageName}.provider",
-                                file
-                            )
-                            val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                                type = "application/pdf"
-                                putExtra(android.content.Intent.EXTRA_STREAM, uri)
-                                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            }
-                            context.startActivity(android.content.Intent.createChooser(intent, "Share PDF"))
+                            projectViewModel.createShareableUriForFile(context, file)
                         }) {
                             Icon(
                                 imageVector = Icons.Filled.Share,
