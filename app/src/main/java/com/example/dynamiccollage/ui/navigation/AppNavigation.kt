@@ -29,12 +29,17 @@ fun AppNavigation(
     projectViewModel: ProjectViewModel,
     coverSetupViewModel: CoverSetupViewModel = viewModel(),
     rowStyleViewModel: RowStyleViewModel = viewModel(),
-    sunatDataViewModel: SunatDataViewModel = viewModel()
+    sunatDataViewModel: SunatDataViewModel = viewModel(),
+    onThemeChange: (String) -> Unit
 ) {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = Screen.Main.route) {
         composable(Screen.Main.route) {
-            MainScreen(navController = navController, projectViewModel = projectViewModel)
+            MainScreen(
+                navController = navController,
+                projectViewModel = projectViewModel,
+                onThemeChange = onThemeChange
+            )
         }
         composable(Screen.CoverSetup.route) {
             CoverSetupScreen(

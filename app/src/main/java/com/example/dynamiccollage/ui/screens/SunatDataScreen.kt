@@ -70,7 +70,7 @@ fun SunatDataScreen(
                 verticalAlignment = Alignment.Top
             ) {
                 // DNI Option
-                Box(modifier = Modifier.weight(1f)) {
+                Box(modifier = Modifier.weight(0.5f)) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
@@ -201,7 +201,7 @@ fun SunatDataScreen(
             if (sunatDataState is SunatDataState.Success) {
                 val data = (sunatDataState as SunatDataState.Success).data
                 var useName by remember { mutableStateOf(true) }
-                var useAddress by remember { mutableState of(data is com.example.dynamiccollage.remote.RucData) }
+                var useAddress by remember { mutableStateOf(data is com.example.dynamiccollage.remote.RucData) }
                 var manualAddress by remember { mutableStateOf("") }
                 var manualDistrict by remember { mutableStateOf("") }
                 var addAnotherAddress by remember { mutableStateOf(false) }
