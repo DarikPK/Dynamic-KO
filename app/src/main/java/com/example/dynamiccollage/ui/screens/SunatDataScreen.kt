@@ -6,9 +6,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import android.widget.Toast
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -71,35 +73,50 @@ fun SunatDataScreen(
             ) {
                 RadioButton(
                     selected = documentType == "DNI",
-                    onClick = { documentType = "DNI" }
+                    onClick = {
+                        documentType = "DNI"
+                        documentNumber = ""
+                    }
                 )
                 Text(
                     text = "DNI",
                     modifier = Modifier.selectable(
                         selected = documentType == "DNI",
-                        onClick = { documentType = "DNI" }
+                        onClick = {
+                            documentType = "DNI"
+                            documentNumber = ""
+                        }
                     ).padding(start = 4.dp)
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 RadioButton(
                     selected = documentType == "RUC",
-                    onClick = { documentType = "RUC" }
+                    onClick = {
+                        documentType = "RUC"
+                        documentNumber = "20"
+                    }
                 )
                 Text(
                     text = "RUC",
                     modifier = Modifier.selectable(
                         selected = documentType == "RUC",
-                        onClick = { documentType = "RUC" }
+                        onClick = {
+                            documentType = "RUC"
+                            documentNumber = "20"
+                        }
                     ).padding(start = 4.dp)
                 )
             }
 
             OutlinedTextField(
                 value = documentNumber,
-                onValueChange = { documentNumber = it },
+                onValueChange = { newValue ->
+                    documentNumber = newValue.filter { it.isDigit() }
+                },
                 label = { Text("Número de ${documentType}") },
                 modifier = Modifier.fillMaxWidth(0.8f),
-                enabled = sunatDataState !is SunatDataState.Loading
+                enabled = sunatDataState !is SunatDataState.Loading,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
 
             Box(modifier = Modifier.fillMaxWidth(0.8f), contentAlignment = Alignment.Center) {

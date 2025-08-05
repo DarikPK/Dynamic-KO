@@ -120,16 +120,16 @@ fun MainScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             MainButton(
+                text = "Obtener Datos Sunat",
+                onClick = { navController.navigate(Screen.SunatData.route) }
+            )
+            MainButton(
                 text = stringResource(R.string.main_btn_cover_setup),
                 onClick = { navController.navigate(Screen.CoverSetup.route) }
             )
             MainButton(
                 text = "Gestionar Contenido",
                 onClick = { navController.navigate(Screen.InnerPages.route) }
-            )
-            MainButton(
-                text = "Obtener Datos Sunat",
-                onClick = { navController.navigate(Screen.SunatData.route) }
             )
             MainButton(
                 text = stringResource(R.string.main_btn_preview_pdf),
