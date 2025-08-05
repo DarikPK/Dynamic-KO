@@ -254,16 +254,6 @@ object PdfGenerator {
         pageGroups.forEach { group ->
             if (group.imageUris.isEmpty()) return@forEach
 
-            val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG)
-            val optionalTextLayout = if (group.optionalTextStyle.isVisible) {
-                textPaint.color = group.optionalTextStyle.fontColor.toArgb()
-                textPaint.textSize = group.optionalTextStyle.fontSize.toFloat()
-                val alignment = getAndroidAlignment(group.optionalTextStyle.textAlign)
-                StaticLayout.Builder.obtain(
-                    group.optionalTextStyle.content, 0, group.optionalTextStyle.content.length, textPaint, A4_WIDTH - 100
-                ).setAlignment(alignment).build()
-            } else null
-
             var imageUriIndex = 0
             for (sheetIndex in 0 until group.sheetCount) {
                 if(imageUriIndex >= group.imageUris.size) break
@@ -276,12 +266,10 @@ object PdfGenerator {
                 val canvas = page.canvas
                 var currentY = 20f
 
-                if (sheetIndex == 0 && optionalTextLayout != null) {
-                    canvas.save()
-                    canvas.translate(50f, currentY)
-                    optionalTextLayout.draw(canvas)
-                    canvas.restore()
-                    currentY += optionalTextLayout.height + 20f
+                if (sheetIndex == 0 && group.optionalTextStyle.isVisible) {
+                    val textRect = RectF(50f, currentY, pageWidth - 50f, currentY + 50f) // Height is arbitrary, will be calculated by drawRow
+                    drawRow(canvas, context, group.optionalTextStyle.content, group.optionalTextStyle, textRect)
+                    currentY += textRect.height() + 20f
                 }
 
                 val rects = getRectsForPage(pageWidth, pageHeight, currentY, group.tableLayout.first, group.tableLayout.second, group.imageSpacing)

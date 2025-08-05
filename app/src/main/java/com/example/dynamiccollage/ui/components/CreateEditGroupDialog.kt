@@ -138,8 +138,8 @@ fun CreateEditGroupDialog(
                 Slider(
                     value = editingGroup.imageSpacing,
                     onValueChange = { viewModel.onEditingGroupImageSpacingChange(it) },
-                    valueRange = 0f..10f,
-                    steps = 9
+                    valueRange = 0f..50f,
+                    steps = 49
                 )
                 Text(
                     text = "Valor: ${editingGroup.imageSpacing.toInt()}",
