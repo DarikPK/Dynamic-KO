@@ -15,9 +15,11 @@ import com.example.dynamiccollage.ui.screens.InnerPagesScreen
 import com.example.dynamiccollage.ui.screens.MainScreen
 import com.example.dynamiccollage.ui.screens.PdfPreviewScreen
 import com.example.dynamiccollage.ui.screens.RowStyleScreen
+import com.example.dynamiccollage.ui.screens.SunatDataScreen
 import com.example.dynamiccollage.viewmodel.CoverSetupViewModel
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 import com.example.dynamiccollage.viewmodel.RowStyleViewModel
+import com.example.dynamiccollage.viewmodel.SunatDataViewModel
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -27,7 +29,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 fun AppNavigation(
     projectViewModel: ProjectViewModel,
     coverSetupViewModel: CoverSetupViewModel = viewModel(),
-    rowStyleViewModel: RowStyleViewModel = viewModel()
+    rowStyleViewModel: RowStyleViewModel = viewModel(),
+    sunatDataViewModel: SunatDataViewModel = viewModel()
 ) {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = Screen.Main.route) {
@@ -58,6 +61,13 @@ fun AppNavigation(
                 projectViewModel = projectViewModel,
                 coverSetupViewModel = coverSetupViewModel,
                 rowStyleViewModel = rowStyleViewModel
+            )
+        }
+        composable(Screen.SunatData.route) {
+            SunatDataScreen(
+                navController = navController,
+                projectViewModel = projectViewModel,
+                sunatDataViewModel = sunatDataViewModel
             )
         }
     }

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.dynamiccollage.data.model.CoverPageConfig
 import com.example.dynamiccollage.data.model.PageGroup
 import androidx.core.content.FileProvider
+import com.example.dynamiccollage.remote.SunatData
 import com.example.dynamiccollage.utils.PdfGenerator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +26,13 @@ class ProjectViewModel : ViewModel() {
 
     private val _currentPageGroups = MutableStateFlow<List<PageGroup>>(emptyList())
     val currentPageGroups: StateFlow<List<PageGroup>> = _currentPageGroups.asStateFlow()
+
+    private val _sunatData = MutableStateFlow<SunatData?>(null)
+    val sunatData: StateFlow<SunatData?> = _sunatData.asStateFlow()
+
+    fun updateSunatData(data: SunatData) {
+        _sunatData.value = data
+    }
 
     fun updateCoverConfig(newConfig: CoverPageConfig) {
         _currentCoverConfig.value = newConfig

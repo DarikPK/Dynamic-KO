@@ -128,6 +128,10 @@ fun MainScreen(
                 onClick = { navController.navigate(Screen.InnerPages.route) }
             )
             MainButton(
+                text = "Obtener Datos Sunat",
+                onClick = { navController.navigate(Screen.SunatData.route) }
+            )
+            MainButton(
                 text = stringResource(R.string.main_btn_preview_pdf),
                 onClick = {
                     projectViewModel.generatePdf(context, "collage_report")

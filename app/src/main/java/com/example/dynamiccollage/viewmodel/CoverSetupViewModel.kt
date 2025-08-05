@@ -7,6 +7,8 @@ import androidx.lifecycle.ViewModel
 import com.example.dynamiccollage.data.model.CoverPageConfig
 import com.example.dynamiccollage.data.model.DefaultCoverConfig // Sigue siendo usado por fieldId
 import com.example.dynamiccollage.data.model.PageOrientation // NUEVA IMPORTACIÓN
+import com.example.dynamiccollage.remote.RucData
+import com.example.dynamiccollage.remote.SunatData
 import com.example.dynamiccollage.data.model.TextStyleConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -49,6 +51,17 @@ class CoverSetupViewModel : ViewModel() {
         _coverConfig.update { currentState ->
             currentState.copy(
                 subtitleStyle = currentState.subtitleStyle.copy(content = newAddress)
+            )
+        }
+    }
+
+    fun onSunatDataReceived(data: SunatData) {
+        _coverConfig.update { currentState ->
+            val address = if (data is RucData) data.direccion else ""
+            currentState.copy(
+                clientNameStyle = currentState.clientNameStyle.copy(content = data.nombre),
+                rucStyle = currentState.rucStyle.copy(content = data.numeroDocumento),
+                subtitleStyle = currentState.subtitleStyle.copy(content = address)
             )
         }
     }
