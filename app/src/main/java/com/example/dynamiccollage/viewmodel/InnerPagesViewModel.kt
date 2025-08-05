@@ -57,9 +57,9 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         _currentGroupAddingImages.value = null
     }
 
-    fun removeImageFromGroup(groupId: String, uri: String) {
+    fun removeImagesFromGroup(groupId: String) {
         projectViewModel.updatePageGroup(groupId) { group ->
-            group.copy(imageUris = group.imageUris.toMutableList().apply { remove(uri) })
+            group.copy(imageUris = emptyList())
         }
     }
 
