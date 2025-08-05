@@ -67,3 +67,31 @@ val md_theme_dark_outlineVariant = Color(0xFF49454F)
 val md_theme_dark_scrim = Color(0xFF000000)
 
 val seed = Color(0xFF6750A4) // Color base para generar la paleta (opcional)
+
+// Custom Themes
+// Claro Theme
+val claro_primary = Color(0xFFADD8E6)
+val claro_onPrimary = Color(0xFF000000)
+val claro_primaryContainer = Color(0xFFFFFFFF)
+val claro_onPrimaryContainer = Color(0xFF000000)
+val claro_secondary = Color(0xFFFFD700)
+val claro_background = Color(0xFFFFFFFF)
+val claro_surface = Color(0xFFFFFFFF)
+
+// Oscuro Theme
+val oscuro_primary = Color(0xFF1F1F1F)
+val oscuro_onPrimary = Color(0xFFFFFFFF)
+val oscuro_primaryContainer = Color(0xFF000000)
+val oscuro_onPrimaryContainer = Color(0xFFFFFFFF)
+val oscuro_secondary = Color(0xFFB8860B)
+val oscuro_background = Color(0xFF000000)
+val oscuro_surface = Color(0xFF1F1F1F)
+
+// Descanso Theme
+val descanso_primary = Color(0xFFAEC6A5)
+val descanso_onPrimary = Color(0xFF000000)
+val descanso_primaryContainer = Color(0xFFF5F5DC)
+val descanso_onPrimaryContainer = Color(0xFF000000)
+val descanso_secondary = Color(0xFFADD8E6)
+val descanso_background = Color(0xFFF5F5DC)
+val descanso_surface = Color(0xFFFFFFFF)

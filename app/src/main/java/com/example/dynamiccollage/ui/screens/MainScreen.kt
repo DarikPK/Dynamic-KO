@@ -45,10 +45,12 @@ import com.example.dynamiccollage.viewmodel.ProjectViewModel
 @Composable
 fun MainScreen(
     navController: NavController,
-    projectViewModel: ProjectViewModel // Se recibe como parámetro
+    projectViewModel: ProjectViewModel,
+    onThemeChange: (String) -> Unit
 ) {
     val context = LocalContext.current
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var showThemeDialog by remember { mutableStateOf(false) }
     val pdfGenerationState by projectViewModel.pdfGenerationState.collectAsState()
     val shareablePdfUri by projectViewModel.shareablePdfUri.collectAsState()
 
@@ -101,6 +103,31 @@ fun MainScreen(
         )
     }
 
+    if (showThemeDialog) {
+        AlertDialog(
+            onDismissRequest = { showThemeDialog = false },
+            title = { Text("Seleccionar Tema") },
+            text = {
+                Column {
+                    val themes = listOf("Default", "Claro", "Oscuro", "Descanso")
+                    themes.forEach { themeName ->
+                        TextButton(onClick = {
+                            onThemeChange(themeName)
+                            showThemeDialog = false
+                        }) {
+                            Text(themeName)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showThemeDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -142,6 +169,10 @@ fun MainScreen(
                 onClick = {
                     Toast.makeText(context, "Plantillas: Próximamente", Toast.LENGTH_SHORT).show()
                 }
+            )
+            MainButton(
+                text = "Tema",
+                onClick = { showThemeDialog = true }
             )
             Spacer(modifier = Modifier.weight(1f))
             MainButton(

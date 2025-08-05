@@ -79,22 +79,48 @@ private val DarkColorScheme = darkColorScheme(
     scrim = md_theme_dark_scrim,
 )
 
+private val ClaroColorScheme = lightColorScheme(
+    primary = claro_primary,
+    onPrimary = claro_onPrimary,
+    primaryContainer = claro_primaryContainer,
+    onPrimaryContainer = claro_onPrimaryContainer,
+    secondary = claro_secondary,
+    background = claro_background,
+    surface = claro_surface,
+)
+
+private val OscuroColorScheme = darkColorScheme(
+    primary = oscuro_primary,
+    onPrimary = oscuro_onPrimary,
+    primaryContainer = oscuro_primaryContainer,
+    onPrimaryContainer = oscuro_onPrimaryContainer,
+    secondary = oscuro_secondary,
+    background = oscuro_background,
+    surface = oscuro_surface,
+)
+
+private val DescansoColorScheme = lightColorScheme(
+    primary = descanso_primary,
+    onPrimary = descanso_onPrimary,
+    primaryContainer = descanso_primaryContainer,
+    onPrimaryContainer = descanso_onPrimaryContainer,
+    secondary = descanso_secondary,
+    background = descanso_background,
+    surface = descanso_surface,
+)
+
 @Composable
 fun DynamicCollageTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    // Por ahora lo mantenemos en false para tener control total sobre los colores definidos.
-    // Se puede habilitar si se desea que el tema se base en el wallpaper del usuario (Material You).
     dynamicColor: Boolean = false,
+    themeName: String = "Default",
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+    val colorScheme = when (themeName) {
+        "Claro" -> ClaroColorScheme
+        "Oscuro" -> OscuroColorScheme
+        "Descanso" -> DescansoColorScheme
+        else -> if (darkTheme) DarkColorScheme else LightColorScheme
     }
     val view = LocalView.current
     if (!view.isInEditMode) {
