@@ -1,6 +1,7 @@
 package com.example.dynamiccollage.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.dynamiccollage.data.model.PageGroup
 import com.example.dynamiccollage.data.model.PageOrientation
@@ -13,9 +14,7 @@ import android.net.Uri
 
 class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : ViewModel() {
 
-    // Asumiendo que ProjectViewModel expone algo como esto. Si no, esto necesitará ajuste.
-    private val _pageGroups = projectViewModel.currentPageGroups
-    val pageGroups: StateFlow<List<PageGroup>> = _pageGroups.asStateFlow()
+    val pageGroups: StateFlow<List<PageGroup>> = projectViewModel.currentPageGroups
 
     private val _showCreateGroupDialog = MutableStateFlow(false)
     val showCreateGroupDialog: StateFlow<Boolean> = _showCreateGroupDialog.asStateFlow()
@@ -25,7 +24,6 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
 
     private val _currentGroupAddingImages = MutableStateFlow<String?>(null)
     val currentGroupAddingImages: StateFlow<String?> = _currentGroupAddingImages.asStateFlow()
-
 
     val isEditingGroupConfigValid: StateFlow<Boolean> = combine(editingGroup) { group ->
         group?.let { it.totalPhotosRequired >= it.imageUris.size } ?: true
@@ -50,7 +48,7 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         projectViewModel.updatePageGroup(groupId) { group ->
             group.copy(imageUris = group.imageUris + uriStrings)
         }
-        _currentGroupAddingImages.value = null // Reset after selection
+        _currentGroupAddingImages.value = null
     }
 
     fun removeImageFromGroup(groupId: String, uri: String) {
@@ -98,8 +96,7 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
     fun saveEditingGroup() {
         viewModelScope.launch {
             _editingGroup.value?.let { groupToSave ->
-                // Distinguir entre crear y editar
-                val currentGroups = _pageGroups.value
+                val currentGroups = pageGroups.value
                 if (currentGroups.any { it.id == groupToSave.id }) {
                     projectViewModel.updatePageGroup(groupToSave.id) { groupToSave }
                 } else {
@@ -108,5 +105,16 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
                 onDismissCreateGroupDialog()
             }
         }
+    }
+}
+
+// Factory para InnerPagesViewModel
+class InnerPagesViewModelFactory(private val projectViewModel: ProjectViewModel) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(InnerPagesViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return InnerPagesViewModel(projectViewModel) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

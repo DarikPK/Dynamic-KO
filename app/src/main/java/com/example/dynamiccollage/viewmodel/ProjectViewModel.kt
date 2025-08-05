@@ -5,23 +5,19 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dynamiccollage.data.model.CoverPageConfig
 import com.example.dynamiccollage.data.model.PageGroup
-import androidx.core.content.FileProvider // Importar FileProvider
+import androidx.core.content.FileProvider
 import com.example.dynamiccollage.utils.PdfGenerator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import android.net.Uri // Importar Uri
+import android.net.Uri
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
-
 class ProjectViewModel : ViewModel() {
-
-    private val _currentGroupAddingImages = MutableStateFlow<String?>(null)
-    val currentGroupAddingImages: StateFlow<String?> = _currentGroupAddingImages
 
     private val _currentCoverConfig = MutableStateFlow(CoverPageConfig())
     val currentCoverConfig: StateFlow<CoverPageConfig> = _currentCoverConfig.asStateFlow()
@@ -33,25 +29,17 @@ class ProjectViewModel : ViewModel() {
         _currentCoverConfig.value = newConfig
     }
 
-    fun setPageGroups(groups: List<PageGroup>) {
-        _currentPageGroups.value = groups
-    }
-
-    fun onAddImagesClickedForGroup(groupId: String) {
-        _currentGroupAddingImages.value = groupId
-    }
-
-    fun addPageGroupToProject(group: PageGroup) {
+    fun addPageGroup(group: PageGroup) {
         _currentPageGroups.update { currentList -> currentList + group }
     }
 
-    fun updatePageGroupInProject(updatedGroup: PageGroup) {
+    fun updatePageGroup(groupId: String, transform: (PageGroup) -> PageGroup) {
         _currentPageGroups.update { currentList ->
-            currentList.map { if (it.id == updatedGroup.id) updatedGroup else it }
+            currentList.map { if (it.id == groupId) transform(it) else it }
         }
     }
 
-    fun removePageGroupFromProject(groupId: String) {
+    fun deletePageGroup(groupId: String) {
         _currentPageGroups.update { currentList ->
             currentList.filterNot { it.id == groupId }
         }
@@ -104,7 +92,6 @@ class ProjectViewModel : ViewModel() {
             _shareablePdfUri.value = uri
         } catch (e: Exception) {
             e.printStackTrace()
-            // Podríamos tener un StateFlow de error de "compartir" también
             _pdfGenerationState.value = PdfGenerationState.Error("No se pudo crear el enlace para compartir.")
         }
     }
@@ -114,27 +101,9 @@ class ProjectViewModel : ViewModel() {
     }
 }
 
-// Clase para manejar los estados de la generación de PDF
 sealed class PdfGenerationState {
     object Idle : PdfGenerationState()
     object Loading : PdfGenerationState()
     data class Success(val file: File) : PdfGenerationState()
     data class Error(val message: String) : PdfGenerationState()
-}
-
-private val _isEditingGroupConfigValid = MutableStateFlow(true) // Nuevo StateFlow para validación
-val isEditingGroupConfigValid: StateFlow<Boolean> = _isEditingGroupConfigValid.asStateFlow()
-
-// Estado para saber a qué grupo se le están añadiendo imágenes
-private val _currentGroupAddingImages = MutableStateFlow<String?>(null)
-val currentGroupAddingImages: StateFlow<String?> = _currentGroupAddingImages.asStateFlow()
-
-fun onAddImagesClickedForGroup(groupId: String) {
-    _currentGroupAddingImages.value = groupId
-    // La lógica para lanzar el selector de imágenes estará en la UI (Screen)
-    // porque necesita el ActivityResultLauncher.
-}
-
-fun onImagesSelectedForGroup(uris: List<android.net.Uri>) {
-    val groupId = _currentGroupAddingImages.value ?: return // Si no hay grupo actual, no hacer nada
 }
