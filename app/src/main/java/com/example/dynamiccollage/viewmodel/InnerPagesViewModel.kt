@@ -47,7 +47,14 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
     val showDeleteImagesDialog: StateFlow<String?> = _showDeleteImagesDialog.asStateFlow()
 
     fun onAddNewGroupClicked() {
-        _editingGroup.value = PageGroup()
+        val coverConfig = projectViewModel.coverPageConfig.value
+        val newGroup = PageGroup(
+            optionalTextStyle = coverConfig.subtitleStyle.copy(
+                id = "pageGroupOptionalText",
+                content = ""
+            )
+        )
+        _editingGroup.value = newGroup
         _showCreateGroupDialog.value = true
     }
 

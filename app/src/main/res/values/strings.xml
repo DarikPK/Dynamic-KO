@@ -85,7 +85,7 @@
     <string name="two_photos">2 Photos</string>
     <string name="sheet_count_label">Number of Sheets</string>
     <string name="optional_text_label">Optional Text (1st page of group)</string>
-    <string name="all_caps_label">All Caps</string>
+    <string name="all_caps_label">Mayúscula</string>
     <string name="apply_style_to_all_button">Apply Style to All Groups</string>
     <string name="save_button">Save</string>
     <string name="cancel_button">Cancel</string>
