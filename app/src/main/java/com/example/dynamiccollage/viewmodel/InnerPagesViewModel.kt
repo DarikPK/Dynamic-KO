@@ -25,9 +25,15 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
     private val _currentGroupAddingImages = MutableStateFlow<String?>(null)
     val currentGroupAddingImages: StateFlow<String?> = _currentGroupAddingImages.asStateFlow()
 
-    val isEditingGroupConfigValid: StateFlow<Boolean> = combine(editingGroup) { group ->
-        group?.let { it.totalPhotosRequired >= it.imageUris.size } ?: true
-    }
+    val isEditingGroupConfigValid: StateFlow<Boolean> = editingGroup
+        .map { group ->
+            group?.let { it.totalPhotosRequired >= it.imageUris.size } ?: true
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000),
+            initialValue = true
+        )
 
     fun onAddNewGroupClicked() {
         _editingGroup.value = PageGroup()
