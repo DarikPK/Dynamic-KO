@@ -139,6 +139,9 @@ fun InnerPagesScreen(
                             onDeleteGroupClicked = { groupId ->
                                 innerPagesViewModel.removePageGroup(groupId)
                             },
+                            onDeleteImagesClicked = { groupId ->
+                                innerPagesViewModel.removeImagesFromGroup(groupId)
+                            }
                         )
                     }
                 }
