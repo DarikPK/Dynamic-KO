@@ -32,7 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel // Para obtener ViewModels específicos de pantalla
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.dynamiccollage.R
@@ -41,15 +41,14 @@ import com.example.dynamiccollage.ui.components.CreateEditGroupDialog
 import com.example.dynamiccollage.ui.components.PageGroupItem
 import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
 import com.example.dynamiccollage.viewmodel.InnerPagesViewModel
+import com.example.dynamiccollage.viewmodel.InnerPagesViewModelFactory
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
-import com.example.dynamiccollage.viewmodel.ViewModelFactory
-import androidx.activity.ComponentActivity // Para previews, si es necesario
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InnerPagesScreen(
     navController: NavController,
-    projectViewModel: ProjectViewModel // Se recibe como parámetro explícito
+    projectViewModel: ProjectViewModel
 ) {
     val innerPagesViewModel: InnerPagesViewModel = viewModel(factory = InnerPagesViewModelFactory(projectViewModel))
 
@@ -152,9 +151,6 @@ fun InnerPagesScreen(
 @Composable
 fun InnerPagesScreenPreview() {
     DynamicCollageTheme {
-        // Previews with ViewModels that have dependencies are complex.
-        // This will likely require a mock or a different setup for a real app.
-        // For now, we remove the dependency to make the preview build.
         InnerPagesScreen(
             navController = rememberNavController(),
             projectViewModel = viewModel() // Simplified for preview
