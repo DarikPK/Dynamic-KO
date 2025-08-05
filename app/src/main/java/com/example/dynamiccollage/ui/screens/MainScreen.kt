@@ -59,6 +59,10 @@ fun MainScreen(
             val encodedPath = java.net.URLEncoder.encode(file.absolutePath, "UTF-8")
             navController.navigate(Screen.PdfPreview.withArgs(encodedPath))
             projectViewModel.resetPdfGenerationState() // Resetea el estado para no volver a navegar
+        } else if (pdfGenerationState is com.example.dynamiccollage.viewmodel.PdfGenerationState.Error) {
+            val message = (pdfGenerationState as com.example.dynamiccollage.viewmodel.PdfGenerationState.Error).message
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+            projectViewModel.resetPdfGenerationState()
         }
     }
 
