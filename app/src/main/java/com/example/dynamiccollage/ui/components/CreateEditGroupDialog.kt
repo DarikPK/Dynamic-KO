@@ -56,6 +56,10 @@ fun CreateEditGroupDialog(
         pageGroupsFromVM.find { it.id == editingGroup.id }
     }
 
+    var sheetCountString by remember {
+        mutableStateOf(editingGroup.sheetCount.takeIf { it > 0 }?.toString() ?: "")
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -107,8 +111,11 @@ fun CreateEditGroupDialog(
                 }
 
                 OutlinedTextField(
-                    value = editingGroup.sheetCount.toString(),
-                    onValueChange = { viewModel.onEditingGroupSheetCountChange(it) },
+                    value = sheetCountString,
+                    onValueChange = {
+                        sheetCountString = it
+                        viewModel.onEditingGroupSheetCountChange(it)
+                    },
                     label = { Text(stringResource(R.string.sheet_count_label)) },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
