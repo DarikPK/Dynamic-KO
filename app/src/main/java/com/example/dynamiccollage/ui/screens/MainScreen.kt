@@ -134,17 +134,6 @@ fun MainScreen(
                 }
             )
             MainButton(
-                text = stringResource(R.string.main_btn_share_pdf),
-                onClick = {
-                    val state = projectViewModel.pdfGenerationState.value
-                    if (state is com.example.dynamiccollage.viewmodel.PdfGenerationState.Success) {
-                        projectViewModel.createShareableUriForFile(context, state.file)
-                    } else {
-                        Toast.makeText(context, "Primero genera un PDF", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            )
-            MainButton(
                 text = stringResource(R.string.main_btn_templates),
                 onClick = {
                     Toast.makeText(context, "Plantillas: Próximamente", Toast.LENGTH_SHORT).show()

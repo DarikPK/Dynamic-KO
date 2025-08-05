@@ -108,7 +108,14 @@ fun InnerPagesScreen(
             CenterAlignedTopAppBar(
                 title = { Text(stringResource(id = R.string.inner_pages_title)) },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = {
+                        val allQuotasMet = pageGroups.all { it.isPhotoQuotaMet }
+                        if (allQuotasMet) {
+                            navController.popBackStack()
+                        } else {
+                            Toast.makeText(context, R.string.error_photo_quota_not_met, Toast.LENGTH_LONG).show()
+                        }
+                    }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(id = R.string.cover_setup_navigate_back_description)
