@@ -227,8 +227,9 @@ fun MainScreenPreview() {
         val context = LocalContext.current
         MainScreen(
             navController = rememberNavController(),
-            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity) // Esto podría fallar en preview si el contexto no es una Activity
+            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity), // Esto podría fallar en preview si el contexto no es una Activity
             // O pasar un mock/stub ProjectViewModel
+            onThemeChange = {}
         )
     }
 }
@@ -240,7 +241,8 @@ fun MainScreenDarkPreview() {
         val context = LocalContext.current
         MainScreen(
             navController = rememberNavController(),
-            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity)
+            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity),
+            onThemeChange = {}
         )
     }
 }
