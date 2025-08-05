@@ -274,9 +274,11 @@ object PdfGenerator {
                 var startY = 20f
 
                 if (sheetIndex == 0 && group.optionalTextStyle.isVisible && group.isPhotoQuotaMet) {
+                    val style = group.optionalTextStyle
+                    val content = if (style.allCaps) style.content.uppercase() else style.content
                     val textRect = RectF(50f, startY, pageWidth - 50f, startY + 50f) // Height is arbitrary, will be calculated by drawRow
-                    drawRow(canvas, context, group.optionalTextStyle.content, group.optionalTextStyle, textRect)
-                    startY += 21f // Approximate height of the text row + spacing
+                    drawRow(canvas, context, content, style, textRect)
+                    startY += style.fontSize + style.rowStyle.padding.top + style.rowStyle.padding.bottom + 5f// Approximate height of the text row + spacing
                 }
 
                 val rects = getRectsForPage(pageWidth, pageHeight, startY, group.tableLayout.first, group.tableLayout.second, group.imageSpacing)
