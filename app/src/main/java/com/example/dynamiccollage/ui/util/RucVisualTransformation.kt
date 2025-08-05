@@ -5,17 +5,17 @@ import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 
-class RucVisualTransformation : VisualTransformation {
+class RucVisualTransformation(val prefix: String) : VisualTransformation {
     override fun filter(text: AnnotatedString): TransformedText {
-        val out = "20" + text.text
+        val out = prefix + text.text
         val offsetMapping = object : OffsetMapping {
             override fun originalToTransformed(offset: Int): Int {
-                return offset + 2
+                return offset + prefix.length
             }
 
             override fun transformedToOriginal(offset: Int): Int {
-                if (offset <= 2) return 0
-                return offset - 2
+                if (offset <= prefix.length) return 0
+                return offset - prefix.length
             }
         }
         return TransformedText(AnnotatedString(out), offsetMapping)
