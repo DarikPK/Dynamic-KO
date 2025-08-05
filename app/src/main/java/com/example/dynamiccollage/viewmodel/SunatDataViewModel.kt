@@ -25,10 +25,18 @@ class SunatDataViewModel : ViewModel() {
         viewModelScope.launch {
             _sunatDataState.value = SunatDataState.Loading
             try {
-                val data = if (documentType == "DNI") {
-                    ApiClient.instance.getDniData(documentNumber)
+                val data: SunatData = if (documentType == "DNI") {
+                    val dniData = ApiClient.instance.getDniData(documentNumber)
+                    if (dniData.error != null) {
+                        throw Exception(dniData.error)
+                    }
+                    dniData
                 } else {
-                    ApiClient.instance.getRucData(documentNumber)
+                    val rucData = ApiClient.instance.getRucData(documentNumber)
+                    if (rucData.error != null) {
+                        throw Exception(rucData.error)
+                    }
+                    rucData
                 }
                 _sunatDataState.value = SunatDataState.Success(data)
             } catch (e: Exception) {

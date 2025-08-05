@@ -34,7 +34,8 @@ data class RucData(
     val dpto: String,
     val manzana: String,
     val kilometro: String,
-    val distrito: String
+    val distrito: String,
+    val error: String? = null
 ) : SunatData
 
 data class DniData(
@@ -43,5 +44,6 @@ data class DniData(
     override val numeroDocumento: String,
     val apellidoPaterno: String,
     val apellidoMaterno: String,
-    val nombres: String
+    val nombres: String,
+    val error: String? = null
 ) : SunatData
