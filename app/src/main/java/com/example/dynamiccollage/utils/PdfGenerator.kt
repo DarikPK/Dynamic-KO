@@ -97,26 +97,26 @@ object PdfGenerator {
 
         val contentArea = RectF(marginLeft, marginTop, (pageWidth - marginRight), (pageHeight - marginBottom))
 
-        val visibleRows = mutableListOf<Pair<Float, (RectF) -> Unit>>()
+        val visibleRows = mutableListOf<Triple<String, Float, (RectF) -> Unit>>()
         var totalWeight = 0f
 
         if (config.clientNameStyle.content.isNotBlank()) {
             totalWeight += config.clientWeight
-            visibleRows.add(config.clientWeight to { rect ->
+            visibleRows.add(Triple("client", config.clientWeight) { rect ->
                 val content = "Cliente: " + if (config.allCaps) config.clientNameStyle.content.uppercase() else config.clientNameStyle.content
                 drawRow(canvas, context, content, config.clientNameStyle, rect)
             })
         }
         if (config.rucStyle.content.isNotBlank()) {
             totalWeight += config.rucWeight
-            visibleRows.add(config.rucWeight to { rect ->
+            visibleRows.add(Triple("ruc", config.rucWeight) { rect ->
                 val content = "RUC: " + if (config.allCaps) config.rucStyle.content.uppercase() else config.rucStyle.content
                 drawRow(canvas, context, content, config.rucStyle, rect)
             })
         }
         if (config.subtitleStyle.content.isNotBlank()) {
             totalWeight += config.addressWeight
-            visibleRows.add(config.addressWeight to { rect ->
+            visibleRows.add(Triple("address", config.addressWeight) { rect ->
                 var content = if (config.allCaps) config.subtitleStyle.content.uppercase() else config.subtitleStyle.content
                 if (config.showAddressPrefix) content = "Dirección: $content"
                 drawRow(canvas, context, content, config.subtitleStyle, rect)
@@ -124,7 +124,7 @@ object PdfGenerator {
         }
         if (config.mainImageUri != null) {
             totalWeight += config.photoWeight
-            visibleRows.add(config.photoWeight to { rect ->
+            visibleRows.add(Triple("photo", config.photoWeight) { rect ->
                 drawRowBackgroundAndBorders(canvas, config.photoStyle, rect)
                 config.mainImageUri?.let { uriString ->
                     try {
@@ -140,8 +140,17 @@ object PdfGenerator {
             })
         }
 
+        var separations = 0
+        for (i in 0 until visibleRows.size - 1) {
+            val currentId = visibleRows[i].first
+            val nextId = visibleRows[i+1].first
+            if (!(currentId == "client" && nextId == "ruc")) {
+                separations++
+            }
+        }
+
         if (visibleRows.size > 1) {
-            totalWeight += config.separationWeight * (visibleRows.size - 1)
+            totalWeight += config.separationWeight * separations
         }
 
         if (totalWeight <= 0f) {
@@ -152,14 +161,17 @@ object PdfGenerator {
         var currentY = contentArea.top
         val separationHeight = contentArea.height() * (config.separationWeight / totalWeight)
 
-        visibleRows.forEachIndexed { index, (weight, drawFunc) ->
+        visibleRows.forEachIndexed { index, (id, weight, drawFunc) ->
             val itemHeight = contentArea.height() * (weight / totalWeight)
             val rect = RectF(contentArea.left, currentY, contentArea.right, currentY + itemHeight)
             drawFunc(rect)
             currentY += itemHeight
 
             if (index < visibleRows.size - 1) {
-                currentY += separationHeight
+                val nextId = visibleRows[index + 1].first
+                if (!(id == "client" && nextId == "ruc")) {
+                    currentY += separationHeight
+                }
             }
         }
 
