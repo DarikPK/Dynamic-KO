@@ -68,6 +68,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.dynamiccollage.R
 import com.example.dynamiccollage.data.model.DefaultCoverConfig // Usado por onTextStyleChange
+import com.example.dynamiccollage.data.model.DocumentType
 import com.example.dynamiccollage.data.model.PageOrientation // NUEVA IMPORTACIÓN
 import com.example.dynamiccollage.data.model.TextStyleConfig
 import com.example.dynamiccollage.ui.navigation.Screen
@@ -151,10 +152,22 @@ fun CoverSetupScreen(
                 singleLine = true
             )
 
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                SegmentedButton(
+                    selected = coverConfig.documentType == DocumentType.RUC,
+                    onClick = { coverSetupViewModel.onDocumentTypeChange(DocumentType.RUC) },
+                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                ) { Text("RUC") }
+                SegmentedButton(
+                    selected = coverConfig.documentType == DocumentType.DNI,
+                    onClick = { coverSetupViewModel.onDocumentTypeChange(DocumentType.DNI) },
+                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                ) { Text("DNI") }
+            }
             OutlinedTextField(
                 value = coverConfig.rucStyle.content,
                 onValueChange = { coverSetupViewModel.onRucChange(it) },
-                label = { Text(stringResource(id = R.string.cover_setup_ruc_label)) },
+                label = { Text(coverConfig.documentType.name) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
@@ -278,7 +291,7 @@ fun CoverSetupScreen(
             )
 
             TextCustomizationSection(
-                label = stringResource(id = R.string.field_ruc),
+                label = coverConfig.documentType.name,
                 textStyleConfig = coverConfig.rucStyle,
                 onTextStyleChange = { newSize, newAlign, newColor ->
                     coverSetupViewModel.onTextStyleChange(DefaultCoverConfig.RUC_ID, newSize, newAlign, newColor)

@@ -33,7 +33,8 @@ data class RucData(
     val lote: String,
     val dpto: String,
     val manzana: String,
-    val kilometro: String
+    val kilometro: String,
+    val distrito: String
 ) : SunatData
 
 data class DniData(

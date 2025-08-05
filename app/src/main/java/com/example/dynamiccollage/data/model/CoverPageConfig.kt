@@ -9,6 +9,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import com.example.dynamiccollage.ui.theme.calibriFontFamily
 
+enum class DocumentType {
+    RUC, DNI
+}
+
 // Valores por defecto para la configuración de la portada
 object DefaultCoverConfig {
     // IDs ya no son necesarios si TextStyleConfig no tiene 'id' y el ViewModel maneja estilos por separado
@@ -49,6 +53,7 @@ data class CoverPageConfig(
             )
         )
     ),
+    val documentType: DocumentType = DocumentType.RUC,
     val rucStyle: TextStyleConfig = TextStyleConfig(
         fontFamily = calibriFontFamily,
         fontSize = 18,
