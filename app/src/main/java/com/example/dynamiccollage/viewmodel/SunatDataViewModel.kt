@@ -6,6 +6,7 @@ import com.example.dynamiccollage.remote.ApiClient
 import com.example.dynamiccollage.remote.SunatData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import retrofit2.HttpException
 import kotlinx.coroutines.launch
 
 // A sealed class to represent the state of the API call
@@ -39,8 +40,14 @@ class SunatDataViewModel : ViewModel() {
                     rucData
                 }
                 _sunatDataState.value = SunatDataState.Success(data)
+            } catch (e: HttpException) {
+                if (e.code() == 422) {
+                    _sunatDataState.value = SunatDataState.Error("DNI o RUC no encontrado o inválido.")
+                } else {
+                    _sunatDataState.value = SunatDataState.Error("Error de red: ${e.message()}")
+                }
             } catch (e: Exception) {
-                _sunatDataState.value = SunatDataState.Error(e.message ?: "Unknown Error")
+                _sunatDataState.value = SunatDataState.Error(e.message ?: "Error desconocido")
             }
         }
     }

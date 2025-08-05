@@ -156,6 +156,8 @@ fun SunatDataScreen(
                 val data = (sunatDataState as SunatDataState.Success).data
                 var useName by remember { mutableStateOf(true) }
                 var useAddress by remember { mutableStateOf(data is com.example.dynamiccollage.remote.RucData) }
+                var manualAddress by remember { mutableStateOf("") }
+                var manualDistrict by remember { mutableStateOf("") }
 
                 Column(
                     modifier = Modifier.padding(top = 16.dp),
@@ -163,23 +165,91 @@ fun SunatDataScreen(
                 ) {
                     Text("Datos encontrados:", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))
+                    val displayName = if (data is com.example.dynamiccollage.remote.DniData) {
+                        "${data.nombres} ${data.apellidoPaterno} ${data.apellidoMaterno}"
+                    } else {
+                        data.nombre
+                    }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = useName, onCheckedChange = { useName = it })
-                        Text("Nombre: ${data.nombre}")
+                        Text("Nombre: $displayName")
                     }
                     if (data is com.example.dynamiccollage.remote.RucData) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Checkbox(checked = useAddress, onCheckedChange = { useAddress = it })
                             Text("Dirección: ${data.direccion} - ${data.distrito}")
                         }
+                    } else if (data is com.example.dynamiccollage.remote.DniData) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(checked = useAddress, onCheckedChange = { useAddress = it })
+                            Text("Añadir dirección")
+                        }
+                        if (useAddress) {
+                            OutlinedTextField(
+                                value = manualAddress,
+                                onValueChange = { manualAddress = it },
+                                label = { Text("Dirección") },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            val districts = listOf(
+                                "Ancón", "Ate", "Barranco", "Breña", "Callao", "Carabayllo", "Cercado de Lima",
+                                "Chaclacayo", "Chorrillos", "Cieneguilla", "Comas", "El agustino", "Independencia",
+                                "Jesús maría", "La molina", "La victoria", "Lince", "Los olivos", "Lurigancho",
+                                "Lurín", "Magdalena del mar", "Miraflores", "Pachacámac", "Pucusana", "Pueblo libre",
+                                "Puente piedra", "Punta hermosa", "Punta negra", "Rímac", "San bartolo", "San borja",
+                                "San isidro", "San Juan de Lurigancho", "San Juan de Miraflores", "San Luis",
+                                "San Martin de Porres", "San Miguel", "Santa Anita", "Santa María del Mar",
+                                "Santa Rosa", "Santiago de Surco", "Surquillo", "Villa el Salvador",
+                                "Villa Maria del Triunfo"
+                            )
+                            var expanded by remember { mutableStateOf(false) }
+                            val filteredDistricts = districts.filter { it.contains(manualDistrict, ignoreCase = true) }
+
+                            ExposedDropdownMenuBox(
+                                expanded = expanded,
+                                onExpandedChange = { expanded = !expanded }
+                            ) {
+                                OutlinedTextField(
+                                    value = manualDistrict,
+                                    onValueChange = { manualDistrict = it },
+                                    label = { Text("Distrito") },
+                                    modifier = Modifier.menuAnchor().fillMaxWidth()
+                                )
+                                ExposedDropdownMenu(
+                                    expanded = expanded,
+                                    onDismissRequest = { expanded = false }
+                                ) {
+                                    filteredDistricts.forEach { district ->
+                                        DropdownMenuItem(
+                                            text = { Text(district) },
+                                            onClick = {
+                                                manualDistrict = district
+                                                expanded = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
                         onClick = {
+                            val finalAddress = when {
+                                useAddress && data is com.example.dynamiccollage.remote.RucData -> "${data.direccion} - ${data.distrito}"
+                                useAddress && data is com.example.dynamiccollage.remote.DniData -> {
+                                    if (manualDistrict.isNotBlank()) {
+                                        "$manualAddress - $manualDistrict"
+                                    } else {
+                                        manualAddress
+                                    }
+                                }
+                                else -> null
+                            }
                             val selectedData = SelectedSunatData(
-                                nombre = if (useName) data.nombre else null,
+                                nombre = if (useName) displayName else null,
                                 numeroDocumento = data.numeroDocumento,
-                                direccion = if (useAddress && data is com.example.dynamiccollage.remote.RucData) "${data.direccion} - ${data.distrito}" else null
+                                direccion = finalAddress
                             )
                             projectViewModel.updateSunatData(selectedData)
                             sunatDataViewModel.resetState()
