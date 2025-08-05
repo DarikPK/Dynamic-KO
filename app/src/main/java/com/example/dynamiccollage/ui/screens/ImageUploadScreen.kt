@@ -66,7 +66,9 @@ fun ImageUploadScreen(
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris ->
         if (uris.isNotEmpty()) {
-            innerPagesViewModel.onImagesSelectedForGroup(uris, groupId)
+            currentGroupAddingImages?.let { groupId ->
+                innerPagesViewModel.onImagesSelectedForGroup(uris, groupId)
+            }
         }
     }
 

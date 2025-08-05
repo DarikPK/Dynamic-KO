@@ -20,6 +20,9 @@ import java.io.File
 
 class ProjectViewModel : ViewModel() {
 
+    private val _currentGroupAddingImages = MutableStateFlow<String?>(null)
+    val currentGroupAddingImages: StateFlow<String?> = _currentGroupAddingImages
+
     private val _currentCoverConfig = MutableStateFlow(CoverPageConfig())
     val currentCoverConfig: StateFlow<CoverPageConfig> = _currentCoverConfig.asStateFlow()
 
@@ -32,6 +35,10 @@ class ProjectViewModel : ViewModel() {
 
     fun setPageGroups(groups: List<PageGroup>) {
         _currentPageGroups.value = groups
+    }
+
+    fun onAddImagesClickedForGroup(groupId: String) {
+        _currentGroupAddingImages.value = groupId
     }
 
     fun addPageGroupToProject(group: PageGroup) {
@@ -113,4 +120,21 @@ sealed class PdfGenerationState {
     object Loading : PdfGenerationState()
     data class Success(val file: File) : PdfGenerationState()
     data class Error(val message: String) : PdfGenerationState()
+}
+
+private val _isEditingGroupConfigValid = MutableStateFlow(true) // Nuevo StateFlow para validación
+val isEditingGroupConfigValid: StateFlow<Boolean> = _isEditingGroupConfigValid.asStateFlow()
+
+// Estado para saber a qué grupo se le están añadiendo imágenes
+private val _currentGroupAddingImages = MutableStateFlow<String?>(null)
+val currentGroupAddingImages: StateFlow<String?> = _currentGroupAddingImages.asStateFlow()
+
+fun onAddImagesClickedForGroup(groupId: String) {
+    _currentGroupAddingImages.value = groupId
+    // La lógica para lanzar el selector de imágenes estará en la UI (Screen)
+    // porque necesita el ActivityResultLauncher.
+}
+
+fun onImagesSelectedForGroup(uris: List<android.net.Uri>) {
+    val groupId = _currentGroupAddingImages.value ?: return // Si no hay grupo actual, no hacer nada
 }

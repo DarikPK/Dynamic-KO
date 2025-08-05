@@ -64,8 +64,7 @@ fun InnerPagesScreen(
     ) { uris ->
         if (uris.isNotEmpty()) {
             currentGroupAddingImages?.let { groupId ->
-                val uriStrings = uris.map { it.toString() }
-                innerPagesViewModel.onImagesSelectedForGroup(uriStrings, groupId)
+                innerPagesViewModel.onImagesSelectedForGroup(uris, groupId)
             }
         }
     }
