@@ -17,7 +17,8 @@ data class PageGroup(
     val photosPerSheet: Int = DefaultPageGroupConfig.PHOTOS_PER_SHEET, // 1 o 2
     val sheetCount: Int = DefaultPageGroupConfig.DEFAULT_SHEET_COUNT, // Número de hojas en este grupo
     val optionalTextStyle: TextStyleConfig = TextStyleConfig(id = DefaultPageGroupConfig.OPTIONAL_TEXT_ID),
-    val imageUris: List<String> = emptyList() // Lista de URIs de las imágenes seleccionadas para este grupo
+    val imageUris: List<String> = emptyList(), // Lista de URIs de las imágenes seleccionadas para este grupo
+    val imageSpacing: Float = 4f // Añadido para consistencia
 ) {
     val totalPhotosRequired: Int
         get() = photosPerSheet * sheetCount
@@ -25,17 +26,15 @@ data class PageGroup(
     val isPhotoQuotaMet: Boolean
         get() = imageUris.size == totalPhotosRequired
 
-    // Determina la disposición de la tabla basada en la orientación y fotos por hoja
-    // Retorna Pair<columnas, filas> para la tabla en una hoja
     val tableLayout: Pair<Int, Int>
         get() = when (orientation) {
             PageOrientation.Vertical -> {
-                if (photosPerSheet == 1) Pair(1, 1) // 1x1
-                else Pair(1, 2) // 1 columna, 2 filas
+                if (photosPerSheet == 1) Pair(1, 1)
+                else Pair(1, 2)
             }
             PageOrientation.Horizontal -> {
-                if (photosPerSheet == 1) Pair(1, 1) // 1x1
-                else Pair(2, 1) // 2 columnas, 1 fila
+                if (photosPerSheet == 1) Pair(1, 1)
+                else Pair(2, 1)
             }
         }
 }
