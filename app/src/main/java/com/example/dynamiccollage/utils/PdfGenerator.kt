@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.core.content.res.ResourcesCompat
+import android.util.Log
 import com.example.dynamiccollage.R
 import com.example.dynamiccollage.data.model.CoverPageConfig
 import com.example.dynamiccollage.data.model.PageGroup
@@ -51,26 +52,36 @@ object PdfGenerator {
         fileName: String
     ): File? {
         val pdfDocument = PdfDocument()
-
-        val shouldDrawCover = coverConfig.clientNameStyle.content.isNotBlank() ||
-                coverConfig.rucStyle.content.isNotBlank() ||
-                coverConfig.subtitleStyle.content.isNotBlank() ||
-                coverConfig.mainImageUri != null
-
-        if (shouldDrawCover) {
-            drawCoverPage(pdfDocument, context, coverConfig)
-        }
-        drawInnerPages(pdfDocument, context, pageGroups, if (shouldDrawCover) 2 else 1)
-
         try {
+            Log.d("PdfGenerator", "Iniciando la generación de PDF.")
+
+            val shouldDrawCover = coverConfig.clientNameStyle.content.isNotBlank() ||
+                    coverConfig.rucStyle.content.isNotBlank() ||
+                    coverConfig.subtitleStyle.content.isNotBlank() ||
+                    coverConfig.mainImageUri != null
+
+            if (shouldDrawCover) {
+                Log.d("PdfGenerator", "Dibujando portada.")
+                drawCoverPage(pdfDocument, context, coverConfig)
+            }
+            Log.d("PdfGenerator", "Dibujando páginas interiores.")
+            drawInnerPages(pdfDocument, context, pageGroups, if (shouldDrawCover) 2 else 1)
+
             val storageDir: File? = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-            storageDir?.mkdirs()
+            if (storageDir == null) {
+                Log.e("PdfGenerator", "El directorio de almacenamiento es nulo.")
+                pdfDocument.close()
+                return null
+            }
+            storageDir.mkdirs()
             val pdfFile = File(storageDir, "$fileName.pdf")
+            Log.d("PdfGenerator", "Escribiendo en el archivo: ${pdfFile.absolutePath}")
             pdfDocument.writeTo(FileOutputStream(pdfFile))
             pdfDocument.close()
+            Log.d("PdfGenerator", "PDF generado con éxito.")
             return pdfFile
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("PdfGenerator", "Error al generar PDF", e)
             pdfDocument.close()
             return null
         }

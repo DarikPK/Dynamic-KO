@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import android.net.Uri
+import android.util.Log
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -60,8 +61,10 @@ class ProjectViewModel : ViewModel() {
 
     fun generatePdf(context: Context, fileName: String) {
         viewModelScope.launch {
+            Log.d("ProjectViewModel", "generatePdf: Iniciando...")
             _pdfGenerationState.value = PdfGenerationState.Loading
             val generatedFile = withContext(Dispatchers.IO) {
+                Log.d("ProjectViewModel", "generatePdf: En el hilo de IO, llamando a PdfGenerator.")
                 PdfGenerator.generate(
                     context = context,
                     coverConfig = _currentCoverConfig.value,
@@ -69,10 +72,12 @@ class ProjectViewModel : ViewModel() {
                     fileName = fileName.ifBlank { "DynamicCollage" }
                 )
             }
-            _pdfGenerationState.value = if (generatedFile != null) {
-                PdfGenerationState.Success(generatedFile)
+            if (generatedFile != null) {
+                Log.d("ProjectViewModel", "generatePdf: Éxito. Archivo: ${generatedFile.absolutePath}")
+                _pdfGenerationState.value = PdfGenerationState.Success(generatedFile)
             } else {
-                PdfGenerationState.Error("No se pudo generar el PDF.")
+                Log.e("ProjectViewModel", "generatePdf: Fallo. `generatedFile` es nulo.")
+                _pdfGenerationState.value = PdfGenerationState.Error("No se pudo generar el PDF.")
             }
         }
     }
