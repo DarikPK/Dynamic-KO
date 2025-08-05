@@ -37,6 +37,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.dynamiccollage.R
 import com.example.dynamiccollage.data.model.PageGroup
+import com.example.dynamiccollage.ui.components.ConfirmationDialog
 import com.example.dynamiccollage.ui.components.CreateEditGroupDialog
 import com.example.dynamiccollage.ui.components.PageGroupItem
 import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
@@ -57,6 +58,26 @@ fun InnerPagesScreen(
     val editingGroup by innerPagesViewModel.editingGroup.collectAsState()
     val currentGroupAddingImages by innerPagesViewModel.currentGroupAddingImages.collectAsState()
     val context = LocalContext.current
+    val groupToDelete by innerPagesViewModel.showDeleteGroupDialog.collectAsState()
+    val imagesToDelete by innerPagesViewModel.showDeleteImagesDialog.collectAsState()
+
+    if (groupToDelete != null) {
+        ConfirmationDialog(
+            title = "Eliminar Grupo",
+            message = "Estás seguro de que quieres eliminar este grupo?",
+            onConfirm = { innerPagesViewModel.onConfirmRemoveGroup() },
+            onDismiss = { innerPagesViewModel.onDismissRemoveGroupDialog() }
+        )
+    }
+
+    if (imagesToDelete != null) {
+        ConfirmationDialog(
+            title = "Eliminar Imágenes",
+            message = "Estás seguro de que quieres eliminar todas las imágenes de este grupo?",
+            onConfirm = { innerPagesViewModel.onConfirmRemoveImages() },
+            onDismiss = { innerPagesViewModel.onDismissRemoveImagesDialog() }
+        )
+    }
 
     val multipleImagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
@@ -137,10 +158,10 @@ fun InnerPagesScreen(
                                 innerPagesViewModel.onEditGroupClicked(groupToEdit)
                             },
                             onDeleteGroupClicked = { groupId ->
-                                innerPagesViewModel.removePageGroup(groupId)
+                                innerPagesViewModel.onRemoveGroupClicked(groupId)
                             },
                             onDeleteImagesClicked = { groupId ->
-                                innerPagesViewModel.removeImagesFromGroup(groupId)
+                                innerPagesViewModel.onRemoveImagesClicked(groupId)
                             }
                         )
                     }

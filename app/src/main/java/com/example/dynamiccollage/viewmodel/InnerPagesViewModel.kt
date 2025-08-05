@@ -40,6 +40,12 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
             initialValue = true
         )
 
+    private val _showDeleteGroupDialog = MutableStateFlow<String?>(null)
+    val showDeleteGroupDialog: StateFlow<String?> = _showDeleteGroupDialog.asStateFlow()
+
+    private val _showDeleteImagesDialog = MutableStateFlow<String?>(null)
+    val showDeleteImagesDialog: StateFlow<String?> = _showDeleteImagesDialog.asStateFlow()
+
     fun onAddNewGroupClicked() {
         _editingGroup.value = PageGroup()
         _showCreateGroupDialog.value = true
@@ -74,8 +80,30 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         }
     }
 
-    fun removePageGroup(groupId: String) {
-        projectViewModel.deletePageGroup(groupId)
+    fun onRemoveGroupClicked(groupId: String) {
+        _showDeleteGroupDialog.value = groupId
+    }
+
+    fun onConfirmRemoveGroup() {
+        _showDeleteGroupDialog.value?.let { projectViewModel.deletePageGroup(it) }
+        _showDeleteGroupDialog.value = null
+    }
+
+    fun onDismissRemoveGroupDialog() {
+        _showDeleteGroupDialog.value = null
+    }
+
+    fun onRemoveImagesClicked(groupId: String) {
+        _showDeleteImagesDialog.value = groupId
+    }
+
+    fun onConfirmRemoveImages() {
+        _showDeleteImagesDialog.value?.let { removeImagesFromGroup(it) }
+        _showDeleteImagesDialog.value = null
+    }
+
+    fun onDismissRemoveImagesDialog() {
+        _showDeleteImagesDialog.value = null
     }
 
     fun onDismissCreateGroupDialog() {

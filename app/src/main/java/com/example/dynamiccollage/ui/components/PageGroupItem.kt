@@ -52,19 +52,28 @@ fun PageGroupItem(
                 .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            if (pageGroup.groupName.isNotBlank()) {
-                Text(
-                    text = pageGroup.groupName,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            } else {
-                Text(
-                    text = stringResource(R.string.group_item_unnamed_group, pageGroup.id.substring(0, 6)), // Mostrar parte del ID si no tiene nombre
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (pageGroup.groupName.isNotBlank()) {
+                    Text(
+                        text = pageGroup.groupName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                } else {
+                    Text(
+                        text = stringResource(R.string.group_item_unnamed_group, pageGroup.id.substring(0, 6)), // Mostrar parte del ID si no tiene nombre
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                IconButton(onClick = { onDeleteGroupClicked(pageGroup.id) }) {
+                    Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.group_item_delete_button_description), tint = MaterialTheme.colorScheme.error)
+                }
             }
 
             InfoRow(label = stringResource(R.string.group_orientation_label), value = pageGroup.orientation.name)
@@ -114,10 +123,6 @@ fun PageGroupItem(
                     }
                     IconButton(onClick = { onEditGroupClicked(pageGroup) }) {
                         Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.group_item_edit_button_description))
-                    }
-                    Spacer(modifier = Modifier.width(4.dp))
-                    IconButton(onClick = { onDeleteGroupClicked(pageGroup.id) }) {
-                        Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.group_item_delete_button_description), tint = MaterialTheme.colorScheme.error)
                     }
                 }
             }

@@ -45,7 +45,7 @@ data class CoverPageConfig(
             border = BorderProperties(
                 color = Color(0xFF73A1D3),
                 top = true,
-                bottom = true
+                bottom = false
             )
         )
     ),
