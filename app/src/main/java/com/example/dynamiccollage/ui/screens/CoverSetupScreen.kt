@@ -156,7 +156,7 @@ fun CoverSetupScreen(
             OutlinedTextField(
                 value = coverConfig.clientNameStyle.content,
                 onValueChange = { coverSetupViewModel.onClientNameChange(it) },
-                label = { Text("Fila 1") },
+                placeholder = { Text("Fila 1") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -181,7 +181,7 @@ fun CoverSetupScreen(
             OutlinedTextField(
                 value = coverConfig.rucStyle.content,
                 onValueChange = { coverSetupViewModel.onRucChange(it) },
-                label = { Text("Fila 2") },
+                placeholder = { Text("Fila 2") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
@@ -202,7 +202,7 @@ fun CoverSetupScreen(
             OutlinedTextField(
                 value = coverConfig.subtitleStyle.content,
                 onValueChange = { coverSetupViewModel.onAddressChange(it) },
-                label = { Text("Fila 3") },
+                placeholder = { Text("Fila 3") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
