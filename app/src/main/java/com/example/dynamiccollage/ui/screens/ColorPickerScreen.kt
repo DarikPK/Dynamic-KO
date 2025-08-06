@@ -21,6 +21,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -144,6 +145,7 @@ fun ColorPickerScreen(
             )
 
             Text("Paleta de Colores")
+            val density = LocalDensity.current
             BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxWidth()
