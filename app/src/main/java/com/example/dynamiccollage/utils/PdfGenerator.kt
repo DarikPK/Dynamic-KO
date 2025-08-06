@@ -115,82 +115,132 @@ object PdfGenerator {
 
         val contentArea = RectF(marginLeft, marginTop, (pageWidth - marginRight), (pageHeight - marginBottom))
 
-        val visibleRows = mutableListOf<Triple<String, Float, (RectF) -> Unit>>()
-        var totalWeight = 0f
+        // --- Lógica de Diseño Refactorizada ---
 
+        // 1. Crear una lista de todas las filas posibles
+        val allRows = mutableListOf<Map<String, Any>>()
         if (config.clientNameStyle.content.isNotBlank()) {
-            totalWeight += config.clientWeight
-            visibleRows.add(Triple("client", config.clientWeight) { rect ->
-                val content = "Cliente: " + if (config.allCaps) config.clientNameStyle.content.uppercase() else config.clientNameStyle.content
-                drawRow(canvas, context, content, config.clientNameStyle, rect)
-            })
+            allRows.add(mapOf(
+                "id" to "client",
+                "weight" to config.clientWeight,
+                "draw" to { rect: RectF ->
+                    val content = "Cliente: " + if (config.allCaps) config.clientNameStyle.content.uppercase() else config.clientNameStyle.content
+                    drawRow(canvas, context, content, config.clientNameStyle, rect)
+                }
+            ))
         }
         if (config.rucStyle.content.isNotBlank()) {
-            totalWeight += config.rucWeight
-            visibleRows.add(Triple("ruc", config.rucWeight) { rect ->
-                val documentLabel = if (config.documentType == com.example.dynamiccollage.data.model.DocumentType.DNI) "DNI: " else "RUC: "
-                val content = documentLabel + if (config.allCaps) config.rucStyle.content.uppercase() else config.rucStyle.content
-                drawRow(canvas, context, content, config.rucStyle, rect)
-            })
+            allRows.add(mapOf(
+                "id" to "ruc",
+                "weight" to config.rucWeight,
+                "draw" to { rect: RectF ->
+                    val documentLabel = if (config.documentType == com.example.dynamiccollage.data.model.DocumentType.DNI) "DNI: " else "RUC: "
+                    val content = documentLabel + if (config.allCaps) config.rucStyle.content.uppercase() else config.rucStyle.content
+                    drawRow(canvas, context, content, config.rucStyle, rect)
+                }
+            ))
         }
         if (config.subtitleStyle.content.isNotBlank()) {
-            totalWeight += config.addressWeight
-            visibleRows.add(Triple("address", config.addressWeight) { rect ->
-                var content = if (config.allCaps) config.subtitleStyle.content.uppercase() else config.subtitleStyle.content
-                if (config.showAddressPrefix) content = "Dirección: $content"
-                drawRow(canvas, context, content, config.subtitleStyle, rect)
-            })
+            allRows.add(mapOf(
+                "id" to "address",
+                "weight" to 0f, // El peso ya no se usa para la dirección
+                "style" to config.subtitleStyle,
+                "content" to (if (config.showAddressPrefix) "Dirección: " else "") + if (config.allCaps) config.subtitleStyle.content.uppercase() else config.subtitleStyle.content,
+                "draw" to { rect: RectF ->
+                    var content = if (config.allCaps) config.subtitleStyle.content.uppercase() else config.subtitleStyle.content
+                    if (config.showAddressPrefix) content = "Dirección: $content"
+                    drawRow(canvas, context, content, config.subtitleStyle, rect)
+                }
+            ))
         }
         if (config.mainImageUri != null) {
-            totalWeight += config.photoWeight
-            visibleRows.add(Triple("photo", config.photoWeight) { rect ->
-                drawRowBackgroundAndBorders(canvas, config.photoStyle, rect)
-                config.mainImageUri?.let { uriString ->
-                    try {
-                        val padding = config.photoStyle.padding
-                        val paddedRect = RectF(rect.left + padding.left, rect.top + padding.top, rect.right - padding.right, rect.bottom - padding.bottom)
-                        val bitmap = decodeSampledBitmapFromUri(context, Uri.parse(uriString), paddedRect.width().toInt(), paddedRect.height().toInt())
-                        bitmap?.let {
-                            drawBitmapToCanvas(canvas, it, paddedRect)
-                            it.recycle()
-                        }
-                    } catch (e: Exception) { e.printStackTrace() }
+            allRows.add(mapOf(
+                "id" to "photo",
+                "weight" to config.photoWeight,
+                "draw" to { rect: RectF ->
+                    drawRowBackgroundAndBorders(canvas, config.photoStyle, rect)
+                    config.mainImageUri?.let { uriString ->
+                        try {
+                            val padding = config.photoStyle.padding
+                            val paddedRect = RectF(rect.left + padding.left, rect.top + padding.top, rect.right - padding.right, rect.bottom - padding.bottom)
+                            val bitmap = decodeSampledBitmapFromUri(context, Uri.parse(uriString), paddedRect.width().toInt(), paddedRect.height().toInt())
+                            bitmap?.let {
+                                drawBitmapToCanvas(canvas, it, paddedRect)
+                                it.recycle()
+                            }
+                        } catch (e: Exception) { e.printStackTrace() }
+                    }
                 }
-            })
+            ))
         }
 
-        var separations = 0
-        for (i in 0 until visibleRows.size - 1) {
-            val currentId = visibleRows[i].first
-            val nextId = visibleRows[i+1].first
-            if (!(currentId == "client" && nextId == "ruc")) {
-                separations++
-            }
-        }
-
-        if (visibleRows.size > 1) {
-            totalWeight += config.separationWeight * separations
-        }
-
-        if (totalWeight <= 0f) {
+        if (allRows.isEmpty()) {
             pdfDocument.finishPage(page)
             return
         }
 
-        var currentY = contentArea.top
-        val separationHeight = contentArea.height() * (config.separationWeight / totalWeight)
+        // 2. Calcular la altura de la fila de dirección dinámicamente
+        var addressRowHeight = 0f
+        val addressRowData = allRows.find { it["id"] == "address" }
+        if (addressRowData != null) {
+            val style = addressRowData["style"] as TextStyleConfig
+            val content = addressRowData["content"] as String
+            val textPaint = createTextPaint(context, style)
+            val staticLayout = StaticLayout.Builder.obtain(content, 0, content.length, textPaint, contentArea.width().toInt())
+                .setAlignment(getAndroidAlignment(style.textAlign))
+                .build()
+            addressRowHeight = staticLayout.height.toFloat() + style.rowStyle.padding.top + style.rowStyle.padding.bottom
+        }
 
-        visibleRows.forEachIndexed { index, (id, weight, drawFunc) ->
-            val itemHeight = contentArea.height() * (weight / totalWeight)
+        // 3. Calcular el espacio restante y los pesos para las otras filas
+        val weightedRows = allRows.filter { it["id"] != "address" }
+        val totalWeight = weightedRows.sumOf { (it["weight"] as Float).toDouble() }.toFloat()
+
+        var separations = 0
+        for (i in 0 until allRows.size - 1) {
+            val currentId = allRows[i]["id"] as String
+            val nextId = allRows[i+1]["id"] as String
+            // No contar separación entre cliente y RUC
+            if (currentId == "client" && nextId == "ruc") continue
+            // No contar la separación después de la dirección, ya que es fija
+            if (currentId == "address") continue
+            separations++
+        }
+
+        val totalSeparationWeight = config.separationWeight * separations
+        val finalTotalWeight = totalWeight + totalSeparationWeight
+
+        val fixedSpace = if (addressRowData != null) addressRowHeight + 5f else 0f
+        val availableHeight = contentArea.height() - fixedSpace
+
+        if (finalTotalWeight <= 0f && availableHeight <= 0f) {
+            pdfDocument.finishPage(page)
+            return
+        }
+
+        val separationHeight = if (finalTotalWeight > 0) availableHeight * (config.separationWeight / finalTotalWeight) else 0f
+
+        // 4. Dibujar todas las filas
+        var currentY = contentArea.top
+        allRows.forEachIndexed { index, rowData ->
+            val id = rowData["id"] as String
+            val drawFunc = rowData["draw"] as (RectF) -> Unit
+
+            val itemHeight = if (id == "address") {
+                addressRowHeight
+            } else {
+                if (finalTotalWeight > 0) availableHeight * ((rowData["weight"] as Float) / finalTotalWeight) else 0f
+            }
+
             val rect = RectF(contentArea.left, currentY, contentArea.right, currentY + itemHeight)
             drawFunc(rect)
             currentY += itemHeight
 
-            if (index < visibleRows.size - 1) {
-                val nextId = visibleRows[index + 1].first
-                // Requerimiento: Espacio fijo de 5 puntos después de la dirección.
+            // Añadir separación
+            if (index < allRows.size - 1) {
+                val nextId = allRows[index + 1]["id"] as String
                 if (id == "address") {
-                    currentY += 5f
+                    currentY += 5f // Espacio fijo después de la dirección
                 } else if (!(id == "client" && nextId == "ruc")) {
                     currentY += separationHeight
                 }
@@ -227,14 +277,8 @@ object PdfGenerator {
     }
 
 
-    private fun drawTextInRect(canvas: Canvas, context: Context, text: String, style: TextStyleConfig, rect: RectF) {
-        if (text.isBlank()) return
-
-        val padding = style.rowStyle.padding
-        val paddedRect = RectF(rect.left + padding.left, rect.top + padding.top, rect.right - padding.right, rect.bottom - padding.bottom)
-        if (paddedRect.width() <= 0 || paddedRect.height() <= 0) return
-
-        val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+    private fun createTextPaint(context: Context, style: TextStyleConfig): TextPaint {
+        return TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
             color = style.fontColor.toArgb()
             textSize = style.fontSize.toFloat()
 
@@ -257,6 +301,16 @@ object PdfGenerator {
                 Typeface.create(Typeface.DEFAULT, typefaceStyle)
             }
         }
+    }
+
+    private fun drawTextInRect(canvas: Canvas, context: Context, text: String, style: TextStyleConfig, rect: RectF) {
+        if (text.isBlank()) return
+
+        val padding = style.rowStyle.padding
+        val paddedRect = RectF(rect.left + padding.left, rect.top + padding.top, rect.right - padding.right, rect.bottom - padding.bottom)
+        if (paddedRect.width() <= 0 || paddedRect.height() <= 0) return
+
+        val textPaint = createTextPaint(context, style)
 
         val staticLayout = StaticLayout.Builder.obtain(
             text, 0, text.length, textPaint, paddedRect.width().toInt()
