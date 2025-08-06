@@ -109,13 +109,13 @@ fun MainScreen(
             title = { Text("Seleccionar Tema") },
             text = {
                 Column {
-                    val themes = listOf("Default", "Claro", "Oscuro", "Descanso")
+                    val themes = listOf("Claro", "Oscuro", "Descanso")
                     themes.forEach { themeName ->
                         TextButton(onClick = {
                             onThemeChange(themeName)
                             showThemeDialog = false
                         }) {
-                            Text(themeName)
+                            Text(themeName, color = MaterialTheme.colorScheme.onSurface)
                         }
                     }
                 }

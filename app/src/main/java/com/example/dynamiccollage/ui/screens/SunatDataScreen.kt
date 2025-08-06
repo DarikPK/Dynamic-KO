@@ -40,7 +40,16 @@ fun SunatDataScreen(
     LaunchedEffect(sunatDataState) {
         when (val state = sunatDataState) {
             is SunatDataState.Error -> {
-                Toast.makeText(context, "Error: ${state.message}", Toast.LENGTH_LONG).show()
+                val errorMessage = if (state.message.contains("Error de red")) {
+                    when (documentType) {
+                        "DNI" -> "DNI no válido"
+                        "RUC10", "RUC20" -> "RUC no válido"
+                        else -> "Documento no válido"
+                    }
+                } else {
+                    state.message
+                }
+                Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
                 sunatDataViewModel.resetState()
             }
             else -> {

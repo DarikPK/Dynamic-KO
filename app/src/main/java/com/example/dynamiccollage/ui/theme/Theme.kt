@@ -120,7 +120,7 @@ fun DynamicCollageTheme(
         "Claro" -> ClaroColorScheme
         "Oscuro" -> OscuroColorScheme
         "Descanso" -> DescansoColorScheme
-        else -> if (darkTheme) DarkColorScheme else LightColorScheme
+        else -> DarkColorScheme
     }
     val view = LocalView.current
     if (!view.isInEditMode) {
