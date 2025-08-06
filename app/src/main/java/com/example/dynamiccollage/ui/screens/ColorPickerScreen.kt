@@ -136,7 +136,7 @@ fun ColorPickerScreen(
                         rInput = it
                         val r = it.toIntOrNull()?.coerceIn(0, 255)
                         if (r != null) {
-                            currentColor = Color(r, (green * 255).roundToInt(), (blue * 255).roundToInt())
+                            currentColor = Color(r, (currentColor.green * 255).roundToInt(), (currentColor.blue * 255).roundToInt())
                         }
                     },
                     label = { Text("R") },
@@ -149,7 +149,7 @@ fun ColorPickerScreen(
                         gInput = it
                         val g = it.toIntOrNull()?.coerceIn(0, 255)
                         if (g != null) {
-                            currentColor = Color((red * 255).roundToInt(), g, (blue * 255).roundToInt())
+                            currentColor = Color((currentColor.red * 255).roundToInt(), g, (currentColor.blue * 255).roundToInt())
                         }
                     },
                     label = { Text("G") },
@@ -162,7 +162,7 @@ fun ColorPickerScreen(
                         bInput = it
                         val b = it.toIntOrNull()?.coerceIn(0, 255)
                         if (b != null) {
-                            currentColor = Color((red * 255).roundToInt(), (green * 255).roundToInt(), b)
+                            currentColor = Color((currentColor.red * 255).roundToInt(), (currentColor.green * 255).roundToInt(), b)
                         }
                     },
                     label = { Text("B") },
