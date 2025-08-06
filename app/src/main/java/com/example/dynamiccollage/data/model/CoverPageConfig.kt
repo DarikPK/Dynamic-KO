@@ -10,7 +10,7 @@ import androidx.compose.ui.unit.sp
 import com.example.dynamiccollage.ui.theme.calibriFontFamily
 
 enum class DocumentType {
-    RUC, DNI
+    RUC, DNI, NONE
 }
 
 // Valores por defecto para la configuración de la portada
