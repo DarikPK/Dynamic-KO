@@ -19,6 +19,9 @@ import android.util.Log
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import android.graphics.Bitmap
+import java.io.FileOutputStream
+import java.util.UUID
 
 class ProjectViewModel : ViewModel() {
 
@@ -155,6 +158,34 @@ class ProjectViewModel : ViewModel() {
         coverImage?.let { allImages.add(it) }
         allImages.addAll(innerImages)
         return allImages
+    }
+
+    fun saveCroppedImage(context: Context, oldUri: String, croppedBitmap: Bitmap) {
+        viewModelScope.launch {
+            val newUri = withContext(Dispatchers.IO) {
+                val file = File(context.cacheDir, "${UUID.randomUUID()}.jpg")
+                FileOutputStream(file).use { out ->
+                    croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
+                }
+                Uri.fromFile(file).toString()
+            }
+
+            val coverImage = _currentCoverConfig.value.mainImageUri
+            if (coverImage == oldUri) {
+                _currentCoverConfig.update { it.copy(mainImageUri = newUri) }
+            } else {
+                _currentPageGroups.update { groups ->
+                    groups.map { group ->
+                        if (group.imageUris.contains(oldUri)) {
+                            val newImageUris = group.imageUris.map { if (it == oldUri) newUri else it }
+                            group.copy(imageUris = newImageUris)
+                        } else {
+                            group
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

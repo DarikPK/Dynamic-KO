@@ -76,7 +76,7 @@ data class CoverPageConfig(
         fontWeight = FontWeight.Normal,
         fontColor = DefaultTextConfig.FONT_COLOR,
         rowStyle = RowStyle(
-            padding = PaddingValues(bottom = 0.6f),
+            padding = PaddingValues(bottom = 2f),
             border = BorderProperties(
                 color = Color(0xFF73A1D3),
                 bottom = true
@@ -106,7 +106,7 @@ data class CoverPageConfig(
     // Pesos para el diseño de la portada
     val clientWeight: Float = 0.4f,
     val rucWeight: Float = 0.4f,
-    val addressWeight: Float = 1.0f,
+    val addressWeight: Float = 0.3f,
     val separationWeight: Float = 0.2f,
     val photoWeight: Float = 10f,
 
