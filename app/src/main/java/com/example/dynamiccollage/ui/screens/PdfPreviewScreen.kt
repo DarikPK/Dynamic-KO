@@ -79,9 +79,19 @@ fun PdfPreviewScreen(
             )
         }
     ) { paddingValues ->
-        if (file != null && file.exists()) {
-            PdfView(modifier = Modifier.padding(paddingValues), uri = Uri.fromFile(file))
-        } else {
+        Column(modifier = Modifier.padding(paddingValues)) {
+            val pdfSizeMode by projectViewModel.pdfSizeMode.collectAsState()
+            val pdfSize by projectViewModel.pdfSize.collectAsState()
+            if (pdfSizeMode == 2 && pdfSize > 0) {
+                Text(
+                    text = "Tamaño del PDF: ${projectViewModel.getFormattedPdfSize()}",
+                    modifier = Modifier.padding(16.dp),
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
+            if (file != null && file.exists()) {
+                PdfView(uri = Uri.fromFile(file))
+            } else {
             Box(
                 modifier = Modifier
                     .fillMaxSize()

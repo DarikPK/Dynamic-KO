@@ -128,7 +128,8 @@ object PdfGenerator {
         if (config.rucStyle.content.isNotBlank()) {
             totalWeight += config.rucWeight
             visibleRows.add(Triple("ruc", config.rucWeight) { rect ->
-                val content = "RUC: " + if (config.allCaps) config.rucStyle.content.uppercase() else config.rucStyle.content
+                val documentLabel = if (config.documentType == com.example.dynamiccollage.data.model.DocumentType.DNI) "DNI: " else "RUC: "
+                val content = documentLabel + if (config.allCaps) config.rucStyle.content.uppercase() else config.rucStyle.content
                 drawRow(canvas, context, content, config.rucStyle, rect)
             })
         }
