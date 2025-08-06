@@ -105,6 +105,13 @@ fun TextStyleScreen(
     }
 }
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.input.KeyboardType
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TextCustomizationSection(
@@ -112,9 +119,8 @@ private fun TextCustomizationSection(
     textStyleConfig: TextStyleConfig,
     onTextStyleChange: (newSize: Float?, newAlign: TextAlign?, newColor: Color?) -> Unit
 ) {
-    var currentFontSizeSlider: Float by remember(textStyleConfig.fontSize) {
-        mutableStateOf(textStyleConfig.fontSize.toFloat())
-    }
+    var fontSizeInput by remember(textStyleConfig.fontSize) { mutableStateOf(textStyleConfig.fontSize.toString()) }
+
     val colorOptions = mapOf(
         stringResource(R.string.color_black) to Color.Black,
         stringResource(R.string.color_gray) to Color.Gray,
@@ -132,15 +138,18 @@ private fun TextCustomizationSection(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(label, style = MaterialTheme.typography.titleSmall)
-        Text(stringResource(id = R.string.cover_setup_font_size_label, currentFontSizeSlider))
-        Slider(
-            value = currentFontSizeSlider,
-            onValueChange = { currentFontSizeSlider = it },
-            valueRange = 8f..72f,
-            steps = 63,
-            onValueChangeFinished = {
-                onTextStyleChange(currentFontSizeSlider, null, null)
-            }
+        OutlinedTextField(
+            value = fontSizeInput,
+            onValueChange = {
+                fontSizeInput = it
+                it.toFloatOrNull()?.let { floatValue ->
+                    onTextStyleChange(floatValue, null, null)
+                }
+            },
+            label = { Text("Tamaño de Fuente") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
         )
         Text(stringResource(id = R.string.cover_setup_alignment_label))
         val alignmentOptions = listOf(
@@ -163,22 +172,25 @@ private fun TextCustomizationSection(
         }
         Spacer(modifier = Modifier.height(8.dp))
         Text(stringResource(id = R.string.cover_setup_text_color_label))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            colorOptions.forEach { (name, colorValue) ->
-                OutlinedButton(
-                    onClick = { onTextStyleChange(null, null, colorValue) },
-                    modifier = Modifier.padding(8.dp),
-                    border = if (textStyleConfig.fontColor == colorValue) ButtonDefaults.outlinedButtonBorder.copy(width = 2.dp) else ButtonDefaults.outlinedButtonBorder,
-                ) {
-                    Box(modifier = Modifier.size(20.dp).background(colorValue))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(name, style = MaterialTheme.typography.bodySmall)
-                }
+            colorOptions.forEach { (_, colorValue) ->
+                val isSelected = textStyleConfig.fontColor == colorValue
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(colorValue)
+                        .clickable { onTextStyleChange(null, null, colorValue) }
+                        .border(
+                            width = if (isSelected) 3.dp else 0.dp,
+                            color = MaterialTheme.colorScheme.outline,
+                            shape = CircleShape
+                        )
+                )
             }
         }
     }
