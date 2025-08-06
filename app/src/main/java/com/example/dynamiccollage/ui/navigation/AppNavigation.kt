@@ -92,19 +92,22 @@ fun AppNavigation(
         composable(Screen.TextStyle.route) {
             TextStyleScreen(
                 navController = navController,
-                coverSetupViewModel = coverSetupViewModel
+                coverSetupViewModel = coverSetupViewModel,
+                projectViewModel = projectViewModel
             )
         }
         composable(Screen.Margins.route) {
             MarginsScreen(
                 navController = navController,
-                coverSetupViewModel = coverSetupViewModel
+                coverSetupViewModel = coverSetupViewModel,
+                projectViewModel = projectViewModel
             )
         }
         composable(Screen.Weights.route) {
             WeightsScreen(
                 navController = navController,
-                coverSetupViewModel = coverSetupViewModel
+                coverSetupViewModel = coverSetupViewModel,
+                projectViewModel = projectViewModel
             )
         }
     }

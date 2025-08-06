@@ -1,5 +1,6 @@
 package com.example.dynamiccollage.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -8,22 +9,27 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.dynamiccollage.viewmodel.CoverSetupViewModel
+import com.example.dynamiccollage.viewmodel.ProjectViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WeightsScreen(
     navController: NavController,
-    coverSetupViewModel: CoverSetupViewModel
+    coverSetupViewModel: CoverSetupViewModel,
+    projectViewModel: ProjectViewModel
 ) {
     val coverConfig by coverSetupViewModel.coverConfig.collectAsState()
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -32,6 +38,14 @@ fun WeightsScreen(
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = {
+                        projectViewModel.updateCoverConfig(coverConfig)
+                        Toast.makeText(context, "Guardado", Toast.LENGTH_SHORT).show()
+                    }) {
+                        Icon(Icons.Filled.Save, contentDescription = "Guardar Cambios")
                     }
                 }
             )
