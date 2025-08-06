@@ -25,13 +25,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import com.canhub.cropper.CropImageView
+import com.example.dynamiccollage.viewmodel.ProjectViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ImageCropScreen(navController: NavController, imageUri: String?) {
+fun ImageCropScreen(
+    navController: NavController,
+    imageUri: String?,
+    projectViewModel: ProjectViewModel
+) {
     val cropImageView = remember {
         CropImageView(navController.context).apply {
-            setImageUriAsync(Uri.parse(imageUri))
+            imageUri?.let { setImageUriAsync(Uri.parse(it)) }
         }
     }
 
@@ -46,12 +51,49 @@ fun ImageCropScreen(navController: NavController, imageUri: String?) {
                 },
                 actions = {
                     IconButton(onClick = {
-                        val cropped = cropImageView.getCroppedImage()
-                        // TODO: Save the cropped image and update the URI
-                        navController.popBackStack()
+                        cropImageView.getCroppedImageAsync()
                     }) {
                         Icon(Icons.Default.Done, contentDescription = "Hecho")
                     }
+                }
+            )
+        },
+        bottomBar = {
+            BottomAppBar {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceAround
+                ) {
+                    Button(onClick = { cropImageView.rotateImage(90) }) {
+                        Icon(Icons.Default.RotateRight, contentDescription = "Girar")
+                        Text("Girar")
+                    }
+                }
+            }
+        }
+    ) { paddingValues ->
+        Column(modifier = Modifier.padding(paddingValues)) {
+            AndroidView({
+                cropImageView.setOnCropImageCompleteListener { _, result ->
+                    if (result.isSuccessful) {
+                        val croppedBitmap = result.bitmap
+                        if (croppedBitmap != null) {
+                            imageUri?.let {
+                                projectViewModel.saveCroppedImage(
+                                    navController.context,
+                                    it,
+                                    croppedBitmap
+                                )
+                            }
+                        }
+                        navController.popBackStack()
+                    }
+                }
+                cropImageView
+            }, modifier = Modifier.fillMaxSize())
+        }
+    }
+}
                 }
             )
         },

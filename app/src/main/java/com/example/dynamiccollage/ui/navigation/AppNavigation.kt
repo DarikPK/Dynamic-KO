@@ -85,7 +85,11 @@ fun AppNavigation(
             arguments = listOf(navArgument("imageUri") { type = NavType.StringType })
         ) { backStackEntry ->
             val imageUri = backStackEntry.arguments?.getString("imageUri")
-            ImageCropScreen(navController = navController, imageUri = imageUri)
+            ImageCropScreen(
+                navController = navController,
+                imageUri = imageUri,
+                projectViewModel = projectViewModel
+            )
         }
     }
 }
