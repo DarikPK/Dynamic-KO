@@ -94,25 +94,3 @@ fun ImageCropScreen(
         }
     }
 }
-                }
-            )
-        },
-        bottomBar = {
-            BottomAppBar {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceAround
-                ) {
-                    Button(onClick = { cropImageView.rotateImage(90) }) {
-                        Icon(Icons.Default.RotateRight, contentDescription = "Girar")
-                        Text("Girar")
-                    }
-                }
-            }
-        }
-    ) { paddingValues ->
-        Column(modifier = Modifier.padding(paddingValues)) {
-            AndroidView({ cropImageView }, modifier = Modifier.fillMaxSize())
-        }
-    }
-}
