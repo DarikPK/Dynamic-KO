@@ -80,9 +80,8 @@ fun PdfPreviewScreen(
         }
     ) { paddingValues ->
         Column(modifier = Modifier.padding(paddingValues)) {
-            val pdfSizeMode by projectViewModel.pdfSizeMode.collectAsState()
             val pdfSize by projectViewModel.pdfSize.collectAsState()
-            if (pdfSizeMode == 2 && pdfSize > 0) {
+            if (pdfSize > 0) {
                 Text(
                     text = "Tamaño del PDF: ${projectViewModel.getFormattedPdfSize()}",
                     modifier = Modifier.padding(16.dp),

@@ -177,26 +177,6 @@ fun MainScreen(
                 text = "Tema",
                 onClick = { showThemeDialog = true }
             )
-            val pdfSizeMode by projectViewModel.pdfSizeMode.collectAsState()
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                RadioButton(
-                    selected = pdfSizeMode == 1,
-                    onClick = { projectViewModel.setPdfSizeMode(1) }
-                )
-                Text("Tamaño en Portada")
-                Spacer(modifier = Modifier.width(16.dp))
-                RadioButton(
-                    selected = pdfSizeMode == 2,
-                    onClick = { projectViewModel.setPdfSizeMode(2) }
-                )
-                Text("Tamaño en Vista Previa")
-            }
-            val pdfSize by projectViewModel.pdfSize.collectAsState()
-            if (pdfSizeMode == 1 && pdfSize > 0) {
-                Text("Tamaño del PDF: ${projectViewModel.getFormattedPdfSize()}")
-            }
             Spacer(modifier = Modifier.weight(1f))
             MainButton(
                 text = stringResource(R.string.main_btn_generate_pdf),
