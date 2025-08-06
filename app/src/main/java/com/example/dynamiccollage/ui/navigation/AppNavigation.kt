@@ -19,6 +19,7 @@ import com.example.dynamiccollage.ui.screens.AdvancedCoverOptionsScreen
 import com.example.dynamiccollage.ui.screens.MarginsScreen
 import com.example.dynamiccollage.ui.screens.SunatDataScreen
 import com.example.dynamiccollage.ui.screens.TextStyleScreen
+import com.example.dynamiccollage.ui.screens.ColorPickerScreen
 import com.example.dynamiccollage.ui.screens.WeightsScreen
 import com.example.dynamiccollage.viewmodel.CoverSetupViewModel
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
@@ -107,6 +108,11 @@ fun AppNavigation(
                 navController = navController,
                 coverSetupViewModel = coverSetupViewModel,
                 projectViewModel = projectViewModel
+            )
+        }
+        composable(Screen.ColorPicker.route) {
+            ColorPickerScreen(
+                navController = navController
             )
         }
     }

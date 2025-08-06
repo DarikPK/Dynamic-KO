@@ -4,7 +4,6 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -20,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -29,6 +29,7 @@ import androidx.navigation.NavController
 import com.example.dynamiccollage.R
 import com.example.dynamiccollage.data.model.DefaultCoverConfig
 import com.example.dynamiccollage.data.model.TextStyleConfig
+import com.example.dynamiccollage.ui.navigation.Screen
 import com.example.dynamiccollage.viewmodel.CoverSetupViewModel
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 
@@ -41,6 +42,24 @@ fun TextStyleScreen(
 ) {
     val coverConfig by coverSetupViewModel.coverConfig.collectAsState()
     val context = LocalContext.current
+
+    // Listener para el resultado del ColorPickerScreen
+    LaunchedEffect(key1 = navController.currentBackStackEntry) {
+        navController.currentBackStackEntry
+            ?.savedStateHandle
+            ?.getLiveData<String>("selected_color")
+            ?.observe(navController.currentBackStackEntry!!) { result ->
+                val parts = result.split(":")
+                val fieldId = parts[0]
+                val colorHex = parts[1]
+                val newColor = Color(android.graphics.Color.parseColor("#$colorHex"))
+                coverSetupViewModel.onTextStyleChange(fieldId, newColor = newColor)
+
+                // Limpiar el estado para no volver a procesarlo
+                navController.currentBackStackEntry?.savedStateHandle?.remove<String>("selected_color")
+            }
+    }
+
 
     Scaffold(
         topBar = {
@@ -85,7 +104,9 @@ fun TextStyleScreen(
 
             TextCustomizationSection(
                 label = stringResource(id = R.string.field_client_name),
+                fieldId = DefaultCoverConfig.CLIENT_NAME_ID,
                 textStyleConfig = coverConfig.clientNameStyle,
+                navController = navController,
                 onTextStyleChange = { newSize, newAlign, newColor ->
                     coverSetupViewModel.onTextStyleChange(DefaultCoverConfig.CLIENT_NAME_ID, newSize, newAlign, newColor)
                 }
@@ -93,7 +114,9 @@ fun TextStyleScreen(
 
             TextCustomizationSection(
                 label = coverConfig.documentType.name,
+                fieldId = DefaultCoverConfig.RUC_ID,
                 textStyleConfig = coverConfig.rucStyle,
+                navController = navController,
                 onTextStyleChange = { newSize, newAlign, newColor ->
                     coverSetupViewModel.onTextStyleChange(DefaultCoverConfig.RUC_ID, newSize, newAlign, newColor)
                 }
@@ -101,7 +124,9 @@ fun TextStyleScreen(
 
             TextCustomizationSection(
                 label = stringResource(id = R.string.field_address),
+                fieldId = DefaultCoverConfig.SUBTITLE_ID,
                 textStyleConfig = coverConfig.subtitleStyle,
+                navController = navController,
                 onTextStyleChange = { newSize, newAlign, newColor ->
                     coverSetupViewModel.onTextStyleChange(DefaultCoverConfig.SUBTITLE_ID, newSize, newAlign, newColor)
                 }
@@ -114,18 +139,12 @@ fun TextStyleScreen(
 @Composable
 private fun TextCustomizationSection(
     label: String,
+    fieldId: String,
     textStyleConfig: TextStyleConfig,
+    navController: NavController,
     onTextStyleChange: (newSize: Float?, newAlign: TextAlign?, newColor: Color?) -> Unit
 ) {
     var fontSizeInput by remember(textStyleConfig.fontSize) { mutableStateOf(textStyleConfig.fontSize.toString()) }
-
-    val colorOptions = mapOf(
-        stringResource(R.string.color_black) to Color.Black,
-        stringResource(R.string.color_gray) to Color.Gray,
-        stringResource(R.string.color_blue) to Color.Blue,
-        stringResource(R.string.color_red) to Color.Red,
-        stringResource(R.string.color_green) to Color.Green
-    )
 
     Column(
         modifier = Modifier
@@ -170,24 +189,25 @@ private fun TextCustomizationSection(
         }
         Spacer(modifier = Modifier.height(8.dp))
         Text(stringResource(id = R.string.cover_setup_text_color_label))
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+
+        OutlinedButton(
+            onClick = {
+                val colorHex = String.format("%06X", (0xFFFFFF and textStyleConfig.fontColor.toArgb()))
+                navController.navigate(Screen.ColorPicker.withArgs(fieldId, colorHex))
+            },
+            modifier = Modifier.fillMaxWidth()
         ) {
-            colorOptions.forEach { (_, colorValue) ->
-                val isSelected = textStyleConfig.fontColor == colorValue
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Color Actual")
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(colorValue)
-                        .clickable { onTextStyleChange(null, null, colorValue) }
-                        .border(
-                            width = if (isSelected) 3.dp else 0.dp,
-                            color = MaterialTheme.colorScheme.outline,
-                            shape = CircleShape
-                        )
+                        .size(24.dp)
+                        .background(textStyleConfig.fontColor, shape = CircleShape)
+                        .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
                 )
             }
         }

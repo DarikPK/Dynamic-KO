@@ -12,6 +12,7 @@ sealed class Screen(val route: String) {
     object TextStyle : Screen("text_style_screen")
     object Margins : Screen("margins_screen")
     object Weights : Screen("weights_screen")
+    object ColorPicker : Screen("color_picker_screen")
     // object Settings : Screen("settings_screen") // Ejemplo si se necesitara
 
     fun withArgs(vararg args: String): String {
