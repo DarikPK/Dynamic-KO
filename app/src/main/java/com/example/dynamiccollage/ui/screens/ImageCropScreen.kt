@@ -22,6 +22,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import com.canhub.cropper.CropImageView
@@ -34,8 +35,9 @@ fun ImageCropScreen(
     imageUri: String?,
     projectViewModel: ProjectViewModel
 ) {
+    val context = LocalContext.current
     val cropImageView = remember {
-        CropImageView(navController.context).apply {
+        CropImageView(context).apply {
             imageUri?.let { setImageUriAsync(Uri.parse(it)) }
         }
     }
@@ -74,22 +76,23 @@ fun ImageCropScreen(
     ) { paddingValues ->
         Column(modifier = Modifier.padding(paddingValues)) {
             AndroidView({
-                cropImageView.setOnCropImageCompleteListener { _, result ->
-                    if (result.isSuccessful) {
-                        val croppedBitmap = result.bitmap
-                        if (croppedBitmap != null) {
-                            imageUri?.let {
-                                projectViewModel.saveCroppedImage(
-                                    navController.context,
-                                    it,
-                                    croppedBitmap
-                                )
+                cropImageView.apply {
+                    setOnCropImageCompleteListener { _, result ->
+                        if (result.isSuccessful) {
+                            val croppedBitmap = result.bitmap
+                            if (croppedBitmap != null) {
+                                imageUri?.let {
+                                    projectViewModel.saveCroppedImage(
+                                        context,
+                                        it,
+                                        croppedBitmap
+                                    )
+                                }
                             }
+                            navController.popBackStack()
                         }
-                        navController.popBackStack()
                     }
                 }
-                cropImageView
             }, modifier = Modifier.fillMaxSize())
         }
     }
