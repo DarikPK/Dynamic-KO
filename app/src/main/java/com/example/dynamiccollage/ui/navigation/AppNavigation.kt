@@ -10,7 +10,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.dynamiccollage.ui.screens.CoverSetupScreen
-import com.example.dynamiccollage.ui.screens.ImageCropScreen
 import com.example.dynamiccollage.ui.screens.ImageManagerScreen
 import com.example.dynamiccollage.ui.screens.InnerPagesScreen
 import com.example.dynamiccollage.ui.screens.MainScreen
@@ -78,17 +77,6 @@ fun AppNavigation(
         }
         composable(Screen.ImageManager.route) {
             ImageManagerScreen(navController = navController, projectViewModel = projectViewModel)
-        }
-        composable(
-            route = Screen.ImageCrop.route + "/{imageUri}",
-            arguments = listOf(navArgument("imageUri") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val imageUri = backStackEntry.arguments?.getString("imageUri")
-            ImageCropScreen(
-                navController = navController,
-                imageUri = imageUri,
-                projectViewModel = projectViewModel
-            )
         }
     }
 }
