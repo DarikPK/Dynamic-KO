@@ -153,14 +153,17 @@ fun CoverSetupScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            Text("Fila 1", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(bottom = 4.dp))
             OutlinedTextField(
                 value = coverConfig.clientNameStyle.content,
                 onValueChange = { coverSetupViewModel.onClientNameChange(it) },
-                label = { Text("Fila 1") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
 
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text("Fila 2", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(bottom = 4.dp))
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                 SegmentedButton(
                     selected = coverConfig.documentType == DocumentType.RUC,
@@ -181,12 +184,14 @@ fun CoverSetupScreen(
             OutlinedTextField(
                 value = coverConfig.rucStyle.content,
                 onValueChange = { coverSetupViewModel.onRucChange(it) },
-                label = { Text("Fila 2") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
 
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text("Fila 3", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(bottom = 4.dp))
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                 SegmentedButton(
                     selected = coverConfig.showAddressPrefix,
@@ -202,7 +207,6 @@ fun CoverSetupScreen(
             OutlinedTextField(
                 value = coverConfig.subtitleStyle.content,
                 onValueChange = { coverSetupViewModel.onAddressChange(it) },
-                label = { Text("Fila 3") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
