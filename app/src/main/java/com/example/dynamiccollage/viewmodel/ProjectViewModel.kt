@@ -68,6 +68,25 @@ class ProjectViewModel : ViewModel() {
     private val _pdfGenerationState = MutableStateFlow<PdfGenerationState>(PdfGenerationState.Idle)
     val pdfGenerationState: StateFlow<PdfGenerationState> = _pdfGenerationState.asStateFlow()
 
+    private val _pdfSize = MutableStateFlow(0L)
+    val pdfSize: StateFlow<Long> = _pdfSize.asStateFlow()
+
+    private val _pdfSizeMode = MutableStateFlow(1)
+    val pdfSizeMode: StateFlow<Int> = _pdfSizeMode.asStateFlow()
+
+    fun setPdfSizeMode(mode: Int) {
+        _pdfSizeMode.value = mode
+    }
+
+    fun getFormattedPdfSize(): String {
+        val size = _pdfSize.value
+        return when {
+            size < 1024 -> "$size B"
+            size < 1024 * 1024 -> "${size / 1024} KB"
+            else -> "%.2f MB".format(size / (1024.0 * 1024.0))
+        }
+    }
+
     fun generatePdf(context: Context, fileName: String) {
         val coverConfig = _currentCoverConfig.value
         val pageGroups = _currentPageGroups.value
@@ -97,6 +116,7 @@ class ProjectViewModel : ViewModel() {
             }
             if (generatedFile != null) {
                 Log.d("ProjectViewModel", "generatePdf: Éxito. Archivo: ${generatedFile.absolutePath}")
+                _pdfSize.value = generatedFile.length()
                 _pdfGenerationState.value = PdfGenerationState.Success(generatedFile)
             } else {
                 Log.e("ProjectViewModel", "generatePdf: Fallo. `generatedFile` es nulo.")

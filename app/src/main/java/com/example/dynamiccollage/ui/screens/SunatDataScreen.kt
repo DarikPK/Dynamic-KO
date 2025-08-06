@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import android.widget.Toast
@@ -62,6 +64,11 @@ fun SunatDataScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Obtener Datos de SUNAT") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
+                    }
+                }
             )
         }
     ) { paddingValues ->
