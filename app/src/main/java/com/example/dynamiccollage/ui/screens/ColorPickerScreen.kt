@@ -3,8 +3,11 @@ package com.example.dynamiccollage.ui.screens
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -14,14 +17,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import kotlin.math.atan2
@@ -30,7 +34,7 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ColorPickerScreen(
     navController: NavController,
@@ -40,54 +44,28 @@ fun ColorPickerScreen(
     val initialColor = Color(android.graphics.Color.parseColor("#$initialColorHex"))
     var currentColor by remember { mutableStateOf(initialColor) }
 
-    // State for HSV color model
     val hsv = FloatArray(3)
     android.graphics.Color.colorToHSV(currentColor.toArgb(), hsv)
     var hue by remember { mutableStateOf(hsv[0]) }
     var saturation by remember { mutableStateOf(hsv[1]) }
     var value by remember { mutableStateOf(hsv[2]) }
 
-    // State for RGB text fields
     var rInput by remember { mutableStateOf((currentColor.red * 255).roundToInt().toString()) }
     var gInput by remember { mutableStateOf((currentColor.green * 255).roundToInt().toString()) }
     var bInput by remember { mutableStateOf((currentColor.blue * 255).roundToInt().toString()) }
 
-    // Update everything when currentColor changes
     LaunchedEffect(currentColor) {
         android.graphics.Color.colorToHSV(currentColor.toArgb(), hsv)
-        hue = hsv[0]
-        saturation = hsv[1]
-        value = hsv[2]
-        rInput = (currentColor.red * 255).roundToInt().toString()
-        gInput = (currentColor.green * 255).roundToInt().toString()
-        bInput = (currentColor.blue * 255).roundToInt().toString()
-    }
+        if (hsv[0] != hue) hue = hsv[0]
+        if (hsv[1] != saturation) saturation = hsv[1]
+        if (hsv[2] != value) value = hsv[2]
 
-    val canvasSize = remember { mutableStateOf(0f) }
-    var touchPosition by remember { mutableStateOf<Offset?>(null) }
-
-    LaunchedEffect(touchPosition) {
-        touchPosition?.let { pos ->
-            val size = canvasSize.value
-            if (size > 0) {
-                val centerX = size / 2f
-                val centerY = size / 2f
-                val radius = size / 2f
-
-                val dx = pos.x - centerX
-                val dy = pos.y - centerY
-                val d = sqrt(dx * dx + dy * dy)
-
-                val newSaturation = (d / radius).coerceIn(0f, 1f)
-                saturation = newSaturation
-
-                val angle = atan2(dy, dx)
-                val newHue = (Math.toDegrees(angle.toDouble()).toFloat() + 360) % 360
-                hue = newHue
-
-                currentColor = Color.hsv(newHue, newSaturation, value)
-            }
-        }
+        val r = (currentColor.red * 255).roundToInt().toString()
+        val g = (currentColor.green * 255).roundToInt().toString()
+        val b = (currentColor.blue * 255).roundToInt().toString()
+        if (rInput != r) rInput = r
+        if (gInput != g) gInput = g
+        if (bInput != b) bInput = b
     }
 
     Scaffold(
@@ -130,21 +108,25 @@ fun ColorPickerScreen(
                     .border(1.dp, MaterialTheme.colorScheme.outline)
             )
 
-            // Rueda de Color (Estática por ahora)
-            val hueBrush = Brush.sweepGradient(
-                colors = listOf(
-                    Color.Red, Color.Magenta, Color.Blue, Color.Cyan, Color.Green, Color.Yellow, Color.Red
-                ),
-                center = Offset.Zero
-            )
-            val saturationBrush = Brush.radialGradient(
-                colors = listOf(Color.White, Color.Transparent),
-                center = Offset.Zero,
-                radius = 0f
-            )
+            val onColorFromWheel: (Offset, IntSize) -> Unit = { offset, size ->
+                val canvasRadius = size.width / 2f
+                val centerX = canvasRadius
+                val centerY = canvasRadius
 
-            var touchPosition by remember { mutableStateOf<Offset?>(null) }
-            val canvasSize = remember { mutableStateOf(0f) }
+                val dx = offset.x - centerX
+                val dy = offset.y - centerY
+                val distance = sqrt(dx * dx + dy * dy)
+
+                if (distance <= canvasRadius) {
+                    val newSaturation = (distance / canvasRadius).coerceIn(0f, 1f)
+                    val angle = atan2(dy, dx)
+                    val newHue = (Math.toDegrees(angle.toDouble()).toFloat() + 360) % 360
+
+                    hue = newHue
+                    saturation = newSaturation
+                    currentColor = Color.hsv(newHue, newSaturation, value)
+                }
+            }
 
             Canvas(
                 modifier = Modifier
@@ -152,37 +134,32 @@ fun ColorPickerScreen(
                     .aspectRatio(1f)
                     .pointerInput(Unit) {
                         detectDragGestures(
-                            onDragStart = { offset -> touchPosition = offset },
-                            onDrag = { change, _ -> touchPosition = change.position }
+                            onDragStart = { onColorFromWheel(it, size) },
+                            onDrag = { change, _ -> onColorFromWheel(change.position, size) }
                         )
                     }
             ) {
-                canvasSize.value = size.minDimension
-                // El centro del Canvas será el nuevo origen (0,0) para los gradientes
-                val canvasSize = size.minDimension
-                val center = Offset(canvasSize / 2, canvasSize / 2)
-                val radius = canvasSize / 2
+                val canvasRadius = size.minDimension / 2f
+                val center = Offset(canvasRadius, canvasRadius)
 
-                val translatedHueBrush = Brush.sweepGradient(
+                val hueBrush = Brush.sweepGradient(
                     colors = listOf(
                         Color.Red, Color.Magenta, Color.Blue, Color.Cyan, Color.Green, Color.Yellow, Color.Red
                     ),
                     center = center
                 )
-                val translatedSaturationBrush = Brush.radialGradient(
+                val saturationBrush = Brush.radialGradient(
                     colors = listOf(Color.White, Color.Transparent),
                     center = center,
-                    radius = radius
+                    radius = canvasRadius
                 )
 
-                drawCircle(brush = translatedHueBrush, radius = radius, center = center)
-                drawCircle(brush = translatedSaturationBrush, radius = radius, center = center)
-                // Borde exterior
-                drawCircle(color = Color.LightGray, radius = radius, center = center, style = Stroke(width = 2.dp.toPx()))
+                drawCircle(brush = hueBrush, radius = canvasRadius, center = center)
+                drawCircle(brush = saturationBrush, radius = canvasRadius, center = center)
+                drawCircle(color = Color.LightGray, radius = canvasRadius, center = center, style = Stroke(width = 2.dp.toPx()))
 
-                // Dibujar el indicador visual (selector)
                 val angle = Math.toRadians(hue.toDouble())
-                val r = saturation * radius
+                val r = saturation * canvasRadius
                 val selectorX = center.x + (r * cos(angle)).toFloat()
                 val selectorY = center.y + (r * sin(angle)).toFloat()
                 val selectorPosition = Offset(selectorX, selectorY)
