@@ -10,6 +10,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.dynamiccollage.ui.screens.CoverSetupScreen
+import com.example.dynamiccollage.ui.screens.ImageManagerScreen
 import com.example.dynamiccollage.ui.screens.InnerPagesScreen
 import com.example.dynamiccollage.ui.screens.MainScreen
 import com.example.dynamiccollage.ui.screens.PdfPreviewScreen
@@ -73,6 +74,9 @@ fun AppNavigation(
                 projectViewModel = projectViewModel,
                 sunatDataViewModel = sunatDataViewModel
             )
+        }
+        composable(Screen.ImageManager.route) {
+            ImageManagerScreen(navController = navController, projectViewModel = projectViewModel)
         }
     }
 }

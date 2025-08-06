@@ -179,7 +179,7 @@ fun CoverSetupScreen(
                 onValueChange = { coverSetupViewModel.onAddressChange(it) },
                 label = { Text(stringResource(id = R.string.cover_setup_address_label)) },
                 modifier = Modifier.fillMaxWidth(),
-                minLines = 3
+                singleLine = true
             )
 
             Row(
@@ -273,83 +273,94 @@ fun CoverSetupScreen(
                 Text("Poner todo el texto en mayúsculas")
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-            Divider()
-            Spacer(modifier = Modifier.height(8.dp))
+            var showAdvancedOptions by remember { mutableStateOf(false) }
 
-            Text(
-                stringResource(id = R.string.cover_setup_text_customization_title),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            )
-
-            TextCustomizationSection(
-                label = stringResource(id = R.string.field_client_name),
-                textStyleConfig = coverConfig.clientNameStyle,
-                onTextStyleChange = { newSize, newAlign, newColor ->
-                    coverSetupViewModel.onTextStyleChange(DefaultCoverConfig.CLIENT_NAME_ID, newSize, newAlign, newColor)
-                }
-            )
-
-            TextCustomizationSection(
-                label = coverConfig.documentType.name,
-                textStyleConfig = coverConfig.rucStyle,
-                onTextStyleChange = { newSize, newAlign, newColor ->
-                    coverSetupViewModel.onTextStyleChange(DefaultCoverConfig.RUC_ID, newSize, newAlign, newColor)
-                }
-            )
-
-            TextCustomizationSection(
-                label = stringResource(id = R.string.field_address),
-                textStyleConfig = coverConfig.subtitleStyle,
-                onTextStyleChange = { newSize, newAlign, newColor ->
-                    coverSetupViewModel.onTextStyleChange(DefaultCoverConfig.SUBTITLE_ID, newSize, newAlign, newColor)
-                }
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-            Divider()
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Button(
-                onClick = { /* TODO: Navigate to new RowStyleEditor screen */
-                          navController.navigate(Screen.RowStyleEditor.route)
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Personalizar Estilos de Fila (Bordes, Fondos)")
+            TextButton(onClick = { showAdvancedOptions = !showAdvancedOptions }) {
+                Text(if (showAdvancedOptions) "Ocultar Opciones Avanzadas" else "Mostrar Opciones Avanzadas")
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-            Divider()
-            Spacer(modifier = Modifier.height(8.dp))
+            if (showAdvancedOptions) {
+                Column {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Divider()
+                    Spacer(modifier = Modifier.height(8.dp))
 
-            // Ajuste aquí: coverConfig.marginTop ya es Float (cm), no necesita .dp
-            // La sección MarginCustomizationSection debe ser adaptada para tomar Float y su lógica interna también.
-            MarginCustomizationSection(
-                marginTop = coverConfig.marginTop, // Pasar Float directamente
-                marginBottom = coverConfig.marginBottom,
-                marginLeft = coverConfig.marginLeft,
-                marginRight = coverConfig.marginRight,
-                onMarginChange = { top, bottom, left, right ->
-                    coverSetupViewModel.onMarginChange(top, bottom, left, right)
+                    Text(
+                        stringResource(id = R.string.cover_setup_text_customization_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+
+                    TextCustomizationSection(
+                        label = stringResource(id = R.string.field_client_name),
+                        textStyleConfig = coverConfig.clientNameStyle,
+                        onTextStyleChange = { newSize, newAlign, newColor ->
+                            coverSetupViewModel.onTextStyleChange(DefaultCoverConfig.CLIENT_NAME_ID, newSize, newAlign, newColor)
+                        }
+                    )
+
+                    TextCustomizationSection(
+                        label = coverConfig.documentType.name,
+                        textStyleConfig = coverConfig.rucStyle,
+                        onTextStyleChange = { newSize, newAlign, newColor ->
+                            coverSetupViewModel.onTextStyleChange(DefaultCoverConfig.RUC_ID, newSize, newAlign, newColor)
+                        }
+                    )
+
+                    TextCustomizationSection(
+                        label = stringResource(id = R.string.field_address),
+                        textStyleConfig = coverConfig.subtitleStyle,
+                        onTextStyleChange = { newSize, newAlign, newColor ->
+                            coverSetupViewModel.onTextStyleChange(DefaultCoverConfig.SUBTITLE_ID, newSize, newAlign, newColor)
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Divider()
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Button(
+                        onClick = { /* TODO: Navigate to new RowStyleEditor screen */
+                            navController.navigate(Screen.RowStyleEditor.route)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Personalizar Estilos de Fila (Bordes, Fondos)")
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Divider()
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Ajuste aquí: coverConfig.marginTop ya es Float (cm), no necesita .dp
+                    // La sección MarginCustomizationSection debe ser adaptada para tomar Float y su lógica interna también.
+                    MarginCustomizationSection(
+                        marginTop = coverConfig.marginTop, // Pasar Float directamente
+                        marginBottom = coverConfig.marginBottom,
+                        marginLeft = coverConfig.marginLeft,
+                        marginRight = coverConfig.marginRight,
+                        onMarginChange = { top, bottom, left, right ->
+                            coverSetupViewModel.onMarginChange(top, bottom, left, right)
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Divider()
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    LayoutWeightsCustomizationSection(
+                        clientWeight = coverConfig.clientWeight,
+                        rucWeight = coverConfig.rucWeight,
+                        addressWeight = coverConfig.addressWeight,
+                        separationWeight = coverConfig.separationWeight,
+                        photoWeight = coverConfig.photoWeight,
+                        onWeightChange = { client, ruc, address, separation, photo ->
+                            coverSetupViewModel.onWeightChange(client, ruc, address, separation, photo)
+                        }
+                    )
                 }
-            )
+            }
 
-            Spacer(modifier = Modifier.height(16.dp))
-            Divider()
-            Spacer(modifier = Modifier.height(8.dp))
-
-            LayoutWeightsCustomizationSection(
-                clientWeight = coverConfig.clientWeight,
-                rucWeight = coverConfig.rucWeight,
-                addressWeight = coverConfig.addressWeight,
-                separationWeight = coverConfig.separationWeight,
-                photoWeight = coverConfig.photoWeight,
-                onWeightChange = { client, ruc, address, separation, photo ->
-                    coverSetupViewModel.onWeightChange(client, ruc, address, separation, photo)
-                }
-            )
             Spacer(modifier = Modifier.height(24.dp))
         }
     }

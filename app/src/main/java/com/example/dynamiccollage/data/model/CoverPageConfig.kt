@@ -106,7 +106,7 @@ data class CoverPageConfig(
     // Pesos para el diseño de la portada
     val clientWeight: Float = 0.4f,
     val rucWeight: Float = 0.4f,
-    val addressWeight: Float = 0.4f,
+    val addressWeight: Float = 1.0f,
     val separationWeight: Float = 0.2f,
     val photoWeight: Float = 10f,
 
