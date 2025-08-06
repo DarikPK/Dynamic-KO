@@ -1,12 +1,12 @@
 package com.example.dynamiccollage.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Filter
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.material.icons.filled.RotateRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -33,8 +33,7 @@ fun ImageManagerScreen(
         contract = com.canhub.cropper.CropImageContract(),
         onResult = { result ->
             if (result.isSuccessful) {
-                val newUri = result.uriContent
-                selectedImageUri = newUri.toString()
+                selectedImageUri = result.uriContent.toString()
                 // This is not ideal, as we are not saving the bitmap, but the URI.
                 // For now, we will just update the selected image URI to show the preview.
             }
