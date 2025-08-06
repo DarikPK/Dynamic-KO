@@ -41,6 +41,7 @@ object DefaultCoverConfig {
 data class CoverPageConfig(
     // Asumiendo que TextStyleConfig no tiene 'id' y fontSize es Int
     val clientNameStyle: TextStyleConfig = TextStyleConfig(
+        content = "",
         fontFamily = calibriFontFamily,
         fontSize = 18,
         fontWeight = FontWeight.Normal,
@@ -55,6 +56,7 @@ data class CoverPageConfig(
     ),
     val documentType: DocumentType = DocumentType.RUC,
     val rucStyle: TextStyleConfig = TextStyleConfig(
+        content = "",
         fontFamily = calibriFontFamily,
         fontSize = 18,
         fontWeight = FontWeight.Normal,
@@ -69,6 +71,7 @@ data class CoverPageConfig(
         )
     ),
     val subtitleStyle: TextStyleConfig = TextStyleConfig(
+        content = "",
         fontFamily = calibriFontFamily,
         fontSize = 10,
         textAlign = TextAlign.End,
