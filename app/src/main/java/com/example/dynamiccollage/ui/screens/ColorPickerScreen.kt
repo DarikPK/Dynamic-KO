@@ -1,5 +1,6 @@
 package com.example.dynamiccollage.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,59 +17,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.*
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import kotlin.math.cos
 import kotlin.math.roundToInt
-import kotlin.math.sin
-import kotlin.math.sqrt
 
-private fun generateRainbowPalette(): List<Color> {
-    val colors = mutableListOf<Color>()
-    // 7 tonos base del arcoiris (H en HSV)
-    val hues = floatArrayOf(0f, 30f, 60f, 120f, 240f, 270f, 300f)
-    val brightnessSteps = 5
-    val saturation = 0.9f
-
-    hues.forEach { hue ->
-        (1..brightnessSteps).forEach { step ->
-            val brightness = (step.toFloat() / brightnessSteps).coerceIn(0.1f, 1.0f)
-            colors.add(Color.hsv(hue, saturation, brightness))
-        }
-    }
-    return colors
-}
-
-private val predefinedColors = generateRainbowPalette()
-
-private class HexagonShape : Shape {
-    override fun createOutline(
-        size: Size,
-        layoutDirection: LayoutDirection,
-        density: Density
-    ): Outline {
-        val path = Path().apply {
-            val centerX = size.width / 2f
-            val centerY = size.height / 2f
-            val radius = size.minDimension / 2f
-            moveTo(centerX + radius, centerY)
-            for (i in 1..5) {
-                val angle = i * 60.0 * (Math.PI / 180.0)
-                lineTo(centerX + (radius * cos(angle)).toFloat(), centerY + (radius * sin(angle)).toFloat())
-            }
-            close()
-        }
-        return Outline.Generic(path)
-    }
-}
+private val rainbowColors = listOf(
+    Color.Red, Color(0xFFFFA500) /*Orange*/, Color.Yellow, Color.Green,
+    Color.Blue, Color(0xFF4B0082) /*Indigo*/, Color(0xFF9400D3) /*Violet*/
+)
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -78,30 +39,27 @@ fun ColorPickerScreen(
     initialColorHex: String
 ) {
     val initialColor = Color(android.graphics.Color.parseColor("#$initialColorHex"))
-    var currentColor by remember { mutableStateOf(initialColor) }
+    var selectedBaseColor by remember { mutableStateOf(initialColor) }
+    var finalColor by remember { mutableStateOf(initialColor) }
+    var sliderPosition by remember { mutableStateOf(0.5f) }
 
-    val hsv = FloatArray(3)
-    android.graphics.Color.colorToHSV(currentColor.toArgb(), hsv)
-    var hue by remember { mutableStateOf(hsv[0]) }
-    var saturation by remember { mutableStateOf(hsv[1]) }
-    var value by remember { mutableStateOf(hsv[2]) }
+    var rInput by remember { mutableStateOf("") }
+    var gInput by remember { mutableStateOf("") }
+    var bInput by remember { mutableStateOf("") }
 
-    var rInput by remember { mutableStateOf((currentColor.red * 255).roundToInt().toString()) }
-    var gInput by remember { mutableStateOf((currentColor.green * 255).roundToInt().toString()) }
-    var bInput by remember { mutableStateOf((currentColor.blue * 255).roundToInt().toString()) }
+    LaunchedEffect(finalColor) {
+        rInput = (finalColor.red * 255).roundToInt().toString()
+        gInput = (finalColor.green * 255).roundToInt().toString()
+        bInput = (finalColor.blue * 255).roundToInt().toString()
+    }
 
-    LaunchedEffect(currentColor) {
-        android.graphics.Color.colorToHSV(currentColor.toArgb(), hsv)
-        if (hsv[0] != hue) hue = hsv[0]
-        if (hsv[1] != saturation) saturation = hsv[1]
-        if (hsv[2] != value) value = hsv[2]
-
-        val r = (currentColor.red * 255).roundToInt().toString()
-        val g = (currentColor.green * 255).roundToInt().toString()
-        val b = (currentColor.blue * 255).roundToInt().toString()
-        if (rInput != r) rInput = r
-        if (gInput != g) gInput = g
-        if (bInput != b) bInput = b
+    LaunchedEffect(sliderPosition, selectedBaseColor) {
+        val t = sliderPosition
+        finalColor = if (t < 0.5f) {
+            lerp(Color.Black, selectedBaseColor, t * 2)
+        } else {
+            lerp(selectedBaseColor, Color.White, (t - 0.5f) * 2)
+        }
     }
 
     Scaffold(
@@ -115,7 +73,7 @@ fun ColorPickerScreen(
                 },
                 actions = {
                     IconButton(onClick = {
-                        val colorHex = String.format("%06X", (0xFFFFFF and currentColor.toArgb()))
+                        val colorHex = String.format("%06X", (0xFFFFFF and finalColor.toArgb()))
                         navController.previousBackStackEntry
                             ?.savedStateHandle
                             ?.set("selected_color", "$fieldId:$colorHex")
@@ -140,49 +98,33 @@ fun ColorPickerScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(100.dp)
-                    .background(currentColor)
+                    .background(finalColor)
                     .border(1.dp, MaterialTheme.colorScheme.outline)
             )
 
-            Text("Paleta de Colores")
-            val density = LocalDensity.current
-            BoxWithConstraints(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f),
-                contentAlignment = Alignment.Center
+            Text("Colores Base")
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                maxItemsInEachRow = 7
             ) {
-                val boxWidth = this.maxWidth
-                val center = Offset(boxWidth.value / 2, boxWidth.value / 2)
-                val numHues = 7
-                val numShades = 5
-                val angleStep = 360f / numHues
-                val maxRadius = boxWidth.value / 2 * 0.9f
-                val radiusStep = maxRadius / numShades
-                val hexagonSize = (radiusStep * 0.9f).dp
-
-                predefinedColors.forEachIndexed { index, color ->
-                    val hueIndex = index / numShades
-                    val shadeIndex = index % numShades
-
-                    val angle = Math.toRadians((hueIndex * angleStep).toDouble())
-                    val radius = (shadeIndex + 1) * radiusStep
-
-                    val x = center.x + (radius * cos(angle)).toFloat() - (hexagonSize.value / 2 * density.density)
-                    val y = center.y + (radius * sin(angle)).toFloat() - (hexagonSize.value / 2 * density.density)
-
-                    val isSelected = currentColor.toArgb() == color.toArgb()
+                rainbowColors.forEach { color ->
+                    val isSelected = selectedBaseColor.toArgb() == color.toArgb()
                     Box(
                         modifier = Modifier
-                            .offset(x = (x / density.density).dp, y = (y / density.density).dp)
-                            .size(hexagonSize)
-                            .clip(HexagonShape())
+                            .size(40.dp)
+                            .clip(CircleShape)
                             .background(color)
-                            .clickable { currentColor = color }
+                            .clickable {
+                                selectedBaseColor = color
+                                sliderPosition = 0.5f // Reset slider
+                                finalColor = color
+                            }
                             .border(
                                 width = if (isSelected) 3.dp else 0.dp,
                                 color = MaterialTheme.colorScheme.outline,
-                                shape = HexagonShape()
+                                shape = CircleShape
                             )
                     )
                 }
@@ -190,18 +132,44 @@ fun ColorPickerScreen(
 
             Divider()
 
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Tonalidad (Claro/Oscuro)")
+                Slider(
+                    value = sliderPosition,
+                    onValueChange = { sliderPosition = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    track = {
+                        Box(
+                            modifier = Modifier
+                                .height(20.dp)
+                                .fillMaxWidth()
+                                .background(
+                                    brush = Brush.horizontalGradient(
+                                        colors = listOf(Color.Black, selectedBaseColor, Color.White)
+                                    ),
+                                    shape = CircleShape
+                                )
+                                .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                        )
+                    }
+                )
+            }
+
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                OutlinedTextField(
+                 OutlinedTextField(
                     value = rInput,
                     onValueChange = {
                         rInput = it
                         val r = it.toIntOrNull()?.coerceIn(0, 255)
-                        if (r != null) {
-                            currentColor = Color(r, (currentColor.green * 255).roundToInt(), (currentColor.blue * 255).roundToInt())
+                        val g = gInput.toIntOrNull()?.coerceIn(0, 255)
+                        val b = bInput.toIntOrNull()?.coerceIn(0, 255)
+                        if (r != null && g != null && b != null) {
+                            finalColor = Color(r, g, b)
                         }
                     },
                     label = { Text("R") },
@@ -212,9 +180,11 @@ fun ColorPickerScreen(
                     value = gInput,
                     onValueChange = {
                         gInput = it
+                        val r = rInput.toIntOrNull()?.coerceIn(0, 255)
                         val g = it.toIntOrNull()?.coerceIn(0, 255)
-                        if (g != null) {
-                            currentColor = Color((currentColor.red * 255).roundToInt(), g, (currentColor.blue * 255).roundToInt())
+                        val b = bInput.toIntOrNull()?.coerceIn(0, 255)
+                        if (r != null && g != null && b != null) {
+                            finalColor = Color(r, g, b)
                         }
                     },
                     label = { Text("G") },
@@ -225,9 +195,11 @@ fun ColorPickerScreen(
                     value = bInput,
                     onValueChange = {
                         bInput = it
+                        val r = rInput.toIntOrNull()?.coerceIn(0, 255)
+                        val g = gInput.toIntOrNull()?.coerceIn(0, 255)
                         val b = it.toIntOrNull()?.coerceIn(0, 255)
-                        if (b != null) {
-                            currentColor = Color((currentColor.red * 255).roundToInt(), (currentColor.green * 255).roundToInt(), b)
+                        if (r != null && g != null && b != null) {
+                            finalColor = Color(r, g, b)
                         }
                     },
                     label = { Text("B") },
@@ -235,16 +207,6 @@ fun ColorPickerScreen(
                     modifier = Modifier.weight(1f)
                 )
             }
-
-            Text("Brillo")
-            Slider(
-                value = value,
-                onValueChange = {
-                    value = it
-                    currentColor = Color.hsv(hue, saturation, value)
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
         }
     }
 }
