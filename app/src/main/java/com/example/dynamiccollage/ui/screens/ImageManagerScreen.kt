@@ -1,5 +1,6 @@
 package com.example.dynamiccollage.ui.screens
 
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -16,7 +17,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.example.dynamiccollage.ui.navigation.Screen
+import com.canhub.cropper.CropImageContract
+import com.canhub.cropper.CropImageContractOptions
+import com.canhub.cropper.CropImageOptions
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,7 +33,7 @@ fun ImageManagerScreen(
     val context = LocalContext.current
 
     val cropImage = rememberLauncherForActivityResult(
-        contract = com.canhub.cropper.CropImageContract(),
+        contract = CropImageContract(),
         onResult = { result ->
             if (result.isSuccessful) {
                 selectedImageUri = result.uriContent.toString()
@@ -59,12 +62,11 @@ fun ImageManagerScreen(
                 ) {
                     IconButton(onClick = {
                         selectedImageUri?.let {
-                            cropImage.launch(
-                                com.canhub.cropper.CropImageContractOptions(
-                                    uri = android.net.Uri.parse(it),
-                                    cropImageOptions = com.canhub.cropper.CropImageOptions()
-                                )
+                            val cropOptions = CropImageContractOptions(
+                                uri = Uri.parse(it),
+                                cropImageOptions = CropImageOptions()
                             )
+                            cropImage.launch(cropOptions)
                         }
                     }) {
                         Icon(Icons.Default.Crop, contentDescription = "Recortar")
