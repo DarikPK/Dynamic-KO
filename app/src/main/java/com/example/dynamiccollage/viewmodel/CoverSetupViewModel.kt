@@ -13,6 +13,8 @@ import com.example.dynamiccollage.remote.DniData
 import com.example.dynamiccollage.remote.RucData
 import com.example.dynamiccollage.remote.SunatData
 import com.example.dynamiccollage.data.model.TextStyleConfig
+import android.content.ContentResolver
+import android.graphics.BitmapFactory
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -76,9 +78,23 @@ class CoverSetupViewModel : ViewModel() {
         }
     }
 
-    fun onMainImageSelected(uri: Uri?) {
+    fun onMainImageSelected(uri: Uri?, contentResolver: ContentResolver) {
         _coverConfig.update { currentState ->
-            currentState.copy(mainImageUri = uri?.toString())
+            val orientation = uri?.let {
+                contentResolver.openInputStream(it)?.use { inputStream ->
+                    val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                    BitmapFactory.decodeStream(inputStream, null, options)
+                    if (options.outWidth > options.outHeight) {
+                        PageOrientation.Horizontal
+                    } else {
+                        PageOrientation.Vertical
+                    }
+                }
+            }
+            currentState.copy(
+                mainImageUri = uri?.toString(),
+                pageOrientation = orientation ?: currentState.pageOrientation
+            )
         }
     }
 

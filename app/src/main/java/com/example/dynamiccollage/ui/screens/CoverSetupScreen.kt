@@ -103,8 +103,9 @@ fun CoverSetupScreen(
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
-        // Pasar contentResolver para el Paso 2 (Detección de Orientación de Foto)
-        coverSetupViewModel.onMainImageSelected(uri) // , context.contentResolver) // Descomentar cuando se implemente Paso 2 completamente
+        uri?.let {
+            coverSetupViewModel.onMainImageSelected(it, context.contentResolver)
+        }
     }
 
     Scaffold(
@@ -244,7 +245,7 @@ fun CoverSetupScreen(
 
             // Selector de Orientación de Portada (NUEVO)
             Text(
-                stringResource(R.string.cover_setup_page_orientation_label),
+                "Orientación de foto recomendada",
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
