@@ -134,7 +134,11 @@ object PdfGenerator {
                 "id" to "ruc",
                 "weight" to config.rucWeight,
                 "draw" to { rect: RectF ->
-                    val documentLabel = if (config.documentType == com.example.dynamiccollage.data.model.DocumentType.DNI) "DNI: " else "RUC: "
+                    val documentLabel = when (config.documentType) {
+                        com.example.dynamiccollage.data.model.DocumentType.DNI -> "DNI: "
+                        com.example.dynamiccollage.data.model.DocumentType.RUC -> "RUC: "
+                        com.example.dynamiccollage.data.model.DocumentType.NONE -> ""
+                    }
                     val content = documentLabel + if (config.allCaps) config.rucStyle.content.uppercase() else config.rucStyle.content
                     drawRow(canvas, context, content, config.rucStyle, rect)
                 }

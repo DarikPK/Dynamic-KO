@@ -156,7 +156,7 @@ fun CoverSetupScreen(
             OutlinedTextField(
                 value = coverConfig.clientNameStyle.content,
                 onValueChange = { coverSetupViewModel.onClientNameChange(it) },
-                label = { Text(stringResource(id = R.string.cover_setup_client_name_label)) },
+                label = { Text("Fila 1") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -165,29 +165,26 @@ fun CoverSetupScreen(
                 SegmentedButton(
                     selected = coverConfig.documentType == DocumentType.RUC,
                     onClick = { coverSetupViewModel.onDocumentTypeChange(DocumentType.RUC) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 3)
                 ) { Text("RUC") }
                 SegmentedButton(
                     selected = coverConfig.documentType == DocumentType.DNI,
                     onClick = { coverSetupViewModel.onDocumentTypeChange(DocumentType.DNI) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 3)
                 ) { Text("DNI") }
+                SegmentedButton(
+                    selected = coverConfig.documentType == DocumentType.NONE,
+                    onClick = { coverSetupViewModel.onDocumentTypeChange(DocumentType.NONE) },
+                    shape = SegmentedButtonDefaults.itemShape(index = 2, count = 3)
+                ) { Text("-") }
             }
             OutlinedTextField(
                 value = coverConfig.rucStyle.content,
                 onValueChange = { coverSetupViewModel.onRucChange(it) },
-                label = { Text(coverConfig.documentType.name) },
+                label = { Text("Fila 2") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-            )
-
-            OutlinedTextField(
-                value = coverConfig.subtitleStyle.content,
-                onValueChange = { coverSetupViewModel.onAddressChange(it) },
-                label = { Text(stringResource(id = R.string.cover_setup_address_label)) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
             )
 
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
@@ -202,6 +199,14 @@ fun CoverSetupScreen(
                     shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
                 ) { Text("-") }
             }
+
+            OutlinedTextField(
+                value = coverConfig.subtitleStyle.content,
+                onValueChange = { coverSetupViewModel.onAddressChange(it) },
+                label = { Text("Fila 3") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
 
