@@ -92,13 +92,14 @@ fun PdfPreviewScreen(
             if (file != null && file.exists()) {
                 PdfView(uri = Uri.fromFile(file))
             } else {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("Error: PDF not found")
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Error: PDF not found")
+                }
             }
         }
     }
