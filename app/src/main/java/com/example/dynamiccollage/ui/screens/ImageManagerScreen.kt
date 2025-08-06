@@ -1,6 +1,5 @@
 package com.example.dynamiccollage.ui.screens
 
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -17,9 +16,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.canhub.cropper.CropImageContract
-import com.canhub.cropper.CropImageContractOptions
-import com.canhub.cropper.CropImageOptions
+import com.example.dynamiccollage.ui.navigation.Screen
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -32,8 +29,11 @@ fun ImageManagerScreen(
     var selectedImageUri by remember { mutableStateOf(imageUris.firstOrNull()) }
     val context = LocalContext.current
 
+    // TODO: Recorte deshabilitado temporalmente. La siguiente variable y su uso deben ser descomentados
+    // una vez que se decida el método de recorte (librería o implementación propia).
+    /*
     val cropImage = rememberLauncherForActivityResult(
-        contract = CropImageContract(),
+        contract = com.canhub.cropper.CropImageContract(),
         onResult = { result ->
             if (result.isSuccessful) {
                 selectedImageUri = result.uriContent.toString()
@@ -42,6 +42,7 @@ fun ImageManagerScreen(
             }
         }
     )
+    */
 
     Scaffold(
         topBar = {
@@ -60,16 +61,9 @@ fun ImageManagerScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
-                    IconButton(onClick = {
-                        selectedImageUri?.let {
-                            val cropOptions = CropImageContractOptions(
-                                uri = Uri.parse(it),
-                                cropImageOptions = CropImageOptions()
-                            )
-                            cropImage.launch(cropOptions)
-                        }
-                    }) {
-                        Icon(Icons.Default.Crop, contentDescription = "Recortar")
+                    // TODO: El botón de recorte está deshabilitado hasta que se solucione la funcionalidad.
+                    IconButton(onClick = { /* cropImage.launch(...) */ }, enabled = false) {
+                        Icon(Icons.Default.Crop, contentDescription = "Recortar (deshabilitado)")
                     }
                     IconButton(onClick = { /* TODO: Implement rotate */ }) {
                         Icon(Icons.Default.RotateRight, contentDescription = "Girar")
