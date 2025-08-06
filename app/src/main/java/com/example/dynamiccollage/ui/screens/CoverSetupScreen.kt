@@ -153,18 +153,14 @@ fun CoverSetupScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("Fila 1", style = MaterialTheme.typography.titleMedium)
             OutlinedTextField(
                 value = coverConfig.clientNameStyle.content,
                 onValueChange = { coverSetupViewModel.onClientNameChange(it) },
-                label = { Text(stringResource(id = R.string.cover_setup_client_name_label)) },
+                label = { Text("Fila 1") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text("Fila 2", style = MaterialTheme.typography.titleMedium)
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                 SegmentedButton(
                     selected = coverConfig.documentType == DocumentType.RUC,
@@ -185,15 +181,12 @@ fun CoverSetupScreen(
             OutlinedTextField(
                 value = coverConfig.rucStyle.content,
                 onValueChange = { coverSetupViewModel.onRucChange(it) },
-                label = { Text(coverConfig.documentType.name) },
+                label = { Text("Fila 2") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text("Fila 3", style = MaterialTheme.typography.titleMedium)
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                 SegmentedButton(
                     selected = coverConfig.showAddressPrefix,
@@ -206,11 +199,10 @@ fun CoverSetupScreen(
                     shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
                 ) { Text("-") }
             }
-
             OutlinedTextField(
                 value = coverConfig.subtitleStyle.content,
                 onValueChange = { coverSetupViewModel.onAddressChange(it) },
-                label = { Text(stringResource(id = R.string.cover_setup_address_label)) },
+                label = { Text("Fila 3") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
