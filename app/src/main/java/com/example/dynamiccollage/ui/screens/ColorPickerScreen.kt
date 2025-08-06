@@ -30,22 +30,23 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-private val predefinedColors = listOf(
-    // Rojos y Rosados
-    Color(0xFFF44336), Color(0xFFE91E63), Color(0xFFFF8A80), Color(0xFFFFCDD2),
-    // Púrpuras y Violetas
-    Color(0xFF9C27B0), Color(0xFF673AB7), Color(0xFFB39DDB), Color(0xFFE1BEE7),
-    // Azules
-    Color(0xFF3F51B5), Color(0xFF2196F3), Color(0xFF90CAF9), Color(0xFFBBDEFB),
-    // Verdes
-    Color(0xFF4CAF50), Color(0xFF8BC34A), Color(0xFFA5D6A7), Color(0xFFDCEDC8),
-    // Amarillos y Naranjas
-    Color(0xFFFFEB3B), Color(0xFFFFC107), Color(0xFFFF9800), Color(0xFFFFE082),
-    // Marrones y Grises
-    Color(0xFF795548), Color(0xFF9E9E9E), Color(0xFF607D8B), Color(0xFFBDBDBD),
-    // Blanco y Negro
-    Color.Black, Color.White
-)
+private fun generateRainbowPalette(): List<Color> {
+    val colors = mutableListOf<Color>()
+    // 7 tonos base del arcoiris (H en HSV)
+    val hues = floatArrayOf(0f, 30f, 60f, 120f, 240f, 270f, 300f)
+    val brightnessSteps = 5
+    val saturation = 0.9f
+
+    hues.forEach { hue ->
+        (1..brightnessSteps).forEach { step ->
+            val brightness = (step.toFloat() / brightnessSteps).coerceIn(0.1f, 1.0f)
+            colors.add(Color.hsv(hue, saturation, brightness))
+        }
+    }
+    return colors
+}
+
+private val predefinedColors = generateRainbowPalette()
 
 private class HexagonShape : Shape {
     override fun createOutline(
@@ -143,17 +144,36 @@ fun ColorPickerScreen(
             )
 
             Text("Paleta de Colores")
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                maxItemsInEachRow = 7
+            BoxWithConstraints(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f),
+                contentAlignment = Alignment.Center
             ) {
-                predefinedColors.forEach { color ->
+                val boxWidth = this.maxWidth
+                val center = Offset(boxWidth.value / 2, boxWidth.value / 2)
+                val numHues = 7
+                val numShades = 5
+                val angleStep = 360f / numHues
+                val maxRadius = boxWidth.value / 2 * 0.9f
+                val radiusStep = maxRadius / numShades
+                val hexagonSize = (radiusStep * 0.9f).dp
+
+                predefinedColors.forEachIndexed { index, color ->
+                    val hueIndex = index / numShades
+                    val shadeIndex = index % numShades
+
+                    val angle = Math.toRadians((hueIndex * angleStep).toDouble())
+                    val radius = (shadeIndex + 1) * radiusStep
+
+                    val x = center.x + (radius * cos(angle)).toFloat() - (hexagonSize.value / 2 * density.density)
+                    val y = center.y + (radius * sin(angle)).toFloat() - (hexagonSize.value / 2 * density.density)
+
                     val isSelected = currentColor.toArgb() == color.toArgb()
                     Box(
                         modifier = Modifier
-                            .size(44.dp)
+                            .offset(x = (x / density.density).dp, y = (y / density.density).dp)
+                            .size(hexagonSize)
                             .clip(HexagonShape())
                             .background(color)
                             .clickable { currentColor = color }
