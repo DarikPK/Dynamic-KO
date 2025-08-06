@@ -15,6 +15,7 @@ import com.example.dynamiccollage.ui.screens.InnerPagesScreen
 import com.example.dynamiccollage.ui.screens.MainScreen
 import com.example.dynamiccollage.ui.screens.PdfPreviewScreen
 import com.example.dynamiccollage.ui.screens.RowStyleScreen
+import com.example.dynamiccollage.ui.screens.AdvancedCoverOptionsScreen
 import com.example.dynamiccollage.ui.screens.SunatDataScreen
 import com.example.dynamiccollage.viewmodel.CoverSetupViewModel
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
@@ -77,6 +78,12 @@ fun AppNavigation(
         }
         composable(Screen.ImageManager.route) {
             ImageManagerScreen(navController = navController, projectViewModel = projectViewModel)
+        }
+        composable(Screen.AdvancedCoverOptions.route) {
+            AdvancedCoverOptionsScreen(
+                navController = navController,
+                coverSetupViewModel = coverSetupViewModel
+            )
         }
     }
 }
