@@ -9,6 +9,9 @@ sealed class Screen(val route: String) {
     object SunatData : Screen("sunat_data_screen")
     object ImageManager : Screen("image_manager_screen")
     object AdvancedCoverOptions : Screen("advanced_cover_options_screen")
+    object TextStyle : Screen("text_style_screen")
+    object Margins : Screen("margins_screen")
+    object Weights : Screen("weights_screen")
     // object Settings : Screen("settings_screen") // Ejemplo si se necesitara
 
     fun withArgs(vararg args: String): String {
