@@ -42,7 +42,11 @@ fun ImageManagerScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
-                    IconButton(onClick = { /* TODO: Implement crop */ }) {
+                    IconButton(onClick = {
+                        selectedImageUri?.let {
+                            navController.navigate(Screen.ImageCrop.withArgs(it))
+                        }
+                    }) {
                         Icon(Icons.Default.Crop, contentDescription = "Recortar")
                     }
                     IconButton(onClick = { /* TODO: Implement rotate */ }) {
