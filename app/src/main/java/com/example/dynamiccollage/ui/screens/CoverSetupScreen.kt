@@ -25,6 +25,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -89,6 +90,7 @@ fun CoverSetupScreen(
     val projectCoverConfig by projectViewModel.currentCoverConfig.collectAsState()
     val sunatData by projectViewModel.sunatData.collectAsState()
     val context = LocalContext.current
+    var showAdvancedOptions by remember { mutableStateOf(false) }
     // val detectedPhotoOrientation by coverSetupViewModel.detectedPhotoOrientation.collectAsState() // Para Paso 2
 
     LaunchedEffect(projectCoverConfig) {
@@ -129,6 +131,12 @@ fun CoverSetupScreen(
                         Icon(
                             imageVector = Icons.Filled.Save,
                             contentDescription = stringResource(id = R.string.save_cover_config_button_description)
+                        )
+                    }
+                    IconButton(onClick = { showAdvancedOptions = !showAdvancedOptions }) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Opciones Avanzadas"
                         )
                     }
                 },
@@ -274,11 +282,6 @@ fun CoverSetupScreen(
                 Text("Poner todo el texto en mayúsculas")
             }
 
-            var showAdvancedOptions by remember { mutableStateOf(false) }
-
-            TextButton(onClick = { showAdvancedOptions = !showAdvancedOptions }) {
-                Text(if (showAdvancedOptions) "Ocultar Opciones Avanzadas" else "Mostrar Opciones Avanzadas")
-            }
 
             if (showAdvancedOptions) {
                 Column {
