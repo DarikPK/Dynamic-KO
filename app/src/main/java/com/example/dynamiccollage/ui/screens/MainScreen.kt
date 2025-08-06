@@ -179,9 +179,9 @@ fun MainScreen(
             )
             Spacer(modifier = Modifier.weight(1f))
             MainButton(
-                text = stringResource(R.string.main_btn_generate_pdf),
+                text = "Gestionar Imágenes",
                 onClick = {
-                    projectViewModel.generatePdf(context, "collage_report")
+                    navController.navigate(Screen.ImageManager.route)
                 }
             )
             Spacer(modifier = Modifier.height(16.dp))

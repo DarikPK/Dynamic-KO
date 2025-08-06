@@ -147,6 +147,15 @@ class ProjectViewModel : ViewModel() {
     fun resetShareableUri() {
         _shareablePdfUri.value = null
     }
+
+    fun getAllImageUris(): List<String> {
+        val coverImage = _currentCoverConfig.value.mainImageUri
+        val innerImages = _currentPageGroups.value.flatMap { it.imageUris }
+        val allImages = mutableListOf<String>()
+        coverImage?.let { allImages.add(it) }
+        allImages.addAll(innerImages)
+        return allImages
+    }
 }
 
 sealed class PdfGenerationState {
