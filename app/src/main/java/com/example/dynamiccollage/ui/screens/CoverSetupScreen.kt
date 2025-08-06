@@ -190,15 +190,17 @@ fun CoverSetupScreen(
                 singleLine = true
             )
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Checkbox(
-                    checked = coverConfig.showAddressPrefix,
-                    onCheckedChange = { coverSetupViewModel.onShowAddressPrefixChange(it) }
-                )
-                Text("Incluir prefijo 'Dirección:'")
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                SegmentedButton(
+                    selected = coverConfig.showAddressPrefix,
+                    onClick = { coverSetupViewModel.onShowAddressPrefixChange(true) },
+                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                ) { Text("Dirección") }
+                SegmentedButton(
+                    selected = !coverConfig.showAddressPrefix,
+                    onClick = { coverSetupViewModel.onShowAddressPrefixChange(false) },
+                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                ) { Text("-") }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -270,16 +272,6 @@ fun CoverSetupScreen(
                 ) { Text(stringResource(R.string.orientation_horizontal)) }
             }
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Checkbox(
-                    checked = coverConfig.allCaps,
-                    onCheckedChange = { coverSetupViewModel.onAllCapsChange(it) }
-                )
-                Text("Poner todo el texto en mayúsculas")
-            }
 
 
 

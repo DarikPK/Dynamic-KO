@@ -17,7 +17,10 @@ import com.example.dynamiccollage.ui.screens.MainScreen
 import com.example.dynamiccollage.ui.screens.PdfPreviewScreen
 import com.example.dynamiccollage.ui.screens.RowStyleScreen
 import com.example.dynamiccollage.ui.screens.AdvancedCoverOptionsScreen
+import com.example.dynamiccollage.ui.screens.MarginsScreen
 import com.example.dynamiccollage.ui.screens.SunatDataScreen
+import com.example.dynamiccollage.ui.screens.TextStyleScreen
+import com.example.dynamiccollage.ui.screens.WeightsScreen
 import com.example.dynamiccollage.viewmodel.CoverSetupViewModel
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 import com.example.dynamiccollage.viewmodel.RowStyleViewModel
@@ -82,6 +85,24 @@ fun AppNavigation(
         }
         composable(Screen.AdvancedCoverOptions.route) {
             AdvancedCoverOptionsScreen(
+                navController = navController,
+                coverSetupViewModel = coverSetupViewModel
+            )
+        }
+        composable(Screen.TextStyle.route) {
+            TextStyleScreen(
+                navController = navController,
+                coverSetupViewModel = coverSetupViewModel
+            )
+        }
+        composable(Screen.Margins.route) {
+            MarginsScreen(
+                navController = navController,
+                coverSetupViewModel = coverSetupViewModel
+            )
+        }
+        composable(Screen.Weights.route) {
+            WeightsScreen(
                 navController = navController,
                 coverSetupViewModel = coverSetupViewModel
             )
