@@ -110,9 +110,19 @@ fun AppNavigation(
                 projectViewModel = projectViewModel
             )
         }
-        composable(Screen.ColorPicker.route) {
+        composable(
+            route = Screen.ColorPicker.route + "/{fieldId}/{initialColor}",
+            arguments = listOf(
+                navArgument("fieldId") { type = NavType.StringType },
+                navArgument("initialColor") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val fieldId = backStackEntry.arguments?.getString("fieldId") ?: ""
+            val initialColorHex = backStackEntry.arguments?.getString("initialColor") ?: "FFFFFF"
             ColorPickerScreen(
-                navController = navController
+                navController = navController,
+                fieldId = fieldId,
+                initialColorHex = initialColorHex
             )
         }
     }
