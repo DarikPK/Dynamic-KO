@@ -188,7 +188,10 @@ object PdfGenerator {
 
             if (index < visibleRows.size - 1) {
                 val nextId = visibleRows[index + 1].first
-                if (!(id == "client" && nextId == "ruc")) {
+                // Requerimiento: Espacio fijo de 5 puntos después de la dirección.
+                if (id == "address") {
+                    currentY += 5f
+                } else if (!(id == "client" && nextId == "ruc")) {
                     currentY += separationHeight
                 }
             }

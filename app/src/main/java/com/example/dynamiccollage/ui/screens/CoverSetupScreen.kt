@@ -376,11 +376,19 @@ fun LayoutWeightsCustomizationSection(
     photoWeight: Float,
     onWeightChange: (client: String?, ruc: String?, address: String?, separation: String?, photo: String?) -> Unit
 ) {
-    var clientInput by remember(clientWeight) { mutableStateOf(clientWeight.toString()) }
-    var rucInput by remember(rucWeight) { mutableStateOf(rucWeight.toString()) }
-    var addressInput by remember(addressWeight) { mutableStateOf(addressWeight.toString()) }
-    var separationInput by remember(separationWeight) { mutableStateOf(separationWeight.toString()) }
-    var photoInput by remember(photoWeight) { mutableStateOf(photoWeight.toString()) }
+    var clientInput by remember { mutableStateOf(clientWeight.toString()) }
+    var rucInput by remember { mutableStateOf(rucWeight.toString()) }
+    var addressInput by remember { mutableStateOf(addressWeight.toString()) }
+    var separationInput by remember { mutableStateOf(separationWeight.toString()) }
+    var photoInput by remember { mutableStateOf(photoWeight.toString()) }
+
+    // Actualiza el campo de texto solo si el valor del modelo cambia externamente.
+    LaunchedEffect(clientWeight) { if (clientInput.toFloatOrNull() != clientWeight) clientInput = clientWeight.toString() }
+    LaunchedEffect(rucWeight) { if (rucInput.toFloatOrNull() != rucWeight) rucInput = rucWeight.toString() }
+    LaunchedEffect(addressWeight) { if (addressInput.toFloatOrNull() != addressWeight) addressInput = addressWeight.toString() }
+    LaunchedEffect(separationWeight) { if (separationInput.toFloatOrNull() != separationWeight) separationInput = separationWeight.toString() }
+    LaunchedEffect(photoWeight) { if (photoInput.toFloatOrNull() != photoWeight) photoInput = photoWeight.toString() }
+
 
     Column(
         modifier = Modifier
@@ -399,14 +407,20 @@ fun LayoutWeightsCustomizationSection(
             MarginTextField(
                 label = "Peso Cliente",
                 value = clientInput,
-                onValueChange = { clientInput = it; onWeightChange(it, null, null, null, null) },
+                onValueChange = {
+                    clientInput = it
+                    onWeightChange(it, null, null, null, null)
+                },
                 modifier = Modifier.weight(1f)
             )
             Spacer(Modifier.width(8.dp))
             MarginTextField(
                 label = "Peso RUC",
                 value = rucInput,
-                onValueChange = { rucInput = it; onWeightChange(null, it, null, null, null) },
+                onValueChange = {
+                    rucInput = it
+                    onWeightChange(null, it, null, null, null)
+                },
                 modifier = Modifier.weight(1f)
             )
         }
@@ -414,14 +428,20 @@ fun LayoutWeightsCustomizationSection(
             MarginTextField(
                 label = "Peso Dirección",
                 value = addressInput,
-                onValueChange = { addressInput = it; onWeightChange(null, null, it, null, null) },
+                onValueChange = {
+                    addressInput = it
+                    onWeightChange(null, null, it, null, null)
+                },
                 modifier = Modifier.weight(1f)
             )
             Spacer(Modifier.width(8.dp))
             MarginTextField(
                 label = "Peso Separación",
                 value = separationInput,
-                onValueChange = { separationInput = it; onWeightChange(null, null, null, it, null) },
+                onValueChange = {
+                    separationInput = it
+                    onWeightChange(null, null, null, it, null)
+                },
                 modifier = Modifier.weight(1f)
             )
         }
@@ -429,7 +449,10 @@ fun LayoutWeightsCustomizationSection(
             MarginTextField(
                 label = "Peso Foto",
                 value = photoInput,
-                onValueChange = { photoInput = it; onWeightChange(null, null, null, null, it) },
+                onValueChange = {
+                    photoInput = it
+                    onWeightChange(null, null, null, null, it)
+                },
                 modifier = Modifier.weight(1f)
             )
         }
@@ -515,17 +538,21 @@ fun TextCustomizationSection(
 
 @Composable
 fun MarginCustomizationSection(
-    marginTop: Float, // Cambiado a Float
-    marginBottom: Float, // Cambiado a Float
-    marginLeft: Float, // Cambiado a Float
-    marginRight: Float, // Cambiado a Float
+    marginTop: Float,
+    marginBottom: Float,
+    marginLeft: Float,
+    marginRight: Float,
     onMarginChange: (top: String?, bottom: String?, left: String?, right: String?) -> Unit
 ) {
-    // Los valores ya son Float (cm), solo se convierten a String para el TextField
-    var topInput by remember(marginTop) { mutableStateOf(marginTop.toString()) }
-    var bottomInput by remember(marginBottom) { mutableStateOf(marginBottom.toString()) }
-    var leftInput by remember(marginLeft) { mutableStateOf(marginLeft.toString()) }
-    var rightInput by remember(marginRight) { mutableStateOf(marginRight.toString()) }
+    var topInput by remember { mutableStateOf(marginTop.toString()) }
+    var bottomInput by remember { mutableStateOf(marginBottom.toString()) }
+    var leftInput by remember { mutableStateOf(marginLeft.toString()) }
+    var rightInput by remember { mutableStateOf(marginRight.toString()) }
+
+    LaunchedEffect(marginTop) { if (topInput.toFloatOrNull() != marginTop) topInput = marginTop.toString() }
+    LaunchedEffect(marginBottom) { if (bottomInput.toFloatOrNull() != marginBottom) bottomInput = marginBottom.toString() }
+    LaunchedEffect(marginLeft) { if (leftInput.toFloatOrNull() != marginLeft) leftInput = marginLeft.toString() }
+    LaunchedEffect(marginRight) { if (rightInput.toFloatOrNull() != marginRight) rightInput = marginRight.toString() }
 
     Column(
         modifier = Modifier
@@ -544,14 +571,20 @@ fun MarginCustomizationSection(
             MarginTextField(
                 label = stringResource(id = R.string.cover_setup_margin_top),
                 value = topInput,
-                onValueChange = { topInput = it; onMarginChange(it, null, null, null) },
+                onValueChange = {
+                    topInput = it
+                    onMarginChange(it, null, null, null)
+                },
                 modifier = Modifier.weight(1f)
             )
             Spacer(Modifier.width(8.dp))
             MarginTextField(
                 label = stringResource(id = R.string.cover_setup_margin_bottom),
                 value = bottomInput,
-                onValueChange = { bottomInput = it; onMarginChange(null, it, null, null) },
+                onValueChange = {
+                    bottomInput = it
+                    onMarginChange(null, it, null, null)
+                },
                 modifier = Modifier.weight(1f)
             )
         }
@@ -559,14 +592,20 @@ fun MarginCustomizationSection(
             MarginTextField(
                 label = stringResource(id = R.string.cover_setup_margin_left),
                 value = leftInput,
-                onValueChange = { leftInput = it; onMarginChange(null, null, it, null) },
+                onValueChange = {
+                    leftInput = it
+                    onMarginChange(null, null, it, null)
+                },
                 modifier = Modifier.weight(1f)
             )
             Spacer(Modifier.width(8.dp))
             MarginTextField(
                 label = stringResource(id = R.string.cover_setup_margin_right),
                 value = rightInput,
-                onValueChange = { rightInput = it; onMarginChange(null, null, null, it) },
+                onValueChange = {
+                    rightInput = it
+                    onMarginChange(null, null, null, it)
+                },
                 modifier = Modifier.weight(1f)
             )
         }

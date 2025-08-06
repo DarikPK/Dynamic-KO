@@ -104,8 +104,8 @@ data class CoverPageConfig(
     val pageOrientation: PageOrientation = DefaultCoverConfig.PAGE_ORIENTATION, // Nuevo campo
 
     // Pesos para el diseño de la portada
-    val clientWeight: Float = 0.4f,
-    val rucWeight: Float = 0.4f,
+    val clientWeight: Float = 0.5f,
+    val rucWeight: Float = 0.5f,
     val addressWeight: Float = 0.3f,
     val separationWeight: Float = 0.2f,
     val photoWeight: Float = 10f,
