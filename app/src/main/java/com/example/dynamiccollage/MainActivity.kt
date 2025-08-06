@@ -20,7 +20,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val currentTheme = remember { mutableStateOf("Default") }
+            val currentTheme = remember { mutableStateOf("Oscuro") }
             DynamicCollageTheme(themeName = currentTheme.value) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
