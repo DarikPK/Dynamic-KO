@@ -1,10 +1,8 @@
 package com.example.dynamiccollage.ui.screens
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -19,20 +17,56 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
+
+private val predefinedColors = listOf(
+    // Rojos y Rosados
+    Color(0xFFF44336), Color(0xFFE91E63), Color(0xFFFF8A80), Color(0xFFFFCDD2),
+    // Púrpuras y Violetas
+    Color(0xFF9C27B0), Color(0xFF673AB7), Color(0xFFB39DDB), Color(0xFFE1BEE7),
+    // Azules
+    Color(0xFF3F51B5), Color(0xFF2196F3), Color(0xFF90CAF9), Color(0xFFBBDEFB),
+    // Verdes
+    Color(0xFF4CAF50), Color(0xFF8BC34A), Color(0xFFA5D6A7), Color(0xFFDCEDC8),
+    // Amarillos y Naranjas
+    Color(0xFFFFEB3B), Color(0xFFFFC107), Color(0xFFFF9800), Color(0xFFFFE082),
+    // Marrones y Grises
+    Color(0xFF795548), Color(0xFF9E9E9E), Color(0xFF607D8B), Color(0xFFBDBDBD),
+    // Blanco y Negro
+    Color.Black, Color.White
+)
+
+private class HexagonShape : Shape {
+    override fun createOutline(
+        size: Size,
+        layoutDirection: LayoutDirection,
+        density: Density
+    ): Outline {
+        val path = Path().apply {
+            val centerX = size.width / 2f
+            val centerY = size.height / 2f
+            val radius = size.minDimension / 2f
+            moveTo(centerX + radius, centerY)
+            for (i in 1..5) {
+                val angle = i * 60.0 * (Math.PI / 180.0)
+                lineTo(centerX + (radius * cos(angle)).toFloat(), centerY + (radius * sin(angle)).toFloat())
+            }
+            close()
+        }
+        return Outline.Generic(path)
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -108,64 +142,28 @@ fun ColorPickerScreen(
                     .border(1.dp, MaterialTheme.colorScheme.outline)
             )
 
-            val onColorFromWheel: (Offset, IntSize) -> Unit = { offset, size ->
-                val canvasRadius = size.width / 2f
-                val centerX = canvasRadius
-                val centerY = canvasRadius
-
-                val dx = offset.x - centerX
-                val dy = offset.y - centerY
-                val distance = sqrt(dx * dx + dy * dy)
-
-                if (distance <= canvasRadius) {
-                    val newSaturation = (distance / canvasRadius).coerceIn(0f, 1f)
-                    val angle = atan2(dy, dx)
-                    val newHue = (Math.toDegrees(angle.toDouble()).toFloat() + 360) % 360
-
-                    hue = newHue
-                    saturation = newSaturation
-                    currentColor = Color.hsv(newHue, newSaturation, value)
-                }
-            }
-
-            Canvas(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f)
-                    .pointerInput(Unit) {
-                        detectDragGestures(
-                            onDragStart = { onColorFromWheel(it, size) },
-                            onDrag = { change, _ -> onColorFromWheel(change.position, size) }
-                        )
-                    }
+            Text("Paleta de Colores")
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                maxItemsInEachRow = 7
             ) {
-                val canvasRadius = size.minDimension / 2f
-                val center = Offset(canvasRadius, canvasRadius)
-
-                val hueBrush = Brush.sweepGradient(
-                    colors = listOf(
-                        Color.Red, Color.Magenta, Color.Blue, Color.Cyan, Color.Green, Color.Yellow, Color.Red
-                    ),
-                    center = center
-                )
-                val saturationBrush = Brush.radialGradient(
-                    colors = listOf(Color.White, Color.Transparent),
-                    center = center,
-                    radius = canvasRadius
-                )
-
-                drawCircle(brush = hueBrush, radius = canvasRadius, center = center)
-                drawCircle(brush = saturationBrush, radius = canvasRadius, center = center)
-                drawCircle(color = Color.LightGray, radius = canvasRadius, center = center, style = Stroke(width = 2.dp.toPx()))
-
-                val angle = Math.toRadians(hue.toDouble())
-                val r = saturation * canvasRadius
-                val selectorX = center.x + (r * cos(angle)).toFloat()
-                val selectorY = center.y + (r * sin(angle)).toFloat()
-                val selectorPosition = Offset(selectorX, selectorY)
-
-                drawCircle(color = Color.Black, radius = 10.dp.toPx(), center = selectorPosition, style = Stroke(width = 3.dp.toPx()))
-                drawCircle(color = Color.White, radius = 10.dp.toPx(), center = selectorPosition, style = Stroke(width = 1.dp.toPx()))
+                predefinedColors.forEach { color ->
+                    val isSelected = currentColor.toArgb() == color.toArgb()
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(HexagonShape())
+                            .background(color)
+                            .clickable { currentColor = color }
+                            .border(
+                                width = if (isSelected) 3.dp else 0.dp,
+                                color = MaterialTheme.colorScheme.outline,
+                                shape = HexagonShape()
+                            )
+                    )
+                }
             }
 
             Divider()
