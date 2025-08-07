@@ -40,6 +40,35 @@ fun RowStyleScreen(
 ) {
     val coverConfig by coverSetupViewModel.coverConfig.collectAsState()
 
+    // Listener for the result from ColorPickerScreen
+    LaunchedEffect(key1 = navController.currentBackStackEntry) {
+        navController.currentBackStackEntry
+            ?.savedStateHandle
+            ?.getLiveData<String>("selected_color")
+            ?.observe(navController.currentBackStackEntry!!) { result ->
+                val parts = result.split(":")
+                if (parts.size == 2) {
+                    val fieldId = parts[0]
+                    val colorHex = parts[1]
+                    val newColor = Color(android.graphics.Color.parseColor("#$colorHex"))
+
+                    // Determine which style to update based on the fieldId
+                    when (fieldId) {
+                        "Fila Cliente-background" -> rowStyleViewModel.updateBackgroundColor(RowType.CLIENT, newColor)
+                        "Fila Cliente-border" -> rowStyleViewModel.updateBorderColor(RowType.CLIENT, newColor)
+                        "Fila RUC-background" -> rowStyleViewModel.updateBackgroundColor(RowType.RUC, newColor)
+                        "Fila RUC-border" -> rowStyleViewModel.updateBorderColor(RowType.RUC, newColor)
+                        "Fila Dirección-background" -> rowStyleViewModel.updateBackgroundColor(RowType.ADDRESS, newColor)
+                        "Fila Dirección-border" -> rowStyleViewModel.updateBorderColor(RowType.ADDRESS, newColor)
+                        "Fila Foto-background" -> rowStyleViewModel.updateBackgroundColor(RowType.PHOTO, newColor)
+                        "Fila Foto-border" -> rowStyleViewModel.updateBorderColor(RowType.PHOTO, newColor)
+                    }
+
+                    navController.currentBackStackEntry?.savedStateHandle?.remove<String>("selected_color")
+                }
+            }
+    }
+
     LaunchedEffect(Unit) {
         rowStyleViewModel.loadStyles(
             client = coverConfig.clientNameStyle.rowStyle,
@@ -94,6 +123,7 @@ fun RowStyleScreen(
             RowStyleCustomizationSection(
                 title = "Fila Cliente",
                 rowStyle = clientStyle,
+                navController = navController,
                 onBackgroundColorChange = { color -> rowStyleViewModel.updateBackgroundColor(RowType.CLIENT, color) },
                 onPaddingChange = { top, bottom, left, right -> rowStyleViewModel.updatePadding(RowType.CLIENT, top, bottom, left, right) },
                 onBorderColorChange = { color -> rowStyleViewModel.updateBorderColor(RowType.CLIENT, color) },
@@ -103,6 +133,7 @@ fun RowStyleScreen(
             RowStyleCustomizationSection(
                 title = "Fila RUC",
                 rowStyle = rucStyle,
+                navController = navController,
                 onBackgroundColorChange = { color -> rowStyleViewModel.updateBackgroundColor(RowType.RUC, color) },
                 onPaddingChange = { top, bottom, left, right -> rowStyleViewModel.updatePadding(RowType.RUC, top, bottom, left, right) },
                 onBorderColorChange = { color -> rowStyleViewModel.updateBorderColor(RowType.RUC, color) },
@@ -112,6 +143,7 @@ fun RowStyleScreen(
             RowStyleCustomizationSection(
                 title = "Fila Dirección",
                 rowStyle = addressStyle,
+                navController = navController,
                 onBackgroundColorChange = { color -> rowStyleViewModel.updateBackgroundColor(RowType.ADDRESS, color) },
                 onPaddingChange = { top, bottom, left, right -> rowStyleViewModel.updatePadding(RowType.ADDRESS, top, bottom, left, right) },
                 onBorderColorChange = { color -> rowStyleViewModel.updateBorderColor(RowType.ADDRESS, color) },
@@ -121,6 +153,7 @@ fun RowStyleScreen(
             RowStyleCustomizationSection(
                 title = "Fila Foto",
                 rowStyle = photoStyle,
+                navController = navController,
                 onBackgroundColorChange = { color -> rowStyleViewModel.updateBackgroundColor(RowType.PHOTO, color) },
                 onPaddingChange = { top, bottom, left, right -> rowStyleViewModel.updatePadding(RowType.PHOTO, top, bottom, left, right) },
                 onBorderColorChange = { color -> rowStyleViewModel.updateBorderColor(RowType.PHOTO, color) },
@@ -135,6 +168,7 @@ fun RowStyleScreen(
 fun RowStyleCustomizationSection(
     title: String,
     rowStyle: RowStyle,
+    navController: NavController,
     onBackgroundColorChange: (Color) -> Unit,
     onPaddingChange: (top: String?, bottom: String?, left: String?, right: String?) -> Unit,
     onBorderColorChange: (Color) -> Unit,
@@ -158,8 +192,9 @@ fun RowStyleCustomizationSection(
         // Background Color
         ColorSelector(
             label = "Color de Fondo",
+            fieldId = "$title-background",
             selectedColor = rowStyle.backgroundColor,
-            onColorSelected = onBackgroundColorChange
+            navController = navController
         )
 
         // Padding
@@ -219,8 +254,9 @@ fun RowStyleCustomizationSection(
 
         ColorSelector(
             label = "Color de Borde",
+            fieldId = "$title-border",
             selectedColor = rowStyle.border.color,
-            onColorSelected = onBorderColorChange
+            navController = navController
         )
 
         var thicknessInput by remember(rowStyle.border.thickness) { mutableStateOf(rowStyle.border.thickness.toString()) }
@@ -245,22 +281,13 @@ fun RowStyleCustomizationSection(
 }
 
 @Composable
-fun ColorSelector(label: String, selectedColor: Color, onColorSelected: (Color) -> Unit) {
-    var showDialog by remember { mutableStateOf(false) }
-
-    if (showDialog) {
-        ColorPickerDialog(
-            onDismissRequest = { showDialog = false },
-            onColorSelected = {
-                onColorSelected(it)
-                showDialog = false
-            }
-        )
-    }
-
+fun ColorSelector(label: String, fieldId: String, selectedColor: Color, navController: NavController) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(label, style = MaterialTheme.typography.labelLarge)
-        Button(onClick = { showDialog = true }) {
+        Button(onClick = {
+            val colorHex = String.format("%06X", (0xFFFFFF and selectedColor.toArgb()))
+            navController.navigate(Screen.ColorPicker.withArgs(fieldId, colorHex))
+        }) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(
                     modifier = Modifier
