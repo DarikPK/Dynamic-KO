@@ -22,9 +22,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.graphics.toArgb
 import androidx.navigation.NavController
 import com.example.dynamiccollage.R
 import com.example.dynamiccollage.data.model.RowStyle
+import com.example.dynamiccollage.ui.navigation.Screen
 import com.example.dynamiccollage.ui.components.ColorPickerDialog
 import com.example.dynamiccollage.viewmodel.CoverSetupViewModel
 import com.example.dynamiccollage.viewmodel.RowStyleViewModel
