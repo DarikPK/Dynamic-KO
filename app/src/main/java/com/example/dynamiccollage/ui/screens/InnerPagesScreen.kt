@@ -182,9 +182,11 @@ fun InnerPagesScreen(
 @Composable
 fun InnerPagesScreenPreview() {
     DynamicCollageTheme {
+        val projectViewModel: ProjectViewModel = viewModel()
         InnerPagesScreen(
             navController = rememberNavController(),
-            projectViewModel = viewModel() // Simplified for preview
+            projectViewModel = projectViewModel,
+            innerPagesViewModel = viewModel(factory = InnerPagesViewModelFactory(projectViewModel))
         )
     }
 }
@@ -193,9 +195,11 @@ fun InnerPagesScreenPreview() {
 @Composable
 fun InnerPagesScreenDarkPreview() {
     DynamicCollageTheme(darkTheme = true) {
+        val projectViewModel: ProjectViewModel = viewModel()
         InnerPagesScreen(
             navController = rememberNavController(),
-            projectViewModel = viewModel() // Simplified for preview
+            projectViewModel = projectViewModel,
+            innerPagesViewModel = viewModel(factory = InnerPagesViewModelFactory(projectViewModel))
         )
     }
 }
