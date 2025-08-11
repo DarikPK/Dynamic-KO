@@ -54,6 +54,7 @@ fun MainScreen(
     val context = LocalContext.current
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
+    var showContentEntryDialog by remember { mutableStateOf(false) }
     val pdfGenerationState by projectViewModel.pdfGenerationState.collectAsState()
     val shareablePdfUri by projectViewModel.shareablePdfUri.collectAsState()
 
@@ -131,6 +132,41 @@ fun MainScreen(
         )
     }
 
+    if (showContentEntryDialog) {
+        AlertDialog(
+            onDismissRequest = { showContentEntryDialog = false },
+            title = { Text("Gestionar Contenido") },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            showContentEntryDialog = false
+                            navController.navigate(Screen.InnerPages.route)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Ingreso Manual")
+                    }
+                    Button(
+                        onClick = {},
+                        enabled = false,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Ingreso Inteligente (Próximamente)")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showContentEntryDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -158,13 +194,8 @@ fun MainScreen(
                 onClick = { navController.navigate(Screen.CoverSetup.route) }
             )
             MainButton(
-                text = "Ingreso Manual",
-                onClick = { navController.navigate(Screen.InnerPages.route) }
-            )
-            MainButton(
-                text = "Ingreso Inteligente (Próximamente)",
-                onClick = { },
-                enabled = false
+                text = "Gestionar Contenido",
+                onClick = { showContentEntryDialog = true }
             )
             MainButton(
                 text = stringResource(R.string.main_btn_preview_pdf),
@@ -204,7 +235,6 @@ fun MainScreen(
 fun MainButton(
     text: String,
     onClick: () -> Unit,
-    enabled: Boolean = true,
     buttonColor: Color? = null,
     textColor: Color? = null
 ) {
@@ -217,7 +247,6 @@ fun MainButton(
 
     Button(
         onClick = onClick,
-        enabled = enabled,
         modifier = Modifier
             .fillMaxWidth(0.8f)
             .height(48.dp),
