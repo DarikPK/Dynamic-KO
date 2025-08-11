@@ -1,0 +1,197 @@
+package com.example.dynamiccollage.viewmodel
+
+import android.content.Context
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.dynamiccollage.data.model.CoverPageConfig
+import com.example.dynamiccollage.data.model.PageGroup
+import androidx.core.content.FileProvider
+import com.example.dynamiccollage.data.model.SelectedSunatData
+import com.example.dynamiccollage.remote.SunatData
+import com.example.dynamiccollage.utils.PdfGenerator
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import android.net.Uri
+import android.util.Log
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import android.graphics.Bitmap
+import java.io.FileOutputStream
+import java.util.UUID
+
+class ProjectViewModel : ViewModel() {
+
+    private val _currentCoverConfig = MutableStateFlow(CoverPageConfig())
+    val currentCoverConfig: StateFlow<CoverPageConfig> = _currentCoverConfig.asStateFlow()
+
+    private val _currentPageGroups = MutableStateFlow<List<PageGroup>>(emptyList())
+    val currentPageGroups: StateFlow<List<PageGroup>> = _currentPageGroups.asStateFlow()
+
+    private val _sunatData = MutableStateFlow<SelectedSunatData?>(null)
+    val sunatData: StateFlow<SelectedSunatData?> = _sunatData.asStateFlow()
+
+    fun updateSunatData(data: SelectedSunatData) {
+        _sunatData.value = data
+    }
+
+    fun updateCoverConfig(newConfig: CoverPageConfig) {
+        _currentCoverConfig.value = newConfig
+    }
+
+    fun addPageGroup(group: PageGroup) {
+        _currentPageGroups.update { currentList -> currentList + group }
+    }
+
+    fun updatePageGroup(groupId: String, transform: (PageGroup) -> PageGroup) {
+        _currentPageGroups.update { currentList ->
+            currentList.map { if (it.id == groupId) transform(it) else it }
+        }
+    }
+
+    fun deletePageGroup(groupId: String) {
+        _currentPageGroups.update { currentList ->
+            currentList.filterNot { it.id == groupId }
+        }
+    }
+
+    fun resetPageGroups() {
+        _currentPageGroups.value = emptyList()
+    }
+
+    fun resetProject() {
+        _currentCoverConfig.value = CoverPageConfig()
+        resetPageGroups()
+    }
+
+    // --- Generación de PDF ---
+    private val _pdfGenerationState = MutableStateFlow<PdfGenerationState>(PdfGenerationState.Idle)
+    val pdfGenerationState: StateFlow<PdfGenerationState> = _pdfGenerationState.asStateFlow()
+
+    private val _pdfSize = MutableStateFlow(0L)
+    val pdfSize: StateFlow<Long> = _pdfSize.asStateFlow()
+
+    private val _pdfSizeMode = MutableStateFlow(1)
+    val pdfSizeMode: StateFlow<Int> = _pdfSizeMode.asStateFlow()
+
+    fun setPdfSizeMode(mode: Int) {
+        _pdfSizeMode.value = mode
+    }
+
+    fun getFormattedPdfSize(): String {
+        val size = _pdfSize.value
+        return when {
+            size < 1024 -> "$size B"
+            size < 1024 * 1024 -> "${size / 1024} KB"
+            else -> "%.2f MB".format(size / (1024.0 * 1024.0))
+        }
+    }
+
+    fun generatePdf(context: Context, fileName: String) {
+        val coverConfig = _currentCoverConfig.value
+        val pageGroups = _currentPageGroups.value
+
+        val isCoverEmpty = coverConfig.clientNameStyle.content.isBlank() &&
+                coverConfig.rucStyle.content.isBlank() &&
+                coverConfig.subtitleStyle.content.isBlank() &&
+                coverConfig.mainImageUri == null
+        val areInnerPagesEmpty = pageGroups.all { it.imageUris.isEmpty() }
+
+        if (isCoverEmpty && areInnerPagesEmpty) {
+            _pdfGenerationState.value = PdfGenerationState.Error("No hay contenido para generar un PDF.")
+            return
+        }
+
+        viewModelScope.launch {
+            Log.d("ProjectViewModel", "generatePdf: Iniciando...")
+            _pdfGenerationState.value = PdfGenerationState.Loading
+            val generatedFile = withContext(Dispatchers.IO) {
+                Log.d("ProjectViewModel", "generatePdf: En el hilo de IO, llamando a PdfGenerator.")
+                PdfGenerator.generate(
+                    context = context,
+                    coverConfig = _currentCoverConfig.value,
+                    pageGroups = _currentPageGroups.value,
+                    fileName = fileName.ifBlank { "DynamicCollage" }
+                )
+            }
+            if (generatedFile != null) {
+                Log.d("ProjectViewModel", "generatePdf: Éxito. Archivo: ${generatedFile.absolutePath}")
+                _pdfSize.value = generatedFile.length()
+                _pdfGenerationState.value = PdfGenerationState.Success(generatedFile)
+            } else {
+                Log.e("ProjectViewModel", "generatePdf: Fallo. `generatedFile` es nulo.")
+                _pdfGenerationState.value = PdfGenerationState.Error("No se pudo generar el PDF.")
+            }
+        }
+    }
+
+    fun resetPdfGenerationState() {
+        _pdfGenerationState.value = PdfGenerationState.Idle
+    }
+
+    // --- Lógica para Compartir PDF ---
+    private val _shareablePdfUri = MutableStateFlow<Uri?>(null)
+    val shareablePdfUri: StateFlow<Uri?> = _shareablePdfUri.asStateFlow()
+
+    fun createShareableUriForFile(context: Context, file: File) {
+        try {
+            val authority = "${context.packageName}.provider"
+            val uri = FileProvider.getUriForFile(context, authority, file)
+            _shareablePdfUri.value = uri
+        } catch (e: Exception) {
+            e.printStackTrace()
+            _pdfGenerationState.value = PdfGenerationState.Error("No se pudo crear el enlace para compartir.")
+        }
+    }
+
+    fun resetShareableUri() {
+        _shareablePdfUri.value = null
+    }
+
+    fun getAllImageUris(): List<String> {
+        val coverImage = _currentCoverConfig.value.mainImageUri
+        val innerImages = _currentPageGroups.value.flatMap { it.imageUris }
+        val allImages = mutableListOf<String>()
+        coverImage?.let { allImages.add(it) }
+        allImages.addAll(innerImages)
+        return allImages
+    }
+
+    fun saveCroppedImage(context: Context, oldUri: String, croppedBitmap: Bitmap) {
+        viewModelScope.launch {
+            val newUri = withContext(Dispatchers.IO) {
+                val file = File(context.cacheDir, "${UUID.randomUUID()}.jpg")
+                FileOutputStream(file).use { out ->
+                    croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
+                }
+                Uri.fromFile(file).toString()
+            }
+
+            val coverImage = _currentCoverConfig.value.mainImageUri
+            if (coverImage == oldUri) {
+                _currentCoverConfig.update { it.copy(mainImageUri = newUri) }
+            } else {
+                _currentPageGroups.update { groups ->
+                    groups.map { group ->
+                        if (group.imageUris.contains(oldUri)) {
+                            val newImageUris = group.imageUris.map { if (it == oldUri) newUri else it }
+                            group.copy(imageUris = newImageUris)
+                        } else {
+                            group
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+sealed class PdfGenerationState {
+    object Idle : PdfGenerationState()
+    object Loading : PdfGenerationState()
+    data class Success(val file: File) : PdfGenerationState()
+    data class Error(val message: String) : PdfGenerationState()
+}
