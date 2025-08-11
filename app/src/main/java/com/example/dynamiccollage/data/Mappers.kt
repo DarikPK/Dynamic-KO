@@ -1,24 +1,12 @@
 package com.example.dynamiccollage.data
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import com.example.dynamiccollage.data.model.BorderProperties
-import com.example.dynamiccollage.data.model.CoverPageConfig
-import com.example.dynamiccollage.data.model.DocumentType
-import com.example.dynamiccollage.data.model.PageGroup
-import com.example.dynamiccollage.data.model.PageOrientation
-import com.example.dynamiccollage.data.model.PaddingValues
-import com.example.dynamiccollage.data.model.RowStyle
-import com.example.dynamiccollage.data.model.SerializableBorderProperties
-import com.example.dynamiccollage.data.model.SerializableCoverPageConfig
-import com.example.dynamiccollage.data.model.SerializablePageGroup
-import com.example.dynamiccollage.data.model.SerializablePaddingValues
-import com.example.dynamiccollage.data.model.SerializableRowStyle
-import com.example.dynamiccollage.data.model.SerializableTextStyleConfig
-import com.example.dynamiccollage.data.model.TextStyleConfig
+import com.example.dynamiccollage.data.model.*
 import com.example.dynamiccollage.ui.theme.calibriFontFamily
 
 // Mappers for primitive/leaf types
@@ -26,9 +14,40 @@ import com.example.dynamiccollage.ui.theme.calibriFontFamily
 private fun FontFamily.toSerializableName(): String = if (this == calibriFontFamily) "Calibri" else "Default"
 private fun String.toFontFamilyFromName(): FontFamily = if (this == "Calibri") calibriFontFamily else FontFamily.Default
 
+private fun TextAlign.toSerializableInt(): Int = when (this) {
+    TextAlign.Left -> 0
+    TextAlign.Right -> 1
+    TextAlign.Center -> 2
+    TextAlign.Justify -> 3
+    TextAlign.Start -> 4
+    TextAlign.End -> 5
+    else -> 2 // Default to Center
+}
+private fun Int.toTextAlign(): TextAlign = when (this) {
+    0 -> TextAlign.Left
+    1 -> TextAlign.Right
+    2 -> TextAlign.Center
+    3 -> TextAlign.Justify
+    4 -> TextAlign.Start
+    5 -> TextAlign.End
+    else -> TextAlign.Center
+}
+
+private fun FontStyle.toSerializableInt(): Int = when (this) {
+    FontStyle.Normal -> 0
+    FontStyle.Italic -> 1
+    else -> 0
+}
+private fun Int.toFontStyle(): FontStyle = when (this) {
+    0 -> FontStyle.Normal
+    1 -> FontStyle.Italic
+    else -> FontStyle.Normal
+}
+
+
 // Mappers for BorderProperties
 fun BorderProperties.toSerializable() = SerializableBorderProperties(
-    color = this.color.value.toInt(),
+    color = this.color.toArgb(),
     thickness = this.thickness,
     top = this.top,
     bottom = this.bottom,
@@ -62,7 +81,7 @@ fun SerializablePaddingValues.toDomain() = PaddingValues(
 
 // Mappers for RowStyle
 fun RowStyle.toSerializable() = SerializableRowStyle(
-    backgroundColor = this.backgroundColor.value.toInt(),
+    backgroundColor = this.backgroundColor.toArgb(),
     padding = this.padding.toSerializable(),
     border = this.border.toSerializable()
 )
@@ -79,9 +98,9 @@ fun TextStyleConfig.toSerializable() = SerializableTextStyleConfig(
     fontFamilyName = this.fontFamily.toSerializableName(),
     fontSize = this.fontSize,
     fontWeight = this.fontWeight?.weight,
-    fontStyle = this.fontStyle?.ordinal,
-    textAlign = this.textAlign.ordinal,
-    fontColor = this.fontColor.value.toInt(),
+    fontStyle = this.fontStyle?.toSerializableInt(),
+    textAlign = this.textAlign.toSerializableInt(),
+    fontColor = this.fontColor.toArgb(),
     content = this.content,
     allCaps = this.allCaps,
     rowStyle = this.rowStyle.toSerializable()
@@ -92,8 +111,8 @@ fun SerializableTextStyleConfig.toDomain() = TextStyleConfig(
     fontFamily = this.fontFamilyName.toFontFamilyFromName(),
     fontSize = this.fontSize,
     fontWeight = this.fontWeight?.let { FontWeight(it) },
-    fontStyle = this.fontStyle?.let { FontStyle.values()[it] },
-    textAlign = TextAlign.values()[this.textAlign],
+    fontStyle = this.fontStyle?.toFontStyle(),
+    textAlign = this.textAlign.toTextAlign(),
     fontColor = Color(this.fontColor),
     content = this.content,
     allCaps = this.allCaps,
