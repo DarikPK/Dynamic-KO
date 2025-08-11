@@ -20,8 +20,11 @@ import com.example.dynamiccollage.ui.screens.MarginsScreen
 import com.example.dynamiccollage.ui.screens.SunatDataScreen
 import com.example.dynamiccollage.ui.screens.TextStyleScreen
 import com.example.dynamiccollage.ui.screens.ColorPickerScreen
+import com.example.dynamiccollage.ui.screens.GroupHeaderStyleScreen
 import com.example.dynamiccollage.ui.screens.WeightsScreen
 import com.example.dynamiccollage.viewmodel.CoverSetupViewModel
+import com.example.dynamiccollage.viewmodel.InnerPagesViewModel
+import com.example.dynamiccollage.viewmodel.InnerPagesViewModelFactory
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 import com.example.dynamiccollage.viewmodel.RowStyleViewModel
 import com.example.dynamiccollage.viewmodel.SunatDataViewModel
@@ -39,6 +42,8 @@ fun AppNavigation(
     onThemeChange: (String) -> Unit
 ) {
     val navController = rememberNavController()
+    val innerPagesViewModel: InnerPagesViewModel = viewModel(factory = InnerPagesViewModelFactory(projectViewModel))
+
     NavHost(navController = navController, startDestination = Screen.Main.route) {
         composable(Screen.Main.route) {
             MainScreen(
@@ -55,7 +60,17 @@ fun AppNavigation(
             )
         }
         composable(Screen.InnerPages.route) {
-            InnerPagesScreen(navController = navController, projectViewModel = projectViewModel)
+            InnerPagesScreen(
+                navController = navController,
+                projectViewModel = projectViewModel,
+                innerPagesViewModel = innerPagesViewModel
+            )
+        }
+        composable(Screen.GroupHeaderStyle.route) {
+            GroupHeaderStyleScreen(
+                navController = navController,
+                viewModel = innerPagesViewModel
+            )
         }
         composable(
             route = Screen.PdfPreview.route + "/{pdfPath}",
