@@ -126,11 +126,8 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
     }
 
     fun onEditingGroupSheetCountChange(countStr: String) {
-        countStr.toIntOrNull()?.let { count ->
-            if (count > 0) {
-                _editingGroup.value = _editingGroup.value?.copy(sheetCount = count)
-            }
-        }
+        val count = countStr.toIntOrNull() ?: 0
+        _editingGroup.value = _editingGroup.value?.copy(sheetCount = count)
     }
 
     fun onEditingGroupOptionalTextChange(text: String) {
@@ -146,9 +143,8 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
     }
 
     fun onEditingGroupImageSpacingChange(spacingStr: String) {
-        spacingStr.toFloatOrNull()?.let { spacing ->
-            _editingGroup.value = _editingGroup.value?.copy(imageSpacing = spacing)
-        }
+        val spacing = spacingStr.toFloatOrNull() ?: 0f
+        _editingGroup.value = _editingGroup.value?.copy(imageSpacing = spacing)
     }
 
     fun onEditingGroupFontSizeChange(size: String) {
