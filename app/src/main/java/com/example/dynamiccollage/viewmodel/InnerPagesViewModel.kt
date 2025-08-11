@@ -146,6 +146,24 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         _editingGroup.value = _editingGroup.value?.copy(imageSpacing = spacing)
     }
 
+    fun onEditingGroupFontSizeChange(size: String) {
+        _editingGroup.value = _editingGroup.value?.copy(
+            optionalTextStyle = _editingGroup.value!!.optionalTextStyle.copy(fontSize = size.toIntOrNull() ?: 0)
+        )
+    }
+
+    fun onEditingGroupTextAlignChange(align: androidx.compose.ui.text.style.TextAlign) {
+        _editingGroup.value = _editingGroup.value?.copy(
+            optionalTextStyle = _editingGroup.value!!.optionalTextStyle.copy(textAlign = align)
+        )
+    }
+
+    fun onEditingGroupFontColorChange(color: androidx.compose.ui.graphics.Color) {
+        _editingGroup.value = _editingGroup.value?.copy(
+            optionalTextStyle = _editingGroup.value!!.optionalTextStyle.copy(fontColor = color)
+        )
+    }
+
     fun saveEditingGroup() {
         viewModelScope.launch {
             _editingGroup.value?.let { groupToSave ->

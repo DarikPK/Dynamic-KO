@@ -49,10 +49,9 @@ import com.example.dynamiccollage.viewmodel.ProjectViewModel
 @Composable
 fun InnerPagesScreen(
     navController: NavController,
-    projectViewModel: ProjectViewModel
+    projectViewModel: ProjectViewModel,
+    innerPagesViewModel: InnerPagesViewModel
 ) {
-    val innerPagesViewModel: InnerPagesViewModel = viewModel(factory = InnerPagesViewModelFactory(projectViewModel))
-
     val pageGroups by innerPagesViewModel.pageGroups.collectAsState()
     val showDialog by innerPagesViewModel.showCreateGroupDialog.collectAsState()
     val editingGroup by innerPagesViewModel.editingGroup.collectAsState()
@@ -97,6 +96,7 @@ fun InnerPagesScreen(
 
     if (showDialog) {
         CreateEditGroupDialog(
+            navController = navController,
             editingGroup = editingGroup,
             viewModel = innerPagesViewModel,
             onDismiss = { innerPagesViewModel.onDismissCreateGroupDialog() }
