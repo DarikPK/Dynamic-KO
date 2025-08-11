@@ -20,7 +20,6 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -28,7 +27,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -109,7 +107,7 @@ fun CreateEditGroupDialog(
                     SegmentedButton(
                         selected = editingGroup.photosPerSheet == 2,
                         onClick = { viewModel.onEditingGroupPhotosPerSheetChange(2) },
-                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                        shape = SegmentedButtonDefaults.item-shape(index = 1, count = 2)
                     ) { Text(stringResource(R.string.two_photos)) }
                 }
 
@@ -124,19 +122,12 @@ fun CreateEditGroupDialog(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     isError = editingGroup.sheetCount <= 0,
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        focusedBorderColor = Color.White,
-                        focusedLabelColor = Color.White
-                    )
+                    supportingText = {
+                        if (editingGroup.sheetCount <= 0) {
+                            Text(stringResource(id = R.string.error_sheet_count_invalid))
+                        }
+                    }
                 )
-                if (editingGroup.sheetCount <= 0) {
-                    Text(
-                        text = stringResource(R.string.error_sheet_count_invalid),
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(start = 16.dp)
-                    )
-                }
 
                 OutlinedTextField(
                     value = imageSpacingString,
@@ -147,11 +138,7 @@ fun CreateEditGroupDialog(
                     label = { Text("Separación entre fotos (dp)") },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        focusedBorderColor = Color.White,
-                        focusedLabelColor = Color.White
-                    )
+                    singleLine = true
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))

@@ -79,8 +79,8 @@ val claro_background = Color(0xFFFFFFFF)
 val claro_surface = Color(0xFFFFFFFF)
 
 // Oscuro Theme
-val oscuro_primary = Color(0xFF1F1F1F)
-val oscuro_onPrimary = Color(0xFFFFFFFF)
+val oscuro_primary = Color(0xFFD0BCFF) // md_theme_dark_primary
+val oscuro_onPrimary = Color(0xFF381E72) // md_theme_dark_onPrimary
 val oscuro_primaryContainer = Color(0xFF000000)
 val oscuro_onPrimaryContainer = Color(0xFFFFFFFF)
 val oscuro_secondary = Color(0xFFB8860B)
