@@ -139,7 +139,7 @@ fun GroupHeaderStyleScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Color Actual")
+                Text("Color Actual", color = MaterialTheme.colorScheme.onSurface)
                         Box(
                             modifier = Modifier
                                 .size(24.dp)
