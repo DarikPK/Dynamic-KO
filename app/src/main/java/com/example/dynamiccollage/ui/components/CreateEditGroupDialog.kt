@@ -107,7 +107,7 @@ fun CreateEditGroupDialog(
                     SegmentedButton(
                         selected = editingGroup.photosPerSheet == 2,
                         onClick = { viewModel.onEditingGroupPhotosPerSheetChange(2) },
-                        shape = SegmentedButtonDefaults.item-shape(index = 1, count = 2)
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
                     ) { Text(stringResource(R.string.two_photos)) }
                 }
 
