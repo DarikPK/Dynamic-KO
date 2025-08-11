@@ -147,7 +147,7 @@ fun CreateEditGroupDialog(
                     onClick = { navController.navigate(Screen.GroupHeaderStyle.route) },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondary
+                        containerColor = MaterialTheme.colorScheme.tertiary
                     )
                 ) {
                     Text("Agregar Encabezado a Grupo")
