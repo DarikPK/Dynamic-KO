@@ -87,12 +87,18 @@ fun CreateEditGroupDialog(
                     SegmentedButton(
                         selected = editingGroup.orientation == PageOrientation.Vertical,
                         onClick = { viewModel.onEditingGroupOrientationChange(PageOrientation.Vertical) },
-                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                        colors = SegmentedButtonDefaults.colors(
+                            unselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
                     ) { Text(stringResource(R.string.orientation_vertical)) }
                     SegmentedButton(
                         selected = editingGroup.orientation == PageOrientation.Horizontal,
                         onClick = { viewModel.onEditingGroupOrientationChange(PageOrientation.Horizontal) },
-                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                        colors = SegmentedButtonDefaults.colors(
+                            unselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
                     ) { Text(stringResource(R.string.orientation_horizontal)) }
                 }
 
@@ -101,12 +107,18 @@ fun CreateEditGroupDialog(
                     SegmentedButton(
                         selected = editingGroup.photosPerSheet == 1,
                         onClick = { viewModel.onEditingGroupPhotosPerSheetChange(1) },
-                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                        colors = SegmentedButtonDefaults.colors(
+                            unselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
                     ) { Text(stringResource(R.string.one_photo)) }
                     SegmentedButton(
                         selected = editingGroup.photosPerSheet == 2,
                         onClick = { viewModel.onEditingGroupPhotosPerSheetChange(2) },
-                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                        colors = SegmentedButtonDefaults.colors(
+                            unselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
                     ) { Text(stringResource(R.string.two_photos)) }
                 }
 
@@ -158,7 +170,12 @@ fun CreateEditGroupDialog(
                     value = editingGroup.imageSpacing,
                     onValueChange = { viewModel.onEditingGroupImageSpacingChange(it) },
                     valueRange = 0f..50f,
-                    steps = 49
+                    steps = 49,
+                    colors = androidx.compose.material3.SliderDefaults.colors(
+                        thumbColor = MaterialTheme.colorScheme.primary,
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.secondaryContainer
+                    )
                 )
                 Text(
                     text = "Valor: ${editingGroup.imageSpacing.toInt()}",
