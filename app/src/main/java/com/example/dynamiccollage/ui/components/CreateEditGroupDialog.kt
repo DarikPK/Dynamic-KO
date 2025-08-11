@@ -89,7 +89,7 @@ fun CreateEditGroupDialog(
                         onClick = { viewModel.onEditingGroupOrientationChange(PageOrientation.Vertical) },
                         shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
                         colors = SegmentedButtonDefaults.colors(
-                            unselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                            inactiveContainerColor = MaterialTheme.colorScheme.surfaceVariant
                         )
                     ) { Text(stringResource(R.string.orientation_vertical)) }
                     SegmentedButton(
@@ -97,7 +97,7 @@ fun CreateEditGroupDialog(
                         onClick = { viewModel.onEditingGroupOrientationChange(PageOrientation.Horizontal) },
                         shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
                         colors = SegmentedButtonDefaults.colors(
-                            unselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                            inactiveContainerColor = MaterialTheme.colorScheme.surfaceVariant
                         )
                     ) { Text(stringResource(R.string.orientation_horizontal)) }
                 }
@@ -109,7 +109,7 @@ fun CreateEditGroupDialog(
                         onClick = { viewModel.onEditingGroupPhotosPerSheetChange(1) },
                         shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
                         colors = SegmentedButtonDefaults.colors(
-                            unselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                            inactiveContainerColor = MaterialTheme.colorScheme.surfaceVariant
                         )
                     ) { Text(stringResource(R.string.one_photo)) }
                     SegmentedButton(
@@ -117,7 +117,7 @@ fun CreateEditGroupDialog(
                         onClick = { viewModel.onEditingGroupPhotosPerSheetChange(2) },
                         shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
                         colors = SegmentedButtonDefaults.colors(
-                            unselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                            inactiveContainerColor = MaterialTheme.colorScheme.surfaceVariant
                         )
                     ) { Text(stringResource(R.string.two_photos)) }
                 }
