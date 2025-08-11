@@ -120,7 +120,10 @@ fun CreateEditGroupDialog(
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
-                    isError = editingGroup.sheetCount <= 0
+                    isError = editingGroup.sheetCount <= 0,
+                    colors = androidx.compose.material3.TextFieldDefaults.outlinedTextFieldColors(
+                        focusedBorderColor = MaterialTheme.colorScheme.secondary
+                    )
                 )
                 if (editingGroup.sheetCount <= 0) {
                     Text(
@@ -135,18 +138,21 @@ fun CreateEditGroupDialog(
                     value = imageSpacingString,
                     onValueChange = {
                         imageSpacingString = it
-                        viewModel.onEditingGroupImageSpacingChange(it.toFloatOrNull() ?: 0f)
+                        viewModel.onEditingGroupImageSpacingChange(it)
                     },
                     label = { Text("Separación entre fotos (dp)") },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
+                    colors = androidx.compose.material3.TextFieldDefaults.outlinedTextFieldColors(
+                        focusedBorderColor = MaterialTheme.colorScheme.secondary
+                    )
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Button(
-                    onClick = { navController.navigate("group_header_style") },
+                    onClick = { navController.navigate(com.example.dynamiccollage.ui.navigation.Screen.GroupHeaderStyle.route) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Agregar Encabezado a Grupo")
