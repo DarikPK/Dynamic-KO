@@ -137,11 +137,8 @@ fun MainScreen(
             onDismissRequest = { showContentEntryDialog = false },
             title = { Text("Gestionar Contenido") },
             text = {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Button(
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(
                         onClick = {
                             showContentEntryDialog = false
                             navController.navigate(Screen.InnerPages.route)
@@ -150,7 +147,7 @@ fun MainScreen(
                     ) {
                         Text("Ingreso Manual")
                     }
-                    Button(
+                    TextButton(
                         onClick = {},
                         enabled = false,
                         modifier = Modifier.fillMaxWidth()
@@ -159,7 +156,7 @@ fun MainScreen(
                     }
                 }
             },
-            dismissButton = {
+            confirmButton = {
                 TextButton(onClick = { showContentEntryDialog = false }) {
                     Text("Cancelar")
                 }
