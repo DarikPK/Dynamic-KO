@@ -160,7 +160,10 @@ fun CreateEditGroupDialog(
                     Text(stringResource(R.string.all_caps_label))
                     androidx.compose.material3.Switch(
                         checked = editingGroup.optionalTextStyle.allCaps,
-                        onCheckedChange = { viewModel.onEditingGroupOptionalTextAllCapsChange(it) }
+                        onCheckedChange = { viewModel.onEditingGroupOptionalTextAllCapsChange(it) },
+                        colors = androidx.compose.material3.SwitchDefaults.colors(
+                            checkedThumbColor = MaterialTheme.colorScheme.secondary
+                        )
                     )
                 }
 
