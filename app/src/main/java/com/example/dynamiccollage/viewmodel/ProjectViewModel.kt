@@ -156,7 +156,7 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun resetShareableUri() {
-        _shareableUri.value = null
+        _shareablePdfUri.value = null
     }
 
     fun getAllImageUris(): List<String> {
