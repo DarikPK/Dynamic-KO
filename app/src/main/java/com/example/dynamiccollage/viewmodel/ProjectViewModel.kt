@@ -1,29 +1,37 @@
 package com.example.dynamiccollage.viewmodel
 
+import android.app.Application
 import android.content.Context
-import androidx.lifecycle.ViewModel
+import android.graphics.Bitmap
+import android.net.Uri
+import android.util.Log
+import androidx.core.content.FileProvider
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.dynamiccollage.data.toDomain
+import com.example.dynamiccollage.data.toSerializable
 import com.example.dynamiccollage.data.model.CoverPageConfig
 import com.example.dynamiccollage.data.model.PageGroup
-import androidx.core.content.FileProvider
 import com.example.dynamiccollage.data.model.SelectedSunatData
-import com.example.dynamiccollage.remote.SunatData
+import com.example.dynamiccollage.data.model.SerializableProjectState
 import com.example.dynamiccollage.utils.PdfGenerator
+import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import android.net.Uri
-import android.util.Log
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import android.graphics.Bitmap
 import java.io.FileOutputStream
 import java.util.UUID
 
-class ProjectViewModel : ViewModel() {
+class ProjectViewModel(application: Application) : AndroidViewModel(application) {
+
+    init {
+        loadProject()
+    }
 
     private val _currentCoverConfig = MutableStateFlow(CoverPageConfig())
     val currentCoverConfig: StateFlow<CoverPageConfig> = _currentCoverConfig.asStateFlow()
@@ -148,7 +156,7 @@ class ProjectViewModel : ViewModel() {
     }
 
     fun resetShareableUri() {
-        _shareablePdfUri.value = null
+        _shareableUri.value = null
     }
 
     fun getAllImageUris(): List<String> {
@@ -187,6 +195,99 @@ class ProjectViewModel : ViewModel() {
             }
         }
     }
+
+    // --- Lógica de Guardado y Carga de Proyecto ---
+    private val _saveState = MutableStateFlow<SaveState>(SaveState.Idle)
+    val saveState: StateFlow<SaveState> = _saveState.asStateFlow()
+
+    private val gson = Gson()
+    private val projectFileName = "last_project.json"
+
+    fun saveProject() {
+        viewModelScope.launch {
+            val serializableState = SerializableProjectState(
+                coverConfig = _currentCoverConfig.value.toSerializable(),
+                pageGroups = _currentPageGroups.value.map { it.toSerializable() },
+                sunatData = _sunatData.value
+            )
+            val jsonString = gson.toJson(serializableState)
+            val sizeInBytes = jsonString.toByteArray().size.toLong()
+            val sizeLimitBytes = 50 * 1024 * 1024 // 50MB
+
+            if (sizeInBytes > sizeLimitBytes) {
+                _saveState.value = SaveState.RequiresConfirmation(sizeInBytes)
+            } else {
+                writeJsonToFile(jsonString)
+            }
+        }
+    }
+
+    fun forceSaveProject() {
+        viewModelScope.launch {
+            val serializableState = SerializableProjectState(
+                coverConfig = _currentCoverConfig.value.toSerializable(),
+                pageGroups = _currentPageGroups.value.map { it.toSerializable() },
+                sunatData = _sunatData.value
+            )
+            val jsonString = gson.toJson(serializableState)
+            writeJsonToFile(jsonString)
+        }
+    }
+
+    private suspend fun writeJsonToFile(jsonString: String) {
+        val context = getApplication<Application>().applicationContext
+        withContext(Dispatchers.IO) {
+            try {
+                context.openFileOutput(projectFileName, Context.MODE_PRIVATE).use {
+                    it.write(jsonString.toByteArray())
+                }
+                _saveState.value = SaveState.Success
+            } catch (e: Exception) {
+                Log.e("ProjectViewModel", "Error saving project", e)
+                _saveState.value = SaveState.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
+
+    private fun loadProject() {
+        val context = getApplication<Application>().applicationContext
+        viewModelScope.launch {
+            val file = File(context.filesDir, projectFileName)
+            if (!file.exists()) return@launch
+
+            val jsonString = withContext(Dispatchers.IO) {
+                try {
+                    context.openFileInput(projectFileName).bufferedReader().use { it.readText() }
+                } catch (e: Exception) {
+                    Log.e("ProjectViewModel", "Error loading project", e)
+                    null
+                }
+            }
+
+            if (jsonString != null) {
+                try {
+                    val serializableState = gson.fromJson(jsonString, SerializableProjectState::class.java)
+                    val projectState = serializableState.toDomain()
+                    _currentCoverConfig.value = projectState.coverConfig
+                    _currentPageGroups.value = projectState.pageGroups
+                    _sunatData.value = projectState.sunatData
+                } catch (e: Exception) {
+                    Log.e("ProjectViewModel", "Error parsing project JSON", e)
+                }
+            }
+        }
+    }
+
+    fun resetSaveState() {
+        _saveState.value = SaveState.Idle
+    }
+}
+
+sealed class SaveState {
+    object Idle : SaveState()
+    data class RequiresConfirmation(val sizeInBytes: Long) : SaveState()
+    object Success : SaveState()
+    data class Error(val message: String) : SaveState()
 }
 
 sealed class PdfGenerationState {

@@ -43,6 +43,11 @@ import com.example.dynamiccollage.R
 import com.example.dynamiccollage.ui.navigation.Screen
 import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import com.example.dynamiccollage.viewmodel.SaveState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,11 +57,64 @@ fun MainScreen(
     onThemeChange: (String) -> Unit
 ) {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                projectViewModel.saveProject()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
     var showContentEntryDialog by remember { mutableStateOf(false) }
     val pdfGenerationState by projectViewModel.pdfGenerationState.collectAsState()
     val shareablePdfUri by projectViewModel.shareablePdfUri.collectAsState()
+    val saveState by projectViewModel.saveState.collectAsState()
+
+    // Efecto para mostrar Toasts de guardado
+    LaunchedEffect(saveState) {
+        when (val state = saveState) {
+            is SaveState.Success -> {
+                Toast.makeText(context, "Proyecto guardado con éxito", Toast.LENGTH_SHORT).show()
+                projectViewModel.resetSaveState()
+            }
+            is SaveState.Error -> {
+                Toast.makeText(context, "Error al guardar: ${state.message}", Toast.LENGTH_LONG).show()
+                projectViewModel.resetSaveState()
+            }
+            else -> { /* No-op para Idle y RequiresConfirmation */ }
+        }
+    }
+
+    // Diálogo de confirmación para archivos grandes
+    if (saveState is SaveState.RequiresConfirmation) {
+        val sizeInMb = "%.2f".format((saveState as SaveState.RequiresConfirmation).sizeInBytes / (1024.0 * 1024.0))
+        AlertDialog(
+            onDismissRequest = { projectViewModel.resetSaveState() },
+            title = { Text("Confirmar Guardado") },
+            text = { Text("El tamaño del proyecto ($sizeInMb MB) supera los 50MB. ¿Deseas guardarlo de todos modos?") },
+            confirmButton = {
+                Button(onClick = {
+                    projectViewModel.forceSaveProject()
+                }) {
+                    Text("Guardar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { projectViewModel.resetSaveState() }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
 
     // Efecto para navegar cuando el PDF está listo para previsualizar
     LaunchedEffect(pdfGenerationState) {
