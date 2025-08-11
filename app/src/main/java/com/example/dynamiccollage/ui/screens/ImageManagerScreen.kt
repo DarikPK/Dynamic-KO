@@ -19,6 +19,7 @@ import coil.compose.AsyncImage
 import com.example.dynamiccollage.ui.navigation.Screen
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ImageManagerScreen(
