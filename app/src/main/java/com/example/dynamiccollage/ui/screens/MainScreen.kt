@@ -158,8 +158,13 @@ fun MainScreen(
                 onClick = { navController.navigate(Screen.CoverSetup.route) }
             )
             MainButton(
-                text = "Gestionar Contenido",
+                text = "Ingreso Manual",
                 onClick = { navController.navigate(Screen.InnerPages.route) }
+            )
+            MainButton(
+                text = "Ingreso Inteligente (Próximamente)",
+                onClick = { },
+                enabled = false
             )
             MainButton(
                 text = stringResource(R.string.main_btn_preview_pdf),
@@ -199,6 +204,7 @@ fun MainScreen(
 fun MainButton(
     text: String,
     onClick: () -> Unit,
+    enabled: Boolean = true,
     buttonColor: Color? = null,
     textColor: Color? = null
 ) {
@@ -211,6 +217,7 @@ fun MainButton(
 
     Button(
         onClick = onClick,
+        enabled = enabled,
         modifier = Modifier
             .fillMaxWidth(0.8f)
             .height(48.dp),
