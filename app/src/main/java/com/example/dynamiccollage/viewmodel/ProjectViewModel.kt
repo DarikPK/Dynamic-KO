@@ -61,6 +61,12 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun deletePageGroup(groupId: String) {
+        val groupToDelete = _currentPageGroups.value.find { it.id == groupId }
+        viewModelScope.launch(Dispatchers.IO) {
+            groupToDelete?.imageUris?.forEach { uri ->
+                deleteLocalImage(uri)
+            }
+        }
         _currentPageGroups.update { currentList ->
             currentList.filterNot { it.id == groupId }
         }
@@ -71,8 +77,15 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun resetProject() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val imagesDir = File(getApplication<Application>().applicationContext.filesDir, "images")
+            if (imagesDir.exists()) {
+                imagesDir.deleteRecursively()
+            }
+        }
         _currentCoverConfig.value = CoverPageConfig()
-        resetPageGroups()
+        _currentPageGroups.value = emptyList()
+        _sunatData.value = null
     }
 
     // --- Generación de PDF ---
@@ -166,6 +179,92 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
         coverImage?.let { allImages.add(it) }
         allImages.addAll(innerImages)
         return allImages
+    }
+
+    private fun deleteLocalImage(path: String) {
+        try {
+            if (path.startsWith("file://")) {
+                val file = File(Uri.parse(path).path!!)
+                if (file.exists()) {
+                    file.delete()
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("ProjectViewModel", "Error deleting local image", e)
+        }
+    }
+
+    fun removeImageFromPageGroup(groupId: String, uri: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            deleteLocalImage(uri)
+        }
+        updatePageGroup(groupId) { group ->
+            group.copy(imageUris = group.imageUris.filterNot { it == uri })
+        }
+    }
+
+    fun removeAllImagesFromPageGroup(groupId: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val group = _currentPageGroups.value.find { it.id == groupId }
+            group?.imageUris?.forEach { uri ->
+                deleteLocalImage(uri)
+            }
+        }
+        updatePageGroup(groupId) { it.copy(imageUris = emptyList()) }
+    }
+
+    fun copyAndAddImagesToPageGroup(uriStrings: List<String>, groupId: String) {
+        viewModelScope.launch {
+            val permanentPaths = uriStrings.mapNotNull { copyUriToInternalStorage(it) }
+            if (permanentPaths.isNotEmpty()) {
+                updatePageGroup(groupId) { group ->
+                    group.copy(imageUris = group.imageUris + permanentPaths)
+                }
+            }
+        }
+    }
+
+    fun saveCoverConfigAndProcessImage(coverConfig: CoverPageConfig) {
+        viewModelScope.launch {
+            val imageUri = coverConfig.mainImageUri
+            var finalConfig = coverConfig
+
+            if (imageUri != null && imageUri.startsWith("content://")) {
+                val permanentPath = copyUriToInternalStorage(imageUri)
+                finalConfig = coverConfig.copy(mainImageUri = permanentPath)
+            }
+
+            val oldImageUri = _currentCoverConfig.value.mainImageUri
+            if (oldImageUri != null && oldImageUri != finalConfig.mainImageUri) {
+                deleteLocalImage(oldImageUri)
+            }
+
+            updateCoverConfig(finalConfig)
+        }
+    }
+
+    private suspend fun copyUriToInternalStorage(uriString: String): String? {
+        val context = getApplication<Application>().applicationContext
+        return withContext(Dispatchers.IO) {
+            try {
+                val inputStream = context.contentResolver.openInputStream(Uri.parse(uriString))
+                // Create a unique file name
+                val newFile = File(context.filesDir, "images/${UUID.randomUUID()}.jpg")
+                // Ensure the directory exists
+                newFile.parentFile?.mkdirs()
+                val outputStream = FileOutputStream(newFile)
+                inputStream?.use { input ->
+                    outputStream.use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                // Return the path to the new file
+                Uri.fromFile(newFile).toString()
+            } catch (e: Exception) {
+                Log.e("ProjectViewModel", "Error copying URI to internal storage", e)
+                null
+            }
+        }
     }
 
     fun saveCroppedImage(context: Context, oldUri: String, croppedBitmap: Bitmap) {

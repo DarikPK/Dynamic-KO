@@ -82,7 +82,7 @@ fun MainScreen(
     LaunchedEffect(saveState) {
         when (val state = saveState) {
             is SaveState.Success -> {
-                Toast.makeText(context, "Proyecto guardado con éxito", Toast.LENGTH_SHORT).show()
+                // El guardado exitoso ahora es silencioso.
                 projectViewModel.resetSaveState()
             }
             is SaveState.Error -> {

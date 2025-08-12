@@ -69,22 +69,16 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
 
     fun onImagesSelectedForGroup(uris: List<Uri>, groupId: String) {
         val uriStrings = uris.map { it.toString() }
-        projectViewModel.updatePageGroup(groupId) { group ->
-            group.copy(imageUris = group.imageUris + uriStrings)
-        }
+        projectViewModel.copyAndAddImagesToPageGroup(uriStrings, groupId)
         _currentGroupAddingImages.value = null
     }
 
     fun removeSingleImageFromGroup(groupId: String, uri: String) {
-        projectViewModel.updatePageGroup(groupId) { group ->
-            group.copy(imageUris = group.imageUris.toMutableList().apply { remove(uri) })
-        }
+        projectViewModel.removeImageFromPageGroup(groupId, uri)
     }
 
     fun removeImagesFromGroup(groupId: String) {
-        projectViewModel.updatePageGroup(groupId) { group ->
-            group.copy(imageUris = emptyList())
-        }
+        projectViewModel.removeAllImagesFromPageGroup(groupId)
     }
 
     fun onRemoveGroupClicked(groupId: String) {
