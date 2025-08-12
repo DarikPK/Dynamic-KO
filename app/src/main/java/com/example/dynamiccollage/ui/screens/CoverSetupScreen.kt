@@ -5,21 +5,16 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -27,41 +22,31 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -69,15 +54,12 @@ import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.dynamiccollage.R
-import com.example.dynamiccollage.data.model.DefaultCoverConfig // Usado por onTextStyleChange
 import com.example.dynamiccollage.data.model.DocumentType
-import com.example.dynamiccollage.data.model.PageOrientation // NUEVA IMPORTACIÓN
-import com.example.dynamiccollage.data.model.TextStyleConfig
+import com.example.dynamiccollage.data.model.PageOrientation
 import com.example.dynamiccollage.ui.navigation.Screen
-import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
 import com.example.dynamiccollage.viewmodel.CoverSetupViewModel
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
-import androidx.activity.ComponentActivity // Para Preview
+import androidx.activity.ComponentActivity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,21 +72,24 @@ fun CoverSetupScreen(
     val projectCoverConfig by projectViewModel.currentCoverConfig.collectAsState()
     val sunatData by projectViewModel.sunatData.collectAsState()
     val context = LocalContext.current
-    // val detectedPhotoOrientation by coverSetupViewModel.detectedPhotoOrientation.collectAsState() // Para Paso 2
 
-    LaunchedEffect(projectCoverConfig) {
+    // Load the initial config from the shared ProjectViewModel
+    LaunchedEffect(Unit) {
         coverSetupViewModel.loadInitialConfig(projectCoverConfig)
     }
 
+    // Update local state if SUNAT data is fetched
     LaunchedEffect(sunatData) {
         sunatData?.let {
             coverSetupViewModel.onSunatDataReceived(it)
         }
     }
 
+    // Save the local state back to the shared ProjectViewModel when leaving the screen
     DisposableEffect(Unit) {
         onDispose {
-            if (coverConfig != projectCoverConfig) { // Only save if there are changes
+            // Only save if there are actual changes to avoid unnecessary file operations
+            if (coverConfig != projectCoverConfig) {
                 projectViewModel.saveCoverConfigAndProcessImage(context, coverConfig)
             }
         }
@@ -137,8 +122,9 @@ fun CoverSetupScreen(
                             contentDescription = "Opciones Avanzadas"
                         )
                     }
+                    // The explicit save button is now a secondary action, as auto-save is implemented
                     IconButton(onClick = {
-                        projectViewModel.updateCoverConfig(coverConfig)
+                        projectViewModel.saveCoverConfigAndProcessImage(context, coverConfig)
                         Toast.makeText(context, context.getString(R.string.cover_config_saved_toast), Toast.LENGTH_SHORT).show()
                     }) {
                         Icon(
@@ -226,7 +212,6 @@ fun CoverSetupScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Visualización de la imagen seleccionada
             if (coverConfig.mainImageUri != null) {
                 AsyncImage(
                     model = ImageRequest.Builder(context)
@@ -257,15 +242,10 @@ fun CoverSetupScreen(
                 }
             }
 
-            // Mensaje de orientación de foto detectada (para Paso 2)
-            // val photoOrientationText = // ... lógica del mensaje
-            // Text(text = photoOrientationText, ...)
-
             Spacer(modifier = Modifier.height(16.dp))
             Divider()
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Selector de Orientación de Portada (NUEVO)
             Text(
                 "Orientación de foto recomendada",
                 style = MaterialTheme.typography.titleMedium,
@@ -283,11 +263,17 @@ fun CoverSetupScreen(
                     shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
                 ) { Text(stringResource(R.string.orientation_horizontal)) }
             }
-
-
-
-
             Spacer(modifier = Modifier.height(24.dp))
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun CoverSetupScreenPreview() {
+    DynamicCollageTheme {
+        // This preview might not work correctly without a valid NavController and ViewModel setup
+        // It's here for basic layout checking.
+        CoverSetupScreen(navController = rememberNavController(), coverSetupViewModel = viewModel())
     }
 }
