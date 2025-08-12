@@ -116,48 +116,56 @@ private fun cropBitmap(
     cropRect: Rect,
     canvasSize: IntSize
 ): Bitmap? {
-    val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
-    if (inputStream == null) return null
+    try {
+        val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
+        if (inputStream == null) return null
 
-    val originalBitmap = BitmapFactory.decodeStream(inputStream)
-    inputStream.close()
+        val originalBitmap = BitmapFactory.decodeStream(inputStream)
+        inputStream.close()
 
-    val (bitmapWidth, bitmapHeight) = originalBitmap.width to originalBitmap.height
-    val (canvasWidth, canvasHeight) = canvasSize.width to canvasSize.height
+        val (bitmapWidth, bitmapHeight) = originalBitmap.width to originalBitmap.height
+        val (canvasWidth, canvasHeight) = canvasSize.width to canvasSize.height
 
-    // Calculate the scale factor and the dimensions of the displayed image
-    val scaleX = canvasWidth.toFloat() / bitmapWidth
-    val scaleY = canvasHeight.toFloat() / bitmapHeight
-    val scale = min(scaleX, scaleY)
+        if (bitmapWidth == 0 || bitmapHeight == 0 || canvasWidth == 0 || canvasHeight == 0) return null
 
-    val displayedWidth = bitmapWidth * scale
-    val displayedHeight = bitmapHeight * scale
+        val scaleX = canvasWidth.toFloat() / bitmapWidth
+        val scaleY = canvasHeight.toFloat() / bitmapHeight
+        val scale = min(scaleX, scaleY)
 
-    // Calculate the offset of the displayed image within the canvas (letterboxing)
-    val offsetX = (canvasWidth - displayedWidth) / 2
-    val offsetY = (canvasHeight - displayedHeight) / 2
+        if (scale <= 0f) return null
 
-    // Translate the crop rect coordinates from canvas space to displayed image space
-    val translatedRect = cropRect.translate(-offsetX, -offsetY)
+        val displayedWidth = bitmapWidth * scale
+        val displayedHeight = bitmapHeight * scale
 
-    // Scale the translated rect coordinates to the original bitmap's coordinate space
-    val finalCropRect = Rect(
-        left = translatedRect.left / scale,
-        top = translatedRect.top / scale,
-        right = translatedRect.right / scale,
-        bottom = translatedRect.bottom / scale
-    )
+        val offsetX = (canvasWidth - displayedWidth) / 2
+        val offsetY = (canvasHeight - displayedHeight) / 2
 
-    // Ensure crop rect is within the bitmap bounds
-    val boundedRect = finalCropRect.intersect(Rect(0f, 0f, bitmapWidth.toFloat(), bitmapHeight.toFloat()))
-    if (boundedRect.isEmpty) return null
+        val translatedRect = cropRect.translate(-offsetX, -offsetY)
 
+        val finalCropRect = Rect(
+            left = translatedRect.left / scale,
+            top = translatedRect.top / scale,
+            right = translatedRect.right / scale,
+            bottom = translatedRect.bottom / scale
+        )
 
-    return Bitmap.createBitmap(
-        originalBitmap,
-        boundedRect.left.toInt(),
-        boundedRect.top.toInt(),
-        boundedRect.width.toInt(),
-        boundedRect.height.toInt()
-    )
+        val boundedRect = finalCropRect.intersect(Rect(0f, 0f, bitmapWidth.toFloat(), bitmapHeight.toFloat()))
+
+        if (boundedRect.isEmpty || boundedRect.width <= 0 || boundedRect.height <= 0) return null
+
+        val x = boundedRect.left.toInt()
+        val y = boundedRect.top.toInt()
+        val width = boundedRect.width.toInt()
+        val height = boundedRect.height.toInt()
+
+        if (x < 0 || y < 0 || x + width > originalBitmap.width || y + height > originalBitmap.height) {
+            return null // Final check to prevent crash
+        }
+
+        return Bitmap.createBitmap(originalBitmap, x, y, width, height)
+    } catch (e: Exception) {
+        // Log the exception in a real app
+        e.printStackTrace()
+        return null
+    }
 }
