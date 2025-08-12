@@ -61,12 +61,13 @@ fun ImageUploadScreen(
 
     val pageGroups by innerPagesViewModel.pageGroups.collectAsState()
     val group = pageGroups.find { it.id == groupId }
+    val context = LocalContext.current
 
     val multipleImagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris ->
         if (uris.isNotEmpty()) {
-            innerPagesViewModel.onImagesSelectedForGroup(uris, groupId)
+            innerPagesViewModel.onImagesSelectedForGroup(context, uris, groupId)
         }
     }
 
