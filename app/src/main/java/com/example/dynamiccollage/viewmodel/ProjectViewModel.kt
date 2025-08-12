@@ -293,7 +293,8 @@ class ProjectViewModel : ViewModel() {
                     }
                 }
             }
-            deleteLocalImage(oldUri)
+            // Do not delete the old image until we are sure the save was successful.
+            // For now, we will leave it to avoid data loss. A future cleanup utility could remove orphans.
             saveProject(context)
         }
     }
