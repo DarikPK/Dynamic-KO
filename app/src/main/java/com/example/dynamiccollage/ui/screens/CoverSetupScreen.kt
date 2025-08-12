@@ -103,15 +103,6 @@ fun CoverSetupScreen(
         }
     }
 
-    // Save the local state back to the shared ProjectViewModel when leaving the screen
-    DisposableEffect(Unit) {
-        onDispose {
-            if (coverConfig != projectCoverConfig) {
-                projectViewModel.saveCoverConfigAndProcessImage(context, coverConfig)
-            }
-        }
-    }
-
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->

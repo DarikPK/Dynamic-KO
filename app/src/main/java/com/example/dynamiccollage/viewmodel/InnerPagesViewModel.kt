@@ -159,7 +159,7 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         )
     }
 
-    fun saveEditingGroup() {
+    fun saveEditingGroup(context: android.content.Context) {
         viewModelScope.launch {
             _editingGroup.value?.let { groupToSave ->
                 val currentGroups = pageGroups.value
@@ -168,6 +168,7 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
                 } else {
                     projectViewModel.addPageGroup(groupToSave)
                 }
+                projectViewModel.saveProject(context)
                 onDismissCreateGroupDialog()
             }
         }
