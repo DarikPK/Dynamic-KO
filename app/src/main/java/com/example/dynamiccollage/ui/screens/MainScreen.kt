@@ -277,6 +277,15 @@ fun MainScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
             MainButton(
+                text = "Borrar Proyecto Guardado",
+                onClick = {
+                    projectViewModel.deleteSavedProject()
+                    Toast.makeText(context, "Datos guardados eliminados.", Toast.LENGTH_SHORT).show()
+                },
+                buttonColor = MaterialTheme.colorScheme.error,
+                textColor = MaterialTheme.colorScheme.onError
+            )
+            MainButton(
                 text = stringResource(R.string.main_btn_delete_project),
                 onClick = { showDeleteConfirmDialog = true },
                 buttonColor = MaterialTheme.colorScheme.errorContainer,
