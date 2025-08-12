@@ -16,10 +16,10 @@ import java.nio.charset.StandardCharsets
 
 @Composable
 fun AppNavigation(
+    projectViewModel: ProjectViewModel,
     onThemeChange: (String) -> Unit
 ) {
     val context = LocalContext.current
-    val projectViewModel: ProjectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity)
     val coverSetupViewModel: CoverSetupViewModel = viewModel()
     val rowStyleViewModel: RowStyleViewModel = viewModel()
     val sunatDataViewModel: SunatDataViewModel = viewModel()
