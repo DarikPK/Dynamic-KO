@@ -118,8 +118,9 @@ fun CropView(
 
                 drawPath(path = path, color = Color.Black.copy(alpha = 0.5f))
                 drawRect(
-                    rect = displayedRect,
                     color = Color.White,
+                    topLeft = displayedRect.topLeft,
+                    size = displayedRect.size,
                     style = Stroke(width = 2.dp.toPx())
                 )
 
