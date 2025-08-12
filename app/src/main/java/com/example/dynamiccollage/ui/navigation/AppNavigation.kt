@@ -1,49 +1,30 @@
 package com.example.dynamiccollage.ui.navigation
 
+import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.dynamiccollage.ui.screens.CoverSetupScreen
-import com.example.dynamiccollage.ui.screens.ImageManagerScreen
-import com.example.dynamiccollage.ui.screens.InnerPagesScreen
-import com.example.dynamiccollage.ui.screens.MainScreen
-import com.example.dynamiccollage.ui.screens.PdfPreviewScreen
-import com.example.dynamiccollage.ui.screens.RowStyleScreen
-import com.example.dynamiccollage.ui.screens.AdvancedCoverOptionsScreen
-import com.example.dynamiccollage.ui.screens.MarginsScreen
-import com.example.dynamiccollage.ui.screens.SunatDataScreen
-import com.example.dynamiccollage.ui.screens.TextStyleScreen
-import com.example.dynamiccollage.ui.screens.ColorPickerScreen
-import com.example.dynamiccollage.ui.screens.GroupHeaderStyleScreen
-import com.example.dynamiccollage.ui.screens.WeightsScreen
-import com.example.dynamiccollage.viewmodel.CoverSetupViewModel
-import com.example.dynamiccollage.viewmodel.InnerPagesViewModel
-import com.example.dynamiccollage.viewmodel.InnerPagesViewModelFactory
-import com.example.dynamiccollage.viewmodel.ProjectViewModel
-import com.example.dynamiccollage.viewmodel.RowStyleViewModel
-import com.example.dynamiccollage.viewmodel.SunatDataViewModel
+import com.example.dynamiccollage.ui.screens.*
+import com.example.dynamiccollage.viewmodel.*
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
-import androidx.lifecycle.viewmodel.compose.viewModel
-
 
 @Composable
 fun AppNavigation(
-    projectViewModel: ProjectViewModel,
-    coverSetupViewModel: CoverSetupViewModel = viewModel(),
-    rowStyleViewModel: RowStyleViewModel = viewModel(),
-    sunatDataViewModel: SunatDataViewModel = viewModel(),
     onThemeChange: (String) -> Unit
 ) {
-    val navController = rememberNavController()
+    val context = LocalContext.current
+    val projectViewModel: ProjectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity)
+    val coverSetupViewModel: CoverSetupViewModel = viewModel()
+    val rowStyleViewModel: RowStyleViewModel = viewModel()
+    val sunatDataViewModel: SunatDataViewModel = viewModel()
     val innerPagesViewModel: InnerPagesViewModel = viewModel(factory = InnerPagesViewModelFactory(projectViewModel))
+    val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = Screen.Main.route) {
         composable(Screen.Main.route) {

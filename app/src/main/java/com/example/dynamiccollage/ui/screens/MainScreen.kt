@@ -1,7 +1,7 @@
 package com.example.dynamiccollage.ui.screens
 
 import android.widget.Toast
-import androidx.activity.ComponentActivity
+import androidx.activity.ComponentActivity // Necesario para el viewModelStoreOwner en previews si no se pasa el VM
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,18 +36,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.compose.viewModel // Para la preview
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.dynamiccollage.R
 import com.example.dynamiccollage.ui.navigation.Screen
 import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import com.example.dynamiccollage.viewmodel.SaveState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,70 +52,10 @@ fun MainScreen(
     onThemeChange: (String) -> Unit
 ) {
     val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-
-    // Cargar el proyecto una sola vez cuando el composable entra en la composición
-    LaunchedEffect(Unit) {
-        projectViewModel.loadProject(context)
-    }
-
-    // Guardar el proyecto automáticamente cuando la app se va a segundo plano
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_STOP) {
-                projectViewModel.saveProject(context)
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
-    }
-
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
-    var showContentEntryDialog by remember { mutableStateOf(false) }
     val pdfGenerationState by projectViewModel.pdfGenerationState.collectAsState()
     val shareablePdfUri by projectViewModel.shareablePdfUri.collectAsState()
-    val saveState by projectViewModel.saveState.collectAsState()
-
-    // Efecto para mostrar Toasts de guardado o errores
-    LaunchedEffect(saveState) {
-        when (val state = saveState) {
-            is SaveState.Success -> {
-                // El guardado exitoso ahora es silencioso.
-                projectViewModel.resetSaveState()
-            }
-            is SaveState.Error -> {
-                Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
-                projectViewModel.resetSaveState()
-            }
-            else -> { /* No-op para Idle y RequiresConfirmation */ }
-        }
-    }
-
-    // Diálogo de confirmación para archivos grandes
-    if (saveState is SaveState.RequiresConfirmation) {
-        val sizeInMb = "%.2f".format((saveState as SaveState.RequiresConfirmation).sizeInBytes / (1024.0 * 1024.0))
-        AlertDialog(
-            onDismissRequest = { projectViewModel.resetSaveState() },
-            title = { Text("Confirmar Guardado") },
-            text = { Text("El tamaño del proyecto ($sizeInMb MB) supera los 50MB. ¿Deseas guardarlo de todos modos?") },
-            confirmButton = {
-                Button(onClick = {
-                    projectViewModel.forceSaveProject(context)
-                }) {
-                    Text("Guardar")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { projectViewModel.resetSaveState() }) {
-                    Text("Cancelar")
-                }
-            }
-        )
-    }
-
 
     // Efecto para navegar cuando el PDF está listo para previsualizar
     LaunchedEffect(pdfGenerationState) {
@@ -128,7 +63,7 @@ fun MainScreen(
             val file = (pdfGenerationState as com.example.dynamiccollage.viewmodel.PdfGenerationState.Success).file
             val encodedPath = java.net.URLEncoder.encode(file.absolutePath, "UTF-8")
             navController.navigate(Screen.PdfPreview.withArgs(encodedPath))
-            projectViewModel.resetPdfGenerationState()
+            projectViewModel.resetPdfGenerationState() // Resetea el estado para no volver a navegar
         } else if (pdfGenerationState is com.example.dynamiccollage.viewmodel.PdfGenerationState.Error) {
             val message = (pdfGenerationState as com.example.dynamiccollage.viewmodel.PdfGenerationState.Error).message
             Toast.makeText(context, message, Toast.LENGTH_LONG).show()
@@ -145,7 +80,7 @@ fun MainScreen(
                 addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             context.startActivity(android.content.Intent.createChooser(intent, "Share PDF"))
-            projectViewModel.resetShareableUri()
+            projectViewModel.resetShareableUri() // Limpia el URI después de usarlo
         }
     }
 
@@ -157,7 +92,7 @@ fun MainScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        projectViewModel.resetProject(context)
+                        projectViewModel.resetProject()
                         showDeleteConfirmDialog = false
                         Toast.makeText(context, context.getString(R.string.project_deleted_toast), Toast.LENGTH_SHORT).show()
                     }
@@ -196,38 +131,6 @@ fun MainScreen(
         )
     }
 
-    if (showContentEntryDialog) {
-        AlertDialog(
-            onDismissRequest = { showContentEntryDialog = false },
-            title = { Text("Gestionar Contenido") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextButton(
-                        onClick = {
-                            showContentEntryDialog = false
-                            navController.navigate(Screen.InnerPages.route)
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Ingreso Manual")
-                    }
-                    TextButton(
-                        onClick = {},
-                        enabled = false,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Ingreso Inteligente (Próximamente)")
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showContentEntryDialog = false }) {
-                    Text("Cancelar")
-                }
-            }
-        )
-    }
-
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -256,7 +159,7 @@ fun MainScreen(
             )
             MainButton(
                 text = "Gestionar Contenido",
-                onClick = { showContentEntryDialog = true }
+                onClick = { navController.navigate(Screen.InnerPages.route) }
             )
             MainButton(
                 text = stringResource(R.string.main_btn_preview_pdf),
@@ -321,10 +224,14 @@ fun MainButton(
 @Composable
 fun MainScreenPreview() {
     DynamicCollageTheme {
+        // Para que la preview funcione sin crash, el ProjectViewModel necesita ser proveído.
+        // Una forma es usar un viewModel() dummy o un mock.
+        // Esto es solo un ejemplo de cómo podrías necesitar ajustar previews.
         val context = LocalContext.current
         MainScreen(
             navController = rememberNavController(),
-            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity),
+            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity), // Esto podría fallar en preview si el contexto no es una Activity
+            // O pasar un mock/stub ProjectViewModel
             onThemeChange = {}
         )
     }
