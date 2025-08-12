@@ -23,6 +23,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -59,6 +60,12 @@ fun InnerPagesScreen(
     val context = LocalContext.current
     val groupToDelete by innerPagesViewModel.showDeleteGroupDialog.collectAsState()
     val imagesToDelete by innerPagesViewModel.showDeleteImagesDialog.collectAsState()
+
+    DisposableEffect(Unit) {
+        onDispose {
+            innerPagesViewModel.saveEditingGroup()
+        }
+    }
 
     if (groupToDelete != null) {
         ConfirmationDialog(
