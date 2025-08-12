@@ -98,6 +98,7 @@ fun InnerPagesScreen(
 
     if (showDialog) {
         CreateEditGroupDialog(
+            context = context,
             navController = navController,
             editingGroup = editingGroup,
             viewModel = innerPagesViewModel,

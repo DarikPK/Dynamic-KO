@@ -41,6 +41,7 @@ import com.example.dynamiccollage.viewmodel.InnerPagesViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateEditGroupDialog(
+    context: android.content.Context,
     navController: NavController,
     editingGroup: PageGroup?,
     viewModel: InnerPagesViewModel,
@@ -166,7 +167,7 @@ fun CreateEditGroupDialog(
         },
         confirmButton = {
             Button(
-                onClick = { viewModel.saveEditingGroup() },
+                onClick = { viewModel.saveEditingGroup(context) },
                 enabled = isConfigValid && editingGroup.sheetCount > 0
             ) { Text(stringResource(R.string.save_button)) }
         },
