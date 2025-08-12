@@ -19,14 +19,12 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.dynamiccollage.ui.components.CropView
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 import java.io.InputStream
-import kotlin.math.min
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,15 +63,14 @@ fun ImageManagerScreen(
                 if (selectedImageUri != null) {
                     CropView(
                         uri = selectedImageUri!!,
-                        onCrop = { cropRect, canvasSize ->
+                        onCrop = { cropRect, imageBounds ->
                             val croppedBitmap = cropBitmap(
                                 context = context,
                                 uri = selectedImageUri!!,
                                 cropRect = cropRect,
-                                canvasSize = canvasSize
+                                imageBounds = imageBounds
                             )
                             if (croppedBitmap != null) {
-                                // TODO: PHASE 4
                                 projectViewModel.saveCroppedImage(context, selectedImageUri.toString(), croppedBitmap)
                                 navController.popBackStack()
                             }
@@ -115,7 +112,7 @@ private fun cropBitmap(
     context: Context,
     uri: Uri,
     cropRect: Rect,
-    canvasSize: IntSize
+    imageBounds: Rect
 ): Bitmap? {
     try {
         val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
@@ -124,48 +121,23 @@ private fun cropBitmap(
         val originalBitmap = BitmapFactory.decodeStream(inputStream)
         inputStream.close()
 
-        val (bitmapWidth, bitmapHeight) = originalBitmap.width to originalBitmap.height
-        val (canvasWidth, canvasHeight) = canvasSize.width to canvasSize.height
+        val scale = originalBitmap.width / imageBounds.width
 
-        if (bitmapWidth == 0 || bitmapHeight == 0 || canvasWidth == 0 || canvasHeight == 0) return null
+        val finalLeft = (cropRect.left - imageBounds.left) * scale
+        val finalTop = (cropRect.top - imageBounds.top) * scale
+        val finalWidth = cropRect.width * scale
+        val finalHeight = cropRect.height * scale
 
-        val scaleX = canvasWidth.toFloat() / bitmapWidth
-        val scaleY = canvasHeight.toFloat() / bitmapHeight
-        val scale = min(scaleX, scaleY)
+        if (finalWidth <= 0 || finalHeight <= 0) return null
 
-        if (scale <= 0f) return null
-
-        val displayedWidth = bitmapWidth * scale
-        val displayedHeight = bitmapHeight * scale
-
-        val offsetX = (canvasWidth - displayedWidth) / 2
-        val offsetY = (canvasHeight - displayedHeight) / 2
-
-        val translatedRect = cropRect.translate(-offsetX, -offsetY)
-
-        val finalCropRect = Rect(
-            left = translatedRect.left / scale,
-            top = translatedRect.top / scale,
-            right = translatedRect.right / scale,
-            bottom = translatedRect.bottom / scale
+        return Bitmap.createBitmap(
+            originalBitmap,
+            finalLeft.toInt(),
+            finalTop.toInt(),
+            finalWidth.toInt(),
+            finalHeight.toInt()
         )
-
-        val boundedRect = finalCropRect.intersect(Rect(0f, 0f, bitmapWidth.toFloat(), bitmapHeight.toFloat()))
-
-        if (boundedRect.isEmpty || boundedRect.width <= 0 || boundedRect.height <= 0) return null
-
-        val x = boundedRect.left.toInt()
-        val y = boundedRect.top.toInt()
-        val width = boundedRect.width.toInt()
-        val height = boundedRect.height.toInt()
-
-        if (x < 0 || y < 0 || x + width > originalBitmap.width || y + height > originalBitmap.height) {
-            return null // Final check to prevent crash
-        }
-
-        return Bitmap.createBitmap(originalBitmap, x, y, width, height)
     } catch (e: Exception) {
-        // Log the exception in a real app
         e.printStackTrace()
         return null
     }

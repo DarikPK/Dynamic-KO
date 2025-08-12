@@ -28,7 +28,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -47,13 +46,14 @@ private sealed class TouchRegion {
 fun CropView(
     modifier: Modifier = Modifier,
     uri: Uri,
-    onCrop: (Rect, IntSize) -> Unit
+    onCrop: (cropRect: Rect, imageBounds: Rect) -> Unit
 ) {
     var cropRect by remember { mutableStateOf(Rect.Zero) }
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
     var isInitialized by remember { mutableStateOf(false) }
     var touchRegion by remember { mutableStateOf<TouchRegion>(TouchRegion.None) }
-    var canvasSize by remember { mutableStateOf(IntSize.Zero) }
+    var imageBounds by remember { mutableStateOf(Rect.Zero) }
+    var imageAspectRatio by remember { mutableStateOf(0f) }
     val density = LocalDensity.current
 
     Column(
@@ -70,7 +70,11 @@ fun CropView(
                 model = ImageRequest.Builder(LocalContext.current).data(uri).build(),
                 contentDescription = "Image to crop",
                 contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                onSuccess = { result ->
+                    val drawable = result.result.drawable
+                    imageAspectRatio = drawable.intrinsicWidth.toFloat() / drawable.intrinsicHeight.toFloat()
+                }
             )
 
             Canvas(
@@ -83,7 +87,7 @@ fun CropView(
                                 touchRegion = getTouchRegion(startOffset, cropRect, touchSlop)
                             },
                             onDragEnd = {
-                                cropRect = getUpdatedRect(cropRect, dragOffset, touchRegion)
+                                cropRect = getUpdatedRect(cropRect, dragOffset, touchRegion, imageBounds)
                                 dragOffset = Offset.Zero
                                 touchRegion = TouchRegion.None
                             }
@@ -93,20 +97,16 @@ fun CropView(
                         }
                     }
             ) {
-                canvasSize = IntSize(size.width.toInt(), size.height.toInt())
+                if (imageAspectRatio == 0f) return@Canvas
+
+                imageBounds = getImageBounds(imageAspectRatio, size)
 
                 if (!isInitialized) {
-                    val rectSize = size.width * 0.8f
-                    cropRect = Rect(
-                        left = (size.width - rectSize) / 2,
-                        top = (size.height - rectSize) / 2,
-                        right = (size.width + rectSize) / 2,
-                        bottom = (size.height + rectSize) / 2
-                    )
+                    cropRect = imageBounds.deflate(imageBounds.width * 0.1f)
                     isInitialized = true
                 }
 
-                val displayedRect = getUpdatedRect(cropRect, dragOffset, touchRegion)
+                val displayedRect = getUpdatedRect(cropRect, dragOffset, touchRegion, imageBounds)
 
                 val outerPath = Path().apply { addRect(Rect(0f, 0f, size.width, size.height)) }
                 val innerPath = Path().apply { addRect(displayedRect) }
@@ -123,30 +123,34 @@ fun CropView(
                     size = displayedRect.size,
                     style = Stroke(width = 2.dp.toPx())
                 )
-
-                // Draw corner handles
                 drawCircle(color = Color.White, radius = 8.dp.toPx(), center = displayedRect.topLeft)
                 drawCircle(color = Color.White, radius = 8.dp.toPx(), center = displayedRect.topRight)
-                drawCircle(
-                    color = Color.White,
-                    radius = 8.dp.toPx(),
-                    center = displayedRect.bottomLeft
-                )
-                drawCircle(
-                    color = Color.White,
-                    radius = 8.dp.toPx(),
-                    center = displayedRect.bottomRight
-                )
+                drawCircle(color = Color.White, radius = 8.dp.toPx(), center = displayedRect.bottomLeft)
+                drawCircle(color = Color.White, radius = 8.dp.toPx(), center = displayedRect.bottomRight)
             }
         }
         Button(
-            onClick = { onCrop(cropRect, canvasSize) },
+            onClick = { onCrop(cropRect, imageBounds) },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
             Text("Aceptar")
         }
+    }
+}
+
+private fun getImageBounds(imageAspectRatio: Float, canvasSize: androidx.compose.ui.geometry.Size): Rect {
+    if (imageAspectRatio <= 0f) return Rect.Zero
+    val canvasAspectRatio = canvasSize.width / canvasSize.height
+    return if (imageAspectRatio > canvasAspectRatio) {
+        val scaledHeight = canvasSize.width / imageAspectRatio
+        val offsetY = (canvasSize.height - scaledHeight) / 2
+        Rect(0f, offsetY, canvasSize.width, offsetY + scaledHeight)
+    } else {
+        val scaledWidth = canvasSize.height * imageAspectRatio
+        val offsetX = (canvasSize.width - scaledWidth) / 2
+        Rect(offsetX, 0f, offsetX + scaledWidth, canvasSize.height)
     }
 }
 
@@ -164,9 +168,10 @@ private fun getTouchRegion(offset: Offset, rect: Rect, slop: Float): TouchRegion
 private fun getUpdatedRect(
     currentRect: Rect,
     dragOffset: Offset,
-    touchRegion: TouchRegion
+    touchRegion: TouchRegion,
+    bounds: Rect
 ): Rect {
-    return when (touchRegion) {
+    val newRect = when (touchRegion) {
         TouchRegion.Center -> currentRect.translate(dragOffset)
         TouchRegion.TopLeft -> Rect(
             left = currentRect.left + dragOffset.x,
@@ -194,4 +199,12 @@ private fun getUpdatedRect(
         )
         TouchRegion.None -> currentRect
     }
+
+    // Constrain the new rectangle to the image bounds
+    val constrainedLeft = newRect.left.coerceIn(bounds.left, bounds.right - 20f)
+    val constrainedTop = newRect.top.coerceIn(bounds.top, bounds.bottom - 20f)
+    val constrainedRight = newRect.right.coerceIn(constrainedLeft + 20f, bounds.right)
+    val constrainedBottom = newRect.bottom.coerceIn(constrainedTop + 20f, bounds.bottom)
+
+    return Rect(constrainedLeft, constrainedTop, constrainedRight, constrainedBottom)
 }
