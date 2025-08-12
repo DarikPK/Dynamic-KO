@@ -135,7 +135,7 @@ fun CropView(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            Text("Aceptar")
+            Text("Recortar")
         }
     }
 }
