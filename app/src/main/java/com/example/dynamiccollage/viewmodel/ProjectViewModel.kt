@@ -222,6 +222,7 @@ class ProjectViewModel : ViewModel() {
                 updatePageGroup(groupId) { group ->
                     group.copy(imageUris = group.imageUris + permanentPaths)
                 }
+                saveProject(context)
             }
         }
     }
