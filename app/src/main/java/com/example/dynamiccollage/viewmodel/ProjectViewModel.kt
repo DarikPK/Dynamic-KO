@@ -382,14 +382,27 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
                 }
             } catch (t: Throwable) {
                 Log.e("ProjectViewModel", "loadProject: A critical error occurred during project load. Starting fresh.", t)
-                // If any error occurs, we just start with a fresh project and don't crash.
-                // Resetting state is not necessary as it's the default state.
+                _saveState.value = SaveState.Error("Fallo al cargar el proyecto guardado: ${t.javaClass.simpleName}")
             }
         }
     }
 
     fun resetSaveState() {
         _saveState.value = SaveState.Idle
+    }
+
+    fun deleteSavedProject() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val context = getApplication<Application>().applicationContext
+                val file = File(context.filesDir, projectFileName)
+                if (file.exists()) {
+                    file.delete()
+                }
+            } catch (e: Exception) {
+                Log.e("ProjectViewModel", "Error deleting saved project", e)
+            }
+        }
     }
 }
 
