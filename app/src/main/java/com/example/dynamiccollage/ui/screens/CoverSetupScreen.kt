@@ -1,6 +1,7 @@
 package com.example.dynamiccollage.ui.screens
 
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -40,12 +42,15 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -57,9 +62,9 @@ import com.example.dynamiccollage.R
 import com.example.dynamiccollage.data.model.DocumentType
 import com.example.dynamiccollage.data.model.PageOrientation
 import com.example.dynamiccollage.ui.navigation.Screen
+import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
 import com.example.dynamiccollage.viewmodel.CoverSetupViewModel
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
-import androidx.activity.ComponentActivity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -271,9 +276,12 @@ fun CoverSetupScreen(
 @Preview(showBackground = true)
 @Composable
 fun CoverSetupScreenPreview() {
+    val context = LocalContext.current
     DynamicCollageTheme {
-        // This preview might not work correctly without a valid NavController and ViewModel setup
-        // It's here for basic layout checking.
-        CoverSetupScreen(navController = rememberNavController(), coverSetupViewModel = viewModel())
+        CoverSetupScreen(
+            navController = rememberNavController(),
+            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity),
+            coverSetupViewModel = viewModel()
+        )
     }
 }
