@@ -130,7 +130,7 @@ fun CoverSetupScreen(
                         )
                     }
                     IconButton(onClick = {
-                        projectViewModel.saveCoverConfigAndProcessImage(coverConfig)
+                        projectViewModel.saveCoverConfigAndProcessImage(context, coverConfig)
                         Toast.makeText(context, context.getString(R.string.cover_config_saved_toast), Toast.LENGTH_SHORT).show()
                     }) {
                         Icon(
