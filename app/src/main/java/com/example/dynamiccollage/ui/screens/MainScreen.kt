@@ -59,10 +59,16 @@ fun MainScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
+    // Cargar el proyecto una sola vez cuando el composable entra en la composición
+    LaunchedEffect(Unit) {
+        projectViewModel.loadProject(context)
+    }
+
+    // Guardar el proyecto automáticamente cuando la app se va a segundo plano
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_STOP) {
-                projectViewModel.saveProject()
+                projectViewModel.saveProject(context)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -78,7 +84,7 @@ fun MainScreen(
     val shareablePdfUri by projectViewModel.shareablePdfUri.collectAsState()
     val saveState by projectViewModel.saveState.collectAsState()
 
-    // Efecto para mostrar Toasts de guardado
+    // Efecto para mostrar Toasts de guardado o errores
     LaunchedEffect(saveState) {
         when (val state = saveState) {
             is SaveState.Success -> {
@@ -86,7 +92,7 @@ fun MainScreen(
                 projectViewModel.resetSaveState()
             }
             is SaveState.Error -> {
-                Toast.makeText(context, "Error al guardar: ${state.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
                 projectViewModel.resetSaveState()
             }
             else -> { /* No-op para Idle y RequiresConfirmation */ }
@@ -102,7 +108,7 @@ fun MainScreen(
             text = { Text("El tamaño del proyecto ($sizeInMb MB) supera los 50MB. ¿Deseas guardarlo de todos modos?") },
             confirmButton = {
                 Button(onClick = {
-                    projectViewModel.forceSaveProject()
+                    projectViewModel.forceSaveProject(context)
                 }) {
                     Text("Guardar")
                 }
@@ -151,7 +157,7 @@ fun MainScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        projectViewModel.resetProject()
+                        projectViewModel.resetProject(context)
                         showDeleteConfirmDialog = false
                         Toast.makeText(context, context.getString(R.string.project_deleted_toast), Toast.LENGTH_SHORT).show()
                     }
@@ -279,7 +285,7 @@ fun MainScreen(
             MainButton(
                 text = "Borrar Proyecto Guardado",
                 onClick = {
-                    projectViewModel.deleteSavedProject()
+                    projectViewModel.deleteSavedProject(context)
                     Toast.makeText(context, "Datos guardados eliminados.", Toast.LENGTH_SHORT).show()
                 },
                 buttonColor = MaterialTheme.colorScheme.error,
