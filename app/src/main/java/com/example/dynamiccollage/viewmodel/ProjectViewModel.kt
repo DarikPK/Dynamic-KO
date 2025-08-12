@@ -250,30 +250,41 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun loadProject() {
-        val context = getApplication<Application>().applicationContext
         viewModelScope.launch {
-            val file = File(context.filesDir, projectFileName)
-            if (!file.exists()) return@launch
+            try {
+                Log.d("ProjectViewModel", "loadProject: Attempting to load project...")
+                val context = getApplication<Application>().applicationContext
+                val file = File(context.filesDir, projectFileName)
 
-            val jsonString = withContext(Dispatchers.IO) {
-                try {
-                    context.openFileInput(projectFileName).bufferedReader().use { it.readText() }
-                } catch (e: Exception) {
-                    Log.e("ProjectViewModel", "Error loading project", e)
-                    null
+                if (!file.exists()) {
+                    Log.d("ProjectViewModel", "loadProject: No project file found. Starting fresh.")
+                    return@launch
                 }
-            }
 
-            if (jsonString != null) {
-                try {
+                Log.d("ProjectViewModel", "loadProject: Project file exists. Reading...")
+                val jsonString = withContext(Dispatchers.IO) {
+                    try {
+                        context.openFileInput(projectFileName).bufferedReader().use { it.readText() }
+                    } catch (e: Exception) {
+                        Log.e("ProjectViewModel", "loadProject: Error reading file.", e)
+                        null
+                    }
+                }
+
+                if (jsonString != null) {
+                    Log.d("ProjectViewModel", "loadProject: File read success. Parsing JSON...")
                     val serializableState = gson.fromJson(jsonString, SerializableProjectState::class.java)
+                    Log.d("ProjectViewModel", "loadProject: JSON parsing success. Mapping to domain...")
                     val projectState = serializableState.toDomain()
                     _currentCoverConfig.value = projectState.coverConfig
                     _currentPageGroups.value = projectState.pageGroups
                     _sunatData.value = projectState.sunatData
-                } catch (e: Exception) {
-                    Log.e("ProjectViewModel", "Error parsing project JSON", e)
+                    Log.d("ProjectViewModel", "loadProject: Project loaded and state restored successfully.")
                 }
+            } catch (t: Throwable) {
+                Log.e("ProjectViewModel", "loadProject: A critical error occurred during project load. Starting fresh.", t)
+                // If any error occurs, we just start with a fresh project and don't crash.
+                // Resetting state is not necessary as it's the default state.
             }
         }
     }
