@@ -73,11 +73,18 @@ class ProjectViewModel : ViewModel() {
 
     fun resetProject(context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
+            // Delete images directory
             val imagesDir = File(context.applicationContext.filesDir, "images")
             if (imagesDir.exists()) {
                 imagesDir.deleteRecursively()
             }
+            // Delete saved project file
+            val projectFile = File(context.applicationContext.filesDir, projectFileName)
+            if (projectFile.exists()) {
+                projectFile.delete()
+            }
         }
+        // Reset in-memory state
         _currentCoverConfig.value = CoverPageConfig()
         _currentPageGroups.value = emptyList()
         _sunatData.value = null
@@ -378,19 +385,6 @@ class ProjectViewModel : ViewModel() {
 
     fun resetSaveState() {
         _saveState.value = SaveState.Idle
-    }
-
-    fun deleteSavedProject(context: Context) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val file = File(context.applicationContext.filesDir, projectFileName)
-                if (file.exists()) {
-                    file.delete()
-                }
-            } catch (e: Exception) {
-                Log.e("ProjectViewModel", "Error deleting saved project", e)
-            }
-        }
     }
 }
 
