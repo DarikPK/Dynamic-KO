@@ -270,11 +270,12 @@ class ProjectViewModel : ViewModel() {
     fun saveCroppedImage(context: Context, oldUri: String, croppedBitmap: Bitmap) {
         viewModelScope.launch {
             val newUri = withContext(Dispatchers.IO) {
-                val file = File(context.cacheDir, "${UUID.randomUUID()}.jpg")
-                FileOutputStream(file).use { out ->
+                val newFile = File(context.applicationContext.filesDir, "images/${UUID.randomUUID()}.jpg")
+                newFile.parentFile?.mkdirs()
+                FileOutputStream(newFile).use { out ->
                     croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
                 }
-                Uri.fromFile(file).toString()
+                Uri.fromFile(newFile).toString()
             }
 
             val coverImage = _currentCoverConfig.value.mainImageUri
@@ -292,6 +293,8 @@ class ProjectViewModel : ViewModel() {
                     }
                 }
             }
+            deleteLocalImage(oldUri)
+            saveProject(context)
         }
     }
 
