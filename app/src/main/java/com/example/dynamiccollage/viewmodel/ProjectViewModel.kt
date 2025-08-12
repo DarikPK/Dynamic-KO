@@ -267,17 +267,21 @@ class ProjectViewModel : ViewModel() {
         }
     }
 
-    fun saveCroppedImage(context: Context, oldUri: String, croppedBitmap: Bitmap) {
-        viewModelScope.launch {
-            val newUri = withContext(Dispatchers.IO) {
+    suspend fun saveCroppedImage(context: Context, oldUri: String, croppedBitmap: Bitmap): String? {
+        val newUri = withContext(Dispatchers.IO) {
+            try {
                 val newFile = File(context.applicationContext.filesDir, "images/${UUID.randomUUID()}.jpg")
                 newFile.parentFile?.mkdirs()
                 FileOutputStream(newFile).use { out ->
                     croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
                 }
                 Uri.fromFile(newFile).toString()
+            } catch (e: Exception) {
+                null
             }
+        }
 
+        if (newUri != null) {
             val coverImage = _currentCoverConfig.value.mainImageUri
             if (coverImage == oldUri) {
                 _currentCoverConfig.update { it.copy(mainImageUri = newUri) }
@@ -293,10 +297,9 @@ class ProjectViewModel : ViewModel() {
                     }
                 }
             }
-            // Do not delete the old image until we are sure the save was successful.
-            // For now, we will leave it to avoid data loss. A future cleanup utility could remove orphans.
             saveProject(context)
         }
+        return newUri
     }
 
     // --- Lógica de Guardado y Carga de Proyecto ---
@@ -391,6 +394,24 @@ class ProjectViewModel : ViewModel() {
 
     fun resetSaveState() {
         _saveState.value = SaveState.Idle
+    }
+
+    fun replaceImageUri(context: Context, oldUri: String, newUri: String) {
+        if (_currentCoverConfig.value.mainImageUri == oldUri) {
+            _currentCoverConfig.update { it.copy(mainImageUri = newUri) }
+        }
+
+        _currentPageGroups.update { groups ->
+            groups.map { group ->
+                if (group.imageUris.contains(oldUri)) {
+                    val newImageUris = group.imageUris.map { if (it == oldUri) newUri else it }
+                    group.copy(imageUris = newImageUris)
+                } else {
+                    group
+                }
+            }
+        }
+        saveProject(context)
     }
 }
 

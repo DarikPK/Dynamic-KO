@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,7 +25,9 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.dynamiccollage.ui.components.CropView
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
+import kotlinx.coroutines.launch
 import java.io.InputStream
+import kotlin.math.min
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,8 +37,11 @@ fun ImageManagerScreen(
     projectViewModel: ProjectViewModel
 ) {
     val imageUris by remember { mutableStateOf(projectViewModel.getAllImageUris()) }
-    var selectedImageUri by remember { mutableStateOf(imageUris.firstOrNull()?.let { Uri.parse(it) }) }
+    var currentSelectedUri by remember { mutableStateOf(imageUris.firstOrNull()?.let { Uri.parse(it) }) }
+    var uriBeforeCrop by remember { mutableStateOf(currentSelectedUri) }
+
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -44,6 +50,22 @@ fun ImageManagerScreen(
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            // The logic for this will be implemented in the next steps
+                            val uriToRevertTo = uriBeforeCrop
+                            val currentUri = currentSelectedUri
+                            if (uriToRevertTo != null && currentUri != null) {
+                                projectViewModel.replaceImageUri(context, currentUri.toString(), uriToRevertTo.toString())
+                                currentSelectedUri = uriToRevertTo
+                            }
+                        },
+                        enabled = currentSelectedUri != uriBeforeCrop
+                    ) {
+                        Icon(Icons.Default.Undo, contentDescription = "Deshacer Recorte")
                     }
                 }
             )
@@ -60,19 +82,25 @@ fun ImageManagerScreen(
                     .weight(1f),
                 contentAlignment = Alignment.Center
             ) {
-                if (selectedImageUri != null) {
+                if (currentSelectedUri != null) {
                     CropView(
-                        uri = selectedImageUri!!,
+                        uri = currentSelectedUri!!,
                         onCrop = { cropRect, imageBounds ->
-                            val croppedBitmap = cropBitmap(
-                                context = context,
-                                uri = selectedImageUri!!,
-                                cropRect = cropRect,
-                                imageBounds = imageBounds
-                            )
-                            if (croppedBitmap != null) {
-                                projectViewModel.saveCroppedImage(context, selectedImageUri.toString(), croppedBitmap)
-                                navController.popBackStack()
+                            coroutineScope.launch {
+                                val croppedBitmap = cropBitmap(
+                                    context = context,
+                                    uri = currentSelectedUri!!,
+                                    cropRect = cropRect,
+                                    imageBounds = imageBounds
+                                )
+                                if (croppedBitmap != null) {
+                                    val oldUri = currentSelectedUri
+                                    val newUriString = projectViewModel.saveCroppedImage(context, oldUri.toString(), croppedBitmap)
+                                    if (newUriString != null) {
+                                        uriBeforeCrop = oldUri
+                                        currentSelectedUri = Uri.parse(newUriString)
+                                    }
+                                }
                             }
                         }
                     )
@@ -98,9 +126,12 @@ fun ImageManagerScreen(
                             .size(84.dp)
                             .border(
                                 width = 2.dp,
-                                color = if (uri == selectedImageUri) MaterialTheme.colorScheme.primary else Color.Transparent
+                                color = if (uri == currentSelectedUri) MaterialTheme.colorScheme.primary else Color.Transparent
                             )
-                            .clickable { selectedImageUri = uri }
+                            .clickable {
+                                currentSelectedUri = uri
+                                uriBeforeCrop = uri
+                            }
                     )
                 }
             }
