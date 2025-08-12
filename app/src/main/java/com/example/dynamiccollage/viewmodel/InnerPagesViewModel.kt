@@ -62,9 +62,9 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         _currentGroupAddingImages.value = groupId
     }
 
-    fun onImagesSelectedForGroup(uris: List<Uri>, groupId: String) {
+    fun onImagesSelectedForGroup(context: android.content.Context, uris: List<Uri>, groupId: String) {
         val uriStrings = uris.map { it.toString() }
-        projectViewModel.copyAndAddImagesToPageGroup(uriStrings, groupId)
+        projectViewModel.copyAndAddImagesToPageGroup(context, uriStrings, groupId)
         _currentGroupAddingImages.value = null
     }
 

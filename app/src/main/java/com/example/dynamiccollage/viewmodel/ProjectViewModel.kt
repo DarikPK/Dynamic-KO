@@ -1,12 +1,11 @@
 package com.example.dynamiccollage.viewmodel
 
-import android.app.Application
 import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Log
 import androidx.core.content.FileProvider
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dynamiccollage.data.toDomain
 import com.example.dynamiccollage.data.toSerializable
@@ -27,11 +26,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
 
-class ProjectViewModel(application: Application) : AndroidViewModel(application) {
-
-    init {
-        loadProject()
-    }
+class ProjectViewModel : ViewModel() {
 
     private val _currentCoverConfig = MutableStateFlow(CoverPageConfig())
     val currentCoverConfig: StateFlow<CoverPageConfig> = _currentCoverConfig.asStateFlow()
@@ -76,9 +71,9 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
         _currentPageGroups.value = emptyList()
     }
 
-    fun resetProject() {
+    fun resetProject(context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
-            val imagesDir = File(getApplication<Application>().applicationContext.filesDir, "images")
+            val imagesDir = File(context.applicationContext.filesDir, "images")
             if (imagesDir.exists()) {
                 imagesDir.deleteRecursively()
             }
@@ -213,9 +208,9 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
         updatePageGroup(groupId) { it.copy(imageUris = emptyList()) }
     }
 
-    fun copyAndAddImagesToPageGroup(uriStrings: List<String>, groupId: String) {
+    fun copyAndAddImagesToPageGroup(context: Context, uriStrings: List<String>, groupId: String) {
         viewModelScope.launch {
-            val permanentPaths = uriStrings.mapNotNull { copyUriToInternalStorage(it) }
+            val permanentPaths = uriStrings.mapNotNull { copyUriToInternalStorage(context, it) }
             if (permanentPaths.isNotEmpty()) {
                 updatePageGroup(groupId) { group ->
                     group.copy(imageUris = group.imageUris + permanentPaths)
@@ -224,13 +219,13 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun saveCoverConfigAndProcessImage(coverConfig: CoverPageConfig) {
+    fun saveCoverConfigAndProcessImage(context: Context, coverConfig: CoverPageConfig) {
         viewModelScope.launch {
             val imageUri = coverConfig.mainImageUri
             var finalConfig = coverConfig
 
             if (imageUri != null && imageUri.startsWith("content://")) {
-                val permanentPath = copyUriToInternalStorage(imageUri)
+                val permanentPath = copyUriToInternalStorage(context, imageUri)
                 finalConfig = coverConfig.copy(mainImageUri = permanentPath)
             }
 
@@ -243,14 +238,11 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    private suspend fun copyUriToInternalStorage(uriString: String): String? {
-        val context = getApplication<Application>().applicationContext
+    private suspend fun copyUriToInternalStorage(context: Context, uriString: String): String? {
         return withContext(Dispatchers.IO) {
             try {
                 val inputStream = context.contentResolver.openInputStream(Uri.parse(uriString))
-                // Create a unique file name
-                val newFile = File(context.filesDir, "images/${UUID.randomUUID()}.jpg")
-                // Ensure the directory exists
+                val newFile = File(context.applicationContext.filesDir, "images/${UUID.randomUUID()}.jpg")
                 newFile.parentFile?.mkdirs()
                 val outputStream = FileOutputStream(newFile)
                 inputStream?.use { input ->
@@ -258,7 +250,6 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
                         input.copyTo(output)
                     }
                 }
-                // Return the path to the new file
                 Uri.fromFile(newFile).toString()
             } catch (e: Exception) {
                 Log.e("ProjectViewModel", "Error copying URI to internal storage", e)
@@ -302,7 +293,7 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
     private val gson = Gson()
     private val projectFileName = "last_project.json"
 
-    fun saveProject() {
+    fun saveProject(context: Context) {
         viewModelScope.launch {
             val serializableState = SerializableProjectState(
                 coverConfig = _currentCoverConfig.value.toSerializable(),
@@ -316,12 +307,12 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
             if (sizeInBytes > sizeLimitBytes) {
                 _saveState.value = SaveState.RequiresConfirmation(sizeInBytes)
             } else {
-                writeJsonToFile(jsonString)
+                writeJsonToFile(context, jsonString)
             }
         }
     }
 
-    fun forceSaveProject() {
+    fun forceSaveProject(context: Context) {
         viewModelScope.launch {
             val serializableState = SerializableProjectState(
                 coverConfig = _currentCoverConfig.value.toSerializable(),
@@ -329,15 +320,14 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
                 sunatData = _sunatData.value
             )
             val jsonString = gson.toJson(serializableState)
-            writeJsonToFile(jsonString)
+            writeJsonToFile(context, jsonString)
         }
     }
 
-    private suspend fun writeJsonToFile(jsonString: String) {
-        val context = getApplication<Application>().applicationContext
+    private suspend fun writeJsonToFile(context: Context, jsonString: String) {
         withContext(Dispatchers.IO) {
             try {
-                context.openFileOutput(projectFileName, Context.MODE_PRIVATE).use {
+                context.applicationContext.openFileOutput(projectFileName, Context.MODE_PRIVATE).use {
                     it.write(jsonString.toByteArray())
                 }
                 _saveState.value = SaveState.Success
@@ -348,12 +338,11 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    private fun loadProject() {
+    fun loadProject(context: Context) {
         viewModelScope.launch {
             try {
                 Log.d("ProjectViewModel", "loadProject: Attempting to load project...")
-                val context = getApplication<Application>().applicationContext
-                val file = File(context.filesDir, projectFileName)
+                val file = File(context.applicationContext.filesDir, projectFileName)
 
                 if (!file.exists()) {
                     Log.d("ProjectViewModel", "loadProject: No project file found. Starting fresh.")
@@ -363,7 +352,7 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
                 Log.d("ProjectViewModel", "loadProject: Project file exists. Reading...")
                 val jsonString = withContext(Dispatchers.IO) {
                     try {
-                        context.openFileInput(projectFileName).bufferedReader().use { it.readText() }
+                        context.applicationContext.openFileInput(projectFileName).bufferedReader().use { it.readText() }
                     } catch (e: Exception) {
                         Log.e("ProjectViewModel", "loadProject: Error reading file.", e)
                         null
@@ -391,11 +380,10 @@ class ProjectViewModel(application: Application) : AndroidViewModel(application)
         _saveState.value = SaveState.Idle
     }
 
-    fun deleteSavedProject() {
+    fun deleteSavedProject(context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val context = getApplication<Application>().applicationContext
-                val file = File(context.filesDir, projectFileName)
+                val file = File(context.applicationContext.filesDir, projectFileName)
                 if (file.exists()) {
                     file.delete()
                 }
