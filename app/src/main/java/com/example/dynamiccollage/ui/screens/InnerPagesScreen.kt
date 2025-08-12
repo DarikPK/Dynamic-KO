@@ -62,12 +62,6 @@ fun InnerPagesScreen(
     val groupToDelete by innerPagesViewModel.showDeleteGroupDialog.collectAsState()
     val imagesToDelete by innerPagesViewModel.showDeleteImagesDialog.collectAsState()
 
-    DisposableEffect(Unit) {
-        onDispose {
-            innerPagesViewModel.saveEditingGroup()
-        }
-    }
-
     if (groupToDelete != null) {
         ConfirmationDialog(
             title = "Eliminar Grupo",
@@ -135,7 +129,7 @@ fun InnerPagesScreen(
                 ),
                 actions = {
                     IconButton(onClick = {
-                        innerPagesViewModel.saveEditingGroup()
+                        innerPagesViewModel.saveEditingGroup(context)
                         Toast.makeText(context, R.string.page_groups_saved_toast, Toast.LENGTH_SHORT).show()
                     }) {
                         Icon(

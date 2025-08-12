@@ -242,6 +242,7 @@ class ProjectViewModel : ViewModel() {
             }
 
             updateCoverConfig(finalConfig)
+            saveProject(context)
         }
     }
 
