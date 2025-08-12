@@ -36,7 +36,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.dynamiccollage.R
-import com.example.dynamiccollage.data.model.PageGroup
 import com.example.dynamiccollage.ui.components.ConfirmationDialog
 import com.example.dynamiccollage.ui.components.CreateEditGroupDialog
 import com.example.dynamiccollage.ui.components.PageGroupItem
@@ -44,19 +43,23 @@ import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
 import com.example.dynamiccollage.viewmodel.InnerPagesViewModel
 import com.example.dynamiccollage.viewmodel.InnerPagesViewModelFactory
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
+import androidx.activity.ComponentActivity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InnerPagesScreen(
-    navController: NavController,
-    projectViewModel: ProjectViewModel,
-    innerPagesViewModel: InnerPagesViewModel
+    navController: NavController
 ) {
+    val context = LocalContext.current
+    val projectViewModel: ProjectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity)
+    val innerPagesViewModel: InnerPagesViewModel = viewModel(
+        factory = InnerPagesViewModelFactory(projectViewModel)
+    )
+
     val pageGroups by innerPagesViewModel.pageGroups.collectAsState()
     val showDialog by innerPagesViewModel.showCreateGroupDialog.collectAsState()
     val editingGroup by innerPagesViewModel.editingGroup.collectAsState()
     val currentGroupAddingImages by innerPagesViewModel.currentGroupAddingImages.collectAsState()
-    val context = LocalContext.current
     val groupToDelete by innerPagesViewModel.showDeleteGroupDialog.collectAsState()
     val imagesToDelete by innerPagesViewModel.showDeleteImagesDialog.collectAsState()
 
@@ -182,11 +185,8 @@ fun InnerPagesScreen(
 @Composable
 fun InnerPagesScreenPreview() {
     DynamicCollageTheme {
-        val projectViewModel: ProjectViewModel = viewModel()
         InnerPagesScreen(
-            navController = rememberNavController(),
-            projectViewModel = projectViewModel,
-            innerPagesViewModel = viewModel(factory = InnerPagesViewModelFactory(projectViewModel))
+            navController = rememberNavController()
         )
     }
 }
@@ -195,11 +195,8 @@ fun InnerPagesScreenPreview() {
 @Composable
 fun InnerPagesScreenDarkPreview() {
     DynamicCollageTheme(darkTheme = true) {
-        val projectViewModel: ProjectViewModel = viewModel()
         InnerPagesScreen(
-            navController = rememberNavController(),
-            projectViewModel = projectViewModel,
-            innerPagesViewModel = viewModel(factory = InnerPagesViewModelFactory(projectViewModel))
+            navController = rememberNavController()
         )
     }
 }
