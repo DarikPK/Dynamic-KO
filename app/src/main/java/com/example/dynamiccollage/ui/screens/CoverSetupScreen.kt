@@ -92,7 +92,7 @@ fun CoverSetupScreen(
     val context = LocalContext.current
     // val detectedPhotoOrientation by coverSetupViewModel.detectedPhotoOrientation.collectAsState() // Para Paso 2
 
-    LaunchedEffect(projectCoverConfig) {
+    LaunchedEffect(Unit) {
         coverSetupViewModel.loadInitialConfig(projectCoverConfig)
     }
 
