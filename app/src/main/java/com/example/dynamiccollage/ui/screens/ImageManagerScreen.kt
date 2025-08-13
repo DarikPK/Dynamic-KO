@@ -94,10 +94,11 @@ fun ImageManagerScreen(
                 contentAlignment = Alignment.Center
             ) {
                 if (currentSelectedUri != null) {
-                    CropView(
-                        uri = currentSelectedUri!!,
-                        onCrop = { cropRect, imageBounds ->
-                            coroutineScope.launch {
+                    key(currentSelectedUri) {
+                        CropView(
+                            uri = currentSelectedUri!!,
+                            onCrop = { cropRect, imageBounds ->
+                                coroutineScope.launch {
                                 val croppedBitmap = cropBitmap(
                                     context = context,
                                     uri = currentSelectedUri!!,
@@ -113,8 +114,8 @@ fun ImageManagerScreen(
                                     }
                                 }
                             }
-                        }
-                    )
+                        })
+                    }
                 } else {
                     Text("No hay imágenes para editar.")
                 }

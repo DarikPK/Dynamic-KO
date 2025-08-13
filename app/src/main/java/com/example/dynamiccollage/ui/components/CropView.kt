@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathOperation
@@ -39,6 +40,10 @@ private sealed class TouchRegion {
     object TopRight : TouchRegion()
     object BottomLeft : TouchRegion()
     object BottomRight : TouchRegion()
+    object Left : TouchRegion()
+    object Right : TouchRegion()
+    object Top : TouchRegion()
+    object Bottom : TouchRegion()
     object None : TouchRegion()
 }
 
@@ -74,13 +79,14 @@ fun CropView(
                 onSuccess = { result ->
                     val drawable = result.result.drawable
                     imageAspectRatio = drawable.intrinsicWidth.toFloat() / drawable.intrinsicHeight.toFloat()
+                    isInitialized = false // Force re-initialization when image changes
                 }
             )
 
             Canvas(
                 modifier = Modifier
                     .fillMaxSize()
-                    .pointerInput(Unit) {
+                    .pointerInput(uri) { // Re-trigger pointer input when URI changes
                         detectDragGestures(
                             onDragStart = { startOffset ->
                                 val touchSlop = with(density) { 24.dp.toPx() }
@@ -102,7 +108,7 @@ fun CropView(
                 imageBounds = getImageBounds(imageAspectRatio, size)
 
                 if (!isInitialized) {
-                    cropRect = imageBounds.deflate(imageBounds.width * 0.1f)
+                    cropRect = imageBounds
                     isInitialized = true
                 }
 
@@ -123,10 +129,17 @@ fun CropView(
                     size = displayedRect.size,
                     style = Stroke(width = 2.dp.toPx())
                 )
+                // Corner handles
                 drawCircle(color = Color.White, radius = 8.dp.toPx(), center = displayedRect.topLeft)
                 drawCircle(color = Color.White, radius = 8.dp.toPx(), center = displayedRect.topRight)
                 drawCircle(color = Color.White, radius = 8.dp.toPx(), center = displayedRect.bottomLeft)
                 drawCircle(color = Color.White, radius = 8.dp.toPx(), center = displayedRect.bottomRight)
+                // Side handles
+                val handleSize = Size(20.dp.toPx(), 8.dp.toPx())
+                drawRect(color = Color.White, topLeft = Offset(displayedRect.center.x - handleSize.width / 2, displayedRect.top - handleSize.height / 2), size = handleSize)
+                drawRect(color = Color.White, topLeft = Offset(displayedRect.center.x - handleSize.width / 2, displayedRect.bottom - handleSize.height / 2), size = handleSize)
+                drawRect(color = Color.White, topLeft = Offset(displayedRect.left - handleSize.height / 2, displayedRect.center.y - handleSize.width / 2), size = handleSize.copy(width = handleSize.height, height = handleSize.width))
+                drawRect(color = Color.White, topLeft = Offset(displayedRect.right - handleSize.height / 2, displayedRect.center.y - handleSize.width / 2), size = handleSize.copy(width = handleSize.height, height = handleSize.width))
             }
         }
         Button(
@@ -156,10 +169,14 @@ private fun getImageBounds(imageAspectRatio: Float, canvasSize: androidx.compose
 
 private fun getTouchRegion(offset: Offset, rect: Rect, slop: Float): TouchRegion {
     return when {
-        abs(offset.x - rect.topLeft.x) < slop && abs(offset.y - rect.topLeft.y) < slop -> TouchRegion.TopLeft
-        abs(offset.x - rect.topRight.x) < slop && abs(offset.y - rect.topRight.y) < slop -> TouchRegion.TopRight
-        abs(offset.x - rect.bottomLeft.x) < slop && abs(offset.y - rect.bottomLeft.y) < slop -> TouchRegion.BottomLeft
-        abs(offset.x - rect.bottomRight.x) < slop && abs(offset.y - rect.bottomRight.y) < slop -> TouchRegion.BottomRight
+        abs(offset.x - rect.left) < slop && abs(offset.y - rect.top) < slop -> TouchRegion.TopLeft
+        abs(offset.x - rect.right) < slop && abs(offset.y - rect.top) < slop -> TouchRegion.TopRight
+        abs(offset.x - rect.left) < slop && abs(offset.y - rect.bottom) < slop -> TouchRegion.BottomLeft
+        abs(offset.x - rect.right) < slop && abs(offset.y - rect.bottom) < slop -> TouchRegion.BottomRight
+        abs(offset.x - rect.left) < slop -> TouchRegion.Left
+        abs(offset.x - rect.right) < slop -> TouchRegion.Right
+        abs(offset.y - rect.top) < slop -> TouchRegion.Top
+        abs(offset.y - rect.bottom) < slop -> TouchRegion.Bottom
         rect.contains(offset) -> TouchRegion.Center
         else -> TouchRegion.None
     }
@@ -173,30 +190,14 @@ private fun getUpdatedRect(
 ): Rect {
     val newRect = when (touchRegion) {
         TouchRegion.Center -> currentRect.translate(dragOffset)
-        TouchRegion.TopLeft -> Rect(
-            left = currentRect.left + dragOffset.x,
-            top = currentRect.top + dragOffset.y,
-            right = currentRect.right,
-            bottom = currentRect.bottom
-        )
-        TouchRegion.TopRight -> Rect(
-            left = currentRect.left,
-            top = currentRect.top + dragOffset.y,
-            right = currentRect.right + dragOffset.x,
-            bottom = currentRect.bottom
-        )
-        TouchRegion.BottomLeft -> Rect(
-            left = currentRect.left + dragOffset.x,
-            top = currentRect.top,
-            right = currentRect.right,
-            bottom = currentRect.bottom + dragOffset.y
-        )
-        TouchRegion.BottomRight -> Rect(
-            left = currentRect.left,
-            top = currentRect.top,
-            right = currentRect.right + dragOffset.x,
-            bottom = currentRect.bottom + dragOffset.y
-        )
+        TouchRegion.TopLeft -> currentRect.copy(left = currentRect.left + dragOffset.x, top = currentRect.top + dragOffset.y)
+        TouchRegion.TopRight -> currentRect.copy(right = currentRect.right + dragOffset.x, top = currentRect.top + dragOffset.y)
+        TouchRegion.BottomLeft -> currentRect.copy(left = currentRect.left + dragOffset.x, bottom = currentRect.bottom + dragOffset.y)
+        TouchRegion.BottomRight -> currentRect.copy(right = currentRect.right + dragOffset.x, bottom = currentRect.bottom + dragOffset.y)
+        TouchRegion.Left -> currentRect.copy(left = currentRect.left + dragOffset.x)
+        TouchRegion.Right -> currentRect.copy(right = currentRect.right + dragOffset.x)
+        TouchRegion.Top -> currentRect.copy(top = currentRect.top + dragOffset.y)
+        TouchRegion.Bottom -> currentRect.copy(bottom = currentRect.bottom + dragOffset.y)
         TouchRegion.None -> currentRect
     }
 
