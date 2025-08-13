@@ -72,7 +72,14 @@ class CoverSetupViewModel : ViewModel() {
         _coverConfig.update { currentState ->
             val address = data.direccion ?: currentState.subtitleStyle.content
             val clientName = data.nombre ?: currentState.clientNameStyle.content
-            val docType = if (data.numeroDocumento.length == 8) DocumentType.DNI else DocumentType.RUC
+
+            // Only update the doc type if it's not explicitly set to NONE
+            val docType = if (currentState.documentType == DocumentType.NONE) {
+                DocumentType.NONE
+            } else {
+                if (data.numeroDocumento.length == 8) DocumentType.DNI else DocumentType.RUC
+            }
+
             currentState.copy(
                 documentType = docType,
                 clientNameStyle = currentState.clientNameStyle.copy(content = clientName),
