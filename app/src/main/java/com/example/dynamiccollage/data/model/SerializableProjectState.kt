@@ -29,6 +29,8 @@ data class SerializableCoverPageConfig(
     val separationWeight: Float,
     val photoWeight: Float,
     val photoStyle: SerializableRowStyle,
+    val imageQuality: Int?,
+    val autoAdjustSize: Boolean?,
     val templateName: String?
 )
 
