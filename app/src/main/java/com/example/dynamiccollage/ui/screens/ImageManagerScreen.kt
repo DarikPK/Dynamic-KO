@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Restore
+import androidx.compose.material.icons.filled.RotateRight
 import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -65,6 +66,23 @@ fun ImageManagerScreen(
                         enabled = currentSelectedUri != uriBeforeCrop
                     ) {
                         Icon(Icons.Default.Undo, contentDescription = "Deshacer Recorte")
+                    }
+                    IconButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                val oldUri = currentSelectedUri
+                                if (oldUri != null) {
+                                    val newUriString = projectViewModel.rotateImage(context, oldUri.toString())
+                                    if (newUriString != null) {
+                                        uriBeforeCrop = oldUri
+                                        currentSelectedUri = Uri.parse(newUriString)
+                                    }
+                                }
+                            }
+                        },
+                        enabled = currentSelectedUri != null
+                    ) {
+                        Icon(Icons.Default.RotateRight, contentDescription = "Girar")
                     }
                     IconButton(
                         onClick = {

@@ -2,6 +2,8 @@ package com.example.dynamiccollage.viewmodel
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.net.Uri
 import android.util.Log
 import androidx.core.content.FileProvider
@@ -300,6 +302,40 @@ class ProjectViewModel : ViewModel() {
             saveProject(context)
         }
         return newUri
+    }
+
+    suspend fun rotateImage(context: Context, uri: String): String? {
+        try {
+            val inputStream = context.contentResolver.openInputStream(Uri.parse(uri)) ?: return null
+            val originalBitmap = BitmapFactory.decodeStream(inputStream)
+            inputStream.close()
+
+            val matrix = Matrix().apply { postRotate(90f) }
+            val rotatedBitmap = Bitmap.createBitmap(originalBitmap, 0, 0, originalBitmap.width, originalBitmap.height, matrix, true)
+            originalBitmap.recycle()
+
+            val newUri = withContext(Dispatchers.IO) {
+                try {
+                    val newFile = File(context.applicationContext.filesDir, "images/${UUID.randomUUID()}.jpg")
+                    newFile.parentFile?.mkdirs()
+                    FileOutputStream(newFile).use { out ->
+                        rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+                    }
+                    rotatedBitmap.recycle()
+                    Uri.fromFile(newFile).toString()
+                } catch (e: Exception) {
+                    rotatedBitmap.recycle()
+                    null
+                }
+            }
+
+            if (newUri != null) {
+                replaceImageUri(context, uri, newUri)
+            }
+            return newUri
+        } catch (e: Exception) {
+            return null
+        }
     }
 
     // --- Lógica de Guardado y Carga de Proyecto ---

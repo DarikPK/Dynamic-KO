@@ -89,7 +89,7 @@ fun CropView(
                     .pointerInput(uri) { // Re-trigger pointer input when URI changes
                         detectDragGestures(
                             onDragStart = { startOffset ->
-                                val touchSlop = with(density) { 24.dp.toPx() }
+                                val touchSlop = with(density) { 30.dp.toPx() } // Increased slop
                                 touchRegion = getTouchRegion(startOffset, cropRect, touchSlop)
                             },
                             onDragEnd = {
@@ -133,15 +133,15 @@ fun CropView(
                     style = handleStroke
                 )
                 // Corner handles
-                drawCircle(color = Color.White, radius = 8.dp.toPx(), center = displayedRect.topLeft)
-                drawCircle(color = Color.White, radius = 8.dp.toPx(), center = displayedRect.topRight)
-                drawCircle(color = Color.White, radius = 8.dp.toPx(), center = displayedRect.bottomLeft)
-                drawCircle(color = Color.White, radius = 8.dp.toPx(), center = displayedRect.bottomRight)
+                drawCircle(color = Color.White, radius = 12.dp.toPx(), center = displayedRect.topLeft)
+                drawCircle(color = Color.White, radius = 12.dp.toPx(), center = displayedRect.topRight)
+                drawCircle(color = Color.White, radius = 12.dp.toPx(), center = displayedRect.bottomLeft)
+                drawCircle(color = Color.White, radius = 12.dp.toPx(), center = displayedRect.bottomRight)
 
                 // Side handles with triangles
-                val handleRectWidth = 20.dp.toPx()
-                val handleRectHeight = 8.dp.toPx()
-                val triangleSize = 6.dp.toPx()
+                val handleRectWidth = 30.dp.toPx()
+                val handleRectHeight = 12.dp.toPx()
+                val triangleSize = 9.dp.toPx()
 
                 // Top Handle
                 drawRect(color = Color.White, topLeft = Offset(displayedRect.center.x - handleRectWidth / 2, displayedRect.top - handleRectHeight / 2), size = Size(handleRectWidth, handleRectHeight))
