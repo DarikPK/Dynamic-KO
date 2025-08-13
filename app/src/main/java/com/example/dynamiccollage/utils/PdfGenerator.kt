@@ -434,7 +434,12 @@ object PdfGenerator {
                 BitmapFactory.decodeStream(it, null, options)
             } ?: return null
             val outputStream = ByteArrayOutputStream()
-            sampledBitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                sampledBitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, quality, outputStream)
+            } else {
+                @Suppress("DEPRECATION")
+                sampledBitmap.compress(Bitmap.CompressFormat.WEBP, quality, outputStream)
+            }
             sampledBitmap.recycle()
             val finalInputStream = ByteArrayInputStream(outputStream.toByteArray())
             BitmapFactory.decodeStream(finalInputStream)
