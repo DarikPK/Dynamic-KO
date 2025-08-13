@@ -145,7 +145,7 @@ fun CropView(
         }
         Button(
             onClick = { onCrop(getUpdatedRect(cropRect, dragOffset, touchRegion, imageBounds), imageBounds) },
-            enabled = getUpdatedRect(cropRect, dragOffset, touchRegion, imageBounds) != imageBounds,
+            enabled = isInitialized && getUpdatedRect(cropRect, dragOffset, touchRegion, imageBounds) != imageBounds,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
