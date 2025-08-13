@@ -42,6 +42,10 @@ class CoverSetupViewModel : ViewModel() {
         _coverConfig.update { it.copy(documentType = newType) }
     }
 
+    fun onShowClientPrefixChange(show: Boolean) {
+        _coverConfig.update { it.copy(showClientPrefix = show) }
+    }
+
     fun onShowAddressPrefixChange(show: Boolean) {
         _coverConfig.update { currentState ->
             currentState.copy(showAddressPrefix = show)
