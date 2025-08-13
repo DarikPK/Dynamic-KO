@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -39,6 +40,7 @@ fun ImageManagerScreen(
     val imageUris by remember { mutableStateOf(projectViewModel.getAllImageUris()) }
     var currentSelectedUri by remember { mutableStateOf(imageUris.firstOrNull()?.let { Uri.parse(it) }) }
     var uriBeforeCrop by remember { mutableStateOf(currentSelectedUri) }
+    var originalUriOfSession by remember { mutableStateOf(currentSelectedUri) }
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -55,17 +57,27 @@ fun ImageManagerScreen(
                 actions = {
                     IconButton(
                         onClick = {
-                            // The logic for this will be implemented in the next steps
                             val uriToRevertTo = uriBeforeCrop
-                            val currentUri = currentSelectedUri
-                            if (uriToRevertTo != null && currentUri != null) {
-                                projectViewModel.replaceImageUri(context, currentUri.toString(), uriToRevertTo.toString())
+                            if (uriToRevertTo != null && currentSelectedUri != null) {
+                                projectViewModel.replaceImageUri(context, currentSelectedUri.toString(), uriToRevertTo.toString())
                                 currentSelectedUri = uriToRevertTo
                             }
                         },
                         enabled = currentSelectedUri != uriBeforeCrop
                     ) {
                         Icon(Icons.Default.Undo, contentDescription = "Deshacer Recorte")
+                    }
+                    IconButton(
+                        onClick = {
+                             if (originalUriOfSession != null && currentSelectedUri != null) {
+                                projectViewModel.replaceImageUri(context, currentSelectedUri.toString(), originalUriOfSession.toString())
+                                currentSelectedUri = originalUriOfSession
+                                uriBeforeCrop = originalUriOfSession
+                            }
+                        },
+                        enabled = currentSelectedUri != originalUriOfSession
+                    ) {
+                        Icon(Icons.Default.Restore, contentDescription = "Restablecer Original")
                     }
                 }
             )
@@ -131,6 +143,7 @@ fun ImageManagerScreen(
                             .clickable {
                                 currentSelectedUri = uri
                                 uriBeforeCrop = uri
+                                originalUriOfSession = uri
                             }
                     )
                 }

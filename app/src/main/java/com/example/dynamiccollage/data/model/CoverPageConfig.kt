@@ -54,6 +54,7 @@ data class CoverPageConfig(
             )
         )
     ),
+    val showClientPrefix: Boolean = true,
     val documentType: DocumentType = DocumentType.RUC,
     val rucStyle: TextStyleConfig = TextStyleConfig(
         content = "",

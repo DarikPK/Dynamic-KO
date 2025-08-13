@@ -124,7 +124,10 @@ object PdfGenerator {
                 "id" to "client",
                 "weight" to config.clientWeight,
                 "draw" to { rect: RectF ->
-                    val content = "Cliente: " + if (config.allCaps) config.clientNameStyle.content.uppercase() else config.clientNameStyle.content
+                    var content = if (config.allCaps) config.clientNameStyle.content.uppercase() else config.clientNameStyle.content
+                    if (config.showClientPrefix) {
+                        content = "Cliente: $content"
+                    }
                     drawRow(canvas, context, content, config.clientNameStyle, rect)
                 }
             ))
