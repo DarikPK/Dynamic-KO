@@ -20,6 +20,7 @@ fun SizeManagerScreen(
     projectViewModel: ProjectViewModel,
     sizeManagerViewModel: SizeManagerViewModel
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val projectConfig by projectViewModel.currentCoverConfig.collectAsState()
     val imageQuality by sizeManagerViewModel.imageQuality.collectAsState()
     val autoAdjustSize by sizeManagerViewModel.autoAdjustSize.collectAsState()
