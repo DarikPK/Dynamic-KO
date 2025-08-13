@@ -123,24 +123,61 @@ fun CropView(
                     path2 = innerPath
                 )
 
+                val handleStroke = Stroke(width = 2.dp.toPx())
+
                 drawPath(path = path, color = Color.Black.copy(alpha = 0.5f))
                 drawRect(
                     color = Color.White,
                     topLeft = displayedRect.topLeft,
                     size = displayedRect.size,
-                    style = Stroke(width = 2.dp.toPx())
+                    style = handleStroke
                 )
                 // Corner handles
                 drawCircle(color = Color.White, radius = 8.dp.toPx(), center = displayedRect.topLeft)
                 drawCircle(color = Color.White, radius = 8.dp.toPx(), center = displayedRect.topRight)
                 drawCircle(color = Color.White, radius = 8.dp.toPx(), center = displayedRect.bottomLeft)
                 drawCircle(color = Color.White, radius = 8.dp.toPx(), center = displayedRect.bottomRight)
-                // Side handles
-                val handleSize = Size(20.dp.toPx(), 8.dp.toPx())
-                drawRect(color = Color.White, topLeft = Offset(displayedRect.center.x - handleSize.width / 2, displayedRect.top - handleSize.height / 2), size = handleSize)
-                drawRect(color = Color.White, topLeft = Offset(displayedRect.center.x - handleSize.width / 2, displayedRect.bottom - handleSize.height / 2), size = handleSize)
-                drawRect(color = Color.White, topLeft = Offset(displayedRect.left - handleSize.height / 2, displayedRect.center.y - handleSize.width / 2), size = handleSize.copy(width = handleSize.height, height = handleSize.width))
-                drawRect(color = Color.White, topLeft = Offset(displayedRect.right - handleSize.height / 2, displayedRect.center.y - handleSize.width / 2), size = handleSize.copy(width = handleSize.height, height = handleSize.width))
+
+                // Side handles with triangles
+                val handleRectWidth = 20.dp.toPx()
+                val handleRectHeight = 8.dp.toPx()
+                val triangleSize = 6.dp.toPx()
+
+                // Top Handle
+                drawRect(color = Color.White, topLeft = Offset(displayedRect.center.x - handleRectWidth / 2, displayedRect.top - handleRectHeight / 2), size = Size(handleRectWidth, handleRectHeight))
+                drawPath(Path().apply {
+                    moveTo(displayedRect.center.x, displayedRect.top + handleRectHeight / 2 + triangleSize)
+                    lineTo(displayedRect.center.x - triangleSize, displayedRect.top + handleRectHeight / 2)
+                    lineTo(displayedRect.center.x + triangleSize, displayedRect.top + handleRectHeight / 2)
+                    close()
+                }, color = Color.White, style = handleStroke)
+
+                // Bottom Handle
+                drawRect(color = Color.White, topLeft = Offset(displayedRect.center.x - handleRectWidth / 2, displayedRect.bottom - handleRectHeight / 2), size = Size(handleRectWidth, handleRectHeight))
+                drawPath(Path().apply {
+                    moveTo(displayedRect.center.x, displayedRect.bottom - handleRectHeight/2 - triangleSize)
+                    lineTo(displayedRect.center.x - triangleSize, displayedRect.bottom - handleRectHeight/2)
+                    lineTo(displayedRect.center.x + triangleSize, displayedRect.bottom - handleRectHeight/2)
+                    close()
+                }, color = Color.White, style = handleStroke)
+
+                // Left Handle
+                drawRect(color = Color.White, topLeft = Offset(displayedRect.left - handleRectHeight / 2, displayedRect.center.y - handleRectWidth / 2), size = Size(handleRectHeight, handleRectWidth))
+                drawPath(Path().apply {
+                    moveTo(displayedRect.left + handleRectHeight / 2 + triangleSize, displayedRect.center.y)
+                    lineTo(displayedRect.left + handleRectHeight / 2, displayedRect.center.y - triangleSize)
+                    lineTo(displayedRect.left + handleRectHeight / 2, displayedRect.center.y + triangleSize)
+                    close()
+                }, color = Color.White, style = handleStroke)
+
+                // Right Handle
+                drawRect(color = Color.White, topLeft = Offset(displayedRect.right - handleRectHeight / 2, displayedRect.center.y - handleRectWidth / 2), size = Size(handleRectHeight, handleRectWidth))
+                drawPath(Path().apply {
+                    moveTo(displayedRect.right - handleRectHeight / 2 - triangleSize, displayedRect.center.y)
+                    lineTo(displayedRect.right - handleRectHeight / 2, displayedRect.center.y - triangleSize)
+                    lineTo(displayedRect.right - handleRectHeight / 2, displayedRect.center.y + triangleSize)
+                    close()
+                }, color = Color.White, style = handleStroke)
             }
         }
         Button(
@@ -171,14 +208,14 @@ private fun getImageBounds(imageAspectRatio: Float, canvasSize: androidx.compose
 
 private fun getTouchRegion(offset: Offset, rect: Rect, slop: Float): TouchRegion {
     return when {
-        abs(offset.x - rect.left) < slop && abs(offset.y - rect.top) < slop -> TouchRegion.TopLeft
-        abs(offset.x - rect.right) < slop && abs(offset.y - rect.top) < slop -> TouchRegion.TopRight
-        abs(offset.x - rect.left) < slop && abs(offset.y - rect.bottom) < slop -> TouchRegion.BottomLeft
-        abs(offset.x - rect.right) < slop && abs(offset.y - rect.bottom) < slop -> TouchRegion.BottomRight
-        abs(offset.x - rect.left) < slop -> TouchRegion.Left
-        abs(offset.x - rect.right) < slop -> TouchRegion.Right
-        abs(offset.y - rect.top) < slop -> TouchRegion.Top
-        abs(offset.y - rect.bottom) < slop -> TouchRegion.Bottom
+        Rect(center = rect.topLeft, radius = slop).contains(offset) -> TouchRegion.TopLeft
+        Rect(center = rect.topRight, radius = slop).contains(offset) -> TouchRegion.TopRight
+        Rect(center = rect.bottomLeft, radius = slop).contains(offset) -> TouchRegion.BottomLeft
+        Rect(center = rect.bottomRight, radius = slop).contains(offset) -> TouchRegion.BottomRight
+        Rect(center = rect.topCenter, radius = slop).contains(offset) -> TouchRegion.Top
+        Rect(center = rect.bottomCenter, radius = slop).contains(offset) -> TouchRegion.Bottom
+        Rect(center = rect.centerLeft, radius = slop).contains(offset) -> TouchRegion.Left
+        Rect(center = rect.centerRight, radius = slop).contains(offset) -> TouchRegion.Right
         rect.contains(offset) -> TouchRegion.Center
         else -> TouchRegion.None
     }
