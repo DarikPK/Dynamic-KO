@@ -26,6 +26,7 @@ import com.example.dynamiccollage.data.model.PageGroup
 import com.example.dynamiccollage.data.model.PageOrientation
 import com.example.dynamiccollage.data.model.RowStyle
 import com.example.dynamiccollage.data.model.TextStyleConfig
+import org.apache.pdfbox.pdmodel.PDDocument
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -95,6 +96,8 @@ object PdfGenerator {
         fileName: String
     ): File? {
         val pdfDocument = PdfDocument()
+        val uncompressedPdfStream = ByteArrayOutputStream()
+
         try {
             val totalImages = pageGroups.sumOf { it.imageUris.size } + if (coverConfig.mainImageUri != null) 1 else 0
             val quality = if (coverConfig.autoAdjustSize && totalImages > 20) {
@@ -113,11 +116,18 @@ object PdfGenerator {
             }
             drawInnerPages(pdfDocument, context, pageGroups, if (shouldDrawCover) 2 else 1, quality)
 
+            pdfDocument.writeTo(uncompressedPdfStream)
+            pdfDocument.close()
+
             val storageDir: File? = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
             storageDir?.mkdirs()
             val pdfFile = File(storageDir, "$fileName.pdf")
-            pdfDocument.writeTo(FileOutputStream(pdfFile))
-            pdfDocument.close()
+
+            // Comprimir el PDF usando PDFBox
+            val pdDocument = PDDocument.load(uncompressedPdfStream.toByteArray())
+            pdDocument.save(pdfFile)
+            pdDocument.close()
+
             return pdfFile
         } catch (e: Exception) {
             Log.e("PdfGenerator", "Error al generar PDF", e)

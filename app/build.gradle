@@ -67,8 +67,8 @@ dependencies {
     // Coil para carga de imágenes
     implementation "io.coil-kt:coil-compose:2.6.0"
 
-    // iText7 para PDF
-    implementation 'com.itextpdf:itext7-core:7.2.5'
+    // PDFBox para Android
+    implementation 'com.tom-roush:pdfbox-android:2.0.25.0'
 
     // Retrofit for networking
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
