@@ -155,7 +155,7 @@ fun CropView(
 }
 
 private fun getImageBounds(imageAspectRatio: Float, canvasSize: androidx.compose.ui.geometry.Size): Rect {
-    if (imageAspectRatio <= 0f) return Rect.Zero
+    if (imageAspectRatio <= 0f || canvasSize.height == 0f) return Rect.Zero
     val canvasAspectRatio = canvasSize.width / canvasSize.height
     return if (imageAspectRatio > canvasAspectRatio) {
         val scaledHeight = canvasSize.width / imageAspectRatio
