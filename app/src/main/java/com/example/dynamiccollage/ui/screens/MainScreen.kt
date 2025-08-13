@@ -256,6 +256,10 @@ fun MainScreen(
                 onClick = { showContentEntryDialog = true }
             )
             MainButton(
+                text = "Gestionar Tamaño",
+                onClick = { navController.navigate(Screen.SizeManager.route) }
+            )
+            MainButton(
                 text = stringResource(R.string.main_btn_preview_pdf),
                 onClick = {
                     projectViewModel.generatePdf(context, "collage_report")

@@ -163,6 +163,8 @@ fun CoverPageConfig.toSerializable() = SerializableCoverPageConfig(
     separationWeight = this.separationWeight,
     photoWeight = this.photoWeight,
     photoStyle = this.photoStyle.toSerializable(),
+    imageQuality = this.imageQuality,
+    autoAdjustSize = this.autoAdjustSize,
     templateName = this.templateName
 )
 
@@ -186,6 +188,8 @@ fun SerializableCoverPageConfig.toDomain() = CoverPageConfig(
     separationWeight = this.separationWeight,
     photoWeight = this.photoWeight,
     photoStyle = this.photoStyle.toDomain(),
+    imageQuality = this.imageQuality ?: 90,
+    autoAdjustSize = this.autoAdjustSize ?: true,
     templateName = this.templateName
 )
 
