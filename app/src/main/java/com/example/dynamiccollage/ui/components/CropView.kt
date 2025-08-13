@@ -103,9 +103,10 @@ fun CropView(
                         }
                     }
             ) {
-                if (imageAspectRatio == 0f) return@Canvas
+                if (imageAspectRatio <= 0f || size.width == 0f || size.height == 0f) return@Canvas
 
                 imageBounds = getImageBounds(imageAspectRatio, size)
+                if (imageBounds.isEmpty) return@Canvas
 
                 if (!isInitialized) {
                     cropRect = imageBounds
