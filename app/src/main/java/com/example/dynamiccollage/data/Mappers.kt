@@ -145,6 +145,7 @@ fun SerializablePageGroup.toDomain() = PageGroup(
 // Mappers for CoverPageConfig
 fun CoverPageConfig.toSerializable() = SerializableCoverPageConfig(
     clientNameStyle = this.clientNameStyle.toSerializable(),
+    showClientPrefix = this.showClientPrefix,
     documentType = this.documentType.ordinal,
     rucStyle = this.rucStyle.toSerializable(),
     subtitleStyle = this.subtitleStyle.toSerializable(),
@@ -167,6 +168,7 @@ fun CoverPageConfig.toSerializable() = SerializableCoverPageConfig(
 
 fun SerializableCoverPageConfig.toDomain() = CoverPageConfig(
     clientNameStyle = this.clientNameStyle.toDomain(),
+    showClientPrefix = this.showClientPrefix,
     documentType = DocumentType.values()[this.documentType],
     rucStyle = this.rucStyle.toDomain(),
     subtitleStyle = this.subtitleStyle.toDomain(),

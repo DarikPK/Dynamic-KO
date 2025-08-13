@@ -11,6 +11,7 @@ data class SerializableProjectState(
 
 data class SerializableCoverPageConfig(
     val clientNameStyle: SerializableTextStyleConfig,
+    val showClientPrefix: Boolean,
     val documentType: Int, // ordinal of DocumentType enum
     val rucStyle: SerializableTextStyleConfig,
     val subtitleStyle: SerializableTextStyleConfig,
