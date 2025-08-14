@@ -180,48 +180,46 @@ fun ZoomablePdfPage(bitmap: Bitmap) {
             .clipToBounds()
             .pointerInput(Unit) {
                 forEachGesture {
-                    awaitPointerEventScope {
-                        awaitFirstDown(requireUnconsumed = false)
-                        do {
-                            val event = awaitPointerEvent()
-                            val pointers = event.pointers
+                    awaitFirstDown(requireUnconsumed = false)
+                    do {
+                        val event = awaitPointerEvent()
+                        val pointers = event.pointers
 
-                            if (pointers.size == 1 && scale > 1f) {
-                                val panAmount = pointers.first().position - pointers.first().previousPosition
-                                offsetX += panAmount.x
-                                offsetY += panAmount.y
-                                event.changes.first().consume()
-                            } else if (pointers.size > 1) {
-                                val p1 = pointers[0]
-                                val p2 = pointers[1]
+                        if (pointers.size == 1 && scale > 1f) {
+                            val panAmount = pointers.first().position - pointers.first().previousPosition
+                            offsetX += panAmount.x
+                            offsetY += panAmount.y
+                            event.changes.first().consume()
+                        } else if (pointers.size > 1) {
+                            val p1 = pointers[0]
+                            val p2 = pointers[1]
 
-                                val currentDist = (p1.position - p2.position).getDistance()
-                                val prevDist =
-                                    (p1.previousPosition - p2.previousPosition).getDistance()
-                                val zoom = if (prevDist == 0f) 1f else currentDist / prevDist
+                            val currentDist = (p1.position - p2.position).getDistance()
+                            val prevDist =
+                                (p1.previousPosition - p2.previousPosition).getDistance()
+                            val zoom = if (prevDist == 0f) 1f else currentDist / prevDist
 
-                                val currentCentroid = (p1.position + p2.position) / 2f
-                                val prevCentroid =
-                                    (p1.previousPosition + p2.previousPosition) / 2f
-                                val pan = currentCentroid - prevCentroid
+                            val currentCentroid = (p1.position + p2.position) / 2f
+                            val prevCentroid =
+                                (p1.previousPosition + p2.previousPosition) / 2f
+                            val pan = currentCentroid - prevCentroid
 
-                                scale = (scale * zoom).coerceIn(1f, 5f)
-                                if (scale > 1f) {
-                                    offsetX += pan.x
-                                    offsetY += pan.y
-                                } else {
-                                    offsetX = 0f
-                                    offsetY = 0f
-                                }
-                                event.changes.forEach { it.consume() }
+                            scale = (scale * zoom).coerceIn(1f, 5f)
+                            if (scale > 1f) {
+                                offsetX += pan.x
+                                offsetY += pan.y
+                            } else {
+                                offsetX = 0f
+                                offsetY = 0f
                             }
-                        } while (event.changes.any { it.pressed })
-
-                        if (scale <= 1.01f) {
-                            scale = 1f
-                            offsetX = 0f
-                            offsetY = 0f
+                            event.changes.forEach { it.consume() }
                         }
+                    } while (event.changes.any { it.pressed })
+
+                    if (scale <= 1.01f) {
+                        scale = 1f
+                        offsetX = 0f
+                        offsetY = 0f
                     }
                 }
             }
