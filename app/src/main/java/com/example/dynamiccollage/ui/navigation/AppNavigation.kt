@@ -130,5 +130,17 @@ fun AppNavigation(
                 initialColorHex = initialColorHex
             )
         }
+        composable(
+            route = Screen.ImageEffects.route + "/{imageUri}",
+            arguments = listOf(navArgument("imageUri") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val imageUri = backStackEntry.arguments?.getString("imageUri") ?: ""
+            val decodedImageUri = URLDecoder.decode(imageUri, StandardCharsets.UTF_8.toString())
+            ImageEffectsScreen(
+                navController = navController,
+                projectViewModel = projectViewModel,
+                imageUri = decodedImageUri
+            )
+        }
     }
 }
