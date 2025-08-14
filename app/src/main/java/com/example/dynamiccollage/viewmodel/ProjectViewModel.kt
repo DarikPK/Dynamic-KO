@@ -117,13 +117,13 @@ class ProjectViewModel : ViewModel() {
 
     fun generatePdf(context: Context, fileName: String) {
         val coverConfig = _currentCoverConfig.value
-        val pageGroups = _currentPageGroups.value
+        val innerUris = _currentPageGroups.value.flatMap { it.imageUris }
 
         val isCoverEmpty = coverConfig.clientNameStyle.content.isBlank() &&
                 coverConfig.rucStyle.content.isBlank() &&
                 coverConfig.subtitleStyle.content.isBlank() &&
                 coverConfig.mainImageUri == null
-        val areInnerPagesEmpty = pageGroups.all { it.imageUris.isEmpty() }
+        val areInnerPagesEmpty = innerUris.isEmpty()
 
         if (isCoverEmpty && areInnerPagesEmpty) {
             _pdfGenerationState.value = PdfGenerationState.Error("No hay contenido para generar un PDF.")
@@ -134,11 +134,18 @@ class ProjectViewModel : ViewModel() {
             Log.d("ProjectViewModel", "generatePdf: Iniciando...")
             _pdfGenerationState.value = PdfGenerationState.Loading
             val generatedFile = withContext(Dispatchers.IO) {
+                val photosPerPage = _pdfSizeMode.value
+                val generatedPages = com.example.dynamiccollage.utils.PdfContentManager.groupImagesForPdf(
+                    context,
+                    innerUris,
+                    photosPerPage
+                )
+
                 Log.d("ProjectViewModel", "generatePdf: En el hilo de IO, llamando a PdfGenerator.")
                 PdfGenerator.generate(
                     context = context,
                     coverConfig = _currentCoverConfig.value,
-                    pageGroups = _currentPageGroups.value,
+                    generatedPages = generatedPages,
                     fileName = fileName.ifBlank { "DynamicCollage" }
                 )
             }
