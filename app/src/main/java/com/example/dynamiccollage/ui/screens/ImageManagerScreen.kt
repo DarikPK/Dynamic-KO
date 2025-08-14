@@ -29,8 +29,6 @@ import com.example.dynamiccollage.ui.components.CropView
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 import kotlinx.coroutines.launch
 import java.io.InputStream
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.ColorMatrix
 import kotlin.math.min
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,10 +41,6 @@ fun ImageManagerScreen(
     var currentSelectedUri by remember { mutableStateOf(imageUris.firstOrNull()?.let { Uri.parse(it) }) }
     var uriBeforeCrop by remember { mutableStateOf(currentSelectedUri) }
     var originalUriOfSession by remember { mutableStateOf(currentSelectedUri) }
-
-    var brightness by remember { mutableStateOf(0f) }
-    var contrast by remember { mutableStateOf(1f) }
-    var saturation by remember { mutableStateOf(1f) }
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -119,7 +113,6 @@ fun ImageManagerScreen(
             ) {
                 if (currentSelectedUri != null) {
                     key(currentSelectedUri) {
-                        val colorFilter = createColorFilter(brightness, contrast, saturation)
                         CropView(
                             uri = currentSelectedUri!!,
                             onCrop = { cropRect, imageBounds ->
@@ -139,34 +132,11 @@ fun ImageManagerScreen(
                                     }
                                 }
                             }
-                        },
-                        colorFilter = colorFilter)
+                        })
                     }
                 } else {
                     Text("No hay imágenes para editar.")
                 }
-            }
-
-            // Sliders for image effects
-            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                Text("Brillo: ${"%.2f".format(brightness)}")
-                Slider(
-                    value = brightness,
-                    onValueChange = { brightness = it },
-                    valueRange = -1f..1f
-                )
-                Text("Contraste: ${"%.2f".format(contrast)}")
-                Slider(
-                    value = contrast,
-                    onValueChange = { contrast = it },
-                    valueRange = 0f..2f
-                )
-                Text("Saturación: ${"%.2f".format(saturation)}")
-                Slider(
-                    value = saturation,
-                    onValueChange = { saturation = it },
-                    valueRange = 0f..2f
-                )
             }
 
             LazyRow(
@@ -192,10 +162,6 @@ fun ImageManagerScreen(
                                 currentSelectedUri = uri
                                 uriBeforeCrop = uri
                                 originalUriOfSession = uri
-                                // Reset effects
-                                brightness = 0f
-                                contrast = 1f
-                                saturation = 1f
                             }
                     )
                 }
@@ -237,32 +203,4 @@ private fun cropBitmap(
         e.printStackTrace()
         return null
     }
-}
-
-private fun createColorFilter(brightness: Float, contrast: Float, saturation: Float): ColorFilter {
-    val matrix = ColorMatrix()
-    matrix.setToSaturation(saturation)
-
-    val brightnessMatrix = ColorMatrix(
-        floatArrayOf(
-            1f, 0f, 0f, 0f, brightness * 255,
-            0f, 1f, 0f, 0f, brightness * 255,
-            0f, 0f, 1f, 0f, brightness * 255,
-            0f, 0f, 0f, 1f, 0f
-        )
-    )
-
-    val contrastMatrix = ColorMatrix(
-        floatArrayOf(
-            contrast, 0f, 0f, 0f, 128 * (1 - contrast),
-            0f, contrast, 0f, 0f, 128 * (1 - contrast),
-            0f, 0f, contrast, 0f, 128 * (1 - contrast),
-            0f, 0f, 0f, 1f, 0f
-        )
-    )
-
-    matrix.postConcat(brightnessMatrix)
-    matrix.postConcat(contrastMatrix)
-
-    return ColorFilter.colorMatrix(matrix)
 }

@@ -1,7 +1,6 @@
 package com.example.dynamiccollage.ui.components
 
 import android.net.Uri
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -54,8 +53,7 @@ private sealed class TouchRegion {
 fun CropView(
     modifier: Modifier = Modifier,
     uri: Uri,
-    onCrop: (cropRect: Rect, imageBounds: Rect) -> Unit,
-    colorFilter: ColorFilter?
+    onCrop: (cropRect: Rect, imageBounds: Rect) -> Unit
 ) {
     var cropRect by remember { mutableStateOf(Rect.Zero) }
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
@@ -80,7 +78,6 @@ fun CropView(
                 contentDescription = "Image to crop",
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.fillMaxSize(),
-                colorFilter = colorFilter,
                 onSuccess = { result ->
                     val drawable = result.result.drawable
                     imageAspectRatio = drawable.intrinsicWidth.toFloat() / drawable.intrinsicHeight.toFloat()
