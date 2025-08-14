@@ -6,7 +6,7 @@ import android.net.Uri
 import android.os.ParcelFileDescriptor
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.forEachGesture
+import androidx.compose.ui.input.pointer.awaitPointerEventScope
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -179,47 +179,55 @@ fun ZoomablePdfPage(bitmap: Bitmap) {
             .background(Color.White)
             .clipToBounds()
             .pointerInput(Unit) {
-                forEachGesture {
-                    awaitFirstDown(requireUnconsumed = false)
-                    do {
-                        val event = awaitPointerEvent()
-                        val pointers = event.pointers
+                awaitPointerEventScope {
+                    while (true) {
+                        val firstDown = awaitFirstDown(requireUnconsumed = false)
+                        var scaleTemp = scale
+                        var offsetXTemp = offsetX
+                        var offsetYTemp = offsetY
 
-                        if (pointers.size == 1 && scale > 1f) {
-                            val panAmount = pointers.first().position - pointers.first().previousPosition
-                            offsetX += panAmount.x
-                            offsetY += panAmount.y
-                            event.changes.first().consume()
-                        } else if (pointers.size > 1) {
-                            val p1 = pointers[0]
-                            val p2 = pointers[1]
+                        do {
+                            val event = awaitPointerEvent()
+                            val pointers = event.changes
 
-                            val currentDist = (p1.position - p2.position).getDistance()
-                            val prevDist =
-                                (p1.previousPosition - p2.previousPosition).getDistance()
-                            val zoom = if (prevDist == 0f) 1f else currentDist / prevDist
+                            if (pointers.size == 1 && scaleTemp > 1f) {
+                                val panAmount = pointers.first().position - pointers.first().previousPosition
+                                offsetXTemp += panAmount.x
+                                offsetYTemp += panAmount.y
+                                pointers.first().consume()
+                            } else if (pointers.size > 1) {
+                                val p1 = pointers[0]
+                                val p2 = pointers[1]
 
-                            val currentCentroid = (p1.position + p2.position) / 2f
-                            val prevCentroid =
-                                (p1.previousPosition + p2.previousPosition) / 2f
-                            val pan = currentCentroid - prevCentroid
+                                val currentDist = (p1.position - p2.position).getDistance()
+                                val prevDist = (p1.previousPosition - p2.previousPosition).getDistance()
+                                val zoom = if (prevDist == 0f) 1f else currentDist / prevDist
 
-                            scale = (scale * zoom).coerceIn(1f, 5f)
-                            if (scale > 1f) {
-                                offsetX += pan.x
-                                offsetY += pan.y
-                            } else {
-                                offsetX = 0f
-                                offsetY = 0f
+                                val currentCentroid = (p1.position + p2.position) / 2f
+                                val prevCentroid = (p1.previousPosition + p2.previousPosition) / 2f
+                                val pan = currentCentroid - prevCentroid
+
+                                scaleTemp = (scaleTemp * zoom).coerceIn(1f, 5f)
+                                if (scaleTemp > 1f) {
+                                    offsetXTemp += pan.x
+                                    offsetYTemp += pan.y
+                                } else {
+                                    offsetXTemp = 0f
+                                    offsetYTemp = 0f
+                                }
+                                pointers.forEach { it.consume() }
                             }
-                            event.changes.forEach { it.consume() }
-                        }
-                    } while (event.changes.any { it.pressed })
+                        } while (event.changes.any { it.pressed })
 
-                    if (scale <= 1.01f) {
-                        scale = 1f
-                        offsetX = 0f
-                        offsetY = 0f
+                        if (scaleTemp <= 1.01f) {
+                            scaleTemp = 1f
+                            offsetXTemp = 0f
+                            offsetYTemp = 0f
+                        }
+
+                        scale = scaleTemp
+                        offsetX = offsetXTemp
+                        offsetY = offsetYTemp
                     }
                 }
             }
