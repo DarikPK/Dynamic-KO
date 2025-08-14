@@ -1,6 +1,7 @@
 package com.example.dynamiccollage.ui.components
 
 import android.net.Uri
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -48,8 +49,6 @@ private sealed class TouchRegion {
     object Bottom : TouchRegion()
     object None : TouchRegion()
 }
-
-import androidx.compose.ui.graphics.ColorFilter
 
 @Composable
 fun CropView(
