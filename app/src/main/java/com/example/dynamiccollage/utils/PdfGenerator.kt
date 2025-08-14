@@ -33,7 +33,6 @@ import com.tom_roush.pdfbox.pdmodel.font.PDType0Font
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
-import com.tom_roush.pdfbox.pdfwriter.compress.CompressParameters
 import java.io.FileOutputStream
 
 object PdfGenerator {
@@ -125,10 +124,8 @@ object PdfGenerator {
 
             // Comprimir el PDF usando PDFBox
             val pdDocument = PDDocument.load(uncompressedPdfStream.toByteArray())
-            // Guardar con compresión
-            val fileOutputStream = FileOutputStream(pdfFile)
-            pdDocument.save(fileOutputStream, CompressParameters.DEFAULT_COMPRESSION)
-            fileOutputStream.close()
+            pdDocument.version = 1.5f
+            pdDocument.save(pdfFile)
             pdDocument.close()
 
             return pdfFile
