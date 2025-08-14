@@ -31,6 +31,7 @@ import com.tom_roush.pdfbox.pdmodel.PDPage
 import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
 import com.tom_roush.pdfbox.pdmodel.font.PDType0Font
 import java.io.ByteArrayInputStream
+import kotlin.math.minOf
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -433,35 +434,44 @@ object PdfGenerator {
 
     private fun decodeAndCompressBitmapFromUri(context: Context, uri: Uri, reqWidth: Int, reqHeight: Int, quality: Int): Bitmap? {
         return try {
-            // 1. Calculate scaling factor from quality
             val scalingFactor = quality / 100.0f
-            if (scalingFactor <= 0) return null // Avoid division by zero or invalid sizes
+            if (scalingFactor <= 0) return null
 
-            // 2. Apply scaling factor to requested dimensions
-            val scaledWidth = (reqWidth * scalingFactor).toInt().coerceAtLeast(1)
-            val scaledHeight = (reqHeight * scalingFactor).toInt().coerceAtLeast(1)
+            // We still use the quality slider to determine the target resolution
+            val targetWidth = (reqWidth * scalingFactor).toInt().coerceAtLeast(1)
+            val targetHeight = (reqHeight * scalingFactor).toInt().coerceAtLeast(1)
 
             val inputStream = context.contentResolver.openInputStream(uri) ?: return null
             val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeStream(inputStream, null, options)
             inputStream.close()
 
-            // 3. Use scaled dimensions for initial sampling to save memory
-            options.inSampleSize = calculateInSampleSize(options, scaledWidth, scaledHeight)
+            // Use target dimensions for initial sampling to save memory
+            options.inSampleSize = calculateInSampleSize(options, targetWidth, targetHeight)
             options.inJustDecodeBounds = false
 
             val sampledBitmap = context.contentResolver.openInputStream(uri)?.use {
                 BitmapFactory.decodeStream(it, null, options)
             } ?: return null
 
-            // 4. Create a new bitmap with the exact scaled dimensions for precision
-            val scaledBitmap = Bitmap.createScaledBitmap(sampledBitmap, scaledWidth, scaledHeight, true)
+            // Now, calculate the final dimensions preserving aspect ratio
+            val originalWidth = sampledBitmap.width
+            val originalHeight = sampledBitmap.height
+
+            val ratioX = targetWidth / originalWidth.toFloat()
+            val ratioY = targetHeight / originalHeight.toFloat()
+            val middleRatio = minOf(ratioX, ratioY)
+
+            val finalWidth = (originalWidth * middleRatio).toInt().coerceAtLeast(1)
+            val finalHeight = (originalHeight * middleRatio).toInt().coerceAtLeast(1)
+
+            // Create a new bitmap with the correct aspect ratio
+            val scaledBitmap = Bitmap.createScaledBitmap(sampledBitmap, finalWidth, finalHeight, true)
             if (scaledBitmap != sampledBitmap) {
-                // only recycle if a new bitmap was created
                 sampledBitmap.recycle()
             }
 
-            // 5. Compress the final scaled bitmap
+            // Compress the final scaled bitmap
             val outputStream = ByteArrayOutputStream()
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
                 scaledBitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, quality, outputStream)
@@ -471,7 +481,7 @@ object PdfGenerator {
             }
             scaledBitmap.recycle()
 
-            // 6. Decode the compressed stream to get a memory-efficient bitmap
+            // Decode the compressed stream to get a memory-efficient bitmap
             val finalInputStream = ByteArrayInputStream(outputStream.toByteArray())
             BitmapFactory.decodeStream(finalInputStream)
         } catch (e: Exception) {
