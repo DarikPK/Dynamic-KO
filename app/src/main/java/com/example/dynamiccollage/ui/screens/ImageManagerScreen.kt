@@ -107,15 +107,28 @@ fun ImageManagerScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            var brightness by remember { mutableStateOf(0f) }
-            var contrast by remember { mutableStateOf(1f) }
-            var saturation by remember { mutableStateOf(1f) }
+            // State for sliders
+            var brightnessSlider by remember { mutableStateOf(0f) }
+            var contrastSlider by remember { mutableStateOf(0f) }
+            var saturationSlider by remember { mutableStateOf(0f) }
 
-            // Reset effects when image changes
+            // Debounced state for Coil transformation
+            var brightnessEffect by remember { mutableStateOf(0f) }
+            var contrastEffect by remember { mutableStateOf(1f) }
+            var saturationEffect by remember { mutableStateOf(1f) }
+
+            // Crop rect state
+            var cropRect by remember { mutableStateOf(Rect.Zero) }
+
+            // Reset effects and crop rect when image changes
             LaunchedEffect(currentSelectedUri) {
-                brightness = 0f
-                contrast = 1f
-                saturation = 1f
+                brightnessSlider = 0f
+                contrastSlider = 0f
+                saturationSlider = 0f
+                brightnessEffect = 0f
+                contrastEffect = 1f
+                saturationEffect = 1f
+                cropRect = Rect.Zero // Reset crop rect for new image
             }
 
             Box(
@@ -125,32 +138,37 @@ fun ImageManagerScreen(
                 contentAlignment = Alignment.Center
             ) {
                 if (currentSelectedUri != null) {
-                    key(currentSelectedUri) { // This key is important to recompose CropView when the URI changes
-                        CropView(
-                            uri = currentSelectedUri!!,
-                            onCrop = { cropRect, imageBounds ->
-                                coroutineScope.launch {
-                                    val croppedBitmap = cropBitmap(
-                                        context = context,
-                                        uri = currentSelectedUri!!,
-                                        cropRect = cropRect,
-                                        imageBounds = imageBounds
-                                    )
-                                    if (croppedBitmap != null) {
-                                        val oldUri = currentSelectedUri
-                                        val newUriString = projectViewModel.saveCroppedImage(context, oldUri.toString(), croppedBitmap)
-                                        if (newUriString != null) {
-                                            uriBeforeCrop = oldUri
-                                            currentSelectedUri = Uri.parse(newUriString)
-                                        }
+                    CropView(
+                        uri = currentSelectedUri!!,
+                        onCrop = { newCropRect, imageBounds ->
+                            coroutineScope.launch {
+                                val croppedBitmap = cropBitmap(
+                                    context = context,
+                                    uri = currentSelectedUri!!,
+                                    cropRect = newCropRect,
+                                    imageBounds = imageBounds
+                                )
+                                if (croppedBitmap != null) {
+                                    val oldUri = currentSelectedUri
+                                    val newUriString = projectViewModel.saveCroppedImage(context, oldUri.toString(), croppedBitmap)
+                                    if (newUriString != null) {
+                                        uriBeforeCrop = oldUri
+                                        currentSelectedUri = Uri.parse(newUriString)
                                     }
                                 }
-                            },
-                            brightness = brightness,
-                            contrast = contrast,
-                            saturation = saturation
-                        )
-                    }
+                            }
+                        },
+                        brightness = brightnessEffect,
+                        contrast = contrastEffect,
+                        saturation = saturationEffect,
+                        cropRect = cropRect,
+                        onCropRectChange = { newRect -> cropRect = newRect },
+                        onImageLoaded = { imageBounds ->
+                            if (cropRect == Rect.Zero) {
+                                cropRect = imageBounds
+                            }
+                        }
+                    )
                 } else {
                     Text("No hay imágenes para editar.")
                 }
@@ -158,23 +176,32 @@ fun ImageManagerScreen(
 
             // Sliders for image effects
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                Text("Brillo: ${"%.2f".format(brightness)}")
+                Text("Brillo: ${"%.0f".format(brightnessSlider)}")
                 Slider(
-                    value = brightness,
-                    onValueChange = { brightness = it },
-                    valueRange = -100f..100f
+                    value = brightnessSlider,
+                    onValueChange = { brightnessSlider = it },
+                    valueRange = -100f..100f,
+                    onValueChangeFinished = {
+                        brightnessEffect = brightnessSlider
+                    }
                 )
-                Text("Contraste: ${"%.2f".format(contrast)}")
+                Text("Contraste: ${"%.0f".format(contrastSlider)}")
                 Slider(
-                    value = contrast,
-                    onValueChange = { contrast = it },
-                    valueRange = 0.5f..2f
+                    value = contrastSlider,
+                    onValueChange = { contrastSlider = it },
+                    valueRange = -100f..100f,
+                    onValueChangeFinished = {
+                        contrastEffect = 1.0f + contrastSlider / 100.0f
+                    }
                 )
-                Text("Saturación: ${"%.2f".format(saturation)}")
+                Text("Saturación: ${"%.0f".format(saturationSlider)}")
                 Slider(
-                    value = saturation,
-                    onValueChange = { saturation = it },
-                    valueRange = 0f..2f
+                    value = saturationSlider,
+                    onValueChange = { saturationSlider = it },
+                    valueRange = -100f..100f,
+                    onValueChangeFinished = {
+                        saturationEffect = 1.0f + saturationSlider / 100.0f
+                    }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Row {
@@ -187,9 +214,9 @@ fun ImageManagerScreen(
                                 if (originalBitmap != null) {
                                     val bitmapWithEffects = ImageEffects.applyEffects(
                                         bitmap = originalBitmap,
-                                        brightness = brightness,
-                                        contrast = contrast,
-                                        saturation = saturation
+                                        brightness = brightnessEffect,
+                                        contrast = contrastEffect,
+                                        saturation = saturationEffect
                                     )
                                     val newUriString = projectViewModel.saveImageWithEffects(
                                         context = context,
@@ -207,9 +234,12 @@ fun ImageManagerScreen(
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(onClick = {
-                        brightness = 0f
-                        contrast = 1f
-                        saturation = 1f
+                        brightnessSlider = 0f
+                        contrastSlider = 0f
+                        saturationSlider = 0f
+                        brightnessEffect = 0f
+                        contrastEffect = 1f
+                        saturationEffect = 1f
                     }) {
                         Text("Restablecer")
                     }
