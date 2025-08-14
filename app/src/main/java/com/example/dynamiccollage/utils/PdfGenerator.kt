@@ -26,15 +26,14 @@ import com.example.dynamiccollage.data.model.PageGroup
 import com.example.dynamiccollage.data.model.PageOrientation
 import com.example.dynamiccollage.data.model.RowStyle
 import com.example.dynamiccollage.data.model.TextStyleConfig
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.io.FileOutputStream
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.pdmodel.PDPage
 import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
 import com.tom_roush.pdfbox.pdmodel.font.PDType0Font
-
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
 
 object PdfGenerator {
 
@@ -104,11 +103,7 @@ object PdfGenerator {
 
         try {
             val totalImages = pageGroups.sumOf { it.imageUris.size } + if (coverConfig.mainImageUri != null) 1 else 0
-            val quality = if (coverConfig.autoAdjustSize && totalImages > 20) {
-                75
-            } else {
-                coverConfig.imageQuality
-            }
+            val quality = coverConfig.imageQuality
 
             val shouldDrawCover = coverConfig.clientNameStyle.content.isNotBlank() ||
                     coverConfig.rucStyle.content.isNotBlank() ||
