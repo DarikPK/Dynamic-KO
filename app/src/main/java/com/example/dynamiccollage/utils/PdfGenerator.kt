@@ -433,23 +433,45 @@ object PdfGenerator {
 
     private fun decodeAndCompressBitmapFromUri(context: Context, uri: Uri, reqWidth: Int, reqHeight: Int, quality: Int): Bitmap? {
         return try {
+            // 1. Calculate scaling factor from quality
+            val scalingFactor = quality / 100.0f
+            if (scalingFactor <= 0) return null // Avoid division by zero or invalid sizes
+
+            // 2. Apply scaling factor to requested dimensions
+            val scaledWidth = (reqWidth * scalingFactor).toInt().coerceAtLeast(1)
+            val scaledHeight = (reqHeight * scalingFactor).toInt().coerceAtLeast(1)
+
             val inputStream = context.contentResolver.openInputStream(uri) ?: return null
             val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeStream(inputStream, null, options)
             inputStream.close()
-            options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight)
+
+            // 3. Use scaled dimensions for initial sampling to save memory
+            options.inSampleSize = calculateInSampleSize(options, scaledWidth, scaledHeight)
             options.inJustDecodeBounds = false
+
             val sampledBitmap = context.contentResolver.openInputStream(uri)?.use {
                 BitmapFactory.decodeStream(it, null, options)
             } ?: return null
+
+            // 4. Create a new bitmap with the exact scaled dimensions for precision
+            val scaledBitmap = Bitmap.createScaledBitmap(sampledBitmap, scaledWidth, scaledHeight, true)
+            if (scaledBitmap != sampledBitmap) {
+                // only recycle if a new bitmap was created
+                sampledBitmap.recycle()
+            }
+
+            // 5. Compress the final scaled bitmap
             val outputStream = ByteArrayOutputStream()
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                sampledBitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, quality, outputStream)
+                scaledBitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, quality, outputStream)
             } else {
                 @Suppress("DEPRECATION")
-                sampledBitmap.compress(Bitmap.CompressFormat.WEBP, quality, outputStream)
+                scaledBitmap.compress(Bitmap.CompressFormat.WEBP, quality, outputStream)
             }
-            sampledBitmap.recycle()
+            scaledBitmap.recycle()
+
+            // 6. Decode the compressed stream to get a memory-efficient bitmap
             val finalInputStream = ByteArrayInputStream(outputStream.toByteArray())
             BitmapFactory.decodeStream(finalInputStream)
         } catch (e: Exception) {

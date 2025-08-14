@@ -117,7 +117,7 @@ data class CoverPageConfig(
     val photoStyle: RowStyle = RowStyle(),
 
     // PDF Size Management
-    val imageQuality: Int = 90,
+    val imageQuality: Int = 100,
     val autoAdjustSize: Boolean = true,
 
     val templateName: String? = null
