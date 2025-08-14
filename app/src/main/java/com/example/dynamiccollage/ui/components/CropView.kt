@@ -67,6 +67,16 @@ fun CropView(
     var imageAspectRatio by remember { mutableStateOf(0f) }
     val density = LocalDensity.current
 
+    var canvasSize by remember { mutableStateOf(Size.Zero) }
+
+    LaunchedEffect(canvasSize, imageAspectRatio) {
+        if (canvasSize != Size.Zero && imageAspectRatio > 0f) {
+            val bounds = getImageBounds(imageAspectRatio, canvasSize)
+            if (bounds.isEmpty) return@LaunchedEffect
+            onImageLoaded(bounds)
+        }
+    }
+
     Column(
         modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -88,10 +98,6 @@ fun CropView(
                 onSuccess = { result ->
                     val drawable = result.result.drawable
                     imageAspectRatio = drawable.intrinsicWidth.toFloat() / drawable.intrinsicHeight.toFloat()
-                    val canvasSize = size
-                    val bounds = getImageBounds(imageAspectRatio, canvasSize)
-                    if (bounds.isEmpty) return@AsyncImage
-                    onImageLoaded(bounds)
                 }
             )
 
@@ -115,6 +121,7 @@ fun CropView(
                         }
                     }
             ) {
+                canvasSize = size
                 if (imageAspectRatio <= 0f || size.width == 0f || size.height == 0f) return@Canvas
                 imageBounds = getImageBounds(imageAspectRatio, size)
                 if (imageBounds.isEmpty) return@Canvas
