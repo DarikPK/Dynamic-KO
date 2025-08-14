@@ -153,8 +153,7 @@ fun ImageManagerScreen(
                                     val oldUri = currentSelectedUri
                                     val newUriString = projectViewModel.saveCroppedImage(context, oldUri.toString(), croppedBitmap)
                                     if (newUriString != null) {
-                                        uriBeforeCrop = oldUri
-                                        currentSelectedUri = Uri.parse(newUriString)
+                                        navController.popBackStack()
                                     }
                                 }
                             }
