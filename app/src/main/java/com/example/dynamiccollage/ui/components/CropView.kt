@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,29 +53,15 @@ private sealed class TouchRegion {
 fun CropView(
     modifier: Modifier = Modifier,
     uri: Uri,
-    onCrop: (cropRect: Rect, imageBounds: Rect) -> Unit,
-    brightness: Float = 0f,
-    contrast: Float = 1f,
-    saturation: Float = 1f,
-    cropRect: Rect,
-    onCropRectChange: (Rect) -> Unit,
-    onImageLoaded: (Rect) -> Unit
+    onCrop: (cropRect: Rect, imageBounds: Rect) -> Unit
 ) {
+    var cropRect by remember { mutableStateOf(Rect.Zero) }
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
+    var isInitialized by remember { mutableStateOf(false) }
     var touchRegion by remember { mutableStateOf<TouchRegion>(TouchRegion.None) }
     var imageBounds by remember { mutableStateOf(Rect.Zero) }
     var imageAspectRatio by remember { mutableStateOf(0f) }
     val density = LocalDensity.current
-
-    var canvasSize by remember { mutableStateOf(Size.Zero) }
-
-    LaunchedEffect(canvasSize, imageAspectRatio) {
-        if (canvasSize != Size.Zero && imageAspectRatio > 0f) {
-            val bounds = getImageBounds(imageAspectRatio, canvasSize)
-            if (bounds.isEmpty) return@LaunchedEffect
-            onImageLoaded(bounds)
-        }
-    }
 
     Column(
         modifier = modifier.fillMaxSize(),
@@ -89,30 +74,28 @@ fun CropView(
                 .weight(1f)
         ) {
             AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(uri)
-                    .transformations(ColorMatrixTransformation(brightness, contrast, saturation))
-                    .build(),
+                model = ImageRequest.Builder(LocalContext.current).data(uri).build(),
                 contentDescription = "Image to crop",
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.fillMaxSize(),
                 onSuccess = { result ->
                     val drawable = result.result.drawable
                     imageAspectRatio = drawable.intrinsicWidth.toFloat() / drawable.intrinsicHeight.toFloat()
+                    isInitialized = false // Force re-initialization when image changes
                 }
             )
 
             Canvas(
                 modifier = Modifier
                     .fillMaxSize()
-                    .pointerInput(uri) {
+                    .pointerInput(uri) { // Re-trigger pointer input when URI changes
                         detectDragGestures(
                             onDragStart = { startOffset ->
-                                val touchSlop = with(density) { 24.dp.toPx() }
+                                val touchSlop = with(density) { 24.dp.toPx() } // Reverted slop
                                 touchRegion = getTouchRegion(startOffset, cropRect, touchSlop)
                             },
                             onDragEnd = {
-                                onCropRectChange(getUpdatedRect(cropRect, dragOffset, touchRegion, imageBounds))
+                                cropRect = getUpdatedRect(cropRect, dragOffset, touchRegion, imageBounds)
                                 dragOffset = Offset.Zero
                                 touchRegion = TouchRegion.None
                             }
@@ -122,44 +105,87 @@ fun CropView(
                         }
                     }
             ) {
-                canvasSize = size
                 if (imageAspectRatio <= 0f || size.width == 0f || size.height == 0f) return@Canvas
+
                 imageBounds = getImageBounds(imageAspectRatio, size)
                 if (imageBounds.isEmpty) return@Canvas
+
+                if (!isInitialized) {
+                    cropRect = imageBounds
+                    isInitialized = true
+                }
 
                 val displayedRect = getUpdatedRect(cropRect, dragOffset, touchRegion, imageBounds)
 
                 val outerPath = Path().apply { addRect(Rect(0f, 0f, size.width, size.height)) }
                 val innerPath = Path().apply { addRect(displayedRect) }
-                val path = Path.combine(operation = PathOperation.Difference, path1 = outerPath, path2 = innerPath)
+                val path = Path.combine(
+                    operation = PathOperation.Difference,
+                    path1 = outerPath,
+                    path2 = innerPath
+                )
 
                 val handleStroke = Stroke(width = 2.dp.toPx())
 
                 drawPath(path = path, color = Color.Black.copy(alpha = 0.5f))
-                drawRect(color = Color.White, topLeft = displayedRect.topLeft, size = displayedRect.size, style = handleStroke)
+                drawRect(
+                    color = Color.White,
+                    topLeft = displayedRect.topLeft,
+                    size = displayedRect.size,
+                    style = handleStroke
+                )
+                // Corner handles
                 drawCircle(color = Color.White, radius = 8.dp.toPx(), center = displayedRect.topLeft)
                 drawCircle(color = Color.White, radius = 8.dp.toPx(), center = displayedRect.topRight)
                 drawCircle(color = Color.White, radius = 8.dp.toPx(), center = displayedRect.bottomLeft)
                 drawCircle(color = Color.White, radius = 8.dp.toPx(), center = displayedRect.bottomRight)
 
+                // Side handles with triangles
                 val handleRectWidth = 20.dp.toPx()
                 val handleRectHeight = 8.dp.toPx()
                 val triangleSize = 6.dp.toPx()
 
+                // Top Handle
                 drawRect(color = Color.White, topLeft = Offset(displayedRect.center.x - handleRectWidth / 2, displayedRect.top - handleRectHeight / 2), size = Size(handleRectWidth, handleRectHeight))
-                drawPath(Path().apply { moveTo(displayedRect.center.x, displayedRect.top + handleRectHeight / 2 + triangleSize); lineTo(displayedRect.center.x - triangleSize, displayedRect.top + handleRectHeight / 2); lineTo(displayedRect.center.x + triangleSize, displayedRect.top + handleRectHeight / 2); close() }, color = Color.White, style = handleStroke)
+                drawPath(Path().apply {
+                    moveTo(displayedRect.center.x, displayedRect.top + handleRectHeight / 2 + triangleSize)
+                    lineTo(displayedRect.center.x - triangleSize, displayedRect.top + handleRectHeight / 2)
+                    lineTo(displayedRect.center.x + triangleSize, displayedRect.top + handleRectHeight / 2)
+                    close()
+                }, color = Color.White, style = handleStroke)
+
+                // Bottom Handle
                 drawRect(color = Color.White, topLeft = Offset(displayedRect.center.x - handleRectWidth / 2, displayedRect.bottom - handleRectHeight / 2), size = Size(handleRectWidth, handleRectHeight))
-                drawPath(Path().apply { moveTo(displayedRect.center.x, displayedRect.bottom - handleRectHeight/2 - triangleSize); lineTo(displayedRect.center.x - triangleSize, displayedRect.bottom - handleRectHeight/2); lineTo(displayedRect.center.x + triangleSize, displayedRect.bottom - handleRectHeight/2); close() }, color = Color.White, style = handleStroke)
+                drawPath(Path().apply {
+                    moveTo(displayedRect.center.x, displayedRect.bottom - handleRectHeight/2 - triangleSize)
+                    lineTo(displayedRect.center.x - triangleSize, displayedRect.bottom - handleRectHeight/2)
+                    lineTo(displayedRect.center.x + triangleSize, displayedRect.bottom - handleRectHeight/2)
+                    close()
+                }, color = Color.White, style = handleStroke)
+
+                // Left Handle
                 drawRect(color = Color.White, topLeft = Offset(displayedRect.left - handleRectHeight / 2, displayedRect.center.y - handleRectWidth / 2), size = Size(handleRectHeight, handleRectWidth))
-                drawPath(Path().apply { moveTo(displayedRect.left + handleRectHeight / 2 + triangleSize, displayedRect.center.y); lineTo(displayedRect.left + handleRectHeight / 2, displayedRect.center.y - triangleSize); lineTo(displayedRect.left + handleRectHeight / 2, displayedRect.center.y + triangleSize); close() }, color = Color.White, style = handleStroke)
+                drawPath(Path().apply {
+                    moveTo(displayedRect.left + handleRectHeight / 2 + triangleSize, displayedRect.center.y)
+                    lineTo(displayedRect.left + handleRectHeight / 2, displayedRect.center.y - triangleSize)
+                    lineTo(displayedRect.left + handleRectHeight / 2, displayedRect.center.y + triangleSize)
+                    close()
+                }, color = Color.White, style = handleStroke)
+
+                // Right Handle
                 drawRect(color = Color.White, topLeft = Offset(displayedRect.right - handleRectHeight / 2, displayedRect.center.y - handleRectWidth / 2), size = Size(handleRectHeight, handleRectWidth))
-                drawPath(Path().apply { moveTo(displayedRect.right - handleRectHeight / 2 - triangleSize, displayedRect.center.y); lineTo(displayedRect.right - handleRectHeight / 2, displayedRect.center.y - triangleSize); lineTo(displayedRect.right - handleRectHeight / 2, displayedRect.center.y + triangleSize); close() }, color = Color.White, style = handleStroke)
+                drawPath(Path().apply {
+                    moveTo(displayedRect.right - handleRectHeight / 2 - triangleSize, displayedRect.center.y)
+                    lineTo(displayedRect.right - handleRectHeight / 2, displayedRect.center.y - triangleSize)
+                    lineTo(displayedRect.right - handleRectHeight / 2, displayedRect.center.y + triangleSize)
+                    close()
+                }, color = Color.White, style = handleStroke)
             }
         }
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(16.dp)) // Add spacing
         Button(
             onClick = { onCrop(getUpdatedRect(cropRect, dragOffset, touchRegion, imageBounds), imageBounds) },
-            enabled = !cropRect.isEmpty && getUpdatedRect(cropRect, dragOffset, touchRegion, imageBounds) != imageBounds,
+            enabled = isInitialized && getUpdatedRect(cropRect, dragOffset, touchRegion, imageBounds) != imageBounds,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
