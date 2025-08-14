@@ -6,7 +6,7 @@ import android.net.Uri
 import android.os.ParcelFileDescriptor
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.gestures.forEachGesture
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -17,6 +17,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
@@ -174,15 +175,51 @@ fun ZoomablePdfPage(bitmap: Bitmap) {
         modifier = Modifier
             .fillMaxWidth()
             .background(Color.White)
+            .clipToBounds()
             .pointerInput(Unit) {
-                detectTransformGestures { _, pan, zoom, _ ->
-                    scale = (scale * zoom).coerceIn(1f, 5f)
-                    if (scale > 1f) {
-                        offsetX += pan.x
-                        offsetY += pan.y
-                    } else {
-                        offsetX = 0f
-                        offsetY = 0f
+                forEachGesture {
+                    awaitPointerEventScope {
+                        awaitFirstDown(requireUnconsumed = false)
+                        do {
+                            val event = awaitPointerEvent()
+                            val pointers = event.pointers
+
+                            if (pointers.size == 1 && scale > 1f) {
+                                val panAmount = pointers.first().position - pointers.first().previousPosition
+                                offsetX += panAmount.x
+                                offsetY += panAmount.y
+                                event.changes.first().consume()
+                            } else if (pointers.size > 1) {
+                                val p1 = pointers[0]
+                                val p2 = pointers[1]
+
+                                val currentDist = (p1.position - p2.position).getDistance()
+                                val prevDist =
+                                    (p1.previousPosition - p2.previousPosition).getDistance()
+                                val zoom = if (prevDist == 0f) 1f else currentDist / prevDist
+
+                                val currentCentroid = (p1.position + p2.position) / 2f
+                                val prevCentroid =
+                                    (p1.previousPosition + p2.previousPosition) / 2f
+                                val pan = currentCentroid - prevCentroid
+
+                                scale = (scale * zoom).coerceIn(1f, 5f)
+                                if (scale > 1f) {
+                                    offsetX += pan.x
+                                    offsetY += pan.y
+                                } else {
+                                    offsetX = 0f
+                                    offsetY = 0f
+                                }
+                                event.changes.forEach { it.consume() }
+                            }
+                        } while (event.changes.any { it.pressed })
+
+                        if (scale <= 1.01f) {
+                            scale = 1f
+                            offsetX = 0f
+                            offsetY = 0f
+                        }
                     }
                 }
             }
