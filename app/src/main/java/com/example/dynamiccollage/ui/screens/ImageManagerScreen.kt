@@ -195,7 +195,7 @@ private fun cropBitmap(
         val originalBitmap = BitmapFactory.decodeStream(inputStream)
         inputStream.close()
 
-        val scale = originalBitmap.width / imageBounds.width
+        val scale = originalBitmap.width.toFloat() / imageBounds.width
 
         val finalLeft = (cropRect.left - imageBounds.left) * scale
         val finalTop = (cropRect.top - imageBounds.top) * scale
