@@ -218,6 +218,56 @@ object PdfGenerator {
         }
     }
 
+    fun generatePreviewBitmaps(
+        context: Context,
+        generatedPages: List<com.example.dynamiccollage.data.model.GeneratedPage>
+    ): List<Bitmap> {
+        val bitmaps = mutableListOf<Bitmap>()
+        val quality = 85 // Calidad de imagen razonable para previsualizaciones
+        try {
+            generatedPages.forEach { pageData ->
+                val pageWidth = if (pageData.orientation == PageOrientation.Vertical) A4_WIDTH else A4_HEIGHT
+                val pageHeight = if (pageData.orientation == PageOrientation.Vertical) A4_HEIGHT else A4_WIDTH
+                val bitmap = Bitmap.createBitmap(pageWidth, pageHeight, Bitmap.Config.ARGB_8888)
+                val canvas = Canvas(bitmap)
+                drawPageOnCanvas(canvas, context, pageData, quality)
+                bitmaps.add(bitmap)
+            }
+        } catch (e: Exception) {
+            Log.e("PdfGenerator", "Error al generar previsualizaciones de bitmap", e)
+        }
+        return bitmaps
+    }
+
+    private fun drawPageOnCanvas(
+        canvas: Canvas,
+        context: Context,
+        pageData: com.example.dynamiccollage.data.model.GeneratedPage,
+        quality: Int
+    ) {
+        val (cols, rows) = when (pageData.orientation) {
+            PageOrientation.Vertical -> if (pageData.imageUris.size > 1) Pair(1, 2) else Pair(1, 1)
+            PageOrientation.Horizontal -> if (pageData.imageUris.size > 1) Pair(2, 1) else Pair(1, 1)
+        }
+
+        val rects = getRectsForPage(canvas.width, canvas.height, 20f, cols, rows, 15f)
+
+        pageData.imageUris.forEachIndexed { index, uriString ->
+            if (index < rects.size) {
+                val rect = rects[index]
+                try {
+                    val bitmap = decodeAndCompressBitmapFromUri(context, Uri.parse(uriString), rect.width().toInt(), rect.height().toInt(), quality)
+                    bitmap?.let {
+                        drawBitmapToCanvas(canvas, it, rect)
+                        it.recycle()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
+
     private fun drawInnerPages(
         pdfDocument: PdfDocument,
         context: Context,
@@ -231,29 +281,9 @@ object PdfGenerator {
             val pageHeight = if (pageData.orientation == PageOrientation.Vertical) A4_HEIGHT else A4_WIDTH
             val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber++).create()
             val page = pdfDocument.startPage(pageInfo)
-            val canvas = page.canvas
 
-            val (cols, rows) = when (pageData.orientation) {
-                PageOrientation.Vertical -> if (pageData.imageUris.size > 1) Pair(1, 2) else Pair(1, 1)
-                PageOrientation.Horizontal -> if (pageData.imageUris.size > 1) Pair(2, 1) else Pair(1, 1)
-            }
+            drawPageOnCanvas(page.canvas, context, pageData, quality)
 
-            val rects = getRectsForPage(pageWidth, pageHeight, 20f, cols, rows, 15f)
-
-            pageData.imageUris.forEachIndexed { index, uriString ->
-                if (index < rects.size) {
-                    val rect = rects[index]
-                    try {
-                        val bitmap = decodeAndCompressBitmapFromUri(context, Uri.parse(uriString), rect.width().toInt(), rect.height().toInt(), quality)
-                        bitmap?.let {
-                            drawBitmapToCanvas(canvas, it, rect)
-                            it.recycle()
-                        }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                }
-            }
             pdfDocument.finishPage(page)
         }
     }
