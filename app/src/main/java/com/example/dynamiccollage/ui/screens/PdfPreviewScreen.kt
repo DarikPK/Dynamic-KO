@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.ParcelFileDescriptor
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -18,6 +19,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -148,15 +151,7 @@ fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         itemsIndexed(bitmaps) { index, bitmap ->
-            Image(
-                bitmap = bitmap.asImageBitmap(),
-                contentDescription = null,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White)
-                    .padding(8.dp),
-                contentScale = ContentScale.Fit
-            )
+            ZoomablePdfPage(bitmap = bitmap)
             if (index < bitmaps.size - 1) {
                 Divider(
                     color = Color.Gray,
@@ -165,5 +160,45 @@ fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
                 )
             }
         }
+    }
+}
+
+@Composable
+fun ZoomablePdfPage(bitmap: Bitmap) {
+    var scale by remember { mutableStateOf(1f) }
+    var offsetX by remember { mutableStateOf(0f) }
+    var offsetY by remember { mutableStateOf(0f) }
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White)
+            .pointerInput(Unit) {
+                detectTransformGestures { _, pan, zoom, _ ->
+                    scale = (scale * zoom).coerceIn(1f, 5f)
+                    if (scale > 1f) {
+                        offsetX += pan.x
+                        offsetY += pan.y
+                    } else {
+                        offsetX = 0f
+                        offsetY = 0f
+                    }
+                }
+            }
+    ) {
+        Image(
+            bitmap = bitmap.asImageBitmap(),
+            contentDescription = "PDF Page",
+            modifier = Modifier
+                .fillMaxWidth()
+                .graphicsLayer(
+                    scaleX = scale,
+                    scaleY = scale,
+                    translationX = offsetX,
+                    translationY = offsetY
+                ),
+            contentScale = ContentScale.Fit,
+        )
     }
 }
