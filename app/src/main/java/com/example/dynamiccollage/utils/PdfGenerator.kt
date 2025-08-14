@@ -32,7 +32,6 @@ import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
 import com.tom_roush.pdfbox.pdmodel.font.PDType0Font
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import kotlin.math.minOf
 import java.io.File
 import java.io.FileOutputStream
 
@@ -460,7 +459,7 @@ object PdfGenerator {
 
             val ratioX = targetWidth / originalWidth.toFloat()
             val ratioY = targetHeight / originalHeight.toFloat()
-            val middleRatio = minOf(ratioX, ratioY)
+            val middleRatio = if (ratioX < ratioY) ratioX else ratioY
 
             val finalWidth = (originalWidth * middleRatio).toInt().coerceAtLeast(1)
             val finalHeight = (originalHeight * middleRatio).toInt().coerceAtLeast(1)
