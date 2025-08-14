@@ -49,11 +49,14 @@ private sealed class TouchRegion {
     object None : TouchRegion()
 }
 
+import androidx.compose.ui.graphics.ColorFilter
+
 @Composable
 fun CropView(
     modifier: Modifier = Modifier,
     uri: Uri,
-    onCrop: (cropRect: Rect, imageBounds: Rect) -> Unit
+    onCrop: (cropRect: Rect, imageBounds: Rect) -> Unit,
+    colorFilter: ColorFilter?
 ) {
     var cropRect by remember { mutableStateOf(Rect.Zero) }
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
@@ -78,6 +81,7 @@ fun CropView(
                 contentDescription = "Image to crop",
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.fillMaxSize(),
+                colorFilter = colorFilter,
                 onSuccess = { result ->
                     val drawable = result.result.drawable
                     imageAspectRatio = drawable.intrinsicWidth.toFloat() / drawable.intrinsicHeight.toFloat()

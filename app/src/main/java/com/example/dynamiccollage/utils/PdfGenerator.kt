@@ -433,54 +433,23 @@ object PdfGenerator {
 
     private fun decodeAndCompressBitmapFromUri(context: Context, uri: Uri, reqWidth: Int, reqHeight: Int, quality: Int): Bitmap? {
         return try {
-            val scalingFactor = quality / 100.0f
-            if (scalingFactor <= 0) return null
-
-            // We still use the quality slider to determine the target resolution
-            val targetWidth = (reqWidth * scalingFactor).toInt().coerceAtLeast(1)
-            val targetHeight = (reqHeight * scalingFactor).toInt().coerceAtLeast(1)
-
             val inputStream = context.contentResolver.openInputStream(uri) ?: return null
             val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeStream(inputStream, null, options)
             inputStream.close()
-
-            // Use target dimensions for initial sampling to save memory
-            options.inSampleSize = calculateInSampleSize(options, targetWidth, targetHeight)
+            options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight)
             options.inJustDecodeBounds = false
-
             val sampledBitmap = context.contentResolver.openInputStream(uri)?.use {
                 BitmapFactory.decodeStream(it, null, options)
             } ?: return null
-
-            // Now, calculate the final dimensions preserving aspect ratio
-            val originalWidth = sampledBitmap.width
-            val originalHeight = sampledBitmap.height
-
-            val ratioX = targetWidth / originalWidth.toFloat()
-            val ratioY = targetHeight / originalHeight.toFloat()
-            val middleRatio = if (ratioX < ratioY) ratioX else ratioY
-
-            val finalWidth = (originalWidth * middleRatio).toInt().coerceAtLeast(1)
-            val finalHeight = (originalHeight * middleRatio).toInt().coerceAtLeast(1)
-
-            // Create a new bitmap with the correct aspect ratio
-            val scaledBitmap = Bitmap.createScaledBitmap(sampledBitmap, finalWidth, finalHeight, true)
-            if (scaledBitmap != sampledBitmap) {
-                sampledBitmap.recycle()
-            }
-
-            // Compress the final scaled bitmap
             val outputStream = ByteArrayOutputStream()
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                scaledBitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, quality, outputStream)
+                sampledBitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, quality, outputStream)
             } else {
                 @Suppress("DEPRECATION")
-                scaledBitmap.compress(Bitmap.CompressFormat.WEBP, quality, outputStream)
+                sampledBitmap.compress(Bitmap.CompressFormat.WEBP, quality, outputStream)
             }
-            scaledBitmap.recycle()
-
-            // Decode the compressed stream to get a memory-efficient bitmap
+            sampledBitmap.recycle()
             val finalInputStream = ByteArrayInputStream(outputStream.toByteArray())
             BitmapFactory.decodeStream(finalInputStream)
         } catch (e: Exception) {
