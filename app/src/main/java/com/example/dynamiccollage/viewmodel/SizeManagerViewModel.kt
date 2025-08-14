@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.update
 
 class SizeManagerViewModel : ViewModel() {
 
-    private val _imageQuality = MutableStateFlow(90)
+    private val _imageQuality = MutableStateFlow(100)
     val imageQuality: StateFlow<Int> = _imageQuality.asStateFlow()
 
     private val _autoAdjustSize = MutableStateFlow(true)
