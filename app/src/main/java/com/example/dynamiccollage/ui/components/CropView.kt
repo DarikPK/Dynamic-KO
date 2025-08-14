@@ -53,7 +53,10 @@ private sealed class TouchRegion {
 fun CropView(
     modifier: Modifier = Modifier,
     uri: Uri,
-    onCrop: (cropRect: Rect, imageBounds: Rect) -> Unit
+    onCrop: (cropRect: Rect, imageBounds: Rect) -> Unit,
+    brightness: Float = 0f,
+    contrast: Float = 1f,
+    saturation: Float = 1f
 ) {
     var cropRect by remember { mutableStateOf(Rect.Zero) }
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
@@ -74,7 +77,10 @@ fun CropView(
                 .weight(1f)
         ) {
             AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current).data(uri).build(),
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(uri)
+                    .transformations(ColorMatrixTransformation(brightness, contrast, saturation))
+                    .build(),
                 contentDescription = "Image to crop",
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.fillMaxSize(),

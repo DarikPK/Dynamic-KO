@@ -23,9 +23,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import android.graphics.BitmapFactory
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.dynamiccollage.ui.components.CropView
+import com.example.dynamiccollage.utils.ImageEffects
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 import kotlinx.coroutines.launch
 import java.io.InputStream
@@ -105,6 +107,17 @@ fun ImageManagerScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            var brightness by remember { mutableStateOf(0f) }
+            var contrast by remember { mutableStateOf(1f) }
+            var saturation by remember { mutableStateOf(1f) }
+
+            // Reset effects when image changes
+            LaunchedEffect(currentSelectedUri) {
+                brightness = 0f
+                contrast = 1f
+                saturation = 1f
+            }
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -112,30 +125,94 @@ fun ImageManagerScreen(
                 contentAlignment = Alignment.Center
             ) {
                 if (currentSelectedUri != null) {
-                    key(currentSelectedUri) {
+                    key(currentSelectedUri) { // This key is important to recompose CropView when the URI changes
                         CropView(
                             uri = currentSelectedUri!!,
                             onCrop = { cropRect, imageBounds ->
                                 coroutineScope.launch {
-                                val croppedBitmap = cropBitmap(
-                                    context = context,
-                                    uri = currentSelectedUri!!,
-                                    cropRect = cropRect,
-                                    imageBounds = imageBounds
-                                )
-                                if (croppedBitmap != null) {
-                                    val oldUri = currentSelectedUri
-                                    val newUriString = projectViewModel.saveCroppedImage(context, oldUri.toString(), croppedBitmap)
+                                    val croppedBitmap = cropBitmap(
+                                        context = context,
+                                        uri = currentSelectedUri!!,
+                                        cropRect = cropRect,
+                                        imageBounds = imageBounds
+                                    )
+                                    if (croppedBitmap != null) {
+                                        val oldUri = currentSelectedUri
+                                        val newUriString = projectViewModel.saveCroppedImage(context, oldUri.toString(), croppedBitmap)
+                                        if (newUriString != null) {
+                                            uriBeforeCrop = oldUri
+                                            currentSelectedUri = Uri.parse(newUriString)
+                                        }
+                                    }
+                                }
+                            },
+                            brightness = brightness,
+                            contrast = contrast,
+                            saturation = saturation
+                        )
+                    }
+                } else {
+                    Text("No hay imágenes para editar.")
+                }
+            }
+
+            // Sliders for image effects
+            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                Text("Brillo: ${"%.2f".format(brightness)}")
+                Slider(
+                    value = brightness,
+                    onValueChange = { brightness = it },
+                    valueRange = -100f..100f
+                )
+                Text("Contraste: ${"%.2f".format(contrast)}")
+                Slider(
+                    value = contrast,
+                    onValueChange = { contrast = it },
+                    valueRange = 0.5f..2f
+                )
+                Text("Saturación: ${"%.2f".format(saturation)}")
+                Slider(
+                    value = saturation,
+                    onValueChange = { saturation = it },
+                    valueRange = 0f..2f
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row {
+                    Button(onClick = {
+                        coroutineScope.launch {
+                            currentSelectedUri?.let { uri ->
+                                val originalBitmap = context.contentResolver.openInputStream(uri)?.use {
+                                    BitmapFactory.decodeStream(it)
+                                }
+                                if (originalBitmap != null) {
+                                    val bitmapWithEffects = ImageEffects.applyEffects(
+                                        bitmap = originalBitmap,
+                                        brightness = brightness,
+                                        contrast = contrast,
+                                        saturation = saturation
+                                    )
+                                    val newUriString = projectViewModel.saveImageWithEffects(
+                                        context = context,
+                                        oldUri = uri.toString(),
+                                        bitmapWithEffects = bitmapWithEffects
+                                    )
                                     if (newUriString != null) {
-                                        uriBeforeCrop = oldUri
                                         currentSelectedUri = Uri.parse(newUriString)
                                     }
                                 }
                             }
-                        })
+                        }
+                    }) {
+                        Text("Aplicar Efectos")
                     }
-                } else {
-                    Text("No hay imágenes para editar.")
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(onClick = {
+                        brightness = 0f
+                        contrast = 1f
+                        saturation = 1f
+                    }) {
+                        Text("Restablecer")
+                    }
                 }
             }
 
