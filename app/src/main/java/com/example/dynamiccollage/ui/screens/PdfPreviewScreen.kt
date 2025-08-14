@@ -6,7 +6,6 @@ import android.net.Uri
 import android.os.ParcelFileDescriptor
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.ui.input.pointer.awaitPointerEventScope
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -17,13 +16,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.awaitFirstDown
-import androidx.compose.ui.input.pointer.awaitPointerEvent
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -154,7 +148,15 @@ fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         itemsIndexed(bitmaps) { index, bitmap ->
-            ZoomablePdfPage(bitmap = bitmap)
+            Image(
+                bitmap = bitmap.asImageBitmap(),
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White)
+                    .padding(8.dp),
+                contentScale = ContentScale.Fit
+            )
             if (index < bitmaps.size - 1) {
                 Divider(
                     color = Color.Gray,
@@ -163,87 +165,5 @@ fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
                 )
             }
         }
-    }
-}
-
-@Composable
-fun ZoomablePdfPage(bitmap: Bitmap) {
-    var scale by remember { mutableStateOf(1f) }
-    var offsetX by remember { mutableStateOf(0f) }
-    var offsetY by remember { mutableStateOf(0f) }
-
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.White)
-            .clipToBounds()
-            .pointerInput(Unit) {
-                awaitPointerEventScope {
-                    while (true) {
-                        val firstDown = awaitFirstDown(requireUnconsumed = false)
-                        var scaleTemp = scale
-                        var offsetXTemp = offsetX
-                        var offsetYTemp = offsetY
-
-                        do {
-                            val event = awaitPointerEvent()
-                            val pointers = event.changes
-
-                            if (pointers.size == 1 && scaleTemp > 1f) {
-                                val panAmount = pointers.first().position - pointers.first().previousPosition
-                                offsetXTemp += panAmount.x
-                                offsetYTemp += panAmount.y
-                                pointers.first().consume()
-                            } else if (pointers.size > 1) {
-                                val p1 = pointers[0]
-                                val p2 = pointers[1]
-
-                                val currentDist = (p1.position - p2.position).getDistance()
-                                val prevDist = (p1.previousPosition - p2.previousPosition).getDistance()
-                                val zoom = if (prevDist == 0f) 1f else currentDist / prevDist
-
-                                val currentCentroid = (p1.position + p2.position) / 2f
-                                val prevCentroid = (p1.previousPosition + p2.previousPosition) / 2f
-                                val pan = currentCentroid - prevCentroid
-
-                                scaleTemp = (scaleTemp * zoom).coerceIn(1f, 5f)
-                                if (scaleTemp > 1f) {
-                                    offsetXTemp += pan.x
-                                    offsetYTemp += pan.y
-                                } else {
-                                    offsetXTemp = 0f
-                                    offsetYTemp = 0f
-                                }
-                                pointers.forEach { it.consume() }
-                            }
-                        } while (event.changes.any { it.pressed })
-
-                        if (scaleTemp <= 1.01f) {
-                            scaleTemp = 1f
-                            offsetXTemp = 0f
-                            offsetYTemp = 0f
-                        }
-
-                        scale = scaleTemp
-                        offsetX = offsetXTemp
-                        offsetY = offsetYTemp
-                    }
-                }
-            }
-    ) {
-        Image(
-            bitmap = bitmap.asImageBitmap(),
-            contentDescription = "PDF Page",
-            modifier = Modifier
-                .fillMaxWidth()
-                .graphicsLayer(
-                    scaleX = scale,
-                    scaleY = scale,
-                    translationX = offsetX,
-                    translationY = offsetY
-                ),
-            contentScale = ContentScale.Fit,
-        )
     }
 }
