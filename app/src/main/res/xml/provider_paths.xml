@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <external-files-path
+        name="my_documents"
+        path="Documents/" />
+    <!-- Puedes añadir más rutas aquí si guardas archivos en otros lugares,
+         por ejemplo, en el caché: <cache-path name="my_cache" path="." /> -->
+</paths>

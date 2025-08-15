@@ -2,7 +2,6 @@ package com.example.dynamiccollage.ui.screens
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -31,6 +30,8 @@ import com.example.dynamiccollage.viewmodel.ProjectViewModel
 import kotlinx.coroutines.launch
 import java.io.InputStream
 import kotlin.math.min
+import android.graphics.BitmapFactory
+
 
 
 @OptIn(ExperimentalMaterial3Api::class)

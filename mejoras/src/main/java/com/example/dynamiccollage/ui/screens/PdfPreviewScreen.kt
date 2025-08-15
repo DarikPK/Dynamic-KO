@@ -1,6 +1,5 @@
 package com.example.dynamiccollage.ui.screens
 
-
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri

@@ -1,6 +1,5 @@
 package com.example.dynamiccollage.ui.screens
 
-import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -45,7 +44,7 @@ fun PlaceholderScreen(screenName: String) {
 }
 
 // Definir _16dp o usar directamente Dp
-private val _16dp = 16.dp
+private val _16dp = androidx.compose.ui.unit.dp
 
 @Preview(showBackground = true)
 @Composable

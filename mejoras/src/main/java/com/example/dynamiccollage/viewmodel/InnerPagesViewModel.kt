@@ -11,11 +11,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import android.net.Uri
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.*
-
 
 class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : ViewModel() {
 
@@ -67,18 +62,24 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         _currentGroupAddingImages.value = groupId
     }
 
-    fun onImagesSelectedForGroup(context: android.content.Context, uris: List<Uri>, groupId: String) {
+    fun onImagesSelectedForGroup(uris: List<Uri>, groupId: String) {
         val uriStrings = uris.map { it.toString() }
-        projectViewModel.copyAndAddImagesToPageGroup(context, uriStrings, groupId)
+        projectViewModel.updatePageGroup(groupId) { group ->
+            group.copy(imageUris = group.imageUris + uriStrings)
+        }
         _currentGroupAddingImages.value = null
     }
 
     fun removeSingleImageFromGroup(groupId: String, uri: String) {
-        projectViewModel.removeImageFromPageGroup(groupId, uri)
+        projectViewModel.updatePageGroup(groupId) { group ->
+            group.copy(imageUris = group.imageUris.toMutableList().apply { remove(uri) })
+        }
     }
 
     fun removeImagesFromGroup(groupId: String) {
-        projectViewModel.removeAllImagesFromPageGroup(groupId)
+        projectViewModel.updatePageGroup(groupId) { group ->
+            group.copy(imageUris = emptyList())
+        }
     }
 
     fun onRemoveGroupClicked(groupId: String) {
@@ -141,30 +142,11 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         )
     }
 
-    fun onEditingGroupImageSpacingChange(spacingStr: String) {
-        val spacing = spacingStr.toFloatOrNull() ?: 0f
+    fun onEditingGroupImageSpacingChange(spacing: Float) {
         _editingGroup.value = _editingGroup.value?.copy(imageSpacing = spacing)
     }
 
-    fun onEditingGroupFontSizeChange(size: String) {
-        _editingGroup.value = _editingGroup.value?.copy(
-            optionalTextStyle = _editingGroup.value!!.optionalTextStyle.copy(fontSize = size.toIntOrNull() ?: 0)
-        )
-    }
-
-    fun onEditingGroupTextAlignChange(align: androidx.compose.ui.text.style.TextAlign) {
-        _editingGroup.value = _editingGroup.value?.copy(
-            optionalTextStyle = _editingGroup.value!!.optionalTextStyle.copy(textAlign = align)
-        )
-    }
-
-    fun onEditingGroupFontColorChange(color: androidx.compose.ui.graphics.Color) {
-        _editingGroup.value = _editingGroup.value?.copy(
-            optionalTextStyle = _editingGroup.value!!.optionalTextStyle.copy(fontColor = color)
-        )
-    }
-
-    fun saveEditingGroup(context: android.content.Context) {
+    fun saveEditingGroup() {
         viewModelScope.launch {
             _editingGroup.value?.let { groupToSave ->
                 val currentGroups = pageGroups.value
@@ -173,7 +155,6 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
                 } else {
                     projectViewModel.addPageGroup(groupToSave)
                 }
-                projectViewModel.saveProject(context)
                 onDismissCreateGroupDialog()
             }
         }
