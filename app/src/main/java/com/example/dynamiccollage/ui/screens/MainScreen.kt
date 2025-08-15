@@ -171,7 +171,7 @@ fun MainScreen(
     if (showThemeDialog) {
         AlertDialog(
             onDismissRequest = { showThemeDialog = false },
-            title = { Text("Seleccionar Tema") },
+            title = { Text("Seleccionar Temas") },
             text = {
                 Column {
                     val themes = listOf("Claro", "Oscuro", "Descanso")
@@ -272,7 +272,7 @@ fun MainScreen(
                 }
             )
             MainButton(
-                text = "Tema",
+                text = "Temas",
                 onClick = { showThemeDialog = true }
             )
             Spacer(modifier = Modifier.weight(1f))
