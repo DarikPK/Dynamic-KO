@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import kotlinx.coroutines.launch
 
@@ -17,52 +18,60 @@ import kotlinx.coroutines.launch
 fun ZoomableImage(
     bitmap: ImageBitmap,
     modifier: Modifier = Modifier,
+    onGesture: (Boolean) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     var scale by remember { mutableStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
+    var viewSize by remember { mutableStateOf(IntSize.Zero) }
 
-    // We get the size of the bitmap to constrain the panning
-    val size = IntSize(bitmap.width, bitmap.height)
+    // Notify the parent about the zoom state
+    LaunchedEffect(scale) {
+        onGesture(scale > 1f)
+    }
 
-    val gestureModifier = modifier
-        .pointerInput(Unit) {
-            detectTapGestures(
-                onDoubleTap = {
-                    scope.launch {
-                        if (scale > 1f) {
-                            scale = 1f
-                            offset = Offset.Zero
-                        } else {
-                            scale = 2.5f
-                        }
-                    }
-                }
-            )
+    fun applyOffsetBounds() {
+        val imageWidth = viewSize.width * scale
+        val imageHeight = viewSize.height * scale
+        val maxOffsetX = (imageWidth - viewSize.width).coerceAtLeast(0f) / 2f
+        val maxOffsetY = (imageHeight - viewSize.height).coerceAtLeast(0f) / 2f
+
+        offset = Offset(
+            x = offset.x.coerceIn(-maxOffsetX, maxOffsetX),
+            y = offset.y.coerceIn(-maxOffsetY, maxOffsetY)
+        )
+        if (scale == 1f) {
+            offset = Offset.Zero
         }
-        .pointerInput(Unit) {
-            detectTransformGestures { _, pan, zoom, _ ->
-                scale = (scale * zoom).coerceIn(1f, 5f)
-
-                val maxOffsetX = (size.width * (scale - 1)) / 2f
-                val maxOffsetY = (size.height * (scale - 1)) / 2f
-
-                val newOffsetX = (offset.x + pan.x).coerceIn(-maxOffsetX, maxOffsetX)
-                val newOffsetY = (offset.y + pan.y).coerceIn(-maxOffsetY, maxOffsetY)
-
-                if (scale == 1f) {
-                    offset = Offset.Zero
-                } else {
-                    offset = Offset(newOffsetX, newOffsetY)
-                }
-            }
-        }
+    }
 
     Image(
         bitmap = bitmap,
         contentDescription = null,
         contentScale = ContentScale.Fit,
-        modifier = gestureModifier
+        modifier = modifier
+            .onSizeChanged { viewSize = it }
+            .pointerInput(Unit) {
+                detectTransformGestures { centroid, pan, zoom, _ ->
+                    val oldScale = scale
+                    scale = (scale * zoom).coerceIn(1f, 5f)
+                    offset = (offset + centroid - centroid * (scale / oldScale)) + pan
+                    applyOffsetBounds()
+                }
+            }
+            .pointerInput(Unit) {
+                 detectTapGestures(
+                    onDoubleTap = { tapOffset ->
+                        scope.launch {
+                            val newScale = if (scale > 1f) 1f else 2.5f
+                            val oldScale = scale
+                            scale = newScale
+                            offset = (offset - tapOffset) * (newScale / oldScale) + tapOffset
+                            applyOffsetBounds()
+                        }
+                    }
+                )
+            }
             .graphicsLayer(
                 scaleX = scale,
                 scaleY = scale,

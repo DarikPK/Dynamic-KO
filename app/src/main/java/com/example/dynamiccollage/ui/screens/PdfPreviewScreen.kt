@@ -123,6 +123,9 @@ fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
     val bitmaps = remember { mutableStateListOf<Bitmap>() }
     val density = LocalDensity.current.density
 
+    // State to track if any image is currently zoomed
+    var isAnyImageZoomed by remember { mutableStateOf(false) }
+
     LaunchedEffect(Unit) {
         for (i in 0 until pageCount) {
             val page = renderer.openPage(i)
@@ -145,14 +148,19 @@ fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        userScrollEnabled = !isAnyImageZoomed // Control scrolling based on zoom state
     ) {
         itemsIndexed(bitmaps) { index, bitmap ->
             ZoomableImage(
                 bitmap = bitmap.asImageBitmap(),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White)
+                    .background(Color.White),
+                onGesture = { isZoomed ->
+                    // A single zoomed image should disable scrolling for the whole list
+                    isAnyImageZoomed = isZoomed
+                }
             )
             if (index < bitmaps.size - 1) {
                 Divider(
