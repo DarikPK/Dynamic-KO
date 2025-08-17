@@ -5,7 +5,6 @@ import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,13 +18,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.dynamiccollage.R
+import com.example.dynamiccollage.ui.components.ZoomableImage
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 import java.io.File
 
@@ -149,14 +148,11 @@ fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         itemsIndexed(bitmaps) { index, bitmap ->
-            Image(
+            ZoomableImage(
                 bitmap = bitmap.asImageBitmap(),
-                contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color.White)
-                    .padding(8.dp),
-                contentScale = ContentScale.Fit
             )
             if (index < bitmaps.size - 1) {
                 Divider(
