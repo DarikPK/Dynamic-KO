@@ -123,8 +123,9 @@ fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
     val bitmaps = remember { mutableStateListOf<Bitmap>() }
     val density = LocalDensity.current.density
 
-    // State to track if any image is currently zoomed
-    var isAnyImageZoomed by remember { mutableStateOf(false) }
+    // Use a map to track the zoom state of each individual image
+    val zoomedStates = remember { mutableStateMapOf<Int, Boolean>() }
+    val isAnyImageZoomed = zoomedStates.values.any { it }
 
     LaunchedEffect(Unit) {
         for (i in 0 until pageCount) {
@@ -136,7 +137,7 @@ fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
             )
             page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
             bitmaps.add(bitmap)
-            page.close()
+            zoomedStates[i] = false // Initialize all as not zoomed
         }
     }
 
@@ -158,8 +159,7 @@ fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
                     .fillMaxWidth()
                     .background(Color.White),
                 onGesture = { isZoomed ->
-                    // A single zoomed image should disable scrolling for the whole list
-                    isAnyImageZoomed = isZoomed
+                    zoomedStates[index] = isZoomed
                 }
             )
             if (index < bitmaps.size - 1) {
