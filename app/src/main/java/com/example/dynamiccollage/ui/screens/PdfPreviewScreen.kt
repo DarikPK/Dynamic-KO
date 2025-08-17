@@ -108,7 +108,6 @@ fun PdfPreviewScreen(
 fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
     val context = LocalContext.current
 
-    // This state will hold our renderer and page count, and will be re-initialized if the uri changes.
     val rendererState by remember(uri) {
         mutableStateOf(
             try {
@@ -120,7 +119,6 @@ fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
                     val pfd = pfd
                 }
             } catch (e: Exception) {
-                // Handle exceptions like file not found
                 object {
                     val renderer = null
                     val pageCount = 0
@@ -130,7 +128,6 @@ fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
         )
     }
 
-    // Ensure the renderer and pfd are closed when the composable is disposed
     DisposableEffect(rendererState) {
         onDispose {
             rendererState.renderer?.close()
@@ -145,20 +142,16 @@ fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
         return
     }
 
-    val pageCount = rendererState.pageCount
     val bitmaps = remember { mutableStateListOf<Bitmap>() }
     val density = LocalDensity.current.density
-
-    // Use a map to track the zoom state of each individual image
     val zoomedStates = remember { mutableStateMapOf<Int, Boolean>() }
     val isAnyImageZoomed = zoomedStates.values.any { it }
 
     LaunchedEffect(rendererState) {
-        // Clear previous bitmaps if the renderer changes
         bitmaps.clear()
         zoomedStates.clear()
         val renderer = rendererState.renderer ?: return@LaunchedEffect
-        for (i in 0 until pageCount) {
+        for (i in 0 until rendererState.pageCount) {
             val page = renderer.openPage(i)
             val bitmap = Bitmap.createBitmap(
                 (page.width * density).toInt(),
@@ -167,7 +160,7 @@ fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
             )
             page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
             bitmaps.add(bitmap)
-            zoomedStates[i] = false // Initialize all as not zoomed
+            zoomedStates[i] = false
             page.close()
         }
     }
@@ -175,7 +168,7 @@ fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
-        userScrollEnabled = !isAnyImageZoomed // Control scrolling based on zoom state
+        userScrollEnabled = !isAnyImageZoomed
     ) {
         itemsIndexed(bitmaps) { index, bitmap ->
             ZoomableImage(
