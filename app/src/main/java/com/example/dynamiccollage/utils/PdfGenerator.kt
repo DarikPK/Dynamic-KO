@@ -330,14 +330,7 @@ object PdfGenerator {
                 isItalic -> Typeface.ITALIC
                 else -> Typeface.NORMAL
             }
-            val fontFamilyRes = R.font.calibri
-            typeface = try {
-                val baseTypeface = ResourcesCompat.getFont(context, fontFamilyRes)
-                Typeface.create(baseTypeface, typefaceStyle)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Typeface.create(Typeface.DEFAULT, typefaceStyle)
-            }
+            typeface = Typeface.create("Helvetica", typefaceStyle)
         }
     }
 
