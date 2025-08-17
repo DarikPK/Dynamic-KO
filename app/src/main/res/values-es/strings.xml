@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Dynamic Collage</string>
+    <string name="app_name">Pixel Business Collage</string>
 
     <!-- MainScreen Buttons -->
     <string name="main_btn_cover_setup">Configurar Portada</string>

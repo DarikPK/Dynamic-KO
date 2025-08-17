@@ -21,7 +21,7 @@ import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
 fun PlaceholderScreen(screenName: String) {
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Dynamic Collage") })
+            TopAppBar(title = { Text("Pixel Business Collage") })
         }
     ) { paddingValues ->
         Column(
