@@ -1,31 +1,34 @@
 package com.example.dynamiccollage.ui.components
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.forEachGesture
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import kotlinx.coroutines.launch
-import kotlin.math.sqrt
 
 @Composable
 fun ZoomableImage(
     bitmap: ImageBitmap,
     modifier: Modifier = Modifier,
+    onGesture: (Boolean) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     var scale by remember { mutableStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
     var viewSize by remember { mutableStateOf(IntSize.Zero) }
+
+    // Notify the parent about the zoom state
+    LaunchedEffect(scale) {
+        onGesture(scale > 1f)
+    }
 
     fun applyOffsetBounds() {
         val imageWidth = viewSize.width * scale
@@ -49,66 +52,25 @@ fun ZoomableImage(
         modifier = modifier
             .onSizeChanged { viewSize = it }
             .pointerInput(Unit) {
-                forEachGesture {
-                    awaitPointerEventScope {
-                        var isTransforming = false
-                        var tapHandled = false
-
-                        // Wait for a first pointer down
-                        val down = awaitFirstDown()
-
-                        // Await a second pointer down for multi-touch gestures, or a timeout for single-touch
-                        val secondDown = withTimeoutOrNull(200) { awaitPointerEvent() }
-
-                        if (secondDown == null) {
-                            // Single pointer gesture (tap or drag)
-                            // Check for double tap
-                            val secondTap = withTimeoutOrNull(250) { awaitFirstDown(requireUnconsumed = false) }
-                            if (secondTap != null) {
-                                scope.launch {
-                                    val newScale = if (scale > 1f) 1f else 2.5f
-                                    val oldScale = scale
-                                    scale = newScale
-                                    offset = (offset - down.position) * (newScale / oldScale) + down.position
-                                    applyOffsetBounds()
-                                }
-                                tapHandled = true
-                                secondTap.consume()
-                            }
-                        }
-
-                        if (!tapHandled) {
-                            // Main gesture loop
-                            do {
-                                val event = awaitPointerEvent()
-                                val pointers = event.changes
-
-                                val pan = pointers.calculatePan()
-
-                                if (pointers.size > 1) {
-                                    isTransforming = true
-                                } else if (scale > 1f && pan.getDistance() > 0.1f) {
-                                    isTransforming = true
-                                }
-
-                                if (isTransforming) {
-                                    val zoom = pointers.calculateZoom()
-                                    val centroid = pointers.calculateCentroid()
-                                    val oldScale = scale
-                                    scale = (scale * zoom).coerceIn(1f, 5f)
-                                    offset = (offset + centroid - centroid * (scale / oldScale)) + pan
-                                    applyOffsetBounds()
-
-                                    pointers.forEach {
-                                        if (it.positionChanged()) {
-                                            it.consume()
-                                        }
-                                    }
-                                }
-                            } while (event.changes.any { it.pressed })
+                detectTransformGestures { centroid, pan, zoom, _ ->
+                    val oldScale = scale
+                    scale = (scale * zoom).coerceIn(1f, 5f)
+                    offset = (offset + centroid - centroid * (scale / oldScale)) + pan
+                    applyOffsetBounds()
+                }
+            }
+            .pointerInput(Unit) {
+                 detectTapGestures(
+                    onDoubleTap = { tapOffset ->
+                        scope.launch {
+                            val newScale = if (scale > 1f) 1f else 2.5f
+                            val oldScale = scale
+                            scale = newScale
+                            offset = (offset - tapOffset) * (newScale / oldScale) + tapOffset
+                            applyOffsetBounds()
                         }
                     }
-                }
+                )
             }
             .graphicsLayer(
                 scaleX = scale,
@@ -118,26 +80,3 @@ fun ZoomableImage(
             )
     )
 }
-
-private fun List<PointerInputChange>.calculateZoom(): Float {
-    if (size < 2) return 1f
-    val p1 = this[0]
-    val p2 = this[1]
-    val oldDist = (p1.previousPosition - p2.previousPosition).getDistance()
-    val newDist = (p1.position - p2.position).getDistance()
-    return if (oldDist == 0f) 1f else newDist / oldDist
-}
-
-private fun List<PointerInputChange>.calculatePan(): Offset {
-    if (isEmpty()) return Offset.Zero
-    val sum = fold(Offset.Zero) { acc, pointerInputChange -> acc + (pointerInputChange.position - pointerInputChange.previousPosition) }
-    return sum / size.toFloat()
-}
-
-private fun List<PointerInputChange>.calculateCentroid(): Offset {
-    if (isEmpty()) return Offset.Zero
-    val sum = fold(Offset.Zero) { acc, pointerInputChange -> acc + pointerInputChange.position }
-    return sum / size.toFloat()
-}
-
-private fun Offset.getDistance(): Float = sqrt(x * x + y * y)
