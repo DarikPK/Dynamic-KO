@@ -144,21 +144,14 @@ fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
         return
     }
 
-    val zoomedStates = remember { mutableStateMapOf<Int, Boolean>() }
-    val isAnyImageZoomed = zoomedStates.values.any { it }
-
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        userScrollEnabled = !isAnyImageZoomed
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(count = rendererState.pageCount) { index ->
             PdfPage(
                 renderer = rendererState.renderer!!,
-                pageIndex = index,
-                onGesture = { isZoomed ->
-                    zoomedStates[index] = isZoomed
-                }
+                pageIndex = index
             )
             if (index < rendererState.pageCount - 1) {
                 Divider(
@@ -174,8 +167,7 @@ fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
 @Composable
 private fun PdfPage(
     renderer: PdfRenderer,
-    pageIndex: Int,
-    onGesture: (Boolean) -> Unit
+    pageIndex: Int
 ) {
     val density = LocalDensity.current.density
     var bitmap by remember(renderer, pageIndex) { mutableStateOf<Bitmap?>(null) }
@@ -208,8 +200,7 @@ private fun PdfPage(
                 bitmap = it.asImageBitmap(),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White),
-                onGesture = onGesture
+                    .background(Color.White)
             )
         }
     }
