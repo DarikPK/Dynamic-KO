@@ -127,15 +127,15 @@ object PdfGenerator {
         bounds: PDRectangle,
         yPos: Float
     ) {
-        val font = getFont(context, document, "calibri_regular.ttf") // Simplified font selection
-        val fontSize = style.fontSize
+        val font = getFont(context, document, "calibri_regular.ttf")
+        val fontSizeFloat = style.fontSize.toFloat()
         val lines = mutableListOf<String>()
         val words = text.split(" ").iterator()
         var currentLine = ""
         while(words.hasNext()){
             val word = words.next()
             val prospectiveLine = if (currentLine.isEmpty()) word else "$currentLine $word"
-            val width = font.getStringWidth(prospectiveLine) / 1000 * fontSize
+            val width = font.getStringWidth(prospectiveLine) / 1000 * fontSizeFloat
             if(width > bounds.width){
                 lines.add(currentLine)
                 currentLine = word
@@ -145,23 +145,23 @@ object PdfGenerator {
         }
         lines.add(currentLine)
 
-        val leading = fontSize * 1.2f
+        val leading = fontSizeFloat * 1.2f
         contentStream.beginText()
-        contentStream.setFont(font, fontSize)
+        contentStream.setFont(font, fontSizeFloat)
         contentStream.setNonStrokingColor(style.fontColor.toArgb())
 
         var y = yPos
         lines.forEach { line ->
-            val textWidth = font.getStringWidth(line) / 1000 * fontSize
+            val textWidth = font.getStringWidth(line) / 1000 * fontSizeFloat
             val startX = when (style.textAlign) {
                 TextAlign.Center -> bounds.lowerLeftX + (bounds.width - textWidth) / 2
                 TextAlign.End -> bounds.lowerLeftX + bounds.width - textWidth
                 else -> bounds.lowerLeftX
             }
-            contentStream.newLineAtOffset(startX, y)
+            // It seems newLineAtOffset is not suitable for multiline alignment.
+            // A better approach is to set the full position for each line.
+            contentStream.newLineAtOffset(0f, if (y == yPos) y else -leading)
             contentStream.showText(line)
-            y -= leading
-            contentStream.newLineAtOffset(-startX, -leading)
         }
         contentStream.endText()
     }
