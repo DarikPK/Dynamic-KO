@@ -128,7 +128,8 @@ object PdfGenerator {
                     else -> bounds.lowerLeftX
                 }
                 // Using setTextMatrix for absolute positioning, which is safer.
-                contentStream.setTextMatrix(1f, 0f, 0f, 1f, startX, y)
+                // The API expects Doubles for the matrix values.
+                contentStream.setTextMatrix(1.0, 0.0, 0.0, 1.0, startX.toDouble(), y.toDouble())
                 contentStream.showText(line)
                 contentStream.endText()
                 y -= leading
