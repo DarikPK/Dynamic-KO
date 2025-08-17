@@ -16,7 +16,7 @@ class SizeManagerViewModel : ViewModel() {
     val autoAdjustSize: StateFlow<Boolean> = _autoAdjustSize.asStateFlow()
 
     fun loadInitialState(config: CoverPageConfig) {
-        _imageQuality.value = config.imageQuality.coerceIn(50, 90)
+        _imageQuality.value = config.imageQuality.coerceIn(75, 90)
         _autoAdjustSize.value = config.autoAdjustSize
     }
 

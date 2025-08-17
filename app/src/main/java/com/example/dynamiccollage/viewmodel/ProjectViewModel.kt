@@ -141,7 +141,8 @@ class ProjectViewModel : ViewModel() {
                     photosPerPage
                 )
 
-                val mappedQuality = ((_currentCoverConfig.value.imageQuality - 50) * (100f / 40f)).toInt()
+                val sliderValue = _currentCoverConfig.value.imageQuality.toFloat()
+                val mappedQuality = (((sliderValue - 75f) / 15f) * 95f + 5f).toInt()
                 Log.d("ProjectViewModel", "generatePdf: En el hilo de IO, llamando a PdfGenerator.")
                 PdfGenerator.generate(
                     context = context,
