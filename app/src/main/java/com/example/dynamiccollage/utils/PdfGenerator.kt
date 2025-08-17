@@ -87,53 +87,18 @@ object PdfGenerator {
         bounds: PDRectangle,
         yPos: Float
     ) {
-        // Forcing HELVETICA to ensure font loading is not the issue.
-        val font = PDType1Font.HELVETICA
-        val fontSizeFloat = style.fontSize.toFloat()
-
-        val lines = mutableListOf<String>()
-        val words = text.split(" ").iterator()
-        var currentLine = ""
-        while(words.hasNext()){
-            val word = words.next()
-            val prospectiveLine = if (currentLine.isEmpty()) word else "$currentLine $word"
-            try {
-                val width = font.getStringWidth(prospectiveLine) / 1000 * fontSizeFloat
-                if(width > bounds.width && currentLine.isNotEmpty()){
-                    lines.add(currentLine)
-                    currentLine = word
-                } else {
-                    currentLine = prospectiveLine
-                }
-            } catch (e: Exception) {
-                Log.e("PdfGenerator", "Error calculating string width for word: '$word'", e)
-                lines.add(currentLine)
-                currentLine = word
-            }
-        }
-        lines.add(currentLine)
-
-        val leading = fontSizeFloat * 1.2f
-
-        var y = yPos
-        lines.forEach { line ->
-            if (line.isNotBlank()) {
-                contentStream.beginText()
-                contentStream.setFont(font, fontSizeFloat)
-                contentStream.setNonStrokingColor(style.fontColor.toArgb())
-                val textWidth = font.getStringWidth(line) / 1000 * fontSizeFloat
-                val startX = when (style.textAlign) {
-                    TextAlign.Center -> bounds.lowerLeftX + (bounds.width - textWidth) / 2
-                    TextAlign.End -> bounds.lowerLeftX + bounds.width - textWidth
-                    else -> bounds.lowerLeftX
-                }
-                // Using setTextMatrix for absolute positioning, which is safer.
-                // The API expects Doubles for the matrix values.
-                contentStream.setTextMatrix(1.0, 0.0, 0.0, 1.0, startX.toDouble(), y.toDouble())
-                contentStream.showText(line)
-                contentStream.endText()
-                y -= leading
-            }
+        // Drastically simplified for debugging
+        try {
+            contentStream.beginText()
+            val font = PDType1Font.HELVETICA
+            val fontSizeFloat = style.fontSize.toFloat()
+            contentStream.setFont(font, fontSizeFloat)
+            contentStream.setNonStrokingColor(style.fontColor.toArgb())
+            contentStream.newLineAtOffset(bounds.lowerLeftX, yPos)
+            contentStream.showText(text)
+            contentStream.endText()
+        } catch (e: Exception) {
+            Log.e("PdfGenerator", "Crash in simplified drawWrappedText", e)
         }
     }
 
