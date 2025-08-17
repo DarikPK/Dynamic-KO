@@ -195,12 +195,6 @@ private fun PdfPage(
         isLoading = false
     }
 
-    DisposableEffect(bitmap) {
-        onDispose {
-            bitmap?.recycle()
-        }
-    }
-
     if (isLoading) {
         Box(modifier = Modifier
             .fillMaxWidth()
