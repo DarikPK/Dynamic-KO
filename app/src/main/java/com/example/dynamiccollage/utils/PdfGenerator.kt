@@ -395,15 +395,36 @@ object PdfGenerator {
             val sampledBitmap = context.contentResolver.openInputStream(uri)?.use {
                 BitmapFactory.decodeStream(it, null, options)
             } ?: return null
+
+            val scaledBitmap = scaleBitmapToA4(sampledBitmap)
+            if (scaledBitmap != sampledBitmap) {
+                sampledBitmap.recycle() // Recycle the original if a new scaled bitmap was created
+            }
+
             val outputStream = ByteArrayOutputStream()
-            sampledBitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)
-            sampledBitmap.recycle()
+            scaledBitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)
+            scaledBitmap.recycle()
             val finalInputStream = ByteArrayInputStream(outputStream.toByteArray())
             BitmapFactory.decodeStream(finalInputStream)
         } catch (e: Exception) {
             e.printStackTrace()
             null
         }
+    }
+
+    private fun scaleBitmapToA4(bitmap: Bitmap): Bitmap {
+        val maxWidth = 2480
+        val maxHeight = 3508
+
+        val ratio = minOf(
+            maxWidth.toFloat() / bitmap.width,
+            maxHeight.toFloat() / bitmap.height
+        )
+
+        val newWidth = (bitmap.width * ratio).toInt()
+        val newHeight = (bitmap.height * ratio).toInt()
+
+        return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
     }
 
     private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
