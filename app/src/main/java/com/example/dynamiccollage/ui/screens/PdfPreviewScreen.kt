@@ -1,14 +1,11 @@
 package com.example.dynamiccollage.ui.screens
 
-
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
-import android.os.ParcelFileDescriptor
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Share
@@ -142,51 +139,79 @@ fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
         return
     }
 
-    val bitmaps = remember { mutableStateListOf<Bitmap>() }
-    val density = LocalDensity.current.density
     val zoomedStates = remember { mutableStateMapOf<Int, Boolean>() }
     val isAnyImageZoomed = zoomedStates.values.any { it }
-
-    LaunchedEffect(rendererState) {
-        bitmaps.clear()
-        zoomedStates.clear()
-        val renderer = rendererState.renderer ?: return@LaunchedEffect
-        for (i in 0 until rendererState.pageCount) {
-            val page = renderer.openPage(i)
-            val bitmap = Bitmap.createBitmap(
-                (page.width * density).toInt(),
-                (page.height * density).toInt(),
-                Bitmap.Config.ARGB_8888
-            )
-            page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-            bitmaps.add(bitmap)
-            zoomedStates[i] = false
-            page.close()
-        }
-    }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         userScrollEnabled = !isAnyImageZoomed
     ) {
-        itemsIndexed(bitmaps) { index, bitmap ->
-            ZoomableImage(
-                bitmap = bitmap.asImageBitmap(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White),
+        items(count = rendererState.pageCount) { index ->
+            PdfPage(
+                renderer = rendererState.renderer!!,
+                pageIndex = index,
                 onGesture = { isZoomed ->
                     zoomedStates[index] = isZoomed
                 }
             )
-            if (index < bitmaps.size - 1) {
+            if (index < rendererState.pageCount - 1) {
                 Divider(
                     color = Color.Gray,
                     thickness = 1.dp,
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun PdfPage(
+    renderer: PdfRenderer,
+    pageIndex: Int,
+    onGesture: (Boolean) -> Unit
+) {
+    val density = LocalDensity.current.density
+    var bitmap by remember(renderer, pageIndex) { mutableStateOf<Bitmap?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(key1 = renderer, key2 = pageIndex) {
+        isLoading = true
+        val page = renderer.openPage(pageIndex)
+        val newBitmap = Bitmap.createBitmap(
+            (page.width * density).toInt(),
+            (page.height * density).toInt(),
+            Bitmap.Config.ARGB_8888
+        )
+        page.render(newBitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+        page.close()
+        bitmap = newBitmap
+        isLoading = false
+    }
+
+    DisposableEffect(bitmap) {
+        onDispose {
+            bitmap?.recycle()
+        }
+    }
+
+    if (isLoading) {
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .height(500.dp) // Placeholder height
+            .background(Color.LightGray)) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        }
+    } else {
+        bitmap?.let {
+            ZoomableImage(
+                bitmap = it.asImageBitmap(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White),
+                onGesture = onGesture
+            )
         }
     }
 }
