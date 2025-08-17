@@ -66,7 +66,6 @@ object PdfGenerator {
     }
 
     private fun getFont(context: Context, document: PDDocument, fontName: String): PDType0Font? {
-        // Using nullable return type to handle font loading failure gracefully.
         return fontCache.getOrPut(fontName) {
             try {
                 context.assets.open(fontName).use {
@@ -88,7 +87,8 @@ object PdfGenerator {
         bounds: PDRectangle,
         yPos: Float
     ) {
-        val font = getFont(context, document, "calibri_regular.ttf") ?: PDType1Font.HELVETICA
+        // Forcing HELVETICA to ensure font loading is not the issue.
+        val font = PDType1Font.HELVETICA
         val fontSizeFloat = style.fontSize.toFloat()
 
         val lines = mutableListOf<String>()
@@ -106,9 +106,9 @@ object PdfGenerator {
                     currentLine = prospectiveLine
                 }
             } catch (e: Exception) {
-                Log.e("PdfGenerator", "Error calculating string width, possibly due to unsupported characters.", e)
-                lines.add(currentLine) // Add what we have
-                currentLine = word // Start new line
+                Log.e("PdfGenerator", "Error calculating string width for word: '$word'", e)
+                lines.add(currentLine)
+                currentLine = word
             }
         }
         lines.add(currentLine)
@@ -117,19 +117,21 @@ object PdfGenerator {
 
         var y = yPos
         lines.forEach { line ->
-            contentStream.beginText()
-            contentStream.setFont(font, fontSizeFloat)
-            contentStream.setNonStrokingColor(style.fontColor.toArgb())
-            val textWidth = font.getStringWidth(line) / 1000 * fontSizeFloat
-            val startX = when (style.textAlign) {
-                TextAlign.Center -> bounds.lowerLeftX + (bounds.width - textWidth) / 2
-                TextAlign.End -> bounds.lowerLeftX + bounds.width - textWidth
-                else -> bounds.lowerLeftX
+            if (line.isNotBlank()) {
+                contentStream.beginText()
+                contentStream.setFont(font, fontSizeFloat)
+                contentStream.setNonStrokingColor(style.fontColor.toArgb())
+                val textWidth = font.getStringWidth(line) / 1000 * fontSizeFloat
+                val startX = when (style.textAlign) {
+                    TextAlign.Center -> bounds.lowerLeftX + (bounds.width - textWidth) / 2
+                    TextAlign.End -> bounds.lowerLeftX + bounds.width - textWidth
+                    else -> bounds.lowerLeftX
+                }
+                contentStream.newLineAtOffset(startX, y)
+                contentStream.showText(line)
+                contentStream.endText()
+                y -= leading
             }
-            contentStream.newLineAtOffset(startX, y)
-            contentStream.showText(line)
-            contentStream.endText()
-            y -= leading
         }
     }
 
