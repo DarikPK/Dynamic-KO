@@ -45,23 +45,22 @@ object PdfGenerator {
         context: Context,
         coverConfig: CoverPageConfig,
         generatedPages: List<com.example.dynamiccollage.data.model.GeneratedPage>,
-        fileName: String
+        fileName: String,
+        imageQuality: Int
     ): File? {
         val pdfDocument = PdfDocument()
         val uncompressedPdfStream = ByteArrayOutputStream()
 
         try {
-            val quality = 90 // Calidad de imagen fija.
-
             val shouldDrawCover = coverConfig.clientNameStyle.content.isNotBlank() ||
                     coverConfig.rucStyle.content.isNotBlank() ||
                     coverConfig.subtitleStyle.content.isNotBlank() ||
                     coverConfig.mainImageUri != null
 
             if (shouldDrawCover) {
-                drawCoverPage(pdfDocument, context, coverConfig, quality)
+                drawCoverPage(pdfDocument, context, coverConfig, imageQuality)
             }
-            drawInnerPages(pdfDocument, context, generatedPages, if (shouldDrawCover) 2 else 1, quality)
+            drawInnerPages(pdfDocument, context, generatedPages, if (shouldDrawCover) 2 else 1, imageQuality)
 
             pdfDocument.writeTo(uncompressedPdfStream)
             pdfDocument.close()

@@ -141,12 +141,14 @@ class ProjectViewModel : ViewModel() {
                     photosPerPage
                 )
 
+                val mappedQuality = ((_currentCoverConfig.value.imageQuality - 50) * (100f / 40f)).toInt()
                 Log.d("ProjectViewModel", "generatePdf: En el hilo de IO, llamando a PdfGenerator.")
                 PdfGenerator.generate(
                     context = context,
                     coverConfig = _currentCoverConfig.value,
                     generatedPages = generatedPages,
-                    fileName = fileName.ifBlank { "DynamicCollage" }
+                    fileName = fileName.ifBlank { "DynamicCollage" },
+                    imageQuality = mappedQuality
                 )
             }
             if (generatedFile != null) {

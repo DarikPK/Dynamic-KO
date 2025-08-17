@@ -49,15 +49,19 @@ fun SizeManagerScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            val mappedQuality = remember(imageQuality) {
+                ((imageQuality - 50) * (100f / 40f)).toInt()
+            }
+
             Text(
-                text = "Calidad de Imagen: $imageQuality%",
+                text = "Calidad de Imagen: $mappedQuality%",
                 style = MaterialTheme.typography.titleMedium
             )
             Slider(
                 value = imageQuality.toFloat(),
                 onValueChange = { sizeManagerViewModel.onQualityChange(it) },
-                valueRange = 1f..100f,
-                steps = 98
+                valueRange = 50f..90f,
+                steps = 39
             )
 
             Spacer(modifier = Modifier.height(16.dp))
