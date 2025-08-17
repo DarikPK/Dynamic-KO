@@ -134,12 +134,13 @@ class ProjectViewModel : ViewModel() {
             Log.d("ProjectViewModel", "generatePdf: Iniciando...")
             _pdfGenerationState.value = PdfGenerationState.Loading
             val generatedFile = withContext(Dispatchers.IO) {
-                val photosPerPage = _pdfSizeMode.value
-                val generatedPages = com.example.dynamiccollage.utils.PdfContentManager.groupImagesForPdf(
-                    context,
-                    innerUris,
-                    photosPerPage
-                )
+                val generatedPages = _currentPageGroups.value.flatMap { group ->
+                    com.example.dynamiccollage.utils.PdfContentManager.groupImagesForPdf(
+                        imageUris = group.imageUris,
+                        photosPerPage = group.photosPerSheet,
+                        groupOrientation = group.orientation
+                    )
+                }
 
                 val sliderValue = _currentCoverConfig.value.imageQuality.toFloat()
                 val mappedQuality = (((sliderValue - 75f) / 15f) * 95f + 5f).toInt()
