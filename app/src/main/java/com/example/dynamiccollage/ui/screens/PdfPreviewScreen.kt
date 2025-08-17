@@ -107,19 +107,45 @@ fun PdfPreviewScreen(
 @Composable
 fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
     val context = LocalContext.current
-    val renderer = remember {
-        val pfd = context.contentResolver.openFileDescriptor(uri, "r")
-        pfd?.let { PdfRenderer(it) }
+
+    // This state will hold our renderer and page count, and will be re-initialized if the uri changes.
+    val rendererState by remember(uri) {
+        mutableStateOf(
+            try {
+                val pfd = context.contentResolver.openFileDescriptor(uri, "r")
+                val renderer = pfd?.let { PdfRenderer(it) }
+                object {
+                    val renderer = renderer
+                    val pageCount = renderer?.pageCount ?: 0
+                    val pfd = pfd
+                }
+            } catch (e: Exception) {
+                // Handle exceptions like file not found
+                object {
+                    val renderer = null
+                    val pageCount = 0
+                    val pfd = null
+                }
+            }
+        )
     }
 
-    if (renderer == null) {
+    // Ensure the renderer and pfd are closed when the composable is disposed
+    DisposableEffect(rendererState) {
+        onDispose {
+            rendererState.renderer?.close()
+            rendererState.pfd?.close()
+        }
+    }
+
+    if (rendererState.renderer == null) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text("Error opening PDF")
         }
         return
     }
 
-    val pageCount = renderer.pageCount
+    val pageCount = rendererState.pageCount
     val bitmaps = remember { mutableStateListOf<Bitmap>() }
     val density = LocalDensity.current.density
 
@@ -127,7 +153,11 @@ fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
     val zoomedStates = remember { mutableStateMapOf<Int, Boolean>() }
     val isAnyImageZoomed = zoomedStates.values.any { it }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(rendererState) {
+        // Clear previous bitmaps if the renderer changes
+        bitmaps.clear()
+        zoomedStates.clear()
+        val renderer = rendererState.renderer ?: return@LaunchedEffect
         for (i in 0 until pageCount) {
             val page = renderer.openPage(i)
             val bitmap = Bitmap.createBitmap(
@@ -138,12 +168,7 @@ fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
             page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
             bitmaps.add(bitmap)
             zoomedStates[i] = false // Initialize all as not zoomed
-        }
-    }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            renderer.close()
+            page.close()
         }
     }
 
