@@ -3,6 +3,7 @@ package com.example.dynamiccollage.ui.screens
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
+import android.os.ParcelFileDescriptor
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -24,6 +25,13 @@ import com.example.dynamiccollage.R
 import com.example.dynamiccollage.ui.components.ZoomableImage
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 import java.io.File
+
+// Data class to hold the state for the PDF renderer, as suggested by the user.
+data class RendererState(
+    val renderer: PdfRenderer?,
+    val pageCount: Int,
+    val pfd: ParcelFileDescriptor?
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -101,6 +109,7 @@ fun PdfPreviewScreen(
     }
 }
 
+
 @Composable
 fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
     val context = LocalContext.current
@@ -110,17 +119,13 @@ fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
             try {
                 val pfd = context.contentResolver.openFileDescriptor(uri, "r")
                 val renderer = pfd?.let { PdfRenderer(it) }
-                object {
-                    val renderer = renderer
-                    val pageCount = renderer?.pageCount ?: 0
-                    val pfd = pfd
-                }
+                RendererState(
+                    renderer = renderer,
+                    pageCount = renderer?.pageCount ?: 0,
+                    pfd = pfd
+                )
             } catch (e: Exception) {
-                object {
-                    val renderer = null
-                    val pageCount = 0
-                    val pfd = null
-                }
+                RendererState(null, 0, null)
             }
         )
     }
@@ -199,7 +204,7 @@ private fun PdfPage(
     if (isLoading) {
         Box(modifier = Modifier
             .fillMaxWidth()
-            .height(500.dp) // Placeholder height
+            .height(500.dp)
             .background(Color.LightGray)) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         }
