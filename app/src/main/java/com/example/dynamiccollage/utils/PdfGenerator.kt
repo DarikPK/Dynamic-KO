@@ -8,7 +8,6 @@ import android.os.Environment
 import android.util.Log
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.style.TextAlign
-import com.example.dynamiccollage.R
 import com.example.dynamiccollage.data.model.CoverPageConfig
 import com.example.dynamiccollage.data.model.GeneratedPage
 import com.example.dynamiccollage.data.model.PageOrientation
@@ -18,6 +17,7 @@ import com.tom_roush.pdfbox.pdmodel.PDPage
 import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
 import com.tom_roush.pdfbox.pdmodel.common.PDRectangle
 import com.tom_roush.pdfbox.pdmodel.font.PDType0Font
+import com.tom_roush.pdfbox.pdmodel.font.PDType1Font
 import com.tom_roush.pdfbox.pdmodel.graphics.image.PDImageXObject
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -31,7 +31,7 @@ object PdfGenerator {
     private const val A4_MAX_WIDTH_PX = 2480
     private const val A4_MAX_HEIGHT_PX = 3508
 
-    private val fontCache = mutableMapOf<String, PDType0Font>()
+    private val fontCache = mutableMapOf<String, PDType0Font?>()
 
     fun generate(
         context: Context,
@@ -51,8 +51,8 @@ object PdfGenerator {
             }
             drawInnerPages(pdDocument, context, generatedPages)
 
-            val storageDir: File? = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-            storageDir?.mkdirs()
+            val storageDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS) ?: context.filesDir
+            storageDir.mkdirs()
             val pdfFile = File(storageDir, "$fileName.pdf")
             pdDocument.save(pdfFile)
             return pdfFile
@@ -65,12 +65,165 @@ object PdfGenerator {
         }
     }
 
-    private fun getFont(context: Context, document: PDDocument, fontName: String): PDType0Font {
+    private fun getFont(context: Context, document: PDDocument, fontName: String): PDType0Font? {
+        // Using nullable return type to handle font loading failure gracefully.
         return fontCache.getOrPut(fontName) {
-            // A simple font loading, assuming fonts are in assets
-            context.assets.open("calibri_regular.ttf").use {
-                PDType0Font.load(document, it)
+            try {
+                context.assets.open(fontName).use {
+                    PDType0Font.load(document, it)
+                }
+            } catch (e: Exception) {
+                Log.e("PdfGenerator", "Could not load font $fontName. Will fallback to default.", e)
+                null
             }
+        }
+    }
+
+    private fun drawWrappedText(
+        document: PDDocument,
+        contentStream: PDPageContentStream,
+        context: Context,
+        text: String,
+        style: TextStyleConfig,
+        bounds: PDRectangle,
+        yPos: Float
+    ) {
+        val font = getFont(context, document, "calibri_regular.ttf") ?: PDType1Font.HELVETICA
+        val fontSizeFloat = style.fontSize.toFloat()
+
+        val lines = mutableListOf<String>()
+        val words = text.split(" ").iterator()
+        var currentLine = ""
+        while(words.hasNext()){
+            val word = words.next()
+            val prospectiveLine = if (currentLine.isEmpty()) word else "$currentLine $word"
+            try {
+                val width = font.getStringWidth(prospectiveLine) / 1000 * fontSizeFloat
+                if(width > bounds.width && currentLine.isNotEmpty()){
+                    lines.add(currentLine)
+                    currentLine = word
+                } else {
+                    currentLine = prospectiveLine
+                }
+            } catch (e: Exception) {
+                Log.e("PdfGenerator", "Error calculating string width, possibly due to unsupported characters.", e)
+                lines.add(currentLine) // Add what we have
+                currentLine = word // Start new line
+            }
+        }
+        lines.add(currentLine)
+
+        val leading = fontSizeFloat * 1.2f
+
+        var y = yPos
+        lines.forEach { line ->
+            contentStream.beginText()
+            contentStream.setFont(font, fontSizeFloat)
+            contentStream.setNonStrokingColor(style.fontColor.toArgb())
+            val textWidth = font.getStringWidth(line) / 1000 * fontSizeFloat
+            val startX = when (style.textAlign) {
+                TextAlign.Center -> bounds.lowerLeftX + (bounds.width - textWidth) / 2
+                TextAlign.End -> bounds.lowerLeftX + bounds.width - textWidth
+                else -> bounds.lowerLeftX
+            }
+            contentStream.newLineAtOffset(startX, y)
+            contentStream.showText(line)
+            contentStream.endText()
+            y -= leading
+        }
+    }
+
+    private fun drawCoverPage(document: PDDocument, context: Context, config: CoverPageConfig) {
+        val isVertical = config.pageOrientation == PageOrientation.Vertical
+        val pageSize = if (isVertical) PDRectangle.A4 else PDRectangle(A4_HEIGHT, A4_WIDTH)
+        val page = PDPage(pageSize)
+        document.addPage(page)
+        val contentStream = PDPageContentStream(document, page)
+
+        val marginTop = config.marginTop * CM_TO_POINTS
+        val marginBottom = config.marginBottom * CM_TO_POINTS
+        val marginLeft = config.marginLeft * CM_TO_POINTS
+        val marginRight = config.marginRight * CM_TO_POINTS
+        val contentArea = PDRectangle(marginLeft, marginBottom, pageSize.width - marginLeft - marginRight, pageSize.height - marginTop - marginBottom)
+
+        var currentY = contentArea.upperRightY
+
+        if (config.clientNameStyle.content.isNotBlank()) {
+            val text = (if (config.showClientPrefix) "Cliente: " else "") + if (config.allCaps) config.clientNameStyle.content.uppercase() else config.clientNameStyle.content
+            currentY -= 50f
+            drawWrappedText(document, contentStream, context, text, config.clientNameStyle, contentArea, currentY)
+        }
+        if (config.rucStyle.content.isNotBlank()) {
+            val documentLabel = when (config.documentType) {
+                com.example.dynamiccollage.data.model.DocumentType.DNI -> "DNI: "
+                com.example.dynamiccollage.data.model.DocumentType.RUC -> "RUC: "
+                else -> ""
+            }
+            val text = documentLabel + if (config.allCaps) config.rucStyle.content.uppercase() else config.rucStyle.content
+             currentY -= 30f
+            drawWrappedText(document, contentStream, context, text, config.rucStyle, contentArea, currentY)
+        }
+        if (config.subtitleStyle.content.isNotBlank()) {
+            val text = (if (config.showAddressPrefix) "Dirección: " else "") + if (config.allCaps) config.subtitleStyle.content.uppercase() else config.subtitleStyle.content
+             currentY -= 30f
+            drawWrappedText(document, contentStream, context, text, config.subtitleStyle, contentArea, currentY)
+        }
+
+        if (config.mainImageUri != null) {
+            try {
+                val jpegBytes = processImageForPdf(context, Uri.parse(config.mainImageUri!!))
+                if (jpegBytes == null) {
+                    Log.e("PdfGenerator", "Failed to process cover image: ${config.mainImageUri}")
+                }
+                jpegBytes?.let { bytes ->
+                    val imageXObject = PDImageXObject.createFromByteArray(document, bytes, "cover-img")
+                    val imgHeight = contentArea.height / 2f
+                    val imgWidth = imgHeight * imageXObject.width / imageXObject.height
+                    val x = contentArea.lowerLeftX + (contentArea.width - imgWidth) / 2f
+                    val y = contentArea.lowerLeftY
+                    contentStream.drawImage(imageXObject, x, y, imgWidth, imgHeight)
+                }
+            } catch (e: Exception) {
+                Log.e("PdfGenerator", "Error drawing cover image", e)
+            }
+        }
+        contentStream.close()
+    }
+
+    private fun drawInnerPages(document: PDDocument, context: Context, generatedPages: List<GeneratedPage>) {
+        generatedPages.forEach { pageData ->
+            val isVertical = pageData.orientation == PageOrientation.Vertical
+            val pageSize = if (isVertical) PDRectangle.A4 else PDRectangle(A4_HEIGHT, A4_WIDTH)
+            val page = PDPage(pageSize)
+            document.addPage(page)
+            val contentStream = PDPageContentStream(document, page)
+
+            val (cols, rows) = when {
+                !isVertical && pageData.imageUris.size > 1 -> Pair(2, 1)
+                isVertical && pageData.imageUris.size > 1 -> Pair(1, 2)
+                else -> Pair(1, 1)
+            }
+
+            val rects = getRectsForPage(page.mediaBox.width, page.mediaBox.height, cols, rows, 15f)
+
+            pageData.imageUris.forEachIndexed { index, uriString ->
+                if (index < rects.size) {
+                    val rect = rects[index]
+                    try {
+                        val jpegBytes = processImageForPdf(context, Uri.parse(uriString))
+                        if (jpegBytes == null) {
+                             Log.e("PdfGenerator", "Failed to process inner image: $uriString")
+                        }
+                        jpegBytes?.let {
+                            val imageXObject = PDImageXObject.createFromByteArray(document, it, "img-$index")
+                            contentStream.drawImage(imageXObject, rect.lowerLeftX, rect.lowerLeftY, rect.width, rect.height)
+                        }
+                    } catch (e: Exception) {
+                        Log.e("PdfGenerator", "Error drawing image on page", e)
+                    }
+                }
+            }
+            contentStream.close()
         }
     }
 
@@ -118,108 +271,6 @@ object PdfGenerator {
         return inSampleSize
     }
 
-    private fun drawWrappedText(
-        document: PDDocument,
-        contentStream: PDPageContentStream,
-        context: Context,
-        text: String,
-        style: TextStyleConfig,
-        bounds: PDRectangle,
-        yPos: Float
-    ) {
-        val font = getFont(context, document, "calibri_regular.ttf")
-        val fontSizeFloat = style.fontSize.toFloat()
-        val lines = mutableListOf<String>()
-        val words = text.split(" ").iterator()
-        var currentLine = ""
-        while(words.hasNext()){
-            val word = words.next()
-            val prospectiveLine = if (currentLine.isEmpty()) word else "$currentLine $word"
-            val width = font.getStringWidth(prospectiveLine) / 1000 * fontSizeFloat
-            if(width > bounds.width){
-                lines.add(currentLine)
-                currentLine = word
-            } else {
-                currentLine = prospectiveLine
-            }
-        }
-        lines.add(currentLine)
-
-        val leading = fontSizeFloat * 1.2f
-        contentStream.beginText()
-        contentStream.setFont(font, fontSizeFloat)
-        contentStream.setNonStrokingColor(style.fontColor.toArgb())
-
-        var y = yPos
-        lines.forEach { line ->
-            val textWidth = font.getStringWidth(line) / 1000 * fontSizeFloat
-            val startX = when (style.textAlign) {
-                TextAlign.Center -> bounds.lowerLeftX + (bounds.width - textWidth) / 2
-                TextAlign.End -> bounds.lowerLeftX + bounds.width - textWidth
-                else -> bounds.lowerLeftX
-            }
-            // It seems newLineAtOffset is not suitable for multiline alignment.
-            // A better approach is to set the full position for each line.
-            contentStream.newLineAtOffset(0f, if (y == yPos) y else -leading)
-            contentStream.showText(line)
-        }
-        contentStream.endText()
-    }
-
-    private fun drawCoverPage(document: PDDocument, context: Context, config: CoverPageConfig) {
-        val isVertical = config.pageOrientation == PageOrientation.Vertical
-        val pageSize = if (isVertical) PDRectangle.A4 else PDRectangle(A4_HEIGHT, A4_WIDTH)
-        val page = PDPage(pageSize)
-        document.addPage(page)
-        val contentStream = PDPageContentStream(document, page)
-
-        val marginTop = config.marginTop * CM_TO_POINTS
-        val marginBottom = config.marginBottom * CM_TO_POINTS
-        val marginLeft = config.marginLeft * CM_TO_POINTS
-        val marginRight = config.marginRight * CM_TO_POINTS
-        val contentArea = PDRectangle(marginLeft, marginBottom, pageSize.width - marginLeft - marginRight, pageSize.height - marginTop - marginBottom)
-
-        var currentY = contentArea.upperRightY
-
-        if (config.clientNameStyle.content.isNotBlank()) {
-            val text = (if (config.showClientPrefix) "Cliente: " else "") + if (config.allCaps) config.clientNameStyle.content.uppercase() else config.clientNameStyle.content
-            currentY -= 50f
-            drawWrappedText(document, contentStream, context, text, config.clientNameStyle, contentArea, currentY)
-        }
-        if (config.rucStyle.content.isNotBlank()) {
-            val documentLabel = when (config.documentType) {
-                com.example.dynamiccollage.data.model.DocumentType.DNI -> "DNI: "
-                com.example.dynamiccollage.data.model.DocumentType.RUC -> "RUC: "
-                else -> ""
-            }
-            val text = documentLabel + if (config.allCaps) config.rucStyle.content.uppercase() else config.rucStyle.content
-             currentY -= 30f
-            drawWrappedText(document, contentStream, context, text, config.rucStyle, contentArea, currentY)
-        }
-        if (config.subtitleStyle.content.isNotBlank()) {
-            val text = (if (config.showAddressPrefix) "Dirección: " else "") + if (config.allCaps) config.subtitleStyle.content.uppercase() else config.subtitleStyle.content
-             currentY -= 30f
-            drawWrappedText(document, contentStream, context, text, config.subtitleStyle, contentArea, currentY)
-        }
-
-        if (config.mainImageUri != null) {
-            try {
-                val jpegBytes = processImageForPdf(context, Uri.parse(config.mainImageUri!!))
-                jpegBytes?.let { bytes ->
-                    val imageXObject = PDImageXObject.createFromByteArray(document, bytes, "cover-img")
-                    val imgHeight = contentArea.height / 2f
-                    val imgWidth = imgHeight * imageXObject.width / imageXObject.height
-                    val x = contentArea.lowerLeftX + (contentArea.width - imgWidth) / 2f
-                    val y = contentArea.lowerLeftY
-                    contentStream.drawImage(imageXObject, x, y, imgWidth, imgHeight)
-                }
-            } catch (e: Exception) {
-                Log.e("PdfGenerator", "Error drawing cover image", e)
-            }
-        }
-        contentStream.close()
-    }
-
     private fun getRectsForPage(pageWidth: Float, pageHeight: Float, cols: Int, rows: Int, spacing: Float): List<PDRectangle> {
         val rects = mutableListOf<PDRectangle>()
         val totalSpacingX = spacing * (cols + 1)
@@ -234,39 +285,5 @@ object PdfGenerator {
             }
         }
         return rects
-    }
-
-    private fun drawInnerPages(document: PDDocument, context: Context, generatedPages: List<GeneratedPage>) {
-        generatedPages.forEach { pageData ->
-            val isVertical = pageData.orientation == PageOrientation.Vertical
-            val pageSize = if (isVertical) PDRectangle.A4 else PDRectangle(A4_HEIGHT, A4_WIDTH)
-            val page = PDPage(pageSize)
-            document.addPage(page)
-            val contentStream = PDPageContentStream(document, page)
-
-            val (cols, rows) = when {
-                !isVertical && pageData.imageUris.size > 1 -> Pair(2, 1)
-                isVertical && pageData.imageUris.size > 1 -> Pair(1, 2)
-                else -> Pair(1, 1)
-            }
-
-            val rects = getRectsForPage(page.mediaBox.width, page.mediaBox.height, cols, rows, 15f)
-
-            pageData.imageUris.forEachIndexed { index, uriString ->
-                if (index < rects.size) {
-                    val rect = rects[index]
-                    try {
-                        val jpegBytes = processImageForPdf(context, Uri.parse(uriString))
-                        jpegBytes?.let {
-                            val imageXObject = PDImageXObject.createFromByteArray(document, it, "img-$index")
-                            contentStream.drawImage(imageXObject, rect.lowerLeftX, rect.lowerLeftY, rect.width, rect.height)
-                        }
-                    } catch (e: Exception) {
-                        Log.e("PdfGenerator", "Error drawing image on page", e)
-                    }
-                }
-            }
-            contentStream.close()
-        }
     }
 }
