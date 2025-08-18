@@ -130,7 +130,7 @@ fun InnerPagesScreen(
                 navigationIcon = {
                     IconButton(onClick = {
                         val allQuotasMet = if (projectConfig.smartLayoutEnabled) {
-                            pageGroups.all { it.photos.isNotEmpty() }
+                            pageGroups.all { it.imageUris.isNotEmpty() }
                         } else {
                             pageGroups.all { it.isPhotoQuotaMet }
                         }
