@@ -128,7 +128,8 @@ fun PageGroup.toSerializable() = SerializablePageGroup(
     sheetCount = this.sheetCount,
     optionalTextStyle = this.optionalTextStyle.toSerializable(),
     imageUris = this.imageUris,
-    imageSpacing = this.imageSpacing
+    imageSpacing = this.imageSpacing,
+    smartLayoutEnabled = this.smartLayoutEnabled
 )
 
 fun SerializablePageGroup.toDomain() = PageGroup(
@@ -139,7 +140,8 @@ fun SerializablePageGroup.toDomain() = PageGroup(
     sheetCount = this.sheetCount,
     optionalTextStyle = this.optionalTextStyle.toDomain(),
     imageUris = this.imageUris,
-    imageSpacing = this.imageSpacing
+    imageSpacing = this.imageSpacing,
+    smartLayoutEnabled = this.smartLayoutEnabled ?: false
 )
 
 // Mappers for CoverPageConfig

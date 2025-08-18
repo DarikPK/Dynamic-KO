@@ -41,7 +41,8 @@ data class SerializablePageGroup(
     val sheetCount: Int,
     val optionalTextStyle: SerializableTextStyleConfig,
     val imageUris: List<String>,
-    val imageSpacing: Float
+    val imageSpacing: Float,
+    val smartLayoutEnabled: Boolean?
 )
 
 data class SerializableTextStyleConfig(
