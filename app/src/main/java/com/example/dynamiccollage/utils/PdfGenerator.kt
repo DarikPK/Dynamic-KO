@@ -148,8 +148,9 @@ object PdfGenerator {
                 "weight" to config.photoWeight,
                 "draw" to { rect: RectF ->
                     drawRowBackgroundAndBorders(canvas, config.photoStyle, rect)
-                    config.mainImageUri?.let { uriString ->
+                    if (config.mainImageUri != null) {
                         try {
+                            val uriString = config.mainImageUri
                             val padding = config.photoStyle.padding
                             val paddedRect = RectF(rect.left + padding.left, rect.top + padding.top, rect.right - padding.right, rect.bottom - padding.bottom)
                             val bitmap = decodeAndCompressBitmapFromUri(context, Uri.parse(uriString), paddedRect.width().toInt(), paddedRect.height().toInt(), quality)
@@ -200,12 +201,12 @@ object PdfGenerator {
         var currentY = contentArea.top
         allRows.forEachIndexed { index, rowData ->
             val id = rowData["id"] as String
-            val drawFunc = rowData["draw"] as (RectF) -> Unit
+            val drawFunc = rowData["draw"] as? (RectF) -> Unit
             val itemHeight = if (id == "address") addressRowHeight else {
                 if (finalTotalWeight > 0) availableHeight * ((rowData["weight"] as Float) / finalTotalWeight) else 0f
             }
             val rect = RectF(contentArea.left, currentY, contentArea.right, currentY + itemHeight)
-            drawFunc(rect)
+            drawFunc?.invoke(rect)
             currentY += itemHeight
             if (index < allRows.size - 1) {
                 val nextId = allRows[index + 1]["id"] as String

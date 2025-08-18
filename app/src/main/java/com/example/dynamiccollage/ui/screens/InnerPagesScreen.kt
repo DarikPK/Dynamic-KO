@@ -57,7 +57,6 @@ import com.example.dynamiccollage.viewmodel.ProjectViewModel
 @Composable
 fun InnerPagesScreen(
     navController: NavController,
-    projectViewModel: ProjectViewModel,
     innerPagesViewModel: InnerPagesViewModel
 ) {
     val pageGroups by innerPagesViewModel.pageGroups.collectAsState()
@@ -224,7 +223,6 @@ fun InnerPagesScreenPreview() {
         val projectViewModel: ProjectViewModel = viewModel()
         InnerPagesScreen(
             navController = rememberNavController(),
-            projectViewModel = projectViewModel,
             innerPagesViewModel = viewModel(factory = InnerPagesViewModelFactory(projectViewModel))
         )
     }
@@ -237,7 +235,6 @@ fun InnerPagesScreenDarkPreview() {
         val projectViewModel: ProjectViewModel = viewModel()
         InnerPagesScreen(
             navController = rememberNavController(),
-            projectViewModel = projectViewModel,
             innerPagesViewModel = viewModel(factory = InnerPagesViewModelFactory(projectViewModel))
         )
     }

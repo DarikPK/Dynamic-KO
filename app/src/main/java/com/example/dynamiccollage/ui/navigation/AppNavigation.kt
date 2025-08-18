@@ -19,7 +19,6 @@ fun AppNavigation(
     projectViewModel: ProjectViewModel,
     onThemeChange: (String) -> Unit
 ) {
-    val context = LocalContext.current
     val coverSetupViewModel: CoverSetupViewModel = viewModel()
     val rowStyleViewModel: RowStyleViewModel = viewModel()
     val sunatDataViewModel: SunatDataViewModel = viewModel()
@@ -44,7 +43,6 @@ fun AppNavigation(
         composable(Screen.InnerPages.route) {
             InnerPagesScreen(
                 navController = navController,
-                projectViewModel = projectViewModel,
                 innerPagesViewModel = innerPagesViewModel
             )
         }
