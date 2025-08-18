@@ -42,17 +42,18 @@ object PdfContentManager {
             }
         }
 
-        // Determine page orientation based on photo orientation and photos per sheet
-        val verticalPhotoPageOrientation = if (group.photosPerSheet == 2) PageOrientation.Horizontal else PageOrientation.Vertical
-        val horizontalPhotoPageOrientation = if (group.photosPerSheet == 2) PageOrientation.Vertical else PageOrientation.Horizontal
-
         // Create pages for vertical photos
         val verticalChunks = verticalPhotos.chunked(group.photosPerSheet)
         verticalChunks.forEach { chunk ->
+            val orientation = if (chunk.size == 2) {
+                PageOrientation.Horizontal // Pair of vertical photos on a horizontal page
+            } else {
+                PageOrientation.Vertical // Single vertical photo on a vertical page
+            }
             smartPages.add(
                 GeneratedPage(
                     imageUris = chunk,
-                    orientation = verticalPhotoPageOrientation
+                    orientation = orientation
                 )
             )
         }
@@ -60,10 +61,15 @@ object PdfContentManager {
         // Create pages for horizontal photos
         val horizontalChunks = horizontalPhotos.chunked(group.photosPerSheet)
         horizontalChunks.forEach { chunk ->
+            val orientation = if (chunk.size == 2) {
+                PageOrientation.Vertical // Pair of horizontal photos on a vertical page
+            } else {
+                PageOrientation.Horizontal // Single horizontal photo on a horizontal page
+            }
             smartPages.add(
                 GeneratedPage(
                     imageUris = chunk,
-                    orientation = horizontalPhotoPageOrientation
+                    orientation = orientation
                 )
             )
         }
