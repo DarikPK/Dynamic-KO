@@ -219,7 +219,7 @@ fun MainScreen(
                 onClick = { navController.navigate(Screen.CoverSetup.route) }
             )
             MainButton(
-                text = stringResource(R.string.main_btn_inner_pages),
+                text = "Gestionar Contenido",
                 onClick = { navController.navigate(Screen.InnerPages.route) }
             )
             MainButton(
