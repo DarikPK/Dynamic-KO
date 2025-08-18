@@ -24,7 +24,6 @@ fun AppNavigation(
     val rowStyleViewModel: RowStyleViewModel = viewModel()
     val sunatDataViewModel: SunatDataViewModel = viewModel()
     val innerPagesViewModel: InnerPagesViewModel = viewModel(factory = InnerPagesViewModelFactory(projectViewModel))
-    val sizeManagerViewModel: SizeManagerViewModel = viewModel()
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = Screen.Main.route) {
@@ -84,8 +83,7 @@ fun AppNavigation(
         composable(Screen.SizeManager.route) {
             SizeManagerScreen(
                 navController = navController,
-                projectViewModel = projectViewModel,
-                sizeManagerViewModel = sizeManagerViewModel
+                projectViewModel = projectViewModel
             )
         }
         composable(Screen.AdvancedCoverOptions.route) {
