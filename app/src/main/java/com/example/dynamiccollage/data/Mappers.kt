@@ -166,6 +166,8 @@ fun CoverPageConfig.toSerializable() = SerializableCoverPageConfig(
     photoWeight = this.photoWeight,
     photoStyle = this.photoStyle.toSerializable(),
     quality = this.quality,
+    pageBackgroundColor = this.pageBackgroundColor,
+    imageBorderSettingsMap = this.imageBorderSettingsMap.mapValues { it.value.toSerializable() },
     templateName = this.templateName
 )
 
@@ -190,7 +192,20 @@ fun SerializableCoverPageConfig.toDomain() = CoverPageConfig(
     photoWeight = this.photoWeight,
     photoStyle = this.photoStyle.toDomain(),
     quality = this.quality ?: 90,
+    pageBackgroundColor = this.pageBackgroundColor,
+    imageBorderSettingsMap = this.imageBorderSettingsMap?.mapValues { it.value.toDomain() } ?: emptyMap(),
     templateName = this.templateName
+)
+
+// Mappers for ImageBorderSettings
+fun ImageBorderSettings.toSerializable() = SerializableImageBorderSettings(
+    style = this.style.ordinal,
+    size = this.size
+)
+
+fun SerializableImageBorderSettings.toDomain() = ImageBorderSettings(
+    style = ImageBorderStyle.values()[this.style],
+    size = this.size
 )
 
 // Mapper for the top-level project state

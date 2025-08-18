@@ -78,6 +78,15 @@ fun AppNavigation(
         composable(Screen.ImageManager.route) {
             ImageManagerScreen(navController = navController, projectViewModel = projectViewModel)
         }
+        composable(Screen.AdvancedDesign.route) {
+            AdvancedDesignScreen(navController = navController)
+        }
+        composable(Screen.SheetBackground.route) {
+            SheetBackgroundScreen(navController = navController, projectViewModel = projectViewModel)
+        }
+        composable(Screen.ImageBorders.route) {
+            ImageBordersScreen(navController = navController, projectViewModel = projectViewModel)
+        }
         composable(Screen.SizeManager.route) {
             SizeManagerScreen(
                 navController = navController,
@@ -112,16 +121,19 @@ fun AppNavigation(
             )
         }
         composable(
-            route = Screen.ColorPicker.route + "/{fieldId}/{initialColor}",
+            route = Screen.ColorPicker.route + "/{colorType}/{fieldId}/{initialColor}",
             arguments = listOf(
-                navArgument("fieldId") { type = NavType.StringType },
+                navArgument("colorType") { type = NavType.StringType },
+                navArgument("fieldId") { type = NavType.StringType; nullable = true },
                 navArgument("initialColor") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val fieldId = backStackEntry.arguments?.getString("fieldId") ?: ""
+            val colorType = backStackEntry.arguments?.getString("colorType") ?: ""
+            val fieldId = backStackEntry.arguments?.getString("fieldId")
             val initialColorHex = backStackEntry.arguments?.getString("initialColor") ?: "FFFFFF"
             ColorPickerScreen(
                 navController = navController,
+                colorType = colorType,
                 fieldId = fieldId,
                 initialColorHex = initialColorHex
             )

@@ -30,7 +30,14 @@ data class SerializableCoverPageConfig(
     val photoWeight: Float,
     val photoStyle: SerializableRowStyle,
     val quality: Int?,
+    val pageBackgroundColor: Int?,
+    val imageBorderSettingsMap: Map<String, SerializableImageBorderSettings>?,
     val templateName: String?
+)
+
+data class SerializableImageBorderSettings(
+    val style: Int, // ordinal of ImageBorderStyle
+    val size: Float
 )
 
 data class SerializablePageGroup(

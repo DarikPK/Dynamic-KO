@@ -6,9 +6,12 @@ import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.net.Uri
 import android.util.Log
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.dynamiccollage.data.model.ImageBorderSettings
 import com.example.dynamiccollage.data.toDomain
 import com.example.dynamiccollage.data.toSerializable
 import com.example.dynamiccollage.data.model.CoverPageConfig
@@ -45,6 +48,14 @@ class ProjectViewModel : ViewModel() {
 
     fun updateCoverConfig(newConfig: CoverPageConfig) {
         _currentCoverConfig.value = newConfig
+    }
+
+    fun updatePageBackgroundColor(color: Color) {
+        _currentCoverConfig.update { it.copy(pageBackgroundColor = color.toArgb()) }
+    }
+
+    fun updateImageBorderSettings(newSettingsMap: Map<String, ImageBorderSettings>) {
+        _currentCoverConfig.update { it.copy(imageBorderSettingsMap = newSettingsMap) }
     }
 
     fun addPageGroup(group: PageGroup) {

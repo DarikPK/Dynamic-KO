@@ -119,5 +119,9 @@ data class CoverPageConfig(
     // PDF Size Management
     val quality: Int = 90,
 
+    // Advanced Design
+    val pageBackgroundColor: Int? = null,
+    val imageBorderSettingsMap: Map<String, ImageBorderSettings> = emptyMap(),
+
     val templateName: String? = null
 )

@@ -233,10 +233,8 @@ fun MainScreen(
                 }
             )
             MainButton(
-                text = stringResource(R.string.main_btn_templates),
-                onClick = {
-                    Toast.makeText(context, "Plantillas: Próximamente", Toast.LENGTH_SHORT).show()
-                }
+                text = "Diseño Avanzado",
+                onClick = { navController.navigate(Screen.AdvancedDesign.route) }
             )
             MainButton(
                 text = "Temas",

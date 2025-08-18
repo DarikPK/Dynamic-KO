@@ -53,7 +53,8 @@ object PdfContentManager {
             smartPages.add(
                 GeneratedPage(
                     imageUris = chunk,
-                    orientation = orientation
+                    orientation = orientation,
+                    groupId = group.id
                 )
             )
         }
@@ -69,7 +70,8 @@ object PdfContentManager {
             smartPages.add(
                 GeneratedPage(
                     imageUris = chunk,
-                    orientation = orientation
+                    orientation = orientation,
+                    groupId = group.id
                 )
             )
         }
@@ -89,7 +91,8 @@ object PdfContentManager {
             manualPages.add(
                 GeneratedPage(
                     imageUris = chunk,
-                    orientation = group.orientation
+                    orientation = group.orientation,
+                    groupId = group.id
                 )
             )
         }
