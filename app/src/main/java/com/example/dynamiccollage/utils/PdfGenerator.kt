@@ -37,6 +37,8 @@ import java.io.FileOutputStream
 
 object PdfGenerator {
 
+    private enum class ImageAlignment { TOP, BOTTOM, LEFT, RIGHT, CENTER }
+
     private const val A4_WIDTH = 595
     private const val A4_HEIGHT = 842
     private const val CM_TO_POINTS = 28.35f
@@ -155,7 +157,7 @@ object PdfGenerator {
                             val paddedRect = RectF(rect.left + padding.left, rect.top + padding.top, rect.right - padding.right, rect.bottom - padding.bottom)
                             val bitmap = decodeAndCompressBitmapFromUri(context, Uri.parse(uriString), paddedRect.width().toInt(), paddedRect.height().toInt(), quality)
                             bitmap?.let {
-                                drawBitmapToCanvas(canvas, it, paddedRect)
+                                drawBitmapToCanvas(canvas, it, paddedRect, ImageAlignment.CENTER)
                                 it.recycle()
                             }
                         } catch (e: Exception) { e.printStackTrace() }
@@ -259,7 +261,17 @@ object PdfGenerator {
                 try {
                     val bitmap = decodeAndCompressBitmapFromUri(context, Uri.parse(uriString), rect.width().toInt(), rect.height().toInt(), quality)
                     bitmap?.let {
-                        drawBitmapToCanvas(canvas, it, rect)
+                        val alignment = when {
+                            // 1 photo per page = CENTER
+                            cols == 1 && rows == 1 -> ImageAlignment.CENTER
+                            // 2 photos, horizontal page (side by side)
+                            cols == 2 -> if (index == 0) ImageAlignment.RIGHT else ImageAlignment.LEFT
+                            // 2 photos, vertical page (one above other)
+                            rows == 2 -> if (index == 0) ImageAlignment.BOTTOM else ImageAlignment.TOP
+                            // Default case
+                            else -> ImageAlignment.CENTER
+                        }
+                        drawBitmapToCanvas(canvas, it, rect, alignment)
                         it.recycle()
                     }
                 } catch (e: Exception) {
@@ -371,12 +383,57 @@ object PdfGenerator {
         return rects
     }
 
-    private fun drawBitmapToCanvas(canvas: Canvas, bitmap: Bitmap, destRect: RectF) {
-        val srcRect = RectF(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat())
-        val matrix = Matrix()
-        matrix.setRectToRect(srcRect, destRect, Matrix.ScaleToFit.CENTER)
-        canvas.drawBitmap(bitmap, matrix, null)
+    private fun drawBitmapToCanvas(canvas: Canvas, bitmap: Bitmap, cellRect: RectF, alignment: ImageAlignment) {
+        val bitmapWidth = bitmap.width.toFloat()
+        val bitmapHeight = bitmap.height.toFloat()
+
+        val cellWidth = cellRect.width()
+        val cellHeight = cellRect.height()
+
+        val scale: Float
+        val newWidth: Float
+        val newHeight: Float
+
+        if (bitmapWidth / bitmapHeight > cellWidth / cellHeight) {
+            scale = cellWidth / bitmapWidth
+            newWidth = cellWidth
+            newHeight = bitmapHeight * scale
+        } else {
+            scale = cellHeight / bitmapHeight
+            newHeight = cellHeight
+            newWidth = bitmapWidth * scale
+        }
+
+        var x = cellRect.left
+        var y = cellRect.top
+
+        when (alignment) {
+            ImageAlignment.CENTER -> {
+                x += (cellWidth - newWidth) / 2
+                y += (cellHeight - newHeight) / 2
+            }
+            ImageAlignment.LEFT -> {
+                x = cellRect.left
+                y += (cellHeight - newHeight) / 2
+            }
+            ImageAlignment.RIGHT -> {
+                x = cellRect.right - newWidth
+                y += (cellHeight - newHeight) / 2
+            }
+            ImageAlignment.TOP -> {
+                x += (cellWidth - newWidth) / 2
+                y = cellRect.top
+            }
+            ImageAlignment.BOTTOM -> {
+                x += (cellWidth - newWidth) / 2
+                y = cellRect.bottom - newHeight
+            }
+        }
+
+        val finalRect = RectF(x, y, x + newWidth, y + newHeight)
+        canvas.drawBitmap(bitmap, null, finalRect, null)
     }
+
 
     private fun decodeAndCompressBitmapFromUri(context: Context, uri: Uri, reqWidth: Int, reqHeight: Int, quality: Int): Bitmap? {
         return try {
