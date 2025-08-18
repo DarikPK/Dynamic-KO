@@ -138,7 +138,9 @@ class ProjectViewModel : ViewModel() {
                     com.example.dynamiccollage.utils.PdfContentManager.groupImagesForPdf(
                         context = context,
                         imageUris = group.imageUris,
-                        photosPerPage = group.photosPerSheet
+                        photosPerPage = group.photosPerSheet,
+                        smartLayoutEnabled = group.smartLayoutEnabled,
+                        groupOrientation = group.orientation
                     )
                 }
 

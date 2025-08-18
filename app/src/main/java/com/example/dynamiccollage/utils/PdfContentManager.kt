@@ -9,24 +9,38 @@ object PdfContentManager {
     fun groupImagesForPdf(
         context: Context,
         imageUris: List<String>,
-        photosPerPage: Int
+        photosPerPage: Int,
+        smartLayoutEnabled: Boolean,
+        groupOrientation: PageOrientation
     ): List<GeneratedPage> {
         if (imageUris.isEmpty()) return emptyList()
 
-        // Case 1: One photo per page
-        if (photosPerPage == 1) {
-            return imageUris.map { uri ->
-                GeneratedPage(
-                    imageUris = listOf(uri),
-                    orientation = ImageUtils.getImageOrientation(context, uri)
-                )
-            }
+        if (smartLayoutEnabled && photosPerPage == 2) {
+            return runSmartLayout(context, imageUris)
+        } else {
+            return runSimpleLayout(imageUris, photosPerPage, groupOrientation)
         }
+    }
 
-        // Case 2: Two photos per page (Smart Layout)
+    private fun runSimpleLayout(
+        imageUris: List<String>,
+        photosPerPage: Int,
+        groupOrientation: PageOrientation
+    ): List<GeneratedPage> {
+        val effectivePhotosPerPage = if (photosPerPage in 1..2) photosPerPage else 1
+        return imageUris.chunked(effectivePhotosPerPage).map { chunk ->
+            GeneratedPage(
+                imageUris = chunk,
+                orientation = groupOrientation
+            )
+        }
+    }
+
+    private fun runSmartLayout(
+        context: Context,
+        imageUris: List<String>
+    ): List<GeneratedPage> {
         val generatedPages = mutableListOf<GeneratedPage>()
-
-        // Separate photos by orientation
         val photosByOrientation = imageUris.groupBy {
             ImageUtils.getImageOrientation(context, it)
         }
@@ -50,7 +64,6 @@ object PdfContentManager {
                 generatedPages.add(GeneratedPage(imageUris = chunk, orientation = PageOrientation.Horizontal))
             }
         }
-
         return generatedPages
     }
 }

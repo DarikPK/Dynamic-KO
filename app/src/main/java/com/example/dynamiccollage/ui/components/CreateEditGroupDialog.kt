@@ -112,6 +112,20 @@ fun CreateEditGroupDialog(
                     ) { Text(stringResource(R.string.two_photos)) }
                 }
 
+                if (editingGroup.photosPerSheet == 2) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Ingreso Inteligente")
+                        Switch(
+                            checked = editingGroup.smartLayoutEnabled,
+                            onCheckedChange = { viewModel.onEditingGroupSmartLayoutChange(it) }
+                        )
+                    }
+                }
+
                 OutlinedTextField(
                     value = sheetCountString,
                     onValueChange = {
