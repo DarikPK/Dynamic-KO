@@ -1,16 +1,28 @@
 package com.example.dynamiccollage.ui.components
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.PhotoLibrary
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.PhotoLibrary // Asegurar que esta importación es correcta o ajustar el icono
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -19,35 +31,16 @@ import com.example.dynamiccollage.R
 import com.example.dynamiccollage.data.model.PageGroup
 import com.example.dynamiccollage.data.model.PageOrientation
 import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
-import com.example.dynamiccollage.utils.PdfContentManager
 
 @Composable
 fun PageGroupItem(
     pageGroup: PageGroup,
-    isSmartLayoutGloballyEnabled: Boolean,
     onAddImagesClicked: (String) -> Unit,
     onEditGroupClicked: (PageGroup) -> Unit,
     onDeleteGroupClicked: (String) -> Unit,
     onDeleteImagesClicked: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-    val calculatedSheetCount by remember(pageGroup.imageUris, isSmartLayoutGloballyEnabled) {
-        mutableStateOf(
-            if (isSmartLayoutGloballyEnabled && pageGroup.photosPerSheet == 2 && pageGroup.imageUris.isNotEmpty()) {
-                PdfContentManager.groupImagesForPdf(
-                    context = context,
-                    imageUris = pageGroup.imageUris,
-                    photosPerPage = pageGroup.photosPerSheet,
-                    smartLayoutEnabled = isSmartLayoutGloballyEnabled,
-                    groupOrientation = pageGroup.orientation
-                ).size
-            } else {
-                pageGroup.sheetCount
-            }
-        )
-    }
-
     Card(
         modifier = modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -83,7 +76,13 @@ fun PageGroupItem(
                 }
             }
 
-            if (!isSmartLayoutGloballyEnabled) {
+            if (pageGroup.smartLayoutEnabled) {
+                InfoRow(label = stringResource(R.string.group_item_layout_type), value = stringResource(R.string.smart_layout_title))
+                InfoRow(
+                    label = stringResource(R.string.group_item_photos_loaded),
+                    value = "${pageGroup.imageUris.size}"
+                )
+            } else {
                 InfoRow(label = stringResource(R.string.group_orientation_label), value = pageGroup.orientation.name)
                 InfoRow(label = stringResource(R.string.photos_per_sheet_label), value = "${pageGroup.photosPerSheet}")
                 InfoRow(label = stringResource(R.string.sheet_count_label), value = "${pageGroup.sheetCount}")
@@ -91,25 +90,14 @@ fun PageGroupItem(
                     label = stringResource(R.string.group_item_total_photos_required),
                     value = "${pageGroup.totalPhotosRequired}"
                 )
-            } else {
-                InfoRow(label = "Modalidad", value = "Ingreso Inteligente")
-                InfoRow(label = stringResource(R.string.photos_per_sheet_label), value = "${pageGroup.photosPerSheet}")
                 InfoRow(
-                    label = stringResource(R.string.sheet_count_label),
-                    value = if (pageGroup.imageUris.isEmpty()) "-" else calculatedSheetCount.toString()
-                )
-                InfoRow(
-                    label = stringResource(R.string.group_item_total_photos_required),
-                    value = if (pageGroup.photosPerSheet == 2) "Ilimitado (máx. 40)" else pageGroup.totalPhotosRequired.toString()
+                    label = stringResource(R.string.group_item_photos_loaded),
+                    value = "${pageGroup.imageUris.size}",
+                    isMet = pageGroup.isPhotoQuotaMet,
+                    metColor = MaterialTheme.colorScheme.primary,
+                    notMetColor = MaterialTheme.colorScheme.error
                 )
             }
-            InfoRow(
-                label = stringResource(R.string.group_item_photos_loaded),
-                value = "${pageGroup.imageUris.size}",
-                isMet = if (isSmartLayoutGloballyEnabled) null else pageGroup.isPhotoQuotaMet,
-                metColor = MaterialTheme.colorScheme.primary, // O un verde específico
-                notMetColor = MaterialTheme.colorScheme.error
-            )
 
             if (pageGroup.optionalTextStyle.isVisible) {
                 Text(
@@ -130,7 +118,7 @@ fun PageGroupItem(
             ) {
                 OutlinedButton(
                     onClick = { onAddImagesClicked(pageGroup.id) },
-                    enabled = !pageGroup.isPhotoQuotaMet
+                    enabled = pageGroup.smartLayoutEnabled || !pageGroup.isPhotoQuotaMet
                 ) {
                     Icon(Icons.Filled.PhotoLibrary, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
                     Text(stringResource(R.string.group_item_add_images_button))
@@ -183,7 +171,6 @@ fun PageGroupItemPreview() {
                 optionalTextStyle = com.example.dynamiccollage.data.model.TextStyleConfig(content="Texto opcional de ejemplo"),
                 imageUris = List(5) { "uri_placeholder" } // 5 de 6 fotos cargadas
             ),
-            isSmartLayoutGloballyEnabled = false,
             onAddImagesClicked = {},
             onEditGroupClicked = {},
             onDeleteGroupClicked = {},
@@ -204,7 +191,6 @@ fun PageGroupItemUnnamedPreview() {
                 sheetCount = 1,
                 imageUris = List(1) { "uri_placeholder" } // Cuota cumplida
             ),
-            isSmartLayoutGloballyEnabled = true,
             onAddImagesClicked = {},
             onEditGroupClicked = {},
             onDeleteGroupClicked = {},

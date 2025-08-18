@@ -85,7 +85,7 @@
     <string name="two_photos">2 Photos</string>
     <string name="sheet_count_label">Number of Sheets</string>
     <string name="optional_text_label">Optional Text (1st page of group)</string>
-    <string name="all_caps_label">Mayúscula</string>
+    <string name="all_caps_label">All Caps</string>
     <string name="save_button">Save</string>
     <string name="cancel_button">Cancel</string>
     <string name="error_sheet_count_invalid">Number of sheets must be at least 1.</string>
@@ -93,8 +93,11 @@
 
     <!-- PageGroupItem -->
     <string name="group_item_unnamed_group">Unnamed Group (ID: %1$s…)</string>
+    <string name="group_item_layout_type">Layout Type</string>
     <string name="group_item_total_photos_required">Total Photos Required</string>
     <string name="group_item_photos_loaded">Photos Loaded</string>
+    <string name="error_photo_quota_not_met">You must complete the photo quota in all groups before exiting.</string>
+    <string name="error_all_groups_must_be_valid">All manual groups must meet their photo quota and all smart groups must have at least one photo.</string>
     <string name="group_item_add_images_button">Images</string>
     <string name="group_item_edit_button_description">Edit Group</string>
     <string name="group_item_delete_button_description">Delete Group</string>
@@ -105,9 +108,7 @@
     <string name="image_upload_add_photos_button">Add Photos</string>
     <string name="image_upload_done_button">Done</string>
 
-    <!-- Smart Layout and Error Messages -->
-    <string name="error_photo_quota_not_met">You must complete the photo quota in all groups before exiting.</string>
-    <string name="error_at_least_one_photo">Each group must have at least one photo before exiting.</string>
+    <!-- Smart Layout -->
     <string name="smart_layout_title">Smart Layout</string>
-    <string name="smart_layout_description">Automatically group photos by orientation (vertical/horizontal) into separate pages.</string>
+    <string name="smart_layout_description">When enabled, new groups will automatically arrange photos by orientation.</string>
 </resources>

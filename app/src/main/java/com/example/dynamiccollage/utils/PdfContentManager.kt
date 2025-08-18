@@ -2,68 +2,85 @@ package com.example.dynamiccollage.utils
 
 import android.content.Context
 import com.example.dynamiccollage.data.model.GeneratedPage
+import com.example.dynamiccollage.data.model.PageGroup
 import com.example.dynamiccollage.data.model.PageOrientation
 
 object PdfContentManager {
 
     fun groupImagesForPdf(
         context: Context,
-        imageUris: List<String>,
-        photosPerPage: Int,
-        smartLayoutEnabled: Boolean,
-        groupOrientation: PageOrientation
-    ): List<GeneratedPage> {
-        if (imageUris.isEmpty()) return emptyList()
-
-        if (smartLayoutEnabled && photosPerPage == 2) {
-            return runSmartLayout(context, imageUris)
-        } else {
-            return runSimpleLayout(imageUris, photosPerPage, groupOrientation)
-        }
-    }
-
-    private fun runSimpleLayout(
-        imageUris: List<String>,
-        photosPerPage: Int,
-        groupOrientation: PageOrientation
-    ): List<GeneratedPage> {
-        val effectivePhotosPerPage = if (photosPerPage in 1..2) photosPerPage else 1
-        return imageUris.chunked(effectivePhotosPerPage).map { chunk ->
-            GeneratedPage(
-                imageUris = chunk,
-                orientation = groupOrientation
-            )
-        }
-    }
-
-    private fun runSmartLayout(
-        context: Context,
-        imageUris: List<String>
+        pageGroups: List<PageGroup>
     ): List<GeneratedPage> {
         val generatedPages = mutableListOf<GeneratedPage>()
-        val photosByOrientation = imageUris.groupBy {
-            ImageUtils.getImageOrientation(context, it)
-        }
-        val verticalPhotos = photosByOrientation[PageOrientation.Vertical] ?: emptyList()
-        val horizontalPhotos = photosByOrientation[PageOrientation.Horizontal] ?: emptyList()
 
-        // Process pairs of vertical photos -> create horizontal pages
-        verticalPhotos.chunked(2).forEach { chunk ->
-            if (chunk.size == 2) {
-                generatedPages.add(GeneratedPage(imageUris = chunk, orientation = PageOrientation.Horizontal))
-            } else { // Leftover single vertical photo
-                generatedPages.add(GeneratedPage(imageUris = chunk, orientation = PageOrientation.Vertical))
+        pageGroups.forEach { group ->
+            if (group.smartLayoutEnabled) {
+                generatedPages.addAll(processSmartGroup(context, group))
+            } else {
+                generatedPages.addAll(processManualGroup(group))
             }
         }
 
-        // Process pairs of horizontal photos -> create vertical pages
-        horizontalPhotos.chunked(2).forEach { chunk ->
-            if (chunk.size == 2) {
-                generatedPages.add(GeneratedPage(imageUris = chunk, orientation = PageOrientation.Vertical))
-            } else { // Leftover single horizontal photo
-                generatedPages.add(GeneratedPage(imageUris = chunk, orientation = PageOrientation.Horizontal))
-            }
-        }
         return generatedPages
+    }
+
+    private fun processSmartGroup(
+        context: Context,
+        group: PageGroup
+    ): List<GeneratedPage> {
+        val smartPages = mutableListOf<GeneratedPage>()
+        if (group.imageUris.isEmpty()) return smartPages
+
+        val verticalPhotos = mutableListOf<String>()
+        val horizontalPhotos = mutableListOf<String>()
+
+        // Classify photos by their orientation
+        group.imageUris.forEach { uri ->
+            when (ImageUtils.getImageOrientation(context, uri)) {
+                PageOrientation.Vertical -> verticalPhotos.add(uri)
+                PageOrientation.Horizontal -> horizontalPhotos.add(uri)
+            }
+        }
+
+        // Create pages for vertical photos, one photo per page
+        verticalPhotos.forEach { uri ->
+            smartPages.add(
+                GeneratedPage(
+                    imageUris = listOf(uri),
+                    orientation = PageOrientation.Vertical
+                )
+            )
+        }
+
+        // Create pages for horizontal photos, one photo per page
+        horizontalPhotos.forEach { uri ->
+            smartPages.add(
+                GeneratedPage(
+                    imageUris = listOf(uri),
+                    orientation = PageOrientation.Horizontal
+                )
+            )
+        }
+
+        return smartPages
+    }
+
+    private fun processManualGroup(
+        group: PageGroup
+    ): List<GeneratedPage> {
+        val manualPages = mutableListOf<GeneratedPage>()
+        if (group.imageUris.isEmpty()) return manualPages
+
+        val imageChunks = group.imageUris.chunked(group.photosPerSheet)
+
+        imageChunks.forEach { chunk ->
+            manualPages.add(
+                GeneratedPage(
+                    imageUris = chunk,
+                    orientation = group.orientation
+                )
+            )
+        }
+        return manualPages
     }
 }

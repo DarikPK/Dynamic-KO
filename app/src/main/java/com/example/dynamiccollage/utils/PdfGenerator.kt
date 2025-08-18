@@ -45,22 +45,23 @@ object PdfGenerator {
         context: Context,
         coverConfig: CoverPageConfig,
         generatedPages: List<com.example.dynamiccollage.data.model.GeneratedPage>,
-        fileName: String,
-        imageQuality: Int
+        fileName: String
     ): File? {
         val pdfDocument = PdfDocument()
         val uncompressedPdfStream = ByteArrayOutputStream()
 
         try {
+            val quality = coverConfig.quality
+
             val shouldDrawCover = coverConfig.clientNameStyle.content.isNotBlank() ||
                     coverConfig.rucStyle.content.isNotBlank() ||
                     coverConfig.subtitleStyle.content.isNotBlank() ||
                     coverConfig.mainImageUri != null
 
             if (shouldDrawCover) {
-                drawCoverPage(pdfDocument, context, coverConfig, imageQuality)
+                drawCoverPage(pdfDocument, context, coverConfig, quality)
             }
-            drawInnerPages(pdfDocument, context, generatedPages, if (shouldDrawCover) 2 else 1, imageQuality)
+            drawInnerPages(pdfDocument, context, generatedPages, if (shouldDrawCover) 2 else 1, quality)
 
             pdfDocument.writeTo(uncompressedPdfStream)
             pdfDocument.close()
@@ -330,7 +331,7 @@ object PdfGenerator {
                 isItalic -> Typeface.ITALIC
                 else -> Typeface.NORMAL
             }
-            typeface = Typeface.create("Helvetica", typefaceStyle)
+            typeface = Typeface.create(Typeface.SANS_SERIF, typefaceStyle)
         }
     }
 

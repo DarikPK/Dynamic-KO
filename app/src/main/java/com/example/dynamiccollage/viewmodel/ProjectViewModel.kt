@@ -47,10 +47,6 @@ class ProjectViewModel : ViewModel() {
         _currentCoverConfig.value = newConfig
     }
 
-    fun onSmartLayoutToggled(enabled: Boolean) {
-        _currentCoverConfig.update { it.copy(smartLayoutEnabled = enabled) }
-    }
-
     fun addPageGroup(group: PageGroup) {
         _currentPageGroups.update { currentList -> currentList + group }
     }
@@ -122,13 +118,12 @@ class ProjectViewModel : ViewModel() {
 
     fun generatePdf(context: Context, fileName: String) {
         val coverConfig = _currentCoverConfig.value
-        val innerUris = _currentPageGroups.value.flatMap { it.imageUris }
+        val areInnerPagesEmpty = _currentPageGroups.value.all { it.imageUris.isEmpty() }
 
         val isCoverEmpty = coverConfig.clientNameStyle.content.isBlank() &&
                 coverConfig.rucStyle.content.isBlank() &&
                 coverConfig.subtitleStyle.content.isBlank() &&
                 coverConfig.mainImageUri == null
-        val areInnerPagesEmpty = innerUris.isEmpty()
 
         if (isCoverEmpty && areInnerPagesEmpty) {
             _pdfGenerationState.value = PdfGenerationState.Error("No hay contenido para generar un PDF.")
@@ -139,25 +134,17 @@ class ProjectViewModel : ViewModel() {
             Log.d("ProjectViewModel", "generatePdf: Iniciando...")
             _pdfGenerationState.value = PdfGenerationState.Loading
             val generatedFile = withContext(Dispatchers.IO) {
-                val generatedPages = _currentPageGroups.value.flatMap { group ->
-                    com.example.dynamiccollage.utils.PdfContentManager.groupImagesForPdf(
-                        context = context,
-                        imageUris = group.imageUris,
-                        photosPerPage = group.photosPerSheet,
-                        smartLayoutEnabled = coverConfig.smartLayoutEnabled,
-                        groupOrientation = group.orientation
-                    )
-                }
+                val generatedPages = com.example.dynamiccollage.utils.PdfContentManager.groupImagesForPdf(
+                    context,
+                    _currentPageGroups.value
+                )
 
-                val sliderValue = _currentCoverConfig.value.imageQuality.toFloat()
-                val mappedQuality = (((sliderValue - 75f) / 15f) * 95f + 5f).toInt()
                 Log.d("ProjectViewModel", "generatePdf: En el hilo de IO, llamando a PdfGenerator.")
                 PdfGenerator.generate(
                     context = context,
                     coverConfig = _currentCoverConfig.value,
                     generatedPages = generatedPages,
-                    fileName = fileName.ifBlank { "DynamicCollage" },
-                    imageQuality = mappedQuality
+                    fileName = fileName.ifBlank { "DynamicCollage" }
                 )
             }
             if (generatedFile != null) {

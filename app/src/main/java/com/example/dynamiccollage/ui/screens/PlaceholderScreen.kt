@@ -13,7 +13,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.dynamiccollage.R
 import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -21,7 +23,7 @@ import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
 fun PlaceholderScreen(screenName: String) {
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Pixel Business Collage") })
+            TopAppBar(title = { Text(stringResource(id = R.string.app_name)) })
         }
     ) { paddingValues ->
         Column(

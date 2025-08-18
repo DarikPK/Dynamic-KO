@@ -76,6 +76,7 @@ fun MainScreen(
 
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
+    var showContentEntryDialog by remember { mutableStateOf(false) }
     val pdfGenerationState by projectViewModel.pdfGenerationState.collectAsState()
     val shareablePdfUri by projectViewModel.shareablePdfUri.collectAsState()
     val saveState by projectViewModel.saveState.collectAsState()
@@ -192,6 +193,37 @@ fun MainScreen(
         )
     }
 
+    if (showContentEntryDialog) {
+        AlertDialog(
+            onDismissRequest = { showContentEntryDialog = false },
+            title = { Text("Gestionar Contenido") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(
+                        onClick = {
+                            showContentEntryDialog = false
+                            navController.navigate(Screen.InnerPages.route)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Ingreso Manual")
+                    }
+                    TextButton(
+                        onClick = {},
+                        enabled = false,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Ingreso Inteligente (Próximamente)")
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showContentEntryDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -221,7 +253,7 @@ fun MainScreen(
             )
             MainButton(
                 text = "Gestionar Contenido",
-                onClick = { navController.navigate(Screen.InnerPages.route) }
+                onClick = { showContentEntryDialog = true }
             )
             MainButton(
                 text = "Gestionar Tamaño",

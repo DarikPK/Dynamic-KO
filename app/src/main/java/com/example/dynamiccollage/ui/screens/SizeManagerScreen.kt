@@ -6,34 +6,42 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
-import com.example.dynamiccollage.viewmodel.SizeManagerViewModel
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SizeManagerScreen(
     navController: NavController,
-    projectViewModel: ProjectViewModel,
-    sizeManagerViewModel: SizeManagerViewModel
+    projectViewModel: ProjectViewModel
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
     val projectConfig by projectViewModel.currentCoverConfig.collectAsState()
-    val imageQuality by sizeManagerViewModel.imageQuality.collectAsState()
-    val autoAdjustSize by sizeManagerViewModel.autoAdjustSize.collectAsState()
-
-    LaunchedEffect(projectConfig) {
-        sizeManagerViewModel.loadInitialState(projectConfig)
-    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Gestionar Tamaño de PDF") },
+                title = { Text("Ajustar Calidad de PDF") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
@@ -50,50 +58,30 @@ fun SizeManagerScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            val displayQuality = remember(imageQuality) {
-                (((imageQuality.toFloat() - 75f) / 15f) * 100f).toInt()
-            }
-
             Text(
-                text = "Calidad de Imagen: $displayQuality%",
+                text = "Calidad de Imagen: ${projectConfig.quality}%",
                 style = MaterialTheme.typography.titleMedium
             )
             Slider(
-                value = imageQuality.toFloat(),
-                onValueChange = { sizeManagerViewModel.onQualityChange(it) },
+                value = projectConfig.quality.toFloat(),
+                onValueChange = {
+                    val newConfig = projectConfig.copy(quality = it.roundToInt())
+                    projectViewModel.updateCoverConfig(newConfig)
+                },
                 valueRange = 75f..90f,
-                steps = 14
+                steps = 14 // (90 - 75) - 1
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Checkbox(
-                    checked = autoAdjustSize,
-                    onCheckedChange = { sizeManagerViewModel.onAutoAdjustChange(it) }
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Ajustar tamaño automáticamente si supera 3MB")
-            }
 
             Spacer(modifier = Modifier.weight(1f))
 
             Button(
                 onClick = {
-                    val newConfig = projectConfig.copy(
-                        imageQuality = imageQuality,
-                        autoAdjustSize = autoAdjustSize
-                    )
-                    projectViewModel.updateCoverConfig(newConfig)
                     projectViewModel.saveProject(context)
                     navController.popBackStack()
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Guardar")
+                Text("Guardar y Volver")
             }
         }
     }

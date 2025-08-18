@@ -85,6 +85,7 @@
     <string name="two_photos">2 Fotos</string>
     <string name="sheet_count_label">Número de Hojas</string>
     <string name="optional_text_label">Texto Opcional (1ra página del grupo)</string>
+    <string name="all_caps_label">Mayúsculas</string>
     <string name="save_button">Guardar</string>
     <string name="cancel_button">Cancelar</string>
     <string name="error_sheet_count_invalid">El número de hojas debe ser al menos 1.</string>
@@ -92,22 +93,20 @@
 
     <!-- PageGroupItem -->
     <string name="group_item_unnamed_group">Grupo sin nombre (ID: %1$s…)</string>
+    <string name="group_item_layout_type">Tipo de Diseño</string>
     <string name="group_item_total_photos_required">Total Fotos Requeridas</string>
     <string name="group_item_photos_loaded">Fotos Cargadas</string>
     <string name="group_item_add_images_button">Imágenes</string>
     <string name="group_item_edit_button_description">Editar Grupo</string>
     <string name="group_item_delete_button_description">Eliminar Grupo</string>
+    <string name="error_all_groups_must_be_valid">Todos los grupos manuales deben cumplir su cuota de fotos y todos los grupos inteligentes deben tener al menos una foto.</string>
 
     <!-- Image Upload Screen -->
     <string name="image_upload_quota_message">Requeridas: %1$d / Cargadas: %2$d</string>
     <string name="image_upload_add_photos_button">Añadir Fotos</string>
     <string name="image_upload_done_button">Hecho</string>
 
-    <!-- Dynamic strings added previously, ensuring they exist -->
-    <string name="error_photo_quota_not_met">Debe completar la cuota de fotos en todos los grupos antes de salir.</string>
+    <!-- Smart Layout -->
     <string name="smart_layout_title">Ingreso Inteligente</string>
-    <string name="smart_layout_description">Agrupa automáticamente las fotos por orientación (vertical/horizontal) en páginas separadas.</string>
-
-    <!-- New string for the latest fix -->
-    <string name="error_at_least_one_photo">Cada grupo debe tener al menos una foto antes de salir.</string>
+    <string name="smart_layout_description">Cuando está activado, los nuevos grupos organizarán automáticamente las fotos por orientación.</string>
 </resources>

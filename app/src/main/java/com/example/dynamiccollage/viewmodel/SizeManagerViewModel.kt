@@ -9,14 +9,14 @@ import kotlinx.coroutines.flow.update
 
 class SizeManagerViewModel : ViewModel() {
 
-    private val _imageQuality = MutableStateFlow(90)
+    private val _imageQuality = MutableStateFlow(100)
     val imageQuality: StateFlow<Int> = _imageQuality.asStateFlow()
 
     private val _autoAdjustSize = MutableStateFlow(true)
     val autoAdjustSize: StateFlow<Boolean> = _autoAdjustSize.asStateFlow()
 
     fun loadInitialState(config: CoverPageConfig) {
-        _imageQuality.value = config.imageQuality.coerceIn(75, 90)
+        _imageQuality.value = config.imageQuality
         _autoAdjustSize.value = config.autoAdjustSize
     }
 
