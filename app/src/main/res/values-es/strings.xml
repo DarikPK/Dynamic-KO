@@ -102,4 +102,12 @@
     <string name="image_upload_quota_message">Requeridas: %1$d / Cargadas: %2$d</string>
     <string name="image_upload_add_photos_button">Añadir Fotos</string>
     <string name="image_upload_done_button">Hecho</string>
+
+    <!-- Dynamic strings added previously, ensuring they exist -->
+    <string name="error_photo_quota_not_met">Debe completar la cuota de fotos en todos los grupos antes de salir.</string>
+    <string name="smart_layout_title">Ingreso Inteligente</string>
+    <string name="smart_layout_description">Agrupa automáticamente las fotos por orientación (vertical/horizontal) en páginas separadas.</string>
+
+    <!-- New string for the latest fix -->
+    <string name="error_at_least_one_photo">Cada grupo debe tener al menos una foto antes de salir.</string>
 </resources>

@@ -95,7 +95,6 @@
     <string name="group_item_unnamed_group">Unnamed Group (ID: %1$s…)</string>
     <string name="group_item_total_photos_required">Total Photos Required</string>
     <string name="group_item_photos_loaded">Photos Loaded</string>
-    <string name="error_photo_quota_not_met">Debe completar la cuota de fotos en todos los grupos antes de salir.</string>
     <string name="group_item_add_images_button">Images</string>
     <string name="group_item_edit_button_description">Edit Group</string>
     <string name="group_item_delete_button_description">Delete Group</string>
@@ -105,4 +104,10 @@
     <string name="image_upload_quota_message">Required: %1$d / Loaded: %2$d</string>
     <string name="image_upload_add_photos_button">Add Photos</string>
     <string name="image_upload_done_button">Done</string>
+
+    <!-- Smart Layout and Error Messages -->
+    <string name="error_photo_quota_not_met">You must complete the photo quota in all groups before exiting.</string>
+    <string name="error_at_least_one_photo">Each group must have at least one photo before exiting.</string>
+    <string name="smart_layout_title">Smart Layout</string>
+    <string name="smart_layout_description">Automatically group photos by orientation (vertical/horizontal) into separate pages.</string>
 </resources>

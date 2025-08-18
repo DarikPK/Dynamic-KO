@@ -129,11 +129,21 @@ fun InnerPagesScreen(
                 title = { Text(stringResource(id = R.string.inner_pages_title)) },
                 navigationIcon = {
                     IconButton(onClick = {
-                        val allQuotasMet = pageGroups.all { it.isPhotoQuotaMet }
+                        val allQuotasMet = if (projectConfig.smartLayoutEnabled) {
+                            pageGroups.all { it.photos.isNotEmpty() }
+                        } else {
+                            pageGroups.all { it.isPhotoQuotaMet }
+                        }
+
                         if (allQuotasMet) {
                             navController.popBackStack()
                         } else {
-                            Toast.makeText(context, R.string.error_photo_quota_not_met, Toast.LENGTH_LONG).show()
+                            val errorMessage = if (projectConfig.smartLayoutEnabled) {
+                                context.getString(R.string.error_at_least_one_photo)
+                            } else {
+                                context.getString(R.string.error_photo_quota_not_met)
+                            }
+                            Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
                         }
                     }) {
                         Icon(
