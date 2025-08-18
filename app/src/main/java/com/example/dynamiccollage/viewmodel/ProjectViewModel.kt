@@ -136,9 +136,9 @@ class ProjectViewModel : ViewModel() {
             val generatedFile = withContext(Dispatchers.IO) {
                 val generatedPages = _currentPageGroups.value.flatMap { group ->
                     com.example.dynamiccollage.utils.PdfContentManager.groupImagesForPdf(
+                        context = context,
                         imageUris = group.imageUris,
-                        photosPerPage = group.photosPerSheet,
-                        groupOrientation = group.orientation
+                        photosPerPage = group.photosPerSheet
                     )
                 }
 
