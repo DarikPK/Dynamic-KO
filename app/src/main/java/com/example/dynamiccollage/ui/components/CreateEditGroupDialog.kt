@@ -45,6 +45,7 @@ fun CreateEditGroupDialog(
     navController: NavController,
     editingGroup: PageGroup?,
     viewModel: InnerPagesViewModel,
+    isSmartLayoutGloballyEnabled: Boolean,
     onDismiss: () -> Unit
 ) {
     if (editingGroup == null) return
@@ -112,23 +113,25 @@ fun CreateEditGroupDialog(
                     ) { Text(stringResource(R.string.two_photos)) }
                 }
 
-                OutlinedTextField(
-                    value = sheetCountString,
-                    onValueChange = {
-                        sheetCountString = it
-                        viewModel.onEditingGroupSheetCountChange(it)
-                    },
-                    label = { Text(stringResource(R.string.sheet_count_label)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    isError = editingGroup.sheetCount <= 0,
-                    supportingText = {
-                        if (editingGroup.sheetCount <= 0) {
-                            Text(stringResource(id = R.string.error_sheet_count_invalid))
+                if (!isSmartLayoutGloballyEnabled) {
+                    OutlinedTextField(
+                        value = sheetCountString,
+                        onValueChange = {
+                            sheetCountString = it
+                            viewModel.onEditingGroupSheetCountChange(it)
+                        },
+                        label = { Text(stringResource(R.string.sheet_count_label)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        isError = editingGroup.sheetCount <= 0,
+                        supportingText = {
+                            if (editingGroup.sheetCount <= 0) {
+                                Text(stringResource(id = R.string.error_sheet_count_invalid))
+                            }
                         }
-                    }
-                )
+                    )
+                }
 
                 OutlinedTextField(
                     value = imageSpacingString,

@@ -63,6 +63,7 @@ fun InnerPagesScreen(
     val pageGroups by innerPagesViewModel.pageGroups.collectAsState()
     val showDialog by innerPagesViewModel.showCreateGroupDialog.collectAsState()
     val editingGroup by innerPagesViewModel.editingGroup.collectAsState()
+    val projectConfig by projectViewModel.currentCoverConfig.collectAsState()
     val currentGroupAddingImages by innerPagesViewModel.currentGroupAddingImages.collectAsState()
     val context = LocalContext.current
     val groupToDelete by innerPagesViewModel.showDeleteGroupDialog.collectAsState()
@@ -116,6 +117,7 @@ fun InnerPagesScreen(
             navController = navController,
             editingGroup = editingGroup,
             viewModel = innerPagesViewModel,
+            isSmartLayoutGloballyEnabled = projectConfig.smartLayoutEnabled,
             onDismiss = { innerPagesViewModel.onDismissCreateGroupDialog() }
         )
     }
