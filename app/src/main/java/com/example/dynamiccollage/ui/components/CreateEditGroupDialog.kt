@@ -2,7 +2,6 @@ package com.example.dynamiccollage.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,7 +18,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -114,39 +112,23 @@ fun CreateEditGroupDialog(
                     ) { Text(stringResource(R.string.two_photos)) }
                 }
 
-                if (editingGroup.photosPerSheet == 2) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("Ingreso Inteligente")
-                        Switch(
-                            checked = editingGroup.smartLayoutEnabled,
-                            onCheckedChange = { viewModel.onEditingGroupSmartLayoutChange(it) }
-                        )
-                    }
-                }
-
-                if (!editingGroup.smartLayoutEnabled) {
-                    OutlinedTextField(
-                        value = sheetCountString,
-                        onValueChange = {
-                            sheetCountString = it
-                            viewModel.onEditingGroupSheetCountChange(it)
-                        },
-                        label = { Text(stringResource(R.string.sheet_count_label)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true,
-                        isError = editingGroup.sheetCount <= 0,
-                        supportingText = {
-                            if (editingGroup.sheetCount <= 0) {
-                                Text(stringResource(id = R.string.error_sheet_count_invalid))
-                            }
+                OutlinedTextField(
+                    value = sheetCountString,
+                    onValueChange = {
+                        sheetCountString = it
+                        viewModel.onEditingGroupSheetCountChange(it)
+                    },
+                    label = { Text(stringResource(R.string.sheet_count_label)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    isError = editingGroup.sheetCount <= 0,
+                    supportingText = {
+                        if (editingGroup.sheetCount <= 0) {
+                            Text(stringResource(id = R.string.error_sheet_count_invalid))
                         }
-                    )
-                }
+                    }
+                )
 
                 OutlinedTextField(
                     value = imageSpacingString,

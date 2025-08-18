@@ -67,7 +67,7 @@ fun InnerPagesScreen(
         ConfirmationDialog(
             title = "Eliminar Grupo",
             message = "Estás seguro de que quieres eliminar este grupo?",
-            onConfirm = { innerPagesViewModel.onConfirmRemoveGroup() },
+            onConfirm = { innerPagesViewModel.onConfirmRemoveGroup(context) },
             onDismiss = { innerPagesViewModel.onDismissRemoveGroupDialog() }
         )
     }

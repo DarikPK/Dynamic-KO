@@ -4,6 +4,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,6 +17,7 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
@@ -76,6 +78,7 @@ fun MainScreen(
 
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
+    var showContentEntryDialog by remember { mutableStateOf(false) }
     val pdfGenerationState by projectViewModel.pdfGenerationState.collectAsState()
     val shareablePdfUri by projectViewModel.shareablePdfUri.collectAsState()
     val saveState by projectViewModel.saveState.collectAsState()
@@ -192,6 +195,42 @@ fun MainScreen(
         )
     }
 
+    if (showContentEntryDialog) {
+        AlertDialog(
+            onDismissRequest = { showContentEntryDialog = false },
+            title = { Text("Gestionar Contenido") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(
+                        onClick = {
+                            showContentEntryDialog = false
+                            navController.navigate(Screen.InnerPages.route)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Ingreso Manual")
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Ingreso Inteligente")
+                        val projectConfig by projectViewModel.currentCoverConfig.collectAsState()
+                        Switch(
+                            checked = projectConfig.smartLayoutEnabled,
+                            onCheckedChange = { projectViewModel.onSmartLayoutToggled(it) }
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showContentEntryDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -221,7 +260,7 @@ fun MainScreen(
             )
             MainButton(
                 text = "Gestionar Contenido",
-                onClick = { navController.navigate(Screen.InnerPages.route) }
+                onClick = { showContentEntryDialog = true }
             )
             MainButton(
                 text = "Gestionar Tamaño",

@@ -47,6 +47,10 @@ class ProjectViewModel : ViewModel() {
         _currentCoverConfig.value = newConfig
     }
 
+    fun onSmartLayoutToggled(enabled: Boolean) {
+        _currentCoverConfig.update { it.copy(smartLayoutEnabled = enabled) }
+    }
+
     fun addPageGroup(group: PageGroup) {
         _currentPageGroups.update { currentList -> currentList + group }
     }
@@ -57,7 +61,7 @@ class ProjectViewModel : ViewModel() {
         }
     }
 
-    fun deletePageGroup(groupId: String) {
+    fun deletePageGroup(context: Context, groupId: String) {
         val groupToDelete = _currentPageGroups.value.find { it.id == groupId }
         viewModelScope.launch(Dispatchers.IO) {
             groupToDelete?.imageUris?.forEach { uri ->
@@ -67,6 +71,7 @@ class ProjectViewModel : ViewModel() {
         _currentPageGroups.update { currentList ->
             currentList.filterNot { it.id == groupId }
         }
+        saveProject(context)
     }
 
     fun resetPageGroups() {
@@ -139,7 +144,7 @@ class ProjectViewModel : ViewModel() {
                         context = context,
                         imageUris = group.imageUris,
                         photosPerPage = group.photosPerSheet,
-                        smartLayoutEnabled = group.smartLayoutEnabled,
+                        smartLayoutEnabled = coverConfig.smartLayoutEnabled,
                         groupOrientation = group.orientation
                     )
                 }
