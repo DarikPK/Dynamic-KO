@@ -15,9 +15,11 @@ object PdfContentManager {
     ): List<GeneratedPage> {
         if (imageUris.isEmpty()) return emptyList()
 
+        // Use smart layout only if the global flag is on AND the group is set to 2 photos/sheet
         if (smartLayoutEnabled && photosPerPage == 2) {
             return runSmartLayout(context, imageUris)
         } else {
+            // Fallback to simple layout for 1 photo/sheet or if smart layout is off
             return runSimpleLayout(imageUris, photosPerPage, groupOrientation)
         }
     }

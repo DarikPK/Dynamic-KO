@@ -68,6 +68,17 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
     }
 
     fun onImagesSelectedForGroup(context: android.content.Context, uris: List<Uri>, groupId: String) {
+        val group = pageGroups.value.find { it.id == groupId }
+        if (group != null && group.smartLayoutEnabled) {
+            val currentSize = group.imageUris.size
+            val newSize = uris.size
+            if (currentSize + newSize > 40) {
+                android.widget.Toast.makeText(context, "Un grupo inteligente no puede exceder las 40 fotos.", android.widget.Toast.LENGTH_LONG).show()
+                _currentGroupAddingImages.value = null
+                return
+            }
+        }
+
         val uriStrings = uris.map { it.toString() }
         projectViewModel.copyAndAddImagesToPageGroup(context, uriStrings, groupId)
         _currentGroupAddingImages.value = null
@@ -144,6 +155,10 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
     fun onEditingGroupImageSpacingChange(spacingStr: String) {
         val spacing = spacingStr.toFloatOrNull() ?: 0f
         _editingGroup.value = _editingGroup.value?.copy(imageSpacing = spacing)
+    }
+
+    fun onEditingGroupSmartLayoutChange(enabled: Boolean) {
+        _editingGroup.value = _editingGroup.value?.copy(smartLayoutEnabled = enabled)
     }
 
     fun onEditingGroupFontSizeChange(size: String) {
