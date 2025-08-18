@@ -76,8 +76,12 @@ fun PageGroupItem(
                 }
             }
 
+            InfoRow(
+                label = stringResource(R.string.group_item_layout_type),
+                value = if (pageGroup.smartLayoutEnabled) stringResource(R.string.smart_layout_title) else stringResource(R.string.manual_layout_title)
+            )
+
             if (pageGroup.smartLayoutEnabled) {
-                InfoRow(label = stringResource(R.string.group_item_layout_type), value = stringResource(R.string.smart_layout_title))
                 InfoRow(
                     label = stringResource(R.string.group_item_photos_loaded),
                     value = "${pageGroup.imageUris.size}"
@@ -85,14 +89,9 @@ fun PageGroupItem(
             } else {
                 InfoRow(label = stringResource(R.string.group_orientation_label), value = pageGroup.orientation.name)
                 InfoRow(label = stringResource(R.string.photos_per_sheet_label), value = "${pageGroup.photosPerSheet}")
-                InfoRow(label = stringResource(R.string.sheet_count_label), value = "${pageGroup.sheetCount}")
                 InfoRow(
                     label = stringResource(R.string.group_item_total_photos_required),
-                    value = "${pageGroup.totalPhotosRequired}"
-                )
-                InfoRow(
-                    label = stringResource(R.string.group_item_photos_loaded),
-                    value = "${pageGroup.imageUris.size}",
+                    value = "${pageGroup.imageUris.size}/${pageGroup.totalPhotosRequired}",
                     isMet = pageGroup.isPhotoQuotaMet,
                     metColor = MaterialTheme.colorScheme.primary,
                     notMetColor = MaterialTheme.colorScheme.error

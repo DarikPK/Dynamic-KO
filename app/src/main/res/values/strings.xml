@@ -110,5 +110,6 @@
 
     <!-- Smart Layout -->
     <string name="smart_layout_title">Smart Layout</string>
+    <string name="manual_layout_title">Manual Layout</string>
     <string name="smart_layout_description">When enabled, new groups will automatically arrange photos by orientation.</string>
 </resources>
