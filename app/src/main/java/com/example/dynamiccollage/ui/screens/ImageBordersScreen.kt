@@ -10,9 +10,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.dynamiccollage.R
 import com.example.dynamiccollage.data.model.ImageBorderSettings
 import com.example.dynamiccollage.data.model.ImageBorderStyle
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
@@ -33,7 +35,6 @@ fun ImageBordersScreen(
 
     val selectionMap = remember {
         mutableStateMapOf<String, Boolean>().apply {
-            // Initialize with all false
             this["cover"] = false
             pageGroups.forEach { group ->
                 this[group.id] = false
@@ -65,7 +66,6 @@ fun ImageBordersScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Style Selector
                 Text("Estilo de Borde", style = MaterialTheme.typography.titleMedium)
                 SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                     ImageBorderStyle.values().forEachIndexed { index, style ->
@@ -74,24 +74,29 @@ fun ImageBordersScreen(
                             onClick = { selectedStyle = style },
                             shape = SegmentedButtonDefaults.itemShape(index = index, count = ImageBorderStyle.values().size)
                         ) {
-                            Text(style.name.lowercase().replaceFirstChar { it.titlecase() })
+                            val textRes = when (style) {
+                                ImageBorderStyle.NONE -> R.string.image_border_style_none
+                                ImageBorderStyle.CURVED -> R.string.image_border_style_curved
+                                ImageBorderStyle.CHAMFERED -> R.string.image_border_style_chamfered
+                            }
+                            Text(stringResource(id = textRes))
                         }
                     }
                 }
 
-                // Size Slider
-                Text("Tamaño del Borde: ${sliderPosition.toInt()}pt", style = MaterialTheme.typography.titleMedium)
-                Slider(
-                    value = sliderPosition,
-                    onValueChange = { sliderPosition = it },
-                    valueRange = 0f..50f,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                if (selectedStyle != ImageBorderStyle.NONE) {
+                    Text("Tamaño del Borde: ${sliderPosition.toInt()}pt", style = MaterialTheme.typography.titleMedium)
+                    Slider(
+                        value = sliderPosition,
+                        onValueChange = { sliderPosition = it },
+                        valueRange = 0f..50f,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
 
             Divider()
 
-            // Selection List
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -122,15 +127,16 @@ fun ImageBordersScreen(
                 }
             }
 
-            // Save Button
             Button(
                 onClick = {
-                    val newBorderSettings = ImageBorderSettings(style = selectedStyle, size = sliderPosition)
                     val currentSettingsMap = projectConfig.imageBorderSettingsMap.toMutableMap()
-
                     selectionMap.forEach { (id, isSelected) ->
                         if (isSelected) {
-                            currentSettingsMap[id] = newBorderSettings
+                            if (selectedStyle == ImageBorderStyle.NONE) {
+                                currentSettingsMap.remove(id)
+                            } else {
+                                currentSettingsMap[id] = ImageBorderSettings(style = selectedStyle, size = sliderPosition)
+                            }
                         }
                     }
                     projectViewModel.updateImageBorderSettings(currentSettingsMap)
@@ -141,7 +147,7 @@ fun ImageBordersScreen(
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
-                Text("Guardar y Volver")
+                Text("Aplicar y Guardar")
             }
         }
     }

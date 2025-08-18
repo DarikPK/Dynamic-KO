@@ -112,4 +112,9 @@
     <string name="smart_layout_title">Smart Layout</string>
     <string name="manual_layout_title">Manual Layout</string>
     <string name="smart_layout_description">When enabled, new groups will automatically arrange photos by orientation.</string>
+
+    <!-- Image Border Styles -->
+    <string name="image_border_style_none">None</string>
+    <string name="image_border_style_curved">Curved</string>
+    <string name="image_border_style_chamfered">Chamfered</string>
 </resources>

@@ -110,4 +110,9 @@
     <string name="smart_layout_title">Ingreso Inteligente</string>
     <string name="manual_layout_title">Ingreso Manual</string>
     <string name="smart_layout_description">Cuando está activado, los nuevos grupos organizarán automáticamente las fotos por orientación.</string>
+
+    <!-- Image Border Styles -->
+    <string name="image_border_style_none">Ninguno</string>
+    <string name="image_border_style_curved">Curvo</string>
+    <string name="image_border_style_chamfered">Triangular</string>
 </resources>
