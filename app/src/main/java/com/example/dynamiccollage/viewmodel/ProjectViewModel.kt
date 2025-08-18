@@ -47,6 +47,10 @@ class ProjectViewModel : ViewModel() {
         _currentCoverConfig.value = newConfig
     }
 
+    fun onSmartLayoutToggled(enabled: Boolean) {
+        _currentCoverConfig.update { it.copy(smartLayoutEnabled = enabled) }
+    }
+
     fun addPageGroup(group: PageGroup) {
         _currentPageGroups.update { currentList -> currentList + group }
     }
@@ -140,7 +144,7 @@ class ProjectViewModel : ViewModel() {
                         context = context,
                         imageUris = group.imageUris,
                         photosPerPage = group.photosPerSheet,
-                        smartLayoutEnabled = group.smartLayoutEnabled,
+                        smartLayoutEnabled = coverConfig.smartLayoutEnabled,
                         groupOrientation = group.orientation
                     )
                 }

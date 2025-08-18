@@ -47,6 +47,7 @@ fun CreateEditGroupDialog(
     navController: NavController,
     editingGroup: PageGroup?,
     viewModel: InnerPagesViewModel,
+    isSmartLayoutGloballyEnabled: Boolean,
     onDismiss: () -> Unit
 ) {
     if (editingGroup == null) return
@@ -86,7 +87,7 @@ fun CreateEditGroupDialog(
                     singleLine = true
                 )
 
-                if (!editingGroup.smartLayoutEnabled) {
+                if (!isSmartLayoutGloballyEnabled) {
                     Text(stringResource(R.string.group_orientation_label), style = MaterialTheme.typography.labelMedium)
                     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                         SegmentedButton(
@@ -116,21 +117,8 @@ fun CreateEditGroupDialog(
                     ) { Text(stringResource(R.string.two_photos)) }
                 }
 
-                if (editingGroup.photosPerSheet == 2) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("Ingreso Inteligente")
-                        Switch(
-                            checked = editingGroup.smartLayoutEnabled,
-                            onCheckedChange = { viewModel.onEditingGroupSmartLayoutChange(it) }
-                        )
-                    }
-                }
 
-                if (!editingGroup.smartLayoutEnabled) {
+                if (!isSmartLayoutGloballyEnabled) {
                     OutlinedTextField(
                         value = sheetCountString,
                         onValueChange = {
