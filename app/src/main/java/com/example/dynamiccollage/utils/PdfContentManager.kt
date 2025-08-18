@@ -42,21 +42,23 @@ object PdfContentManager {
             }
         }
 
-        // Create pages for vertical photos, one photo per page
-        verticalPhotos.forEach { uri ->
+        // Create pages for vertical photos
+        val verticalChunks = verticalPhotos.chunked(group.photosPerSheet)
+        verticalChunks.forEach { chunk ->
             smartPages.add(
                 GeneratedPage(
-                    imageUris = listOf(uri),
+                    imageUris = chunk,
                     orientation = PageOrientation.Vertical
                 )
             )
         }
 
-        // Create pages for horizontal photos, one photo per page
-        horizontalPhotos.forEach { uri ->
+        // Create pages for horizontal photos
+        val horizontalChunks = horizontalPhotos.chunked(group.photosPerSheet)
+        horizontalChunks.forEach { chunk ->
             smartPages.add(
                 GeneratedPage(
-                    imageUris = listOf(uri),
+                    imageUris = chunk,
                     orientation = PageOrientation.Horizontal
                 )
             )

@@ -99,20 +99,6 @@ fun CreateEditGroupDialog(
                         ) { Text(stringResource(R.string.orientation_horizontal)) }
                     }
 
-                    Text(stringResource(R.string.photos_per_sheet_label), style = MaterialTheme.typography.labelMedium)
-                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                        SegmentedButton(
-                            selected = editingGroup.photosPerSheet == 1,
-                            onClick = { viewModel.onEditingGroupPhotosPerSheetChange(1) },
-                            shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
-                        ) { Text(stringResource(R.string.one_photo)) }
-                        SegmentedButton(
-                            selected = editingGroup.photosPerSheet == 2,
-                            onClick = { viewModel.onEditingGroupPhotosPerSheetChange(2) },
-                            shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
-                        ) { Text(stringResource(R.string.two_photos)) }
-                    }
-
                     OutlinedTextField(
                         value = sheetCountString,
                         onValueChange = {
@@ -130,6 +116,20 @@ fun CreateEditGroupDialog(
                             }
                         }
                     )
+                }
+
+                Text(stringResource(R.string.photos_per_sheet_label), style = MaterialTheme.typography.labelMedium)
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    SegmentedButton(
+                        selected = editingGroup.photosPerSheet == 1,
+                        onClick = { viewModel.onEditingGroupPhotosPerSheetChange(1) },
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                    ) { Text(stringResource(R.string.one_photo)) }
+                    SegmentedButton(
+                        selected = editingGroup.photosPerSheet == 2,
+                        onClick = { viewModel.onEditingGroupPhotosPerSheetChange(2) },
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                    ) { Text(stringResource(R.string.two_photos)) }
                 }
 
                 OutlinedTextField(
