@@ -118,6 +118,7 @@ fun InnerPagesScreen(
             navController = navController,
             editingGroup = editingGroup,
             viewModel = innerPagesViewModel,
+            isSmartLayoutGloballyEnabled = projectConfig.smartLayoutEnabled,
             onDismiss = { innerPagesViewModel.onDismissCreateGroupDialog() }
         )
     }
