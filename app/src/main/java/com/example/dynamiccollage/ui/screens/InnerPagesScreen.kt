@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -29,6 +30,9 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -42,6 +46,7 @@ import com.example.dynamiccollage.R
 import com.example.dynamiccollage.data.model.PageGroup
 import com.example.dynamiccollage.ui.components.ConfirmationDialog
 import com.example.dynamiccollage.ui.components.CreateEditGroupDialog
+import com.example.dynamiccollage.ui.components.SettingsDialog
 import com.example.dynamiccollage.ui.components.PageGroupItem
 import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
 import com.example.dynamiccollage.viewmodel.InnerPagesViewModel
@@ -61,6 +66,7 @@ fun InnerPagesScreen(
     val currentGroupAddingImages by innerPagesViewModel.currentGroupAddingImages.collectAsState()
     val context = LocalContext.current
     val groupToDelete by innerPagesViewModel.showDeleteGroupDialog.collectAsState()
+    var showSettingsDialog by remember { mutableStateOf(false) }
     val imagesToDelete by innerPagesViewModel.showDeleteImagesDialog.collectAsState()
 
     if (groupToDelete != null) {
@@ -78,6 +84,13 @@ fun InnerPagesScreen(
             message = "Estás seguro de que quieres eliminar todas las imágenes de este grupo?",
             onConfirm = { innerPagesViewModel.onConfirmRemoveImages() },
             onDismiss = { innerPagesViewModel.onDismissRemoveImagesDialog() }
+        )
+    }
+
+    if (showSettingsDialog) {
+        SettingsDialog(
+            projectViewModel = projectViewModel,
+            onDismiss = { showSettingsDialog = false }
         )
     }
 
@@ -130,6 +143,12 @@ fun InnerPagesScreen(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 ),
                 actions = {
+                    IconButton(onClick = { showSettingsDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Filled.Settings,
+                            contentDescription = "Ajustes de Página"
+                        )
+                    }
                     IconButton(onClick = {
                         innerPagesViewModel.saveEditingGroup(context)
                         Toast.makeText(context, R.string.page_groups_saved_toast, Toast.LENGTH_SHORT).show()

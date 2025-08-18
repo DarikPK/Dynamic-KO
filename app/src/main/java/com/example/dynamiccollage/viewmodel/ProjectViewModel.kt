@@ -47,6 +47,10 @@ class ProjectViewModel : ViewModel() {
         _currentCoverConfig.value = newConfig
     }
 
+    fun onSmartLayoutToggled(enabled: Boolean) {
+        _currentCoverConfig.update { it.copy(smartLayoutEnabled = enabled) }
+    }
+
     fun addPageGroup(group: PageGroup) {
         _currentPageGroups.update { currentList -> currentList + group }
     }
