@@ -15,8 +15,6 @@ object PdfContentManager {
     ): List<GeneratedPage> {
         if (imageUris.isEmpty()) return emptyList()
 
-        // This is the fix for the orientation bug.
-        // It also prepares for the full smart layout feature.
         if (smartLayoutEnabled && photosPerPage == 2) {
             return runSmartLayout(context, imageUris)
         } else {

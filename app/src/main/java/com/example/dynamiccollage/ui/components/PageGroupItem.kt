@@ -21,12 +21,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -41,6 +38,7 @@ import com.example.dynamiccollage.utils.PdfContentManager
 @Composable
 fun PageGroupItem(
     pageGroup: PageGroup,
+    isSmartLayoutGloballyEnabled: Boolean,
     onAddImagesClicked: (String) -> Unit,
     onEditGroupClicked: (PageGroup) -> Unit,
     onDeleteGroupClicked: (String) -> Unit,
@@ -48,14 +46,14 @@ fun PageGroupItem(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val calculatedSheetCount by remember(pageGroup.imageUris, pageGroup.smartLayoutEnabled) {
+    val calculatedSheetCount by remember(pageGroup.imageUris, isSmartLayoutGloballyEnabled) {
         mutableStateOf(
-            if (pageGroup.smartLayoutEnabled && pageGroup.imageUris.isNotEmpty()) {
+            if (isSmartLayoutGloballyEnabled && pageGroup.imageUris.isNotEmpty()) {
                 PdfContentManager.groupImagesForPdf(
                     context = context,
                     imageUris = pageGroup.imageUris,
                     photosPerPage = pageGroup.photosPerSheet,
-                    smartLayoutEnabled = pageGroup.smartLayoutEnabled,
+                    smartLayoutEnabled = isSmartLayoutGloballyEnabled,
                     groupOrientation = pageGroup.orientation
                 ).size
             } else {
@@ -99,7 +97,7 @@ fun PageGroupItem(
                 }
             }
 
-            if (!pageGroup.smartLayoutEnabled) {
+            if (!isSmartLayoutGloballyEnabled) {
                 InfoRow(label = stringResource(R.string.group_orientation_label), value = pageGroup.orientation.name)
                 InfoRow(label = stringResource(R.string.photos_per_sheet_label), value = "${pageGroup.photosPerSheet}")
                 InfoRow(label = stringResource(R.string.sheet_count_label), value = "${pageGroup.sheetCount}")
@@ -122,7 +120,7 @@ fun PageGroupItem(
             InfoRow(
                 label = stringResource(R.string.group_item_photos_loaded),
                 value = "${pageGroup.imageUris.size}",
-                isMet = if (pageGroup.smartLayoutEnabled) null else pageGroup.isPhotoQuotaMet,
+                isMet = if (isSmartLayoutGloballyEnabled) null else pageGroup.isPhotoQuotaMet,
                 metColor = MaterialTheme.colorScheme.primary, // O un verde específico
                 notMetColor = MaterialTheme.colorScheme.error
             )
@@ -196,10 +194,10 @@ fun PageGroupItemPreview() {
                 orientation = PageOrientation.Vertical,
                 photosPerSheet = 2,
                 sheetCount = 3,
-                smartLayoutEnabled = false,
                 optionalTextStyle = com.example.dynamiccollage.data.model.TextStyleConfig(content="Texto opcional de ejemplo"),
                 imageUris = List(5) { "uri_placeholder" } // 5 de 6 fotos cargadas
             ),
+            isSmartLayoutGloballyEnabled = false,
             onAddImagesClicked = {},
             onEditGroupClicked = {},
             onDeleteGroupClicked = {},
@@ -220,6 +218,7 @@ fun PageGroupItemUnnamedPreview() {
                 sheetCount = 1,
                 imageUris = List(1) { "uri_placeholder" } // Cuota cumplida
             ),
+            isSmartLayoutGloballyEnabled = true,
             onAddImagesClicked = {},
             onEditGroupClicked = {},
             onDeleteGroupClicked = {},
