@@ -119,7 +119,6 @@ data class CoverPageConfig(
     // PDF Size Management
     val imageQuality: Int = 100,
     val autoAdjustSize: Boolean = true,
-    val smartLayoutEnabled: Boolean = false,
 
     val templateName: String? = null
 )

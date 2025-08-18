@@ -2,6 +2,7 @@ package com.example.dynamiccollage.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,6 +19,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -45,7 +47,6 @@ fun CreateEditGroupDialog(
     navController: NavController,
     editingGroup: PageGroup?,
     viewModel: InnerPagesViewModel,
-    isSmartLayoutGloballyEnabled: Boolean,
     onDismiss: () -> Unit
 ) {
     if (editingGroup == null) return
@@ -85,18 +86,20 @@ fun CreateEditGroupDialog(
                     singleLine = true
                 )
 
-                Text(stringResource(R.string.group_orientation_label), style = MaterialTheme.typography.labelMedium)
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                    SegmentedButton(
-                        selected = editingGroup.orientation == PageOrientation.Vertical,
-                        onClick = { viewModel.onEditingGroupOrientationChange(PageOrientation.Vertical) },
-                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
-                    ) { Text(stringResource(R.string.orientation_vertical)) }
-                    SegmentedButton(
-                        selected = editingGroup.orientation == PageOrientation.Horizontal,
-                        onClick = { viewModel.onEditingGroupOrientationChange(PageOrientation.Horizontal) },
-                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
-                    ) { Text(stringResource(R.string.orientation_horizontal)) }
+                if (!editingGroup.smartLayoutEnabled) {
+                    Text(stringResource(R.string.group_orientation_label), style = MaterialTheme.typography.labelMedium)
+                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                        SegmentedButton(
+                            selected = editingGroup.orientation == PageOrientation.Vertical,
+                            onClick = { viewModel.onEditingGroupOrientationChange(PageOrientation.Vertical) },
+                            shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                        ) { Text(stringResource(R.string.orientation_vertical)) }
+                        SegmentedButton(
+                            selected = editingGroup.orientation == PageOrientation.Horizontal,
+                            onClick = { viewModel.onEditingGroupOrientationChange(PageOrientation.Horizontal) },
+                            shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                        ) { Text(stringResource(R.string.orientation_horizontal)) }
+                    }
                 }
 
                 Text(stringResource(R.string.photos_per_sheet_label), style = MaterialTheme.typography.labelMedium)
@@ -113,7 +116,21 @@ fun CreateEditGroupDialog(
                     ) { Text(stringResource(R.string.two_photos)) }
                 }
 
-                if (!isSmartLayoutGloballyEnabled) {
+                if (editingGroup.photosPerSheet == 2) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Ingreso Inteligente")
+                        Switch(
+                            checked = editingGroup.smartLayoutEnabled,
+                            onCheckedChange = { viewModel.onEditingGroupSmartLayoutChange(it) }
+                        )
+                    }
+                }
+
+                if (!editingGroup.smartLayoutEnabled) {
                     OutlinedTextField(
                         value = sheetCountString,
                         onValueChange = {

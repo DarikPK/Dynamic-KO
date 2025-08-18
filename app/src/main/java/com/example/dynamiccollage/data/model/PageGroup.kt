@@ -18,7 +18,8 @@ data class PageGroup(
     val sheetCount: Int = DefaultPageGroupConfig.DEFAULT_SHEET_COUNT, // Número de hojas en este grupo
     val optionalTextStyle: TextStyleConfig = TextStyleConfig(id = DefaultPageGroupConfig.OPTIONAL_TEXT_ID),
     val imageUris: List<String> = emptyList(), // Lista de URIs de las imágenes seleccionadas para este grupo
-    val imageSpacing: Float = 15f // Añadido para consistencia
+    val imageSpacing: Float = 15f, // Añadido para consistencia
+    val smartLayoutEnabled: Boolean = false
 ) {
     val totalPhotosRequired: Int
         get() = photosPerSheet * sheetCount

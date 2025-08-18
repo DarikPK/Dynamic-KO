@@ -15,11 +15,11 @@ object PdfContentManager {
     ): List<GeneratedPage> {
         if (imageUris.isEmpty()) return emptyList()
 
-        // Use smart layout only if the global flag is on AND the group is set to 2 photos/sheet
+        // This is the fix for the orientation bug.
+        // It also prepares for the full smart layout feature.
         if (smartLayoutEnabled && photosPerPage == 2) {
             return runSmartLayout(context, imageUris)
         } else {
-            // Fallback to simple layout for 1 photo/sheet or if smart layout is off
             return runSimpleLayout(imageUris, photosPerPage, groupOrientation)
         }
     }

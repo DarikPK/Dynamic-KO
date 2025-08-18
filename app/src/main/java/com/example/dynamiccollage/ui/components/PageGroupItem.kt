@@ -23,6 +23,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -31,6 +33,7 @@ import com.example.dynamiccollage.R
 import com.example.dynamiccollage.data.model.PageGroup
 import com.example.dynamiccollage.data.model.PageOrientation
 import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
+import com.example.dynamiccollage.utils.PdfContentManager
 
 @Composable
 fun PageGroupItem(
@@ -41,6 +44,23 @@ fun PageGroupItem(
     onDeleteImagesClicked: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val calculatedSheetCount by remember(pageGroup.imageUris, pageGroup.smartLayoutEnabled) {
+        mutableStateOf(
+            if (pageGroup.smartLayoutEnabled && pageGroup.imageUris.isNotEmpty()) {
+                PdfContentManager.groupImagesForPdf(
+                    context = context,
+                    imageUris = pageGroup.imageUris,
+                    photosPerPage = pageGroup.photosPerSheet,
+                    smartLayoutEnabled = pageGroup.smartLayoutEnabled,
+                    groupOrientation = pageGroup.orientation
+                ).size
+            } else {
+                pageGroup.sheetCount
+            }
+        )
+    }
+
     Card(
         modifier = modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -76,17 +96,30 @@ fun PageGroupItem(
                 }
             }
 
-            InfoRow(label = stringResource(R.string.group_orientation_label), value = pageGroup.orientation.name)
-            InfoRow(label = stringResource(R.string.photos_per_sheet_label), value = "${pageGroup.photosPerSheet}")
-            InfoRow(label = stringResource(R.string.sheet_count_label), value = "${pageGroup.sheetCount}")
-            InfoRow(
-                label = stringResource(R.string.group_item_total_photos_required),
-                value = "${pageGroup.totalPhotosRequired}"
-            )
+            if (!pageGroup.smartLayoutEnabled) {
+                InfoRow(label = stringResource(R.string.group_orientation_label), value = pageGroup.orientation.name)
+                InfoRow(label = stringResource(R.string.photos_per_sheet_label), value = "${pageGroup.photosPerSheet}")
+                InfoRow(label = stringResource(R.string.sheet_count_label), value = "${pageGroup.sheetCount}")
+                InfoRow(
+                    label = stringResource(R.string.group_item_total_photos_required),
+                    value = "${pageGroup.totalPhotosRequired}"
+                )
+            } else {
+                InfoRow(label = "Modalidad", value = "Ingreso Inteligente")
+                InfoRow(label = stringResource(R.string.photos_per_sheet_label), value = "${pageGroup.photosPerSheet}")
+                InfoRow(
+                    label = stringResource(R.string.sheet_count_label),
+                    value = if (pageGroup.imageUris.isEmpty()) "-" else calculatedSheetCount.toString()
+                )
+                InfoRow(
+                    label = stringResource(R.string.group_item_total_photos_required),
+                    value = "Ilimitado (máx. 40)"
+                )
+            }
             InfoRow(
                 label = stringResource(R.string.group_item_photos_loaded),
                 value = "${pageGroup.imageUris.size}",
-                isMet = pageGroup.isPhotoQuotaMet,
+                isMet = if (pageGroup.smartLayoutEnabled) null else pageGroup.isPhotoQuotaMet,
                 metColor = MaterialTheme.colorScheme.primary, // O un verde específico
                 notMetColor = MaterialTheme.colorScheme.error
             )
@@ -160,6 +193,7 @@ fun PageGroupItemPreview() {
                 orientation = PageOrientation.Vertical,
                 photosPerSheet = 2,
                 sheetCount = 3,
+                smartLayoutEnabled = false,
                 optionalTextStyle = com.example.dynamiccollage.data.model.TextStyleConfig(content="Texto opcional de ejemplo"),
                 imageUris = List(5) { "uri_placeholder" } // 5 de 6 fotos cargadas
             ),
