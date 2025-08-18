@@ -1,10 +1,12 @@
 package com.example.dynamiccollage.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,6 +19,7 @@ import androidx.navigation.NavController
 import com.example.dynamiccollage.R
 import com.example.dynamiccollage.data.model.ImageBorderSettings
 import com.example.dynamiccollage.data.model.ImageBorderStyle
+import com.example.dynamiccollage.ui.components.EditBorderSettingsDialog
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 import kotlin.math.roundToInt
 
@@ -30,16 +33,30 @@ fun ImageBordersScreen(
     val projectConfig by projectViewModel.currentCoverConfig.collectAsState()
     val pageGroups by projectViewModel.currentPageGroups.collectAsState()
 
-    var selectedStyle by remember { mutableStateOf(ImageBorderStyle.NONE) }
-    var sliderPosition by remember { mutableStateOf(10f) }
+    // A temporary map to hold changes before saving
+    var tempBorderSettingsMap by remember {
+        mutableStateOf(projectConfig.imageBorderSettingsMap)
+    }
 
-    val selectionMap = remember {
-        mutableStateMapOf<String, Boolean>().apply {
-            this["cover"] = false
-            pageGroups.forEach { group ->
-                this[group.id] = false
+    var editingItemId by remember { mutableStateOf<String?>(null) }
+
+    // Show the dialog if an item is being edited
+    editingItemId?.let { id ->
+        val initialSettings = tempBorderSettingsMap[id] ?: ImageBorderSettings()
+        EditBorderSettingsDialog(
+            initialSettings = initialSettings,
+            onDismiss = { editingItemId = null },
+            onConfirm = { newSettings ->
+                val newMap = tempBorderSettingsMap.toMutableMap()
+                if (newSettings.style == ImageBorderStyle.NONE) {
+                    newMap.remove(id)
+                } else {
+                    newMap[id] = newSettings
+                }
+                tempBorderSettingsMap = newMap
+                editingItemId = null
             }
-        }
+        )
     }
 
     Scaffold(
@@ -59,44 +76,6 @@ fun ImageBordersScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Controls Column
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Text("Estilo de Borde", style = MaterialTheme.typography.titleMedium)
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                    ImageBorderStyle.values().forEachIndexed { index, style ->
-                        SegmentedButton(
-                            selected = selectedStyle == style,
-                            onClick = { selectedStyle = style },
-                            shape = SegmentedButtonDefaults.itemShape(index = index, count = ImageBorderStyle.values().size)
-                        ) {
-                            val textRes = when (style) {
-                                ImageBorderStyle.NONE -> R.string.image_border_style_none
-                                ImageBorderStyle.CURVED -> R.string.image_border_style_curved
-                                ImageBorderStyle.CHAMFERED -> R.string.image_border_style_chamfered
-                            }
-                            Text(stringResource(id = textRes))
-                        }
-                    }
-                }
-
-                if (selectedStyle != ImageBorderStyle.NONE) {
-                    Text("Tamaño del Borde: ${sliderPosition.toInt()}pt", style = MaterialTheme.typography.titleMedium)
-                    Slider(
-                        value = sliderPosition,
-                        onValueChange = { sliderPosition = it },
-                        valueRange = 0f..50f,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
-
-            Divider()
-
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -105,41 +84,33 @@ fun ImageBordersScreen(
             ) {
                 item {
                     Text(
-                        "Aplicar a:",
+                        "Configuración de Bordes por Grupo:",
                         style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(vertical = 8.dp)
+                        modifier = Modifier.padding(vertical = 12.dp)
                     )
                 }
                 item {
-                    SelectableRow(
+                    val settings = tempBorderSettingsMap["cover"] ?: ImageBorderSettings()
+                    EditableItemRow(
                         text = "Portada",
-                        checked = selectionMap["cover"] ?: false,
-                        onCheckedChange = { selectionMap["cover"] = it }
+                        settings = settings,
+                        onEditClicked = { editingItemId = "cover" }
                     )
                 }
                 items(pageGroups, key = { it.id }) { group ->
-                    val groupName = group.groupName.ifBlank { "Grupo sin nombre" }
-                    SelectableRow(
+                    val settings = tempBorderSettingsMap[group.id] ?: ImageBorderSettings()
+                    val groupName = group.groupName.ifBlank { "Grupo sin nombre (${group.id.take(6)}...)" }
+                    EditableItemRow(
                         text = groupName,
-                        checked = selectionMap[group.id] ?: false,
-                        onCheckedChange = { selectionMap[group.id] = it }
+                        settings = settings,
+                        onEditClicked = { editingItemId = group.id }
                     )
                 }
             }
 
             Button(
                 onClick = {
-                    val currentSettingsMap = projectConfig.imageBorderSettingsMap.toMutableMap()
-                    selectionMap.forEach { (id, isSelected) ->
-                        if (isSelected) {
-                            if (selectedStyle == ImageBorderStyle.NONE) {
-                                currentSettingsMap.remove(id)
-                            } else {
-                                currentSettingsMap[id] = ImageBorderSettings(style = selectedStyle, size = sliderPosition)
-                            }
-                        }
-                    }
-                    projectViewModel.updateImageBorderSettings(currentSettingsMap)
+                    projectViewModel.updateImageBorderSettings(tempBorderSettingsMap)
                     projectViewModel.saveProject(context)
                     navController.popBackStack()
                 },
@@ -147,22 +118,24 @@ fun ImageBordersScreen(
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
-                Text("Aplicar y Guardar")
+                Text("Guardar y Volver")
             }
         }
     }
 }
 
 @Composable
-private fun SelectableRow(
+private fun EditableItemRow(
     text: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
+    settings: ImageBorderSettings,
+    onEditClicked: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(56.dp),
+            .heightIn(min = 56.dp)
+            .clickable(onClick = onEditClicked)
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -170,8 +143,28 @@ private fun SelectableRow(
             text = text,
             modifier = Modifier.weight(1f),
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis,
+            style = MaterialTheme.typography.bodyLarge
         )
-        Checkbox(checked = checked, onCheckedChange = onCheckedChange)
+
+        val statusText = when (settings.style) {
+            ImageBorderStyle.NONE -> stringResource(id = R.string.image_border_style_none)
+            ImageBorderStyle.CURVED -> "${stringResource(id = R.string.image_border_style_curved)} (${settings.size.toInt()}pt)"
+            ImageBorderStyle.CHAMFERED -> "${stringResource(id = R.string.image_border_style_chamfered)} (${settings.size.toInt()}pt)"
+        }
+
+        Text(
+            text = statusText,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+
+        Icon(
+            imageVector = Icons.Default.Edit,
+            contentDescription = "Editar",
+            tint = MaterialTheme.colorScheme.primary
+        )
     }
+    Divider()
 }
