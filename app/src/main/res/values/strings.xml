@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Pixel Business Collage</string>
+    <string name="app_name">Pixel Collage</string>
 
     <!-- MainScreen Buttons -->
     <string name="main_btn_get_data">Get Data</string>
