@@ -169,6 +169,46 @@ private val CafeColorScheme = lightColorScheme(
     surface = cafe_surface,
 )
 
+private val NocheEstrelladaColorScheme = darkColorScheme(
+    primary = noche_primary,
+    onPrimary = noche_onPrimary,
+    primaryContainer = noche_primaryContainer,
+    onPrimaryContainer = noche_onPrimaryContainer,
+    secondary = noche_secondary,
+    background = noche_background,
+    surface = noche_surface,
+)
+
+private val LujoColorScheme = darkColorScheme(
+    primary = lujo_primary,
+    onPrimary = lujo_onPrimary,
+    primaryContainer = lujo_primaryContainer,
+    onPrimaryContainer = lujo_onPrimaryContainer,
+    secondary = lujo_secondary,
+    background = lujo_background,
+    surface = lujo_surface,
+)
+
+private val CorporativoColorScheme = lightColorScheme(
+    primary = corporativo_primary,
+    onPrimary = corporativo_onPrimary,
+    primaryContainer = corporativo_primaryContainer,
+    onPrimaryContainer = corporativo_onPrimaryContainer,
+    secondary = corporativo_secondary,
+    background = corporativo_background,
+    surface = corporativo_surface,
+)
+
+private val ClasicoColorScheme = lightColorScheme(
+    primary = clasico_primary,
+    onPrimary = clasico_onPrimary,
+    primaryContainer = clasico_primaryContainer,
+    onPrimaryContainer = clasico_onPrimaryContainer,
+    secondary = clasico_secondary,
+    background = clasico_background,
+    surface = clasico_surface,
+)
+
 @Composable
 fun DynamicCollageTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -186,6 +226,10 @@ fun DynamicCollageTheme(
         "Cereza" -> CerezaColorScheme
         "Lavanda" -> LavandaColorScheme
         "Café" -> CafeColorScheme
+        "Noche Estrellada" -> NocheEstrelladaColorScheme
+        "Lujo" -> LujoColorScheme
+        "Corporativo" -> CorporativoColorScheme
+        "Clásico" -> ClasicoColorScheme
         else -> DarkColorScheme
     }
     val view = LocalView.current

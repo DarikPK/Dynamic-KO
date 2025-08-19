@@ -75,7 +75,11 @@ val themePreviews = listOf(
     ThemePreview("Neón", neon_primary, neon_onPrimary, neon_primaryContainer, neon_onPrimaryContainer, neon_secondary, neon_background, neon_onPrimaryContainer, neon_surface, neon_onPrimaryContainer),
     ThemePreview("Cereza", cereza_primary, cereza_onPrimary, cereza_primaryContainer, cereza_onPrimaryContainer, cereza_secondary, cereza_background, cereza_onPrimaryContainer, cereza_surface, cereza_onPrimaryContainer),
     ThemePreview("Lavanda", lavanda_primary, lavanda_onPrimary, lavanda_primaryContainer, lavanda_onPrimaryContainer, lavanda_secondary, lavanda_background, lavanda_onPrimaryContainer, lavanda_surface, lavanda_onPrimaryContainer),
-    ThemePreview("Café", cafe_primary, cafe_onPrimary, cafe_primaryContainer, cafe_onPrimaryContainer, cafe_secondary, cafe_background, cafe_onPrimaryContainer, cafe_surface, cafe_onPrimaryContainer)
+    ThemePreview("Café", cafe_primary, cafe_onPrimary, cafe_primaryContainer, cafe_onPrimaryContainer, cafe_secondary, cafe_background, cafe_onPrimaryContainer, cafe_surface, cafe_onPrimaryContainer),
+    ThemePreview("Noche Estrellada", noche_primary, noche_onPrimary, noche_primaryContainer, noche_onPrimaryContainer, noche_secondary, noche_background, noche_onPrimaryContainer, noche_surface, noche_onPrimaryContainer),
+    ThemePreview("Lujo", lujo_primary, lujo_onPrimary, lujo_primaryContainer, lujo_onPrimaryContainer, lujo_secondary, lujo_background, lujo_onPrimaryContainer, lujo_surface, lujo_onPrimaryContainer),
+    ThemePreview("Corporativo", corporativo_primary, corporativo_onPrimary, corporativo_primaryContainer, corporativo_onPrimaryContainer, corporativo_secondary, corporativo_background, corporativo_onPrimaryContainer, corporativo_surface, corporativo_onPrimaryContainer),
+    ThemePreview("Clásico", clasico_primary, clasico_onPrimary, clasico_primaryContainer, clasico_onPrimaryContainer, clasico_secondary, clasico_background, clasico_onPrimaryContainer, clasico_surface, clasico_onPrimaryContainer)
 )
 
 

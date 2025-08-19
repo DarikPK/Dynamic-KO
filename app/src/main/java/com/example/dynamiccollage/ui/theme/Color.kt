@@ -149,3 +149,39 @@ val cafe_onPrimaryContainer = Color(0xFF000000)
 val cafe_secondary = Color(0xFFBCAAA4) // Another shade of brown
 val cafe_background = Color(0xFFEFEBE9) // Off-white beige
 val cafe_surface = Color(0xFFFFFFFF) // White
+
+// Noche Estrellada Theme
+val noche_primary = Color(0xFF42A5F5) // Blue 400
+val noche_onPrimary = Color(0xFFFFFFFF)
+val noche_primaryContainer = Color(0xFF1E88E5) // Blue 600
+val noche_onPrimaryContainer = Color(0xFFFFFFFF)
+val noche_secondary = Color(0xFFFFD700) // Gold
+val noche_background = Color(0xFF0D1B2A) // Dark Blue-Black
+val noche_surface = Color(0xFF1B263B) // Lighter Dark Blue
+
+// Lujo Theme
+val lujo_primary = Color(0xFFCFB53B) // Gold
+val lujo_onPrimary = Color(0xFF000000)
+val lujo_primaryContainer = Color(0xFF212121)
+val lujo_onPrimaryContainer = Color(0xFFFFFFFF)
+val lujo_secondary = Color(0xFFE0E0E0) // Light Grey
+val lujo_background = Color(0xFF000000)
+val lujo_surface = Color(0xFF1C1C1C)
+
+// Corporativo Theme
+val corporativo_primary = Color(0xFF1976D2) // Blue
+val corporativo_onPrimary = Color(0xFFFFFFFF)
+val corporativo_primaryContainer = Color(0xFFBBDEFB) // Light Blue
+val corporativo_onPrimaryContainer = Color(0xFF000000)
+val corporativo_secondary = Color(0xFFB0BEC5) // Silver/Grey
+val corporativo_background = Color(0xFFECEFF1) // Light Grey
+val corporativo_surface = Color(0xFFFFFFFF)
+
+// Clásico Theme
+val clasico_primary = Color(0xFF212121) // Near Black
+val clasico_onPrimary = Color(0xFFFFFFFF)
+val clasico_primaryContainer = Color(0xFFE0E0E0) // Grey
+val clasico_onPrimaryContainer = Color(0xFF000000)
+val clasico_secondary = Color(0xFF757575) // Medium Grey
+val clasico_background = Color(0xFFFFFFFF)
+val clasico_surface = Color(0xFFF5F5F5) // Off-white
