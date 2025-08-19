@@ -25,8 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -142,56 +141,53 @@ fun ThemePreviewItem(
     isSelected: Boolean,
     onThemeSelected: (String) -> Unit
 ) {
-    val border = if (isSelected) BorderStroke(3.dp, MaterialTheme.colorScheme.primary) else BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onThemeSelected(themePreview.name) },
-        shape = RoundedCornerShape(12.dp),
-        border = border,
-        colors = CardDefaults.cardColors(containerColor = themePreview.background)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = themePreview.name,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = themePreview.onBackground
+    Column(modifier = Modifier.clickable { onThemeSelected(themePreview.name) }) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (isSelected) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = "Seleccionado",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
                 )
-                if (isSelected) {
-                    Icon(
-                        imageVector = Icons.Default.CheckCircle,
-                        contentDescription = "Seleccionado",
-                        tint = themePreview.primary
-                    )
-                }
+            } else {
+                // Add a spacer to keep alignment consistent when icon is not present
+                Spacer(modifier = Modifier.width(24.dp))
             }
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = themePreview.name,
+                fontSize = 20.sp,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.weight(1f)
+            )
             MinimalistPreview(theme = themePreview)
         }
+        Divider()
     }
 }
 
 @Composable
 fun MinimalistPreview(theme: ThemePreview) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        modifier = Modifier.width(120.dp), // Give it a fixed width
+        horizontalArrangement = Arrangement.spacedBy(2.dp) // Tighter spacing
     ) {
         val colors = listOf(theme.primary, theme.secondary, theme.surface, theme.background, theme.onBackground)
         colors.forEach { color ->
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .height(20.dp)
+                    .height(24.dp)
+                    .clip(RoundedCornerShape(4.dp)) // Softer corners
                     .background(color)
-                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
             )
         }
     }
