@@ -56,6 +56,8 @@ data class ThemePreview(
     val name: String,
     val primary: Color,
     val onPrimary: Color,
+    val primaryContainer: Color,
+    val onPrimaryContainer: Color,
     val secondary: Color,
     val background: Color,
     val onBackground: Color,
@@ -65,12 +67,12 @@ data class ThemePreview(
 
 // List of all available themes with their preview colors
 val themePreviews = listOf(
-    ThemePreview("Claro", claro_primary, claro_onPrimary, claro_secondary, claro_background, claro_onPrimaryContainer, claro_surface, claro_onPrimaryContainer),
-    ThemePreview("Oscuro", oscuro_primary, oscuro_onPrimary, oscuro_secondary, oscuro_background, Color.White, oscuro_surface, Color.White),
-    ThemePreview("Descanso", descanso_primary, descanso_onPrimary, descanso_secondary, descanso_background, descanso_onPrimaryContainer, descanso_surface, descanso_onPrimaryContainer),
-    ThemePreview("Bosque", bosque_primary, bosque_onPrimary, bosque_secondary, bosque_background, bosque_onPrimaryContainer, bosque_surface, bosque_onPrimaryContainer),
-    ThemePreview("Océano", oceano_primary, oceano_onPrimary, oceano_secondary, oceano_background, oceano_onPrimaryContainer, oceano_surface, oceano_onPrimaryContainer),
-    ThemePreview("Neón", neon_primary, neon_onPrimary, neon_secondary, neon_background, neon_onPrimaryContainer, neon_surface, neon_onPrimaryContainer)
+    ThemePreview("Claro", claro_primary, claro_onPrimary, claro_primaryContainer, claro_onPrimaryContainer, claro_secondary, claro_background, claro_onPrimaryContainer, claro_surface, claro_onPrimaryContainer),
+    ThemePreview("Oscuro", oscuro_primary, oscuro_onPrimary, oscuro_primaryContainer, oscuro_onPrimaryContainer, oscuro_secondary, oscuro_background, Color.White, oscuro_surface, Color.White),
+    ThemePreview("Descanso", descanso_primary, descanso_onPrimary, descanso_primaryContainer, descanso_onPrimaryContainer, descanso_secondary, descanso_background, descanso_onPrimaryContainer, descanso_surface, descanso_onPrimaryContainer),
+    ThemePreview("Bosque", bosque_primary, bosque_onPrimary, bosque_primaryContainer, bosque_onPrimaryContainer, bosque_secondary, bosque_background, bosque_onPrimaryContainer, bosque_surface, bosque_onPrimaryContainer),
+    ThemePreview("Océano", oceano_primary, oceano_onPrimary, oceano_primaryContainer, oceano_onPrimaryContainer, oceano_secondary, oceano_background, oceano_onPrimaryContainer, oceano_surface, oceano_onPrimaryContainer),
+    ThemePreview("Neón", neon_primary, neon_onPrimary, neon_primaryContainer, neon_onPrimaryContainer, neon_secondary, neon_background, neon_onPrimaryContainer, neon_surface, neon_onPrimaryContainer)
 )
 
 
@@ -167,27 +169,57 @@ fun ThemePreviewItem(
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                ColorCircle(color = themePreview.primary)
-                ColorCircle(color = themePreview.secondary)
-                ColorCircle(color = themePreview.surface)
-                ColorCircle(color = themePreview.onSurface)
-                ColorCircle(color = themePreview.background)
-            }
+            MiniUiPreview(theme = themePreview)
         }
     }
 }
 
 @Composable
-fun ColorCircle(color: Color) {
+fun MiniUiPreview(theme: ThemePreview) {
     Box(
         modifier = Modifier
-            .size(32.dp)
-            .clip(CircleShape)
-            .background(color)
-            .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), CircleShape)
-    )
+            .fillMaxWidth()
+            .height(100.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(theme.background)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
+    ) {
+        // Fake App Bar
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(24.dp)
+                .background(theme.primaryContainer)
+                .align(Alignment.TopCenter)
+        )
+        // Fake Text
+        Column(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(start = 12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .height(8.dp)
+                    .width(120.dp)
+                    .background(theme.onBackground, shape = RoundedCornerShape(4.dp))
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Box(
+                modifier = Modifier
+                    .height(8.dp)
+                    .width(70.dp)
+                    .background(theme.onSurface.copy(alpha = 0.7f), shape = RoundedCornerShape(4.dp))
+            )
+        }
+        // Fake Floating Action Button
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(12.dp)
+                .size(28.dp)
+                .clip(CircleShape)
+                .background(theme.secondary)
+        )
+    }
 }
