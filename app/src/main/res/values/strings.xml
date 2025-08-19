@@ -2,6 +2,7 @@
     <string name="app_name">Pixel Business Collage</string>
 
     <!-- MainScreen Buttons -->
+    <string name="main_btn_get_data">Get Data</string>
     <string name="main_btn_cover_setup">Cover Setup</string>
     <string name="main_btn_inner_pages">Manage Inner Pages</string>
     <string name="main_btn_preview_pdf">PDF Preview</string>

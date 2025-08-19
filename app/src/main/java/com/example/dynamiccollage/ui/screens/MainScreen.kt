@@ -211,7 +211,7 @@ fun MainScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             MainButton(
-                text = "Obtener Datos Sunat",
+                text = stringResource(R.string.main_btn_get_data),
                 onClick = { navController.navigate(Screen.SunatData.route) }
             )
             MainButton(
