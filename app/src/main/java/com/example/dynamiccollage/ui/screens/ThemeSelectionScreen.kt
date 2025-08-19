@@ -193,7 +193,7 @@ fun MinimalistPreview(theme: ThemePreview) {
             colors.forEachIndexed { index, color ->
                 Box(
                     modifier = Modifier
-                        .padding(start = (index * overlap)) // Overlap by moving each circle
+                        .padding(start = (overlap * index)) // Overlap by moving each circle
                         .size(circleSize)
                         .clip(CircleShape)
                         .background(color)
