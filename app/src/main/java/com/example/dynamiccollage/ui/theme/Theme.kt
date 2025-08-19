@@ -179,16 +179,6 @@ private val NocheEstrelladaColorScheme = darkColorScheme(
     surface = noche_surface,
 )
 
-private val LujoColorScheme = darkColorScheme(
-    primary = lujo_primary,
-    onPrimary = lujo_onPrimary,
-    primaryContainer = lujo_primaryContainer,
-    onPrimaryContainer = lujo_onPrimaryContainer,
-    secondary = lujo_secondary,
-    background = lujo_background,
-    surface = lujo_surface,
-)
-
 private val CorporativoColorScheme = lightColorScheme(
     primary = corporativo_primary,
     onPrimary = corporativo_onPrimary,
@@ -209,6 +199,36 @@ private val ClasicoColorScheme = lightColorScheme(
     surface = clasico_surface,
 )
 
+private val VerdeJadeColorScheme = lightColorScheme(
+    primary = jade_primary,
+    onPrimary = jade_onPrimary,
+    primaryContainer = jade_primaryContainer,
+    onPrimaryContainer = jade_onPrimaryContainer,
+    secondary = jade_secondary,
+    background = jade_background,
+    surface = jade_surface,
+)
+
+private val RojoRubiColorScheme = darkColorScheme(
+    primary = rubi_primary,
+    onPrimary = rubi_onPrimary,
+    primaryContainer = rubi_primaryContainer,
+    onPrimaryContainer = rubi_onPrimaryContainer,
+    secondary = rubi_secondary,
+    background = rubi_background,
+    surface = rubi_surface,
+)
+
+private val AmbarColorScheme = lightColorScheme(
+    primary = ambar_primary,
+    onPrimary = ambar_onPrimary,
+    primaryContainer = ambar_primaryContainer,
+    onPrimaryContainer = ambar_onPrimaryContainer,
+    secondary = ambar_secondary,
+    background = ambar_background,
+    surface = ambar_surface,
+)
+
 @Composable
 fun DynamicCollageTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -227,9 +247,11 @@ fun DynamicCollageTheme(
         "Lavanda" -> LavandaColorScheme
         "Café" -> CafeColorScheme
         "Noche Estrellada" -> NocheEstrelladaColorScheme
-        "Lujo" -> LujoColorScheme
         "Corporativo" -> CorporativoColorScheme
         "Clásico" -> ClasicoColorScheme
+        "Verde Jade" -> VerdeJadeColorScheme
+        "Rojo Rubí" -> RojoRubiColorScheme
+        "Ámbar" -> AmbarColorScheme
         else -> DarkColorScheme
     }
     val view = LocalView.current

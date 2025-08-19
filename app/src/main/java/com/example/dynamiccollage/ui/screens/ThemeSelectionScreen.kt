@@ -77,9 +77,11 @@ val themePreviews = listOf(
     ThemePreview("Lavanda", lavanda_primary, lavanda_onPrimary, lavanda_primaryContainer, lavanda_onPrimaryContainer, lavanda_secondary, lavanda_background, lavanda_onPrimaryContainer, lavanda_surface, lavanda_onPrimaryContainer),
     ThemePreview("Café", cafe_primary, cafe_onPrimary, cafe_primaryContainer, cafe_onPrimaryContainer, cafe_secondary, cafe_background, cafe_onPrimaryContainer, cafe_surface, cafe_onPrimaryContainer),
     ThemePreview("Noche Estrellada", noche_primary, noche_onPrimary, noche_primaryContainer, noche_onPrimaryContainer, noche_secondary, noche_background, noche_onPrimaryContainer, noche_surface, noche_onPrimaryContainer),
-    ThemePreview("Lujo", lujo_primary, lujo_onPrimary, lujo_primaryContainer, lujo_onPrimaryContainer, lujo_secondary, lujo_background, lujo_onPrimaryContainer, lujo_surface, lujo_onPrimaryContainer),
     ThemePreview("Corporativo", corporativo_primary, corporativo_onPrimary, corporativo_primaryContainer, corporativo_onPrimaryContainer, corporativo_secondary, corporativo_background, corporativo_onPrimaryContainer, corporativo_surface, corporativo_onPrimaryContainer),
-    ThemePreview("Clásico", clasico_primary, clasico_onPrimary, clasico_primaryContainer, clasico_onPrimaryContainer, clasico_secondary, clasico_background, clasico_onPrimaryContainer, clasico_surface, clasico_onPrimaryContainer)
+    ThemePreview("Clásico", clasico_primary, clasico_onPrimary, clasico_primaryContainer, clasico_onPrimaryContainer, clasico_secondary, clasico_background, clasico_onPrimaryContainer, clasico_surface, clasico_onPrimaryContainer),
+    ThemePreview("Verde Jade", jade_primary, jade_onPrimary, jade_primaryContainer, jade_onPrimaryContainer, jade_secondary, jade_background, jade_onPrimaryContainer, jade_surface, jade_onPrimaryContainer),
+    ThemePreview("Rojo Rubí", rubi_primary, rubi_onPrimary, rubi_primaryContainer, rubi_onPrimaryContainer, rubi_secondary, rubi_background, rubi_onPrimaryContainer, rubi_surface, rubi_onPrimaryContainer),
+    ThemePreview("Ámbar", ambar_primary, ambar_onPrimary, ambar_primaryContainer, ambar_onPrimaryContainer, ambar_secondary, ambar_background, ambar_onPrimaryContainer, ambar_surface, ambar_onPrimaryContainer)
 )
 
 

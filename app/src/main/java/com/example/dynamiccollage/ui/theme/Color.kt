@@ -159,15 +159,6 @@ val noche_secondary = Color(0xFFFFD700) // Gold
 val noche_background = Color(0xFF0D1B2A) // Dark Blue-Black
 val noche_surface = Color(0xFF1B263B) // Lighter Dark Blue
 
-// Lujo Theme
-val lujo_primary = Color(0xFFCFB53B) // Gold
-val lujo_onPrimary = Color(0xFF000000)
-val lujo_primaryContainer = Color(0xFF212121)
-val lujo_onPrimaryContainer = Color(0xFFFFFFFF)
-val lujo_secondary = Color(0xFFE0E0E0) // Light Grey
-val lujo_background = Color(0xFF000000)
-val lujo_surface = Color(0xFF1C1C1C)
-
 // Corporativo Theme
 val corporativo_primary = Color(0xFF1976D2) // Blue
 val corporativo_onPrimary = Color(0xFFFFFFFF)
@@ -185,3 +176,30 @@ val clasico_onPrimaryContainer = Color(0xFF000000)
 val clasico_secondary = Color(0xFF757575) // Medium Grey
 val clasico_background = Color(0xFFFFFFFF)
 val clasico_surface = Color(0xFFF5F5F5) // Off-white
+
+// Verde Jade Theme
+val jade_primary = Color(0xFF00695C) // Teal 800
+val jade_onPrimary = Color(0xFFFFFFFF)
+val jade_primaryContainer = Color(0xFFB2DFDB) // Teal 100
+val jade_onPrimaryContainer = Color(0xFF000000)
+val jade_secondary = Color(0xFF4DB6AC) // Teal 300
+val jade_background = Color(0xFFE0F2F1) // Teal 50
+val jade_surface = Color(0xFFFFFFFF)
+
+// Rojo Rubí Theme
+val rubi_primary = Color(0xFFC62828) // Red 800
+val rubi_onPrimary = Color(0xFFFFFFFF)
+val rubi_primaryContainer = Color(0xFFD32F2F) // Red 700
+val rubi_onPrimaryContainer = Color(0xFFFFFFFF)
+val rubi_secondary = Color(0xFFFFCDD2) // Red 100
+val rubi_background = Color(0xFF260e0e) // Very dark red
+val rubi_surface = Color(0xFF3c1818) // Lighter dark red
+
+// Ámbar Theme
+val ambar_primary = Color(0xFFFF8F00) // Amber 800
+val ambar_onPrimary = Color(0xFF000000)
+val ambar_primaryContainer = Color(0xFFFFECB3) // Amber 100
+val ambar_onPrimaryContainer = Color(0xFF000000)
+val ambar_secondary = Color(0xFFFFCA28) // Amber 400
+val ambar_background = Color(0xFFFFF8E1) // Amber 50
+val ambar_surface = Color(0xFFFFFFFF)
