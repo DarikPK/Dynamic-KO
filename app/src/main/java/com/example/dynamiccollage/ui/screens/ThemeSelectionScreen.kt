@@ -181,20 +181,25 @@ fun ThemePreviewItem(
 
 @Composable
 fun MinimalistPreview(theme: ThemePreview) {
-    Row(
-        modifier = Modifier.width(120.dp), // Give it a fixed width
-        horizontalArrangement = Arrangement.spacedBy(2.dp) // Tighter spacing
+    Box(
+        modifier = Modifier.width(100.dp), // A bit less width
+        contentAlignment = Alignment.CenterEnd
     ) {
-        val colors = listOf(theme.primary, theme.secondary, theme.surface, theme.background, theme.onBackground)
-        colors.forEach { color ->
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(24.dp)
-                    .clip(RoundedCornerShape(4.dp)) // Softer corners
-                    .background(color)
-                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
-            )
+        val colors = listOf(theme.primary, theme.secondary, theme.surface, theme.background, theme.onBackground).take(5)
+        val circleSize = 18.dp
+        val overlap = 10.dp
+
+        Box {
+            colors.forEachIndexed { index, color ->
+                Box(
+                    modifier = Modifier
+                        .padding(start = (index * overlap)) // Overlap by moving each circle
+                        .size(circleSize)
+                        .clip(CircleShape)
+                        .background(color)
+                        .border(1.dp, MaterialTheme.colorScheme.background, CircleShape) // Border with background color for contrast
+                )
+            }
         }
     }
 }
