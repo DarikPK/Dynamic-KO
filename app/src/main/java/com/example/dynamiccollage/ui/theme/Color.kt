@@ -122,3 +122,30 @@ val neon_onPrimaryContainer = Color(0xFFFFFFFF)
 val neon_secondary = Color(0xFF00FFFF) // Cyan (Aqua)
 val neon_background = Color(0xFF000000) // Black
 val neon_surface = Color(0xFF121212) // Near Black
+
+// Cereza Theme
+val cereza_primary = Color(0xFFD32F2F) // Red
+val cereza_onPrimary = Color(0xFFFFFFFF)
+val cereza_primaryContainer = Color(0xFF424242) // Dark Grey
+val cereza_onPrimaryContainer = Color(0xFFFFFFFF)
+val cereza_secondary = Color(0xFFF8BBD0) // Light Pink
+val cereza_background = Color(0xFF212121) // Near Black
+val cereza_surface = Color(0xFF303030) // Darker Grey
+
+// Lavanda Theme
+val lavanda_primary = Color(0xFF9575CD) // Lavender Purple
+val lavanda_onPrimary = Color(0xFFFFFFFF)
+val lavanda_primaryContainer = Color(0xFFE1BEE7) // Lighter Purple
+val lavanda_onPrimaryContainer = Color(0xFF000000)
+val lavanda_secondary = Color(0xFFBCAAA4) // Light Brown/Grey
+val lavanda_background = Color(0xFFF3E5F5) // Very Light Purple
+val lavanda_surface = Color(0xFFFFFFFF) // White
+
+// Café Theme
+val cafe_primary = Color(0xFF6D4C41) // Dark Brown
+val cafe_onPrimary = Color(0xFFFFFFFF)
+val cafe_primaryContainer = Color(0xFFD7CCC8) // Light Brown/Grey
+val cafe_onPrimaryContainer = Color(0xFF000000)
+val cafe_secondary = Color(0xFFBCAAA4) // Another shade of brown
+val cafe_background = Color(0xFFEFEBE9) // Off-white beige
+val cafe_surface = Color(0xFFFFFFFF) // White

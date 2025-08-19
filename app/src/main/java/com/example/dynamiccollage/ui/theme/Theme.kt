@@ -139,6 +139,36 @@ private val NeonColorScheme = darkColorScheme(
     surface = neon_surface,
 )
 
+private val CerezaColorScheme = darkColorScheme(
+    primary = cereza_primary,
+    onPrimary = cereza_onPrimary,
+    primaryContainer = cereza_primaryContainer,
+    onPrimaryContainer = cereza_onPrimaryContainer,
+    secondary = cereza_secondary,
+    background = cereza_background,
+    surface = cereza_surface,
+)
+
+private val LavandaColorScheme = lightColorScheme(
+    primary = lavanda_primary,
+    onPrimary = lavanda_onPrimary,
+    primaryContainer = lavanda_primaryContainer,
+    onPrimaryContainer = lavanda_onPrimaryContainer,
+    secondary = lavanda_secondary,
+    background = lavanda_background,
+    surface = lavanda_surface,
+)
+
+private val CafeColorScheme = lightColorScheme(
+    primary = cafe_primary,
+    onPrimary = cafe_onPrimary,
+    primaryContainer = cafe_primaryContainer,
+    onPrimaryContainer = cafe_onPrimaryContainer,
+    secondary = cafe_secondary,
+    background = cafe_background,
+    surface = cafe_surface,
+)
+
 @Composable
 fun DynamicCollageTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -153,6 +183,9 @@ fun DynamicCollageTheme(
         "Bosque" -> BosqueColorScheme
         "Océano" -> OceanoColorScheme
         "Neón" -> NeonColorScheme
+        "Cereza" -> CerezaColorScheme
+        "Lavanda" -> LavandaColorScheme
+        "Café" -> CafeColorScheme
         else -> DarkColorScheme
     }
     val view = LocalView.current

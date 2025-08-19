@@ -73,7 +73,10 @@ val themePreviews = listOf(
     ThemePreview("Descanso", descanso_primary, descanso_onPrimary, descanso_primaryContainer, descanso_onPrimaryContainer, descanso_secondary, descanso_background, descanso_onPrimaryContainer, descanso_surface, descanso_onPrimaryContainer),
     ThemePreview("Bosque", bosque_primary, bosque_onPrimary, bosque_primaryContainer, bosque_onPrimaryContainer, bosque_secondary, bosque_background, bosque_onPrimaryContainer, bosque_surface, bosque_onPrimaryContainer),
     ThemePreview("Océano", oceano_primary, oceano_onPrimary, oceano_primaryContainer, oceano_onPrimaryContainer, oceano_secondary, oceano_background, oceano_onPrimaryContainer, oceano_surface, oceano_onPrimaryContainer),
-    ThemePreview("Neón", neon_primary, neon_onPrimary, neon_primaryContainer, neon_onPrimaryContainer, neon_secondary, neon_background, neon_onPrimaryContainer, neon_surface, neon_onPrimaryContainer)
+    ThemePreview("Neón", neon_primary, neon_onPrimary, neon_primaryContainer, neon_onPrimaryContainer, neon_secondary, neon_background, neon_onPrimaryContainer, neon_surface, neon_onPrimaryContainer),
+    ThemePreview("Cereza", cereza_primary, cereza_onPrimary, cereza_primaryContainer, cereza_onPrimaryContainer, cereza_secondary, cereza_background, cereza_onPrimaryContainer, cereza_surface, cereza_onPrimaryContainer),
+    ThemePreview("Lavanda", lavanda_primary, lavanda_onPrimary, lavanda_primaryContainer, lavanda_onPrimaryContainer, lavanda_secondary, lavanda_background, lavanda_onPrimaryContainer, lavanda_surface, lavanda_onPrimaryContainer),
+    ThemePreview("Café", cafe_primary, cafe_onPrimary, cafe_primaryContainer, cafe_onPrimaryContainer, cafe_secondary, cafe_background, cafe_onPrimaryContainer, cafe_surface, cafe_onPrimaryContainer)
 )
 
 
@@ -169,58 +172,27 @@ fun ThemePreviewItem(
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
-            MiniUiPreview(theme = themePreview)
+            Spacer(modifier = Modifier.height(12.dp))
+            MinimalistPreview(theme = themePreview)
         }
     }
 }
 
 @Composable
-fun MiniUiPreview(theme: ThemePreview) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(100.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(theme.background)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
+fun MinimalistPreview(theme: ThemePreview) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        // Fake App Bar
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(24.dp)
-                .background(theme.primaryContainer)
-                .align(Alignment.TopCenter)
-        )
-        // Fake Text
-        Column(
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .padding(start = 12.dp)
-        ) {
+        val colors = listOf(theme.primary, theme.secondary, theme.surface, theme.background, theme.onBackground)
+        colors.forEach { color ->
             Box(
                 modifier = Modifier
-                    .height(8.dp)
-                    .width(120.dp)
-                    .background(theme.onBackground, shape = RoundedCornerShape(4.dp))
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Box(
-                modifier = Modifier
-                    .height(8.dp)
-                    .width(70.dp)
-                    .background(theme.onSurface.copy(alpha = 0.7f), shape = RoundedCornerShape(4.dp))
+                    .weight(1f)
+                    .height(20.dp)
+                    .background(color)
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant)
             )
         }
-        // Fake Floating Action Button
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(12.dp)
-                .size(28.dp)
-                .clip(CircleShape)
-                .background(theme.secondary)
-        )
     }
 }
