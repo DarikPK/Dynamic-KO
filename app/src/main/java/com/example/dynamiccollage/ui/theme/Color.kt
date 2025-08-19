@@ -95,3 +95,30 @@ val descanso_onPrimaryContainer = Color(0xFF000000)
 val descanso_secondary = Color(0xFFFFC0CB)
 val descanso_background = Color(0xFFE0E0E0)
 val descanso_surface = Color(0xFFF5F5F5)
+
+// Bosque Theme
+val bosque_primary = Color(0xFF556B2F) // DarkOliveGreen
+val bosque_onPrimary = Color(0xFFFFFFFF)
+val bosque_primaryContainer = Color(0xFFF0FFF0) // Honeydew
+val bosque_onPrimaryContainer = Color(0xFF000000)
+val bosque_secondary = Color(0xFF8B4513) // SaddleBrown
+val bosque_background = Color(0xFFFAF9F6) // Off-white
+val bosque_surface = Color(0xFFFFFFFF)
+
+// Océano Theme
+val oceano_primary = Color(0xFF00BFFF) // DeepSkyBlue
+val oceano_onPrimary = Color(0xFF000000)
+val oceano_primaryContainer = Color(0xFF00008B) // DarkBlue
+val oceano_onPrimaryContainer = Color(0xFFFFFFFF)
+val oceano_secondary = Color(0xFFF0E68C) // Khaki
+val oceano_background = Color(0xFF000033) // Very Dark Blue
+val oceano_surface = Color(0xFF00004D) // Slightly Lighter Dark Blue
+
+// Neón Theme
+val neon_primary = Color(0xFFFF00FF) // Magenta (Fuchsia)
+val neon_onPrimary = Color(0xFF000000)
+val neon_primaryContainer = Color(0xFF1A1A1A) // Very Dark Grey
+val neon_onPrimaryContainer = Color(0xFFFFFFFF)
+val neon_secondary = Color(0xFF00FFFF) // Cyan (Aqua)
+val neon_background = Color(0xFF000000) // Black
+val neon_surface = Color(0xFF121212) // Near Black

@@ -42,6 +42,13 @@ class ProjectViewModel : ViewModel() {
     private val _sunatData = MutableStateFlow<SelectedSunatData?>(null)
     val sunatData: StateFlow<SelectedSunatData?> = _sunatData.asStateFlow()
 
+    private val _themeName = MutableStateFlow("Oscuro")
+    val themeName: StateFlow<String> = _themeName.asStateFlow()
+
+    fun updateTheme(newThemeName: String) {
+        _themeName.value = newThemeName
+    }
+
     fun updateSunatData(data: SelectedSunatData) {
         _sunatData.value = data
     }
@@ -387,7 +394,8 @@ class ProjectViewModel : ViewModel() {
             val serializableState = SerializableProjectState(
                 coverConfig = _currentCoverConfig.value.toSerializable(),
                 pageGroups = _currentPageGroups.value.map { it.toSerializable() },
-                sunatData = _sunatData.value
+                sunatData = _sunatData.value,
+                themeName = _themeName.value
             )
             val jsonString = gson.toJson(serializableState)
             val sizeInBytes = jsonString.toByteArray().size.toLong()
@@ -406,7 +414,8 @@ class ProjectViewModel : ViewModel() {
             val serializableState = SerializableProjectState(
                 coverConfig = _currentCoverConfig.value.toSerializable(),
                 pageGroups = _currentPageGroups.value.map { it.toSerializable() },
-                sunatData = _sunatData.value
+                sunatData = _sunatData.value,
+                themeName = _themeName.value
             )
             val jsonString = gson.toJson(serializableState)
             writeJsonToFile(context, jsonString)
@@ -456,6 +465,7 @@ class ProjectViewModel : ViewModel() {
                     _currentCoverConfig.value = projectState.coverConfig
                     _currentPageGroups.value = projectState.pageGroups
                     _sunatData.value = projectState.sunatData
+                    _themeName.value = projectState.themeName
                     Log.d("ProjectViewModel", "loadProject: Project loaded and state restored successfully.")
                 }
             } catch (t: Throwable) {

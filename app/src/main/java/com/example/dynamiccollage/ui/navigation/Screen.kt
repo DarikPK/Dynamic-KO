@@ -19,6 +19,7 @@ sealed class Screen(val route: String) {
     object AdvancedDesign : Screen("advanced_design_screen")
     object SheetBackground : Screen("sheet_background_screen")
     object ImageBorders : Screen("image_borders_screen")
+    object ThemeSelection : Screen("theme_selection_screen")
     // object Settings : Screen("settings_screen") // Ejemplo si se necesitara
 
     fun withArgs(vararg args: String): String {

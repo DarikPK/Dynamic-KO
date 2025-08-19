@@ -16,8 +16,7 @@ import java.nio.charset.StandardCharsets
 
 @Composable
 fun AppNavigation(
-    projectViewModel: ProjectViewModel,
-    onThemeChange: (String) -> Unit
+    projectViewModel: ProjectViewModel
 ) {
     val coverSetupViewModel: CoverSetupViewModel = viewModel()
     val rowStyleViewModel: RowStyleViewModel = viewModel()
@@ -29,8 +28,7 @@ fun AppNavigation(
         composable(Screen.Main.route) {
             MainScreen(
                 navController = navController,
-                projectViewModel = projectViewModel,
-                onThemeChange = onThemeChange
+                projectViewModel = projectViewModel
             )
         }
         composable(Screen.CoverSetup.route) {
@@ -148,6 +146,12 @@ fun AppNavigation(
                 navController = navController,
                 projectViewModel = projectViewModel,
                 imageUri = decodedImageUri
+            )
+        }
+        composable(Screen.ThemeSelection.route) {
+            ThemeSelectionScreen(
+                navController = navController,
+                projectViewModel = projectViewModel
             )
         }
     }

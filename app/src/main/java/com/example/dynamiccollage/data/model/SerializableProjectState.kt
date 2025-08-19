@@ -6,7 +6,8 @@ package com.example.dynamiccollage.data.model
 data class SerializableProjectState(
     val coverConfig: SerializableCoverPageConfig,
     val pageGroups: List<SerializablePageGroup>,
-    val sunatData: SelectedSunatData? // This one is already serializable
+    val sunatData: SelectedSunatData?, // This one is already serializable
+    val themeName: String? = null
 )
 
 data class SerializableCoverPageConfig(

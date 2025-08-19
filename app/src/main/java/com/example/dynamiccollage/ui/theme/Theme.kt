@@ -109,6 +109,36 @@ private val DescansoColorScheme = lightColorScheme(
     surface = descanso_surface,
 )
 
+private val BosqueColorScheme = lightColorScheme(
+    primary = bosque_primary,
+    onPrimary = bosque_onPrimary,
+    primaryContainer = bosque_primaryContainer,
+    onPrimaryContainer = bosque_onPrimaryContainer,
+    secondary = bosque_secondary,
+    background = bosque_background,
+    surface = bosque_surface,
+)
+
+private val OceanoColorScheme = darkColorScheme(
+    primary = oceano_primary,
+    onPrimary = oceano_onPrimary,
+    primaryContainer = oceano_primaryContainer,
+    onPrimaryContainer = oceano_onPrimaryContainer,
+    secondary = oceano_secondary,
+    background = oceano_background,
+    surface = oceano_surface,
+)
+
+private val NeonColorScheme = darkColorScheme(
+    primary = neon_primary,
+    onPrimary = neon_onPrimary,
+    primaryContainer = neon_primaryContainer,
+    onPrimaryContainer = neon_onPrimaryContainer,
+    secondary = neon_secondary,
+    background = neon_background,
+    surface = neon_surface,
+)
+
 @Composable
 fun DynamicCollageTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -120,6 +150,9 @@ fun DynamicCollageTheme(
         "Claro" -> ClaroColorScheme
         "Oscuro" -> OscuroColorScheme
         "Descanso" -> DescansoColorScheme
+        "Bosque" -> BosqueColorScheme
+        "Océano" -> OceanoColorScheme
+        "Neón" -> NeonColorScheme
         else -> DarkColorScheme
     }
     val view = LocalView.current

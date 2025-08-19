@@ -50,8 +50,7 @@ import com.example.dynamiccollage.viewmodel.SaveState
 @Composable
 fun MainScreen(
     navController: NavController,
-    projectViewModel: ProjectViewModel,
-    onThemeChange: (String) -> Unit
+    projectViewModel: ProjectViewModel
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -75,7 +74,6 @@ fun MainScreen(
     }
 
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
-    var showThemeDialog by remember { mutableStateOf(false) }
     val pdfGenerationState by projectViewModel.pdfGenerationState.collectAsState()
     val shareablePdfUri by projectViewModel.shareablePdfUri.collectAsState()
     val saveState by projectViewModel.saveState.collectAsState()
@@ -167,30 +165,6 @@ fun MainScreen(
         )
     }
 
-    if (showThemeDialog) {
-        AlertDialog(
-            onDismissRequest = { showThemeDialog = false },
-            title = { Text("Seleccionar Temas") },
-            text = {
-                Column {
-                    val themes = listOf("Claro", "Oscuro", "Descanso")
-                    themes.forEach { themeName ->
-                        TextButton(onClick = {
-                            onThemeChange(themeName)
-                            showThemeDialog = false
-                        }) {
-                            Text(themeName, color = MaterialTheme.colorScheme.onSurface)
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showThemeDialog = false }) {
-                    Text("Cancelar")
-                }
-            }
-        )
-    }
 
     Scaffold(
         topBar = {
@@ -238,7 +212,7 @@ fun MainScreen(
             )
             MainButton(
                 text = "Temas",
-                onClick = { showThemeDialog = true }
+                onClick = { navController.navigate(Screen.ThemeSelection.route) }
             )
             Spacer(modifier = Modifier.weight(1f))
             MainButton(
@@ -290,8 +264,7 @@ fun MainScreenPreview() {
         val context = LocalContext.current
         MainScreen(
             navController = rememberNavController(),
-            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity),
-            onThemeChange = {}
+            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity)
         )
     }
 }
@@ -303,8 +276,7 @@ fun MainScreenDarkPreview() {
         val context = LocalContext.current
         MainScreen(
             navController = rememberNavController(),
-            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity),
-            onThemeChange = {}
+            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity)
         )
     }
 }
