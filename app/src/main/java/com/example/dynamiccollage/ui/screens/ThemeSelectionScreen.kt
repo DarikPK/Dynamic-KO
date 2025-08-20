@@ -25,6 +25,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -181,24 +183,32 @@ fun ThemePreviewItem(
 
 @Composable
 fun MinimalistPreview(theme: ThemePreview) {
-    Box(
-        modifier = Modifier.width(100.dp), // A bit less width
-        contentAlignment = Alignment.CenterEnd
+    // The container with the dynamic background color
+    Card(
+        modifier = Modifier.width(120.dp).height(40.dp),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = theme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        val colors = listOf(theme.primary, theme.secondary, theme.surface, theme.background, theme.onBackground).take(5)
-        val circleSize = 18.dp
-        val overlap = 10.dp
+        Box(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            val colors = listOf(theme.primary, theme.secondary, theme.onBackground, theme.onSurface).take(4)
+            val circleSize = 18.dp
+            val overlap = 12.dp
 
-        Box {
-            colors.forEachIndexed { index, color ->
-                Box(
-                    modifier = Modifier
-                        .padding(start = (overlap * index)) // Overlap by moving each circle
-                        .size(circleSize)
-                        .clip(CircleShape)
-                        .background(color)
-                        .border(1.dp, MaterialTheme.colorScheme.background, CircleShape) // Border with background color for contrast
-                )
+            Box {
+                colors.forEachIndexed { index, color ->
+                    Box(
+                        modifier = Modifier
+                            .padding(start = (overlap * index))
+                            .size(circleSize)
+                            .clip(CircleShape)
+                            .background(color)
+                            .border(1.dp, theme.surface, CircleShape) // Border uses the container's color
+                    )
+                }
             }
         }
     }
