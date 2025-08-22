@@ -40,14 +40,31 @@ fun ImageManagerScreen(
     navController: NavController,
     projectViewModel: ProjectViewModel
 ) {
-    val imageUris by remember { mutableStateOf(projectViewModel.getAllImageUris()) }
-    var currentSelectedUri by remember { mutableStateOf(imageUris.firstOrNull()?.let { Uri.parse(it) }) }
-    var uriBeforeCrop by remember { mutableStateOf(currentSelectedUri) }
-    var originalUriOfSession by remember { mutableStateOf(currentSelectedUri) }
-
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+
+    // Collect state from the ViewModel
+    val coverConfig by projectViewModel.currentCoverConfig.collectAsState()
+    val pageGroups by projectViewModel.currentPageGroups.collectAsState()
     val effectSettingsMap by projectViewModel.imageEffectSettings.collectAsState()
+    val currentSelectedUriString by projectViewModel.managerSelectedUri.collectAsState()
+    val currentSelectedUri = currentSelectedUriString?.let { Uri.parse(it) }
+
+    // Derive the list of all image URIs from the state
+    val imageUris = remember(coverConfig, pageGroups) {
+        projectViewModel.getAllImageUris()
+    }
+
+    // Local state for undoing crop, now simpler
+    var uriBeforeCrop by remember { mutableStateOf<Uri?>(null) }
+    var originalUriOfSession by remember { mutableStateOf<Uri?>(null) }
+
+    // Initialize the selected URI in the ViewModel once
+    LaunchedEffect(imageUris) {
+        if (currentSelectedUriString == null && imageUris.isNotEmpty()) {
+            projectViewModel.setManagerSelectedUri(imageUris.first())
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -62,48 +79,41 @@ fun ImageManagerScreen(
                     IconButton(
                         onClick = {
                             val uriToRevertTo = uriBeforeCrop
-                            if (uriToRevertTo != null && currentSelectedUri != null) {
-                                projectViewModel.replaceImageUri(context, currentSelectedUri.toString(), uriToRevertTo.toString())
-                                currentSelectedUri = uriToRevertTo
+                            if (uriToRevertTo != null && currentSelectedUriString != null) {
+                                projectViewModel.replaceImageUri(context, currentSelectedUriString!!, uriToRevertTo.toString())
                             }
                         },
-                        enabled = currentSelectedUri != uriBeforeCrop
+                        enabled = currentSelectedUri != uriBeforeCrop && uriBeforeCrop != null
                     ) {
                         Icon(Icons.Default.Undo, contentDescription = "Deshacer Recorte")
                     }
                     IconButton(
                         onClick = {
                             coroutineScope.launch {
-                                val oldUri = currentSelectedUri
-                                if (oldUri != null) {
-                                    val newUriString = projectViewModel.rotateImage(context, oldUri.toString())
-                                    if (newUriString != null) {
-                                        uriBeforeCrop = oldUri
-                                        currentSelectedUri = Uri.parse(newUriString)
-                                    }
+                                if (currentSelectedUriString != null) {
+                                    uriBeforeCrop = currentSelectedUri
+                                    projectViewModel.rotateImage(context, currentSelectedUriString!!)
                                 }
                             }
                         },
-                        enabled = currentSelectedUri != null
+                        enabled = currentSelectedUriString != null
                     ) {
                         Icon(Icons.Default.RotateRight, contentDescription = "Girar")
                     }
                     IconButton(
                         onClick = {
-                            currentSelectedUri?.let {
-                                navController.navigate("image_effects_screen/${Uri.encode(it.toString())}")
+                            currentSelectedUriString?.let {
+                                navController.navigate("image_effects_screen/${Uri.encode(it)}")
                             }
                         },
-                        enabled = currentSelectedUri != null
+                        enabled = currentSelectedUriString != null
                     ) {
                         Icon(Icons.Default.Tune, contentDescription = "Efectos")
                     }
                     IconButton(
                         onClick = {
-                             if (originalUriOfSession != null && currentSelectedUri != null) {
-                                projectViewModel.replaceImageUri(context, currentSelectedUri.toString(), originalUriOfSession.toString())
-                                currentSelectedUri = originalUriOfSession
-                                uriBeforeCrop = originalUriOfSession
+                             if (originalUriOfSession != null && currentSelectedUriString != null) {
+                                projectViewModel.replaceImageUri(context, currentSelectedUriString!!, originalUriOfSession.toString())
                             }
                         },
                         enabled = currentSelectedUri != originalUriOfSession
@@ -126,34 +136,31 @@ fun ImageManagerScreen(
                 contentAlignment = Alignment.Center
             ) {
                 if (currentSelectedUri != null) {
-                    key(currentSelectedUri) {
-                        val settings = effectSettingsMap[currentSelectedUri.toString()]
+                    key(currentSelectedUriString) {
+                        val settings = effectSettingsMap[currentSelectedUriString]
                         val transformations = if (settings != null) {
                             listOf(com.example.dynamiccollage.ui.components.ProjectEffectsTransformation(settings))
                         } else {
                             emptyList()
                         }
                         CropView(
-                            uri = currentSelectedUri!!,
+                            uri = currentSelectedUri,
                             transformations = transformations,
                             onCrop = { cropRect, imageBounds ->
                                 coroutineScope.launch {
-                                val croppedBitmap = cropBitmap(
-                                    context = context,
-                                    uri = currentSelectedUri!!,
-                                    cropRect = cropRect,
-                                    imageBounds = imageBounds
-                                )
-                                if (croppedBitmap != null) {
-                                    val oldUri = currentSelectedUri
-                                    val newUriString = projectViewModel.saveCroppedImage(context, oldUri.toString(), croppedBitmap)
-                                    if (newUriString != null) {
-                                        uriBeforeCrop = oldUri
-                                        currentSelectedUri = Uri.parse(newUriString)
+                                    val croppedBitmap = cropBitmap(
+                                        context = context,
+                                        uri = currentSelectedUri,
+                                        cropRect = cropRect,
+                                        imageBounds = imageBounds
+                                    )
+                                    if (croppedBitmap != null) {
+                                        uriBeforeCrop = currentSelectedUri
+                                        projectViewModel.saveCroppedImage(context, currentSelectedUriString!!, croppedBitmap)
                                     }
                                 }
                             }
-                        })
+                        )
                     }
                 } else {
                     Text("No hay imágenes para editar.")
@@ -187,10 +194,10 @@ fun ImageManagerScreen(
                             .size(84.dp)
                             .border(
                                 width = 2.dp,
-                                color = if (uri == currentSelectedUri) MaterialTheme.colorScheme.primary else Color.Transparent
+                                color = if (uriString == currentSelectedUriString) MaterialTheme.colorScheme.primary else Color.Transparent
                             )
                             .clickable {
-                                currentSelectedUri = uri
+                                projectViewModel.setManagerSelectedUri(uriString)
                                 uriBeforeCrop = uri
                                 originalUriOfSession = uri
                             }

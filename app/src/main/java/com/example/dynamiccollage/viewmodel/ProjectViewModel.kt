@@ -49,6 +49,13 @@ class ProjectViewModel : ViewModel() {
     private val _imageEffectSettings = MutableStateFlow<Map<String, ImageEffectSettings>>(emptyMap())
     val imageEffectSettings: StateFlow<Map<String, ImageEffectSettings>> = _imageEffectSettings.asStateFlow()
 
+    private val _managerSelectedUri = MutableStateFlow<String?>(null)
+    val managerSelectedUri: StateFlow<String?> = _managerSelectedUri.asStateFlow()
+
+    fun setManagerSelectedUri(uri: String?) {
+        _managerSelectedUri.value = uri
+    }
+
     fun updateImageEffectSettings(context: Context, uri: String, settings: ImageEffectSettings) {
         _imageEffectSettings.update { currentMap ->
             currentMap.toMutableMap().apply {
@@ -476,6 +483,9 @@ class ProjectViewModel : ViewModel() {
     }
 
     fun replaceImageUri(context: Context, oldUri: String, newUri: String) {
+        if (_managerSelectedUri.value == oldUri) {
+            _managerSelectedUri.value = newUri
+        }
         if (_currentCoverConfig.value.mainImageUri == oldUri) {
             _currentCoverConfig.update { it.copy(mainImageUri = newUri) }
         }
