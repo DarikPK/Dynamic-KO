@@ -328,22 +328,7 @@ class ProjectViewModel : ViewModel() {
         }
 
         if (newUri != null) {
-            val coverImage = _currentCoverConfig.value.mainImageUri
-            if (coverImage == oldUri) {
-                _currentCoverConfig.update { it.copy(mainImageUri = newUri) }
-            } else {
-                _currentPageGroups.update { groups ->
-                    groups.map { group ->
-                        if (group.imageUris.contains(oldUri)) {
-                            val newImageUris = group.imageUris.map { if (it == oldUri) newUri else it }
-                            group.copy(imageUris = newImageUris)
-                        } else {
-                            group
-                        }
-                    }
-                }
-            }
-            saveProject(context)
+            replaceImageUri(context, oldUri, newUri)
         }
         return newUri
     }
