@@ -32,7 +32,8 @@ object PdfGenerator {
         context: Context,
         coverConfig: CoverPageConfig,
         generatedPages: List<GeneratedPage>,
-        fileName: String
+        fileName: String,
+        imageEffectSettings: Map<String, ImageEffectSettings>
     ): File? {
         val pdfDocument = PdfDocument()
         val uncompressedPdfStream = ByteArrayOutputStream()
@@ -46,9 +47,9 @@ object PdfGenerator {
                     coverConfig.mainImageUri != null
 
             if (shouldDrawCover) {
-                drawCoverPage(pdfDocument, context, coverConfig, quality)
+                drawCoverPage(pdfDocument, context, coverConfig, quality, imageEffectSettings)
             }
-            drawInnerPages(pdfDocument, context, generatedPages, coverConfig, if (shouldDrawCover) 2 else 1, quality)
+            drawInnerPages(pdfDocument, context, generatedPages, coverConfig, if (shouldDrawCover) 2 else 1, quality, imageEffectSettings)
 
             pdfDocument.writeTo(uncompressedPdfStream)
             pdfDocument.close()
@@ -70,7 +71,7 @@ object PdfGenerator {
         }
     }
 
-    private fun drawCoverPage(pdfDocument: PdfDocument, context: Context, config: CoverPageConfig, quality: Int) {
+    private fun drawCoverPage(pdfDocument: PdfDocument, context: Context, config: CoverPageConfig, quality: Int, imageEffectSettings: Map<String, ImageEffectSettings>) {
         val pageWidth = if (config.pageOrientation == PageOrientation.Vertical) A4_WIDTH else A4_HEIGHT
         val pageHeight = if (config.pageOrientation == PageOrientation.Vertical) A4_HEIGHT else A4_WIDTH
         val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
@@ -81,11 +82,11 @@ object PdfGenerator {
             canvas.drawColor(color)
         }
 
-        drawCoverPageContent(canvas, context, config, quality, pageWidth, pageHeight)
+        drawCoverPageContent(canvas, context, config, quality, pageWidth, pageHeight, imageEffectSettings)
         pdfDocument.finishPage(page)
     }
 
-    private fun drawCoverPageContent(canvas: Canvas, context: Context, config: CoverPageConfig, quality: Int, pageWidth: Int, pageHeight: Int) {
+    private fun drawCoverPageContent(canvas: Canvas, context: Context, config: CoverPageConfig, quality: Int, pageWidth: Int, pageHeight: Int, imageEffectSettings: Map<String, ImageEffectSettings>) {
         val marginTop = config.marginTop * CM_TO_POINTS
         val marginBottom = config.marginBottom * CM_TO_POINTS
         val marginLeft = config.marginLeft * CM_TO_POINTS
@@ -115,10 +116,25 @@ object PdfGenerator {
                             val uriString = config.mainImageUri
                             val padding = config.photoStyle.padding
                             val paddedRect = RectF(rect.left + padding.left, rect.top + padding.top, rect.right - padding.right, rect.bottom - padding.bottom)
-                            val bitmap = decodeAndCompressBitmapFromUri(context, Uri.parse(uriString), paddedRect.width().toInt(), paddedRect.height().toInt(), quality)
+                            var bitmap = decodeAndCompressBitmapFromUri(context, Uri.parse(uriString), paddedRect.width().toInt(), paddedRect.height().toInt(), quality)
                             bitmap?.let {
+                                // Apply effects if they exist
+                                val settings = imageEffectSettings[uriString]
+                                if (settings != null) {
+                                    val contrast = 1.0f + settings.contrast / 100.0f
+                                    val saturation = 1.0f + settings.saturation / 100.0f
+                                    val sharpness = settings.sharpness / 100.0f
+
+                                    bitmap = ImageEffects.applyEffects(it, settings.brightness, contrast, saturation)
+                                    if (sharpness > 0) {
+                                        bitmap = ImageEffects.applySharpen(bitmap!!, sharpness)
+                                    } else if (sharpness < 0) {
+                                        bitmap = ImageEffects.applyBlur(bitmap!!, -sharpness)
+                                    }
+                                }
+
                                 val borderSettings = config.imageBorderSettingsMap["cover"]
-                                drawBitmapToCanvas(canvas, it, paddedRect, ImageAlignment.CENTER, borderSettings)
+                                drawBitmapToCanvas(canvas, bitmap!!, paddedRect, ImageAlignment.CENTER, borderSettings)
                                 it.recycle()
                             }
                         } catch (e: Exception) { e.printStackTrace() }
@@ -174,7 +190,8 @@ object PdfGenerator {
         context: Context,
         pageData: GeneratedPage,
         coverConfig: CoverPageConfig,
-        quality: Int
+        quality: Int,
+        imageEffectSettings: Map<String, ImageEffectSettings>
     ) {
         val (cols, rows) = when (pageData.orientation) {
             PageOrientation.Vertical -> if (pageData.imageUris.size > 1) Pair(1, 2) else Pair(1, 1)
@@ -188,15 +205,30 @@ object PdfGenerator {
             if (index < rects.size) {
                 val rect = rects[index]
                 try {
-                    val bitmap = decodeAndCompressBitmapFromUri(context, Uri.parse(uriString), rect.width().toInt(), rect.height().toInt(), quality)
+                    var bitmap = decodeAndCompressBitmapFromUri(context, Uri.parse(uriString), rect.width().toInt(), rect.height().toInt(), quality)
                     bitmap?.let {
+                        // Apply effects if they exist
+                        val settings = imageEffectSettings[uriString]
+                        if (settings != null) {
+                            val contrast = 1.0f + settings.contrast / 100.0f
+                            val saturation = 1.0f + settings.saturation / 100.0f
+                            val sharpness = settings.sharpness / 100.0f
+
+                            bitmap = ImageEffects.applyEffects(it, settings.brightness, contrast, saturation)
+                            if (sharpness > 0) {
+                                bitmap = ImageEffects.applySharpen(bitmap!!, sharpness)
+                            } else if (sharpness < 0) {
+                                bitmap = ImageEffects.applyBlur(bitmap!!, -sharpness)
+                            }
+                        }
+
                         val alignment = when {
                             cols == 1 && rows == 1 -> ImageAlignment.CENTER
                             cols == 2 -> if (index == 0) ImageAlignment.RIGHT else ImageAlignment.LEFT
                             rows == 2 -> if (index == 0) ImageAlignment.BOTTOM else ImageAlignment.TOP
                             else -> ImageAlignment.CENTER
                         }
-                        drawBitmapToCanvas(canvas, it, rect, alignment, borderSettings)
+                        drawBitmapToCanvas(canvas, bitmap!!, rect, alignment, borderSettings)
                         it.recycle()
                     }
                 } catch (e: Exception) {
@@ -212,7 +244,8 @@ object PdfGenerator {
         generatedPages: List<GeneratedPage>,
         coverConfig: CoverPageConfig,
         startPageNumber: Int,
-        quality: Int
+        quality: Int,
+        imageEffectSettings: Map<String, ImageEffectSettings>
     ) {
         var pageNumber = startPageNumber
         generatedPages.forEach { pageData ->
@@ -226,7 +259,7 @@ object PdfGenerator {
                 canvas.drawColor(color)
             }
 
-            drawPageOnCanvas(canvas, context, pageData, coverConfig, quality)
+            drawPageOnCanvas(canvas, context, pageData, coverConfig, quality, imageEffectSettings)
 
             pdfDocument.finishPage(page)
         }

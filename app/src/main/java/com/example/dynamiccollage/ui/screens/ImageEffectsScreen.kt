@@ -167,36 +167,14 @@ fun ImageEffectsScreen(
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
                     Button(onClick = {
-                        coroutineScope.launch {
-                            originalBitmap?.let { ob ->
-                                val brightness = brightnessSlider
-                                val contrast = 1.0f + contrastSlider / 100.0f
-                                val saturation = 1.0f + saturationSlider / 100.0f
-                                val sharpness = sharpnessSlider / 100.0f
-
-                                var processedBitmap = ImageEffects.applyEffects(ob, brightness, contrast, saturation)
-                                if (sharpness > 0) {
-                                    processedBitmap = ImageEffects.applySharpen(processedBitmap, sharpness)
-                                } else if (sharpness < 0) {
-                                    processedBitmap = ImageEffects.applyBlur(processedBitmap, -sharpness)
-                                }
-
-                                val newSettings = ImageEffectSettings(
-                                    brightness = brightnessSlider,
-                                    contrast = contrastSlider,
-                                    saturation = saturationSlider,
-                                    sharpness = sharpnessSlider
-                                )
-
-                                projectViewModel.applyAndSaveImageEffects(
-                                    context = context,
-                                    oldUri = imageUri,
-                                    bitmapWithEffects = processedBitmap,
-                                    settings = newSettings
-                                )
-                                navController.popBackStack()
-                            }
-                        }
+                        val newSettings = ImageEffectSettings(
+                            brightness = brightnessSlider,
+                            contrast = contrastSlider,
+                            saturation = saturationSlider,
+                            sharpness = sharpnessSlider
+                        )
+                        projectViewModel.updateImageEffectSettings(context, imageUri, newSettings)
+                        navController.popBackStack()
                     }) {
                         Text("Aplicar y Guardar")
                     }

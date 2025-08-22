@@ -49,6 +49,14 @@ class ProjectViewModel : ViewModel() {
     private val _imageEffectSettings = MutableStateFlow<Map<String, ImageEffectSettings>>(emptyMap())
     val imageEffectSettings: StateFlow<Map<String, ImageEffectSettings>> = _imageEffectSettings.asStateFlow()
 
+    fun updateImageEffectSettings(context: Context, uri: String, settings: ImageEffectSettings) {
+        _imageEffectSettings.update { currentMap ->
+            currentMap.toMutableMap().apply {
+                this[uri] = settings
+            }
+        }
+        saveProject(context)
+    }
 
     fun updateTheme(newThemeName: String) {
         _themeName.value = newThemeName
@@ -167,7 +175,8 @@ class ProjectViewModel : ViewModel() {
                     context = context,
                     coverConfig = _currentCoverConfig.value,
                     generatedPages = generatedPages,
-                    fileName = fileName.ifBlank { "DynamicCollage" }
+                    fileName = fileName.ifBlank { "DynamicCollage" },
+                    imageEffectSettings = _imageEffectSettings.value
                 )
             }
             if (generatedFile != null) {
@@ -274,40 +283,6 @@ class ProjectViewModel : ViewModel() {
 
             updateCoverConfig(finalConfig)
             saveProject(context)
-        }
-    }
-
-    fun applyAndSaveImageEffects(
-        context: Context,
-        oldUri: String,
-        bitmapWithEffects: Bitmap,
-        settings: ImageEffectSettings
-    ) {
-        viewModelScope.launch {
-            _imageEffectSettings.update { currentMap ->
-                currentMap.toMutableMap().apply {
-                    this[oldUri] = settings
-                }
-            }
-
-            val newUri = withContext(Dispatchers.IO) {
-                try {
-                    val newFile = File(context.applicationContext.filesDir, "images/${UUID.randomUUID()}.jpg")
-                    newFile.parentFile?.mkdirs()
-                    FileOutputStream(newFile).use { out ->
-                        bitmapWithEffects.compress(Bitmap.CompressFormat.JPEG, 95, out)
-                    }
-                    Uri.fromFile(newFile).toString()
-                } catch (e: Exception) {
-                    Log.e("ProjectViewModel", "Error saving image with effects", e)
-                    null
-                }
-            }
-            if (newUri != null) {
-                replaceImageUri(context, oldUri, newUri)
-            } else {
-                saveProject(context)
-            }
         }
     }
 
