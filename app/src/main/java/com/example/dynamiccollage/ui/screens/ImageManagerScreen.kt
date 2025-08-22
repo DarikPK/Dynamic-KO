@@ -47,6 +47,7 @@ fun ImageManagerScreen(
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val effectSettingsMap by projectViewModel.imageEffectSettings.collectAsState()
 
     Scaffold(
         topBar = {
@@ -126,8 +127,15 @@ fun ImageManagerScreen(
             ) {
                 if (currentSelectedUri != null) {
                     key(currentSelectedUri) {
+                        val settings = effectSettingsMap[currentSelectedUri.toString()]
+                        val transformations = if (settings != null) {
+                            listOf(com.example.dynamiccollage.ui.components.ProjectEffectsTransformation(settings))
+                        } else {
+                            emptyList()
+                        }
                         CropView(
                             uri = currentSelectedUri!!,
+                            transformations = transformations,
                             onCrop = { cropRect, imageBounds ->
                                 coroutineScope.launch {
                                 val croppedBitmap = cropBitmap(
@@ -161,8 +169,18 @@ fun ImageManagerScreen(
             ) {
                 items(imageUris) { uriString ->
                     val uri = Uri.parse(uriString)
+                    val settings = effectSettingsMap[uriString]
+                    val transformations = if (settings != null) {
+                        listOf(com.example.dynamiccollage.ui.components.ProjectEffectsTransformation(settings))
+                    } else {
+                        emptyList()
+                    }
+
                     AsyncImage(
-                        model = uri,
+                        model = coil.request.ImageRequest.Builder(context)
+                            .data(uri)
+                            .transformations(transformations)
+                            .build(),
                         contentDescription = "Thumbnail",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
