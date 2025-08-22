@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -70,7 +71,11 @@ fun ImageEffectsScreen(
                 val sharpness = sharpnessSlider / 100.0f
 
                 var processedBitmap = ImageEffects.applyEffects(thumbnail, brightness, contrast, saturation)
-                processedBitmap = ImageEffects.applySharpen(processedBitmap, sharpness)
+                if (sharpness > 0) {
+                    processedBitmap = ImageEffects.applySharpen(processedBitmap, sharpness)
+                } else if (sharpness < 0) {
+                    processedBitmap = ImageEffects.applyBlur(processedBitmap, -sharpness)
+                }
 
                 previewBitmap = processedBitmap
             }
@@ -104,7 +109,9 @@ fun ImageEffectsScreen(
                 if (previewBitmap != null) {
                     Image(
                         bitmap = previewBitmap!!.asImageBitmap(),
-                        contentDescription = "Image Preview"
+                        contentDescription = "Image Preview",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit
                     )
                 } else {
                     CircularProgressIndicator()
@@ -140,7 +147,7 @@ fun ImageEffectsScreen(
                 Slider(
                     value = sharpnessSlider,
                     onValueChange = { sharpnessSlider = it },
-                    valueRange = 0f..100f,
+                    valueRange = -100f..100f,
                     onValueChangeFinished = { updatePreview() }
                 )
                 Spacer(modifier = Modifier.height(16.dp))
@@ -157,7 +164,11 @@ fun ImageEffectsScreen(
                                 val sharpness = sharpnessSlider / 100.0f
 
                                 var processedBitmap = ImageEffects.applyEffects(ob, brightness, contrast, saturation)
-                                processedBitmap = ImageEffects.applySharpen(processedBitmap, sharpness)
+                                if (sharpness > 0) {
+                                    processedBitmap = ImageEffects.applySharpen(processedBitmap, sharpness)
+                                } else if (sharpness < 0) {
+                                    processedBitmap = ImageEffects.applyBlur(processedBitmap, -sharpness)
+                                }
 
                                 projectViewModel.saveImageWithEffects(
                                     context = context,
