@@ -16,6 +16,7 @@ import androidx.navigation.NavController
 import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.material3.CircularProgressIndicator
+import com.example.dynamiccollage.data.model.ImageEffectSettings
 import com.example.dynamiccollage.utils.ImageEffects
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 import kotlinx.coroutines.launch
@@ -31,11 +32,14 @@ fun ImageEffectsScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
+    val effectSettings by projectViewModel.imageEffectSettings.collectAsState()
+    val initialSettings = remember { effectSettings[imageUri] ?: ImageEffectSettings() }
+
     // State for sliders
-    var brightnessSlider by remember { mutableStateOf(0f) }
-    var contrastSlider by remember { mutableStateOf(0f) }
-    var saturationSlider by remember { mutableStateOf(0f) }
-    var sharpnessSlider by remember { mutableStateOf(0f) }
+    var brightnessSlider by remember { mutableStateOf(initialSettings.brightness) }
+    var contrastSlider by remember { mutableStateOf(initialSettings.contrast) }
+    var saturationSlider by remember { mutableStateOf(initialSettings.saturation) }
+    var sharpnessSlider by remember { mutableStateOf(initialSettings.sharpness) }
 
     // State for the preview bitmap
     var previewBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
@@ -169,6 +173,14 @@ fun ImageEffectsScreen(
                                 } else if (sharpness < 0) {
                                     processedBitmap = ImageEffects.applyBlur(processedBitmap, -sharpness)
                                 }
+
+                                val newSettings = ImageEffectSettings(
+                                    brightness = brightnessSlider,
+                                    contrast = contrastSlider,
+                                    saturation = saturationSlider,
+                                    sharpness = sharpnessSlider
+                                )
+                                projectViewModel.updateImageEffectSettings(imageUri, newSettings)
 
                                 projectViewModel.saveImageWithEffects(
                                     context = context,

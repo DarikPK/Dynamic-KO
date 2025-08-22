@@ -15,6 +15,7 @@ import com.example.dynamiccollage.data.model.ImageBorderSettings
 import com.example.dynamiccollage.data.toDomain
 import com.example.dynamiccollage.data.toSerializable
 import com.example.dynamiccollage.data.model.CoverPageConfig
+import com.example.dynamiccollage.data.model.ImageEffectSettings
 import com.example.dynamiccollage.data.model.PageGroup
 import com.example.dynamiccollage.data.model.SelectedSunatData
 import com.example.dynamiccollage.data.model.SerializableProjectState
@@ -44,6 +45,17 @@ class ProjectViewModel : ViewModel() {
 
     private val _themeName = MutableStateFlow("Oscuro")
     val themeName: StateFlow<String> = _themeName.asStateFlow()
+
+    private val _imageEffectSettings = MutableStateFlow<Map<String, ImageEffectSettings>>(emptyMap())
+    val imageEffectSettings: StateFlow<Map<String, ImageEffectSettings>> = _imageEffectSettings.asStateFlow()
+
+    fun updateImageEffectSettings(uri: String, settings: ImageEffectSettings) {
+        _imageEffectSettings.update { currentMap ->
+            currentMap.toMutableMap().apply {
+                this[uri] = settings
+            }
+        }
+    }
 
     fun updateTheme(newThemeName: String) {
         _themeName.value = newThemeName
@@ -395,7 +407,8 @@ class ProjectViewModel : ViewModel() {
                 coverConfig = _currentCoverConfig.value.toSerializable(),
                 pageGroups = _currentPageGroups.value.map { it.toSerializable() },
                 sunatData = _sunatData.value,
-                themeName = _themeName.value
+                themeName = _themeName.value,
+                imageEffectSettings = _imageEffectSettings.value
             )
             val jsonString = gson.toJson(serializableState)
             val sizeInBytes = jsonString.toByteArray().size.toLong()
@@ -415,7 +428,8 @@ class ProjectViewModel : ViewModel() {
                 coverConfig = _currentCoverConfig.value.toSerializable(),
                 pageGroups = _currentPageGroups.value.map { it.toSerializable() },
                 sunatData = _sunatData.value,
-                themeName = _themeName.value
+                themeName = _themeName.value,
+                imageEffectSettings = _imageEffectSettings.value
             )
             val jsonString = gson.toJson(serializableState)
             writeJsonToFile(context, jsonString)
@@ -466,6 +480,7 @@ class ProjectViewModel : ViewModel() {
                     _currentPageGroups.value = projectState.pageGroups
                     _sunatData.value = projectState.sunatData
                     _themeName.value = projectState.themeName
+                    _imageEffectSettings.value = projectState.imageEffectSettings
                     Log.d("ProjectViewModel", "loadProject: Project loaded and state restored successfully.")
                 }
             } catch (t: Throwable) {

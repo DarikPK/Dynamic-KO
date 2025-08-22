@@ -213,5 +213,6 @@ fun SerializableProjectState.toDomain() = ProjectState(
     coverConfig = this.coverConfig.toDomain(),
     pageGroups = this.pageGroups.map { it.toDomain() },
     sunatData = this.sunatData,
-    themeName = this.themeName ?: "Oscuro"
+    themeName = this.themeName ?: "Oscuro",
+    imageEffectSettings = this.imageEffectSettings ?: emptyMap()
 )

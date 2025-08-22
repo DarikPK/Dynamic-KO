@@ -7,7 +7,8 @@ data class SerializableProjectState(
     val coverConfig: SerializableCoverPageConfig,
     val pageGroups: List<SerializablePageGroup>,
     val sunatData: SelectedSunatData?, // This one is already serializable
-    val themeName: String? = null
+    val themeName: String? = null,
+    val imageEffectSettings: Map<String, ImageEffectSettings>? = null
 )
 
 data class SerializableCoverPageConfig(
