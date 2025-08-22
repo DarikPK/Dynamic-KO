@@ -70,4 +70,80 @@ object ImageEffects {
 
         return newBitmap
     }
+
+    /**
+     * Applies a sharpen effect to a bitmap using a convolution matrix.
+     * @param bitmap The original bitmap.
+     * @param strength The strength of the sharpen effect. 0.0 means no change, 1.0 is full sharpen.
+     * @return A new bitmap with the sharpen effect applied.
+     */
+    fun applySharpen(bitmap: Bitmap, strength: Float): Bitmap {
+        if (strength <= 0f) return bitmap
+
+        val width = bitmap.width
+        val height = bitmap.height
+        val pixels = IntArray(width * height)
+        bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+
+        val newPixels = IntArray(width * height)
+
+        // Sharpen kernel
+        val kernel = floatArrayOf(
+            0f, -1f, 0f,
+            -1f, 5f, -1f,
+            0f, -1f, 0f
+        )
+
+        for (i in 1 until height - 1) {
+            for (j in 1 until width - 1) {
+                var sumR = 0f
+                var sumG = 0f
+                var sumB = 0f
+
+                // Apply kernel
+                for (k in -1..1) {
+                    for (l in -1..1) {
+                        val pixel = pixels[(i + k) * width + (j + l)]
+                        val kernelValue = kernel[(k + 1) * 3 + (l + 1)]
+
+                        sumR += ((pixel shr 16) and 0xFF) * kernelValue
+                        sumG += ((pixel shr 8) and 0xFF) * kernelValue
+                        sumB += (pixel and 0xFF) * kernelValue
+                    }
+                }
+
+                val originalPixel = pixels[i * width + j]
+                val originalR = (originalPixel shr 16) and 0xFF
+                val originalG = (originalPixel shr 8) and 0xFF
+                val originalB = originalPixel and 0xFF
+
+                // Clamp values
+                val r = sumR.toInt().coerceIn(0, 255)
+                val g = sumG.toInt().coerceIn(0, 255)
+                val b = sumB.toInt().coerceIn(0, 255)
+
+                // Blend with original pixel based on strength
+                val finalR = (originalR * (1 - strength) + r * strength).toInt()
+                val finalG = (originalG * (1 - strength) + g * strength).toInt()
+                val finalB = (originalB * (1 - strength) + b * strength).toInt()
+
+                newPixels[i * width + j] = (originalPixel and 0xFF000000.toInt()) or (finalR shl 16) or (finalG shl 8) or finalB
+            }
+        }
+
+        // Handle edges by copying them from the original
+        for (i in 0 until width) {
+            newPixels[i] = pixels[i]
+            newPixels[(height - 1) * width + i] = pixels[(height - 1) * width + i]
+        }
+        for (i in 0 until height) {
+            newPixels[i * width] = pixels[i * width]
+            newPixels[i * width + width - 1] = pixels[i * width + width - 1]
+        }
+
+
+        val newBitmap = Bitmap.createBitmap(width, height, bitmap.config)
+        newBitmap.setPixels(newPixels, 0, width, 0, 0, width, height)
+        return newBitmap
+    }
 }

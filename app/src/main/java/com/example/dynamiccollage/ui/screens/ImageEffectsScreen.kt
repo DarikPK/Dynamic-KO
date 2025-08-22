@@ -12,9 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
-import com.example.dynamiccollage.ui.components.ColorMatrixTransformation
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.material3.CircularProgressIndicator
 import com.example.dynamiccollage.utils.ImageEffects
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 import kotlinx.coroutines.launch
@@ -34,11 +34,48 @@ fun ImageEffectsScreen(
     var brightnessSlider by remember { mutableStateOf(0f) }
     var contrastSlider by remember { mutableStateOf(0f) }
     var saturationSlider by remember { mutableStateOf(0f) }
+    var sharpnessSlider by remember { mutableStateOf(0f) }
 
-    // Debounced state for Coil transformation
-    var brightnessEffect by remember { mutableStateOf(0f) }
-    var contrastEffect by remember { mutableStateOf(1f) }
-    var saturationEffect by remember { mutableStateOf(1f) }
+    // State for the preview bitmap
+    var previewBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    // Store the original bitmap in memory
+    var originalBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+
+    // Load the original bitmap once
+    LaunchedEffect(uri) {
+        coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            val bitmap = context.contentResolver.openInputStream(uri)?.use {
+                BitmapFactory.decodeStream(it)
+            }
+            originalBitmap = bitmap
+            previewBitmap = bitmap
+        }
+    }
+
+    // Function to update the preview bitmap
+    fun updatePreview() {
+        coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            originalBitmap?.let { ob ->
+                // Create a smaller bitmap for faster preview processing
+                val scaleFactor = 400.0 / ob.width.coerceAtLeast(ob.height)
+                val thumbnail = if (scaleFactor < 1.0) {
+                    android.graphics.Bitmap.createScaledBitmap(ob, (ob.width * scaleFactor).toInt(), (ob.height * scaleFactor).toInt(), true)
+                } else {
+                    ob
+                }
+
+                val brightness = brightnessSlider
+                val contrast = 1.0f + contrastSlider / 100.0f
+                val saturation = 1.0f + saturationSlider / 100.0f
+                val sharpness = sharpnessSlider / 100.0f
+
+                var processedBitmap = ImageEffects.applyEffects(thumbnail, brightness, contrast, saturation)
+                processedBitmap = ImageEffects.applySharpen(processedBitmap, sharpness)
+
+                previewBitmap = processedBitmap
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -64,19 +101,14 @@ fun ImageEffectsScreen(
                     .weight(1f),
                 contentAlignment = Alignment.Center
             ) {
-                AsyncImage(
-                    model = ImageRequest.Builder(context)
-                        .data(uri)
-                        .transformations(
-                            ColorMatrixTransformation(
-                                brightness = brightnessEffect,
-                                contrast = contrastEffect,
-                                saturation = saturationEffect
-                            )
-                        )
-                        .build(),
-                    contentDescription = "Image Preview"
-                )
+                if (previewBitmap != null) {
+                    Image(
+                        bitmap = previewBitmap!!.asImageBitmap(),
+                        contentDescription = "Image Preview"
+                    )
+                } else {
+                    CircularProgressIndicator()
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -88,27 +120,28 @@ fun ImageEffectsScreen(
                     value = brightnessSlider,
                     onValueChange = { brightnessSlider = it },
                     valueRange = -100f..100f,
-                    onValueChangeFinished = {
-                        brightnessEffect = brightnessSlider
-                    }
+                    onValueChangeFinished = { updatePreview() }
                 )
                 Text("Contraste: ${"%.0f".format(contrastSlider)}")
                 Slider(
                     value = contrastSlider,
                     onValueChange = { contrastSlider = it },
                     valueRange = -100f..100f,
-                    onValueChangeFinished = {
-                        contrastEffect = 1.0f + contrastSlider / 100.0f
-                    }
+                    onValueChangeFinished = { updatePreview() }
                 )
                 Text("Saturación: ${"%.0f".format(saturationSlider)}")
                 Slider(
                     value = saturationSlider,
                     onValueChange = { saturationSlider = it },
                     valueRange = -100f..100f,
-                    onValueChangeFinished = {
-                        saturationEffect = 1.0f + saturationSlider / 100.0f
-                    }
+                    onValueChangeFinished = { updatePreview() }
+                )
+                Text("Nitidez: ${"%.0f".format(sharpnessSlider)}")
+                Slider(
+                    value = sharpnessSlider,
+                    onValueChange = { sharpnessSlider = it },
+                    valueRange = 0f..100f,
+                    onValueChangeFinished = { updatePreview() }
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(
@@ -117,20 +150,19 @@ fun ImageEffectsScreen(
                 ) {
                     Button(onClick = {
                         coroutineScope.launch {
-                            val originalBitmap = context.contentResolver.openInputStream(uri)?.use {
-                                BitmapFactory.decodeStream(it)
-                            }
-                            if (originalBitmap != null) {
-                                val bitmapWithEffects = ImageEffects.applyEffects(
-                                    bitmap = originalBitmap,
-                                    brightness = brightnessEffect,
-                                    contrast = contrastEffect,
-                                    saturation = saturationEffect
-                                )
+                            originalBitmap?.let { ob ->
+                                val brightness = brightnessSlider
+                                val contrast = 1.0f + contrastSlider / 100.0f
+                                val saturation = 1.0f + saturationSlider / 100.0f
+                                val sharpness = sharpnessSlider / 100.0f
+
+                                var processedBitmap = ImageEffects.applyEffects(ob, brightness, contrast, saturation)
+                                processedBitmap = ImageEffects.applySharpen(processedBitmap, sharpness)
+
                                 projectViewModel.saveImageWithEffects(
                                     context = context,
                                     oldUri = imageUri,
-                                    bitmapWithEffects = bitmapWithEffects
+                                    bitmapWithEffects = processedBitmap
                                 )
                                 navController.popBackStack()
                             }
@@ -142,9 +174,8 @@ fun ImageEffectsScreen(
                         brightnessSlider = 0f
                         contrastSlider = 0f
                         saturationSlider = 0f
-                        brightnessEffect = 0f
-                        contrastEffect = 1f
-                        saturationEffect = 1f
+                        sharpnessSlider = 0f
+                        updatePreview()
                     }) {
                         Text("Restablecer")
                     }
