@@ -187,12 +187,12 @@ fun ImageEffectsScreen(
                                     saturation = saturationSlider,
                                     sharpness = sharpnessSlider
                                 )
-                                projectViewModel.updateImageEffectSettings(imageUri, newSettings)
 
-                                projectViewModel.saveImageWithEffects(
+                                projectViewModel.applyAndSaveImageEffects(
                                     context = context,
                                     oldUri = imageUri,
-                                    bitmapWithEffects = processedBitmap
+                                    bitmapWithEffects = processedBitmap,
+                                    settings = newSettings
                                 )
                                 navController.popBackStack()
                             }

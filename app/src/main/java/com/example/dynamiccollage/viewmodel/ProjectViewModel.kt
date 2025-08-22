@@ -49,13 +49,6 @@ class ProjectViewModel : ViewModel() {
     private val _imageEffectSettings = MutableStateFlow<Map<String, ImageEffectSettings>>(emptyMap())
     val imageEffectSettings: StateFlow<Map<String, ImageEffectSettings>> = _imageEffectSettings.asStateFlow()
 
-    fun updateImageEffectSettings(uri: String, settings: ImageEffectSettings) {
-        _imageEffectSettings.update { currentMap ->
-            currentMap.toMutableMap().apply {
-                this[uri] = settings
-            }
-        }
-    }
 
     fun updateTheme(newThemeName: String) {
         _themeName.value = newThemeName
@@ -284,6 +277,40 @@ class ProjectViewModel : ViewModel() {
         }
     }
 
+    fun applyAndSaveImageEffects(
+        context: Context,
+        oldUri: String,
+        bitmapWithEffects: Bitmap,
+        settings: ImageEffectSettings
+    ) {
+        viewModelScope.launch {
+            _imageEffectSettings.update { currentMap ->
+                currentMap.toMutableMap().apply {
+                    this[oldUri] = settings
+                }
+            }
+
+            val newUri = withContext(Dispatchers.IO) {
+                try {
+                    val newFile = File(context.applicationContext.filesDir, "images/${UUID.randomUUID()}.jpg")
+                    newFile.parentFile?.mkdirs()
+                    FileOutputStream(newFile).use { out ->
+                        bitmapWithEffects.compress(Bitmap.CompressFormat.JPEG, 95, out)
+                    }
+                    Uri.fromFile(newFile).toString()
+                } catch (e: Exception) {
+                    Log.e("ProjectViewModel", "Error saving image with effects", e)
+                    null
+                }
+            }
+            if (newUri != null) {
+                replaceImageUri(context, oldUri, newUri)
+            } else {
+                saveProject(context)
+            }
+        }
+    }
+
     private suspend fun copyUriToInternalStorage(context: Context, uriString: String): String? {
         return withContext(Dispatchers.IO) {
             try {
@@ -371,27 +398,6 @@ class ProjectViewModel : ViewModel() {
         } catch (e: Exception) {
             return null
         }
-    }
-
-    suspend fun saveImageWithEffects(context: Context, oldUri: String, bitmapWithEffects: Bitmap): String? {
-        val newUri = withContext(Dispatchers.IO) {
-            try {
-                val newFile = File(context.applicationContext.filesDir, "images/${UUID.randomUUID()}.jpg")
-                newFile.parentFile?.mkdirs()
-                FileOutputStream(newFile).use { out ->
-                    bitmapWithEffects.compress(Bitmap.CompressFormat.JPEG, 95, out)
-                }
-                Uri.fromFile(newFile).toString()
-            } catch (e: Exception) {
-                Log.e("ProjectViewModel", "Error saving image with effects", e)
-                null
-            }
-        }
-
-        if (newUri != null) {
-            replaceImageUri(context, oldUri, newUri)
-        }
-        return newUri
     }
 
     // --- Lógica de Guardado y Carga de Proyecto ---
