@@ -45,25 +45,6 @@ fun ImageEffectsScreen(
     // Store the original bitmap in memory
     var originalBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
 
-    // This one effect handles loading the bitmap, initializing the sliders, and updating the preview
-    LaunchedEffect(uri, effectSettingsMap) {
-        coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            val bitmap = context.contentResolver.openInputStream(uri)?.use {
-                BitmapFactory.decodeStream(it)
-            }
-            originalBitmap = bitmap
-
-            val settings = effectSettingsMap[imageUri] ?: ImageEffectSettings()
-            brightnessSlider = settings.brightness
-            contrastSlider = settings.contrast
-            saturationSlider = settings.saturation
-            sharpnessSlider = settings.sharpness
-
-            // Now that the bitmap is loaded and sliders are set, generate the initial preview
-            updatePreview()
-        }
-    }
-
     // Function to update the preview bitmap
     fun updatePreview() {
         coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
@@ -90,6 +71,25 @@ fun ImageEffectsScreen(
 
                 previewBitmap = processedBitmap
             }
+        }
+    }
+
+    // This one effect handles loading the bitmap, initializing the sliders, and updating the preview
+    LaunchedEffect(uri, effectSettingsMap) {
+        coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            val bitmap = context.contentResolver.openInputStream(uri)?.use {
+                BitmapFactory.decodeStream(it)
+            }
+            originalBitmap = bitmap
+
+            val settings = effectSettingsMap[imageUri] ?: ImageEffectSettings()
+            brightnessSlider = settings.brightness
+            contrastSlider = settings.contrast
+            saturationSlider = settings.saturation
+            sharpnessSlider = settings.sharpness
+
+            // Now that the bitmap is loaded and sliders are set, generate the initial preview
+            updatePreview()
         }
     }
 
