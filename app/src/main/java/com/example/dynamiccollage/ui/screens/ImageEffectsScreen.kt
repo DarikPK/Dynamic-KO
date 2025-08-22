@@ -32,28 +32,35 @@ fun ImageEffectsScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    val effectSettings by projectViewModel.imageEffectSettings.collectAsState()
-    val initialSettings = remember { effectSettings[imageUri] ?: ImageEffectSettings() }
+    val effectSettingsMap by projectViewModel.imageEffectSettings.collectAsState()
 
-    // State for sliders
-    var brightnessSlider by remember { mutableStateOf(initialSettings.brightness) }
-    var contrastSlider by remember { mutableStateOf(initialSettings.contrast) }
-    var saturationSlider by remember { mutableStateOf(initialSettings.saturation) }
-    var sharpnessSlider by remember { mutableStateOf(initialSettings.sharpness) }
+    // State for sliders, initialized to default
+    var brightnessSlider by remember { mutableStateOf(0f) }
+    var contrastSlider by remember { mutableStateOf(0f) }
+    var saturationSlider by remember { mutableStateOf(0f) }
+    var sharpnessSlider by remember { mutableStateOf(0f) }
 
     // State for the preview bitmap
     var previewBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     // Store the original bitmap in memory
     var originalBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
 
-    // Load the original bitmap once
-    LaunchedEffect(uri) {
+    // This one effect handles loading the bitmap, initializing the sliders, and updating the preview
+    LaunchedEffect(uri, effectSettingsMap) {
         coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             val bitmap = context.contentResolver.openInputStream(uri)?.use {
                 BitmapFactory.decodeStream(it)
             }
             originalBitmap = bitmap
-            previewBitmap = bitmap
+
+            val settings = effectSettingsMap[imageUri] ?: ImageEffectSettings()
+            brightnessSlider = settings.brightness
+            contrastSlider = settings.contrast
+            saturationSlider = settings.saturation
+            sharpnessSlider = settings.sharpness
+
+            // Now that the bitmap is loaded and sliders are set, generate the initial preview
+            updatePreview()
         }
     }
 
