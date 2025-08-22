@@ -183,11 +183,11 @@ fun ThemePreviewItem(
 
 @Composable
 fun MinimalistPreview(theme: ThemePreview) {
-    // The container with the dynamic background color
+    // The container now uses the currently active theme's surface color
     Card(
         modifier = Modifier.width(120.dp).height(40.dp),
         shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = theme.surface),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Box(
@@ -206,7 +206,7 @@ fun MinimalistPreview(theme: ThemePreview) {
                             .size(circleSize)
                             .clip(CircleShape)
                             .background(color)
-                            .border(1.dp, theme.surface, CircleShape) // Border uses the container's color
+                            .border(1.dp, MaterialTheme.colorScheme.surface, CircleShape) // Border now also uses the active theme's surface color
                     )
                 }
             }
