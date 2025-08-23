@@ -17,7 +17,7 @@ import com.example.dynamiccollage.data.toSerializable
 import com.example.dynamiccollage.data.model.CoverPageConfig
 import com.example.dynamiccollage.data.model.ImageEffectSettings
 import com.example.dynamiccollage.data.model.PageGroup
-import com.example.dynamiccollage.data.model.SerializableRectF
+import com.example.dynamiccollage.data.model.SerializableNormalizedRectF
 import com.example.dynamiccollage.data.model.SelectedSunatData
 import com.example.dynamiccollage.data.model.SerializableProjectState
 import com.example.dynamiccollage.utils.PdfGenerator
@@ -76,7 +76,7 @@ class ProjectViewModel : ViewModel() {
         saveProject(context)
     }
 
-    fun updateImageCrop(context: Context, uri: String, cropRect: SerializableRectF?) {
+    fun updateImageCrop(context: Context, uri: String, cropRect: SerializableNormalizedRectF?) {
         _imageEffectSettings.update { currentMap ->
             val currentSettings = currentMap[uri] ?: ImageEffectSettings()
             currentMap.toMutableMap().apply {
