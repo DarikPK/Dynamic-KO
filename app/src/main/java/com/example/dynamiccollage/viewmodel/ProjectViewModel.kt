@@ -17,6 +17,7 @@ import com.example.dynamiccollage.data.toSerializable
 import com.example.dynamiccollage.data.model.CoverPageConfig
 import com.example.dynamiccollage.data.model.ImageEffectSettings
 import com.example.dynamiccollage.data.model.PageGroup
+import com.example.dynamiccollage.data.model.SerializableRectF
 import com.example.dynamiccollage.data.model.SelectedSunatData
 import com.example.dynamiccollage.data.model.SerializableProjectState
 import com.example.dynamiccollage.utils.PdfGenerator
@@ -60,6 +61,37 @@ class ProjectViewModel : ViewModel() {
         _imageEffectSettings.update { currentMap ->
             currentMap.toMutableMap().apply {
                 this[uri] = settings
+            }
+        }
+        saveProject(context)
+    }
+
+    fun updateImageRotation(context: Context, uri: String, degrees: Float) {
+        _imageEffectSettings.update { currentMap ->
+            val currentSettings = currentMap[uri] ?: ImageEffectSettings()
+            currentMap.toMutableMap().apply {
+                this[uri] = currentSettings.copy(rotationDegrees = degrees)
+            }
+        }
+        saveProject(context)
+    }
+
+    fun updateImageCrop(context: Context, uri: String, cropRect: SerializableRectF?) {
+        _imageEffectSettings.update { currentMap ->
+            val currentSettings = currentMap[uri] ?: ImageEffectSettings()
+            currentMap.toMutableMap().apply {
+                this[uri] = currentSettings.copy(cropRect = cropRect)
+            }
+        }
+        saveProject(context)
+    }
+
+    fun resetImageTransforms(context: Context, uri: String) {
+        _imageEffectSettings.update { currentMap ->
+            val currentSettings = currentMap[uri] ?: ImageEffectSettings()
+            currentMap.toMutableMap().apply {
+                // Reset only transform properties, keep other effects
+                this[uri] = currentSettings.copy(rotationDegrees = 0f, cropRect = null)
             }
         }
         saveProject(context)
@@ -313,59 +345,6 @@ class ProjectViewModel : ViewModel() {
         }
     }
 
-    suspend fun saveCroppedImage(context: Context, oldUri: String, croppedBitmap: Bitmap): String? {
-        val newUri = withContext(Dispatchers.IO) {
-            try {
-                val newFile = File(context.applicationContext.filesDir, "images/${UUID.randomUUID()}.jpg")
-                newFile.parentFile?.mkdirs()
-                FileOutputStream(newFile).use { out ->
-                    croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
-                }
-                Uri.fromFile(newFile).toString()
-            } catch (e: Exception) {
-                null
-            }
-        }
-
-        if (newUri != null) {
-            replaceImageUri(context, oldUri, newUri)
-        }
-        return newUri
-    }
-
-    suspend fun rotateImage(context: Context, uri: String): String? {
-        try {
-            val inputStream = context.contentResolver.openInputStream(Uri.parse(uri)) ?: return null
-            val originalBitmap = BitmapFactory.decodeStream(inputStream)
-            inputStream.close()
-
-            val matrix = Matrix().apply { postRotate(90f) }
-            val rotatedBitmap = Bitmap.createBitmap(originalBitmap, 0, 0, originalBitmap.width, originalBitmap.height, matrix, true)
-            originalBitmap.recycle()
-
-            val newUri = withContext(Dispatchers.IO) {
-                try {
-                    val newFile = File(context.applicationContext.filesDir, "images/${UUID.randomUUID()}.jpg")
-                    newFile.parentFile?.mkdirs()
-                    FileOutputStream(newFile).use { out ->
-                        rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
-                    }
-                    rotatedBitmap.recycle()
-                    Uri.fromFile(newFile).toString()
-                } catch (e: Exception) {
-                    rotatedBitmap.recycle()
-                    null
-                }
-            }
-
-            if (newUri != null) {
-                replaceImageUri(context, uri, newUri)
-            }
-            return newUri
-        } catch (e: Exception) {
-            return null
-        }
-    }
 
     // --- Lógica de Guardado y Carga de Proyecto ---
     private val _saveState = MutableStateFlow<SaveState>(SaveState.Idle)
@@ -465,27 +444,6 @@ class ProjectViewModel : ViewModel() {
 
     fun resetSaveState() {
         _saveState.value = SaveState.Idle
-    }
-
-    fun replaceImageUri(context: Context, oldUri: String, newUri: String) {
-        if (_managerSelectedUri.value == oldUri) {
-            _managerSelectedUri.value = newUri
-        }
-        if (_currentCoverConfig.value.mainImageUri == oldUri) {
-            _currentCoverConfig.update { it.copy(mainImageUri = newUri) }
-        }
-
-        _currentPageGroups.update { groups ->
-            groups.map { group ->
-                if (group.imageUris.contains(oldUri)) {
-                    val newImageUris = group.imageUris.map { if (it == oldUri) newUri else it }
-                    group.copy(imageUris = newImageUris)
-                } else {
-                    group
-                }
-            }
-        }
-        saveProject(context)
     }
 }
 

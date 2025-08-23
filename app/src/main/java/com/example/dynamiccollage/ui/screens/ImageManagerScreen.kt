@@ -1,6 +1,5 @@
 package com.example.dynamiccollage.ui.screens
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.foundation.border
@@ -13,26 +12,23 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.RotateRight
 import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.example.dynamiccollage.data.model.ImageEffectSettings
+import androidx.compose.ui.geometry.Rect
+import com.example.dynamiccollage.data.model.SerializableNormalizedRectF
 import com.example.dynamiccollage.ui.components.CropView
+import com.example.dynamiccollage.ui.components.ProjectEffectsTransformation
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 import kotlinx.coroutines.launch
-import java.io.InputStream
-import kotlin.math.min
-import android.graphics.BitmapFactory
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,9 +51,13 @@ fun ImageManagerScreen(
         projectViewModel.getAllImageUris()
     }
 
-    // Local state for undoing crop, now simpler
-    var uriBeforeCrop by remember { mutableStateOf<Uri?>(null) }
-    var originalUriOfSession by remember { mutableStateOf<Uri?>(null) }
+    // State to force recomposition of CropView
+    var cropViewResetKey by remember { mutableStateOf(0) }
+
+    // Get the settings for the currently selected image
+    val currentSettings = currentSelectedUriString?.let {
+        effectSettingsMap[it]
+    } ?: ImageEffectSettings()
 
     // Initialize the selected URI in the ViewModel once
     LaunchedEffect(imageUris) {
@@ -78,22 +78,10 @@ fun ImageManagerScreen(
                 actions = {
                     IconButton(
                         onClick = {
-                            val uriToRevertTo = uriBeforeCrop
-                            if (uriToRevertTo != null && currentSelectedUriString != null) {
-                                projectViewModel.replaceImageUri(context, currentSelectedUriString!!, uriToRevertTo.toString())
-                            }
-                        },
-                        enabled = currentSelectedUri != uriBeforeCrop && uriBeforeCrop != null
-                    ) {
-                        Icon(Icons.Default.Undo, contentDescription = "Deshacer Recorte")
-                    }
-                    IconButton(
-                        onClick = {
-                            coroutineScope.launch {
-                                if (currentSelectedUriString != null) {
-                                    uriBeforeCrop = currentSelectedUri
-                                    projectViewModel.rotateImage(context, currentSelectedUriString!!)
-                                }
+                            if (currentSelectedUriString != null) {
+                                val currentRotation = currentSettings.rotationDegrees
+                                val newRotation = (currentRotation + 90f) % 360f
+                                projectViewModel.updateImageRotation(context, currentSelectedUriString!!, newRotation)
                             }
                         },
                         enabled = currentSelectedUriString != null
@@ -112,13 +100,15 @@ fun ImageManagerScreen(
                     }
                     IconButton(
                         onClick = {
-                             if (originalUriOfSession != null && currentSelectedUriString != null) {
-                                projectViewModel.replaceImageUri(context, currentSelectedUriString!!, originalUriOfSession.toString())
+                            if (currentSelectedUriString != null) {
+                                projectViewModel.resetImageTransforms(context, currentSelectedUriString!!)
+                                // Force CropView to reset its internal state
+                                cropViewResetKey++
                             }
                         },
-                        enabled = currentSelectedUri != originalUriOfSession
+                        enabled = currentSelectedUriString != null && currentSettings.hasTransforms()
                     ) {
-                        Icon(Icons.Default.Restore, contentDescription = "Restablecer Original")
+                        Icon(Icons.Default.Restore, contentDescription = "Restablecer")
                     }
                 }
             )
@@ -136,27 +126,22 @@ fun ImageManagerScreen(
                 contentAlignment = Alignment.Center
             ) {
                 if (currentSelectedUri != null) {
-                    key(currentSelectedUriString) {
-                        val settings = effectSettingsMap[currentSelectedUriString]
-                        val transformations = if (settings != null) {
-                            listOf(com.example.dynamiccollage.ui.components.ProjectEffectsTransformation(settings))
-                        } else {
-                            emptyList()
-                        }
+                    key(currentSelectedUriString, cropViewResetKey) {
                         CropView(
                             uri = currentSelectedUri,
-                            transformations = transformations,
+                            transformations = listOf(ProjectEffectsTransformation(currentSettings)),
                             onCrop = { cropRect, imageBounds ->
                                 coroutineScope.launch {
-                                    val croppedBitmap = cropBitmap(
-                                        context = context,
-                                        uri = currentSelectedUri,
-                                        cropRect = cropRect,
-                                        imageBounds = imageBounds
-                                    )
-                                    if (croppedBitmap != null) {
-                                        uriBeforeCrop = currentSelectedUri
-                                        projectViewModel.saveCroppedImage(context, currentSelectedUriString!!, croppedBitmap)
+                                    if (imageBounds.width > 0 && imageBounds.height > 0) {
+                                        val normalizedRect = SerializableNormalizedRectF(
+                                            left = (cropRect.left - imageBounds.left) / imageBounds.width,
+                                            top = (cropRect.top - imageBounds.top) / imageBounds.height,
+                                            width = cropRect.width / imageBounds.width,
+                                            height = cropRect.height / imageBounds.height
+                                        )
+                                        projectViewModel.updateImageCrop(context, currentSelectedUriString!!, normalizedRect)
+                                        // Increment key to signal CropView should reset its overlay
+                                        cropViewResetKey++
                                     }
                                 }
                             }
@@ -178,7 +163,7 @@ fun ImageManagerScreen(
                     val uri = Uri.parse(uriString)
                     val settings = effectSettingsMap[uriString]
                     val transformations = if (settings != null) {
-                        listOf(com.example.dynamiccollage.ui.components.ProjectEffectsTransformation(settings))
+                        listOf(ProjectEffectsTransformation(settings))
                     } else {
                         emptyList()
                     }
@@ -198,47 +183,10 @@ fun ImageManagerScreen(
                             )
                             .clickable {
                                 projectViewModel.setManagerSelectedUri(uriString)
-                                uriBeforeCrop = uri
-                                originalUriOfSession = uri
                             }
                     )
                 }
             }
         }
-    }
-}
-
-private fun cropBitmap(
-    context: Context,
-    uri: Uri,
-    cropRect: Rect,
-    imageBounds: Rect
-): Bitmap? {
-    try {
-        val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
-        if (inputStream == null) return null
-
-        val originalBitmap = BitmapFactory.decodeStream(inputStream)
-        inputStream.close()
-
-        val scale = originalBitmap.width.toFloat() / imageBounds.width
-
-        val finalLeft = (cropRect.left - imageBounds.left) * scale
-        val finalTop = (cropRect.top - imageBounds.top) * scale
-        val finalWidth = cropRect.width * scale
-        val finalHeight = cropRect.height * scale
-
-        if (finalWidth <= 0 || finalHeight <= 0) return null
-
-        return Bitmap.createBitmap(
-            originalBitmap,
-            finalLeft.toInt(),
-            finalTop.toInt(),
-            finalWidth.toInt(),
-            finalHeight.toInt()
-        )
-    } catch (e: Exception) {
-        e.printStackTrace()
-        return null
     }
 }

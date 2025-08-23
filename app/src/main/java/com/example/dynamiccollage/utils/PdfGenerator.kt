@@ -22,6 +22,44 @@ import com.tom_roush.pdfbox.pdmodel.PDDocument
 
 object PdfGenerator {
 
+    private fun applyAllEffects(input: Bitmap, settings: ImageEffectSettings): Bitmap {
+        var processedBitmap = input
+
+        // 1. Apply Crop
+        settings.cropRect?.let { normalizedRect ->
+            if (normalizedRect.width > 0 && normalizedRect.height > 0) {
+                val left = (normalizedRect.left * processedBitmap.width).toInt()
+                val top = (normalizedRect.top * processedBitmap.height).toInt()
+                val width = (normalizedRect.width * processedBitmap.width).toInt()
+                val height = (normalizedRect.height * processedBitmap.height).toInt()
+
+                if (width > 0 && height > 0 && (left + width) <= processedBitmap.width && (top + height) <= processedBitmap.height) {
+                    processedBitmap = Bitmap.createBitmap(processedBitmap, left, top, width, height)
+                }
+            }
+        }
+
+        // 2. Apply Rotation
+        if (settings.rotationDegrees != 0f) {
+            val matrix = Matrix().apply { postRotate(settings.rotationDegrees) }
+            processedBitmap = Bitmap.createBitmap(processedBitmap, 0, 0, processedBitmap.width, processedBitmap.height, matrix, true)
+        }
+
+        // 3. Apply Color & Sharpness Effects
+        val contrast = 1.0f + settings.contrast / 100.0f
+        val saturation = 1.0f + settings.saturation / 100.0f
+        processedBitmap = ImageEffects.applyEffects(processedBitmap, settings.brightness, contrast, saturation)
+
+        val sharpness = settings.sharpness / 100.0f
+        if (sharpness > 0) {
+            processedBitmap = ImageEffects.applySharpen(processedBitmap, sharpness)
+        } else if (sharpness < 0) {
+            processedBitmap = ImageEffects.applyBlur(processedBitmap, -sharpness)
+        }
+
+        return processedBitmap
+    }
+
     private enum class ImageAlignment { TOP, BOTTOM, LEFT, RIGHT, CENTER }
 
     private const val A4_WIDTH = 595
@@ -121,16 +159,7 @@ object PdfGenerator {
                                 // Apply effects if they exist
                                 val settings = imageEffectSettings[uriString]
                                 if (settings != null) {
-                                    val contrast = 1.0f + settings.contrast / 100.0f
-                                    val saturation = 1.0f + settings.saturation / 100.0f
-                                    val sharpness = settings.sharpness / 100.0f
-
-                                    bitmap = ImageEffects.applyEffects(it, settings.brightness, contrast, saturation)
-                                    if (sharpness > 0) {
-                                        bitmap = ImageEffects.applySharpen(bitmap!!, sharpness)
-                                    } else if (sharpness < 0) {
-                                        bitmap = ImageEffects.applyBlur(bitmap!!, -sharpness)
-                                    }
+                                    bitmap = applyAllEffects(it, settings)
                                 }
 
                                 val borderSettings = config.imageBorderSettingsMap["cover"]
@@ -210,16 +239,7 @@ object PdfGenerator {
                         // Apply effects if they exist
                         val settings = imageEffectSettings[uriString]
                         if (settings != null) {
-                            val contrast = 1.0f + settings.contrast / 100.0f
-                            val saturation = 1.0f + settings.saturation / 100.0f
-                            val sharpness = settings.sharpness / 100.0f
-
-                            bitmap = ImageEffects.applyEffects(it, settings.brightness, contrast, saturation)
-                            if (sharpness > 0) {
-                                bitmap = ImageEffects.applySharpen(bitmap!!, sharpness)
-                            } else if (sharpness < 0) {
-                                bitmap = ImageEffects.applyBlur(bitmap!!, -sharpness)
-                            }
+                            bitmap = applyAllEffects(it, settings)
                         }
 
                         val alignment = when {
