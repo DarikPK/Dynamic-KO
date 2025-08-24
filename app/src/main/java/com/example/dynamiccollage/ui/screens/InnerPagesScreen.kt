@@ -75,23 +75,21 @@ fun InnerPagesScreen(
         )
     }
 
-    if (groupToDelete != null) {
-        ConfirmationDialog(
-            title = "Eliminar Grupo",
-            message = "Estás seguro de que quieres eliminar este grupo?",
-            onConfirm = { innerPagesViewModel.onConfirmRemoveGroup(context) },
-            onDismiss = { innerPagesViewModel.onDismissRemoveGroupDialog() }
-        )
-    }
+    ConfirmationDialog(
+        show = groupToDelete != null,
+        onDismiss = { innerPagesViewModel.onDismissRemoveGroupDialog() },
+        onConfirm = { innerPagesViewModel.onConfirmRemoveGroup(context) },
+        title = "Eliminar Grupo",
+        message = "Estás seguro de que quieres eliminar este grupo?"
+    )
 
-    if (imagesToDelete != null) {
-        ConfirmationDialog(
-            title = "Eliminar Imágenes",
-            message = "Estás seguro de que quieres eliminar todas las imágenes de este grupo?",
-            onConfirm = { innerPagesViewModel.onConfirmRemoveImages() },
-            onDismiss = { innerPagesViewModel.onDismissRemoveImagesDialog() }
-        )
-    }
+    ConfirmationDialog(
+        show = imagesToDelete != null,
+        onDismiss = { innerPagesViewModel.onDismissRemoveImagesDialog() },
+        onConfirm = { innerPagesViewModel.onConfirmRemoveImages() },
+        title = "Eliminar Imágenes",
+        message = "Estás seguro de que quieres eliminar todas las imágenes de este grupo?"
+    )
 
     val multipleImagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
