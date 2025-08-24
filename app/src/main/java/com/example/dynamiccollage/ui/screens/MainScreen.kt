@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import com.example.dynamiccollage.ui.components.ConfirmationDialog
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -143,27 +144,16 @@ fun MainScreen(
         }
     }
 
-    if (showDeleteConfirmDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirmDialog = false },
-            title = { Text(stringResource(id = R.string.delete_project_dialog_title)) },
-            text = { Text(stringResource(id = R.string.delete_project_dialog_message)) },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        projectViewModel.resetProject(context)
-                        showDeleteConfirmDialog = false
-                        Toast.makeText(context, context.getString(R.string.project_deleted_toast), Toast.LENGTH_SHORT).show()
-                    }
-                ) { Text(stringResource(id = R.string.delete_button)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirmDialog = false }) {
-                    Text(stringResource(id = R.string.cancel_button))
-                }
-            }
-        )
-    }
+    ConfirmationDialog(
+        show = showDeleteConfirmDialog,
+        onDismiss = { showDeleteConfirmDialog = false },
+        onConfirm = {
+            projectViewModel.resetProject(context)
+            Toast.makeText(context, context.getString(R.string.project_deleted_toast), Toast.LENGTH_SHORT).show()
+        },
+        title = stringResource(id = R.string.delete_project_dialog_title),
+        message = stringResource(id = R.string.delete_project_dialog_message)
+    )
 
 
     Scaffold(

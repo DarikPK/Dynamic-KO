@@ -1,32 +1,44 @@
 package com.example.dynamiccollage.ui.components
 
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.stringResource
-import com.example.dynamiccollage.R
 
 @Composable
 fun ConfirmationDialog(
-    title: String,
-    message: String,
+    show: Boolean,
+    onDismiss: () -> Unit,
     onConfirm: () -> Unit,
-    onDismiss: () -> Unit
+    title: String,
+    message: String
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(text = title) },
-        text = { Text(text = message) },
-        confirmButton = {
-            TextButton(onClick = onConfirm) {
-                Text(stringResource(id = R.string.delete_button))
+    if (show) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text(text = title) },
+            text = { Text(text = message) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onConfirm()
+                        onDismiss() // Automatically dismiss after confirming
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Confirmar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("Cancelar")
+                }
             }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(id = R.string.cancel_button))
-            }
-        }
-    )
+        )
+    }
 }
