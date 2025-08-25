@@ -19,6 +19,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import com.example.dynamiccollage.ui.components.ConfirmationDialog
+import com.example.dynamiccollage.ui.components.LoadingDialog
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -154,6 +155,10 @@ fun MainScreen(
         title = stringResource(id = R.string.delete_project_dialog_title),
         message = stringResource(id = R.string.delete_project_dialog_message)
     )
+
+    if (pdfGenerationState is com.example.dynamiccollage.viewmodel.PdfGenerationState.Loading) {
+        LoadingDialog(message = "Generando PDF...")
+    }
 
 
     Scaffold(
