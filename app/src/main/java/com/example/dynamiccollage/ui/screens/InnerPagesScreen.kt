@@ -1,9 +1,19 @@
 package com.example.dynamiccollage.ui.screens
 
+import android.Manifest
+import android.Manifest
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -72,6 +82,51 @@ fun InnerPagesScreen(
     var showSettingsDialog by remember { mutableStateOf(false) }
     val imagesToDelete by innerPagesViewModel.showDeleteImagesDialog.collectAsState()
 
+    var showPermissionRationaleDialog by remember { mutableStateOf(false) }
+    var showPermissionDeniedDialog by remember { mutableStateOf(false) }
+
+    val permission = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+        Manifest.permission.READ_MEDIA_IMAGES
+    } else {
+        Manifest.permission.READ_EXTERNAL_STORAGE
+    }
+
+    val multipleImagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetMultipleContents()
+    ) { uris ->
+        if (uris.isNotEmpty()) {
+            currentGroupAddingImages?.let { groupId ->
+                innerPagesViewModel.onImagesSelectedForGroup(context, uris, groupId)
+            }
+        }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            multipleImagePickerLauncher.launch("image/*")
+        } else {
+            showPermissionDeniedDialog = true
+        }
+    }
+
+    fun requestPermissionOrLaunchPicker(groupId: String) {
+        innerPagesViewModel.setGroupAddingImages(groupId) // Set the group ID first
+        when (ContextCompat.checkSelfPermission(context, permission)) {
+            PackageManager.PERMISSION_GRANTED -> {
+                multipleImagePickerLauncher.launch("image/*")
+            }
+            else -> {
+                if (ActivityCompat.shouldShowRequestPermissionRationale(context as Activity, permission)) {
+                    showPermissionRationaleDialog = true
+                } else {
+                    permissionLauncher.launch(permission)
+                }
+            }
+        }
+    }
+
     if (showSettingsDialog) {
         SettingsDialog(
             viewModel = innerPagesViewModel,
@@ -95,21 +150,31 @@ fun InnerPagesScreen(
         message = "Estás seguro de que quieres eliminar todas las imágenes de este grupo?"
     )
 
-    val multipleImagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetMultipleContents()
-    ) { uris ->
-        if (uris.isNotEmpty()) {
-            currentGroupAddingImages?.let { groupId ->
-                innerPagesViewModel.onImagesSelectedForGroup(context, uris, groupId)
-            }
-        }
-    }
+    // Dialog for permission rationale
+    ConfirmationDialog(
+        show = showPermissionRationaleDialog,
+        onDismiss = { showPermissionRationaleDialog = false },
+        onConfirm = { permissionLauncher.launch(permission) },
+        title = "Permiso Necesario",
+        message = "Para seleccionar imágenes de tu galería, la aplicación necesita permiso para acceder a tus archivos multimedia. Por favor, concede el permiso cuando se te solicite."
+    )
 
-    LaunchedEffect(currentGroupAddingImages) {
-        if (currentGroupAddingImages != null) {
-            multipleImagePickerLauncher.launch("image/*")
-        }
-    }
+    // Dialog for permanently denied permission
+    ConfirmationDialog(
+        show = showPermissionDeniedDialog,
+        onDismiss = { showPermissionDeniedDialog = false },
+        onConfirm = {
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.fromParts("package", context.packageName, null)
+            }
+            context.startActivity(intent)
+        },
+        title = "Permiso Denegado",
+        message = "El permiso para acceder a la galería fue denegado permanentemente. Para usar esta función, debes habilitarlo manualmente desde los ajustes de la aplicación.",
+        confirmButtonText = "Ir a Ajustes",
+        dismissButtonText = "Entendido"
+    )
+
 
     if (showDialog) {
         CreateEditGroupDialog(
@@ -221,7 +286,7 @@ fun InnerPagesScreen(
                         PageGroupItem(
                             pageGroup = pageGroup,
                             onAddImagesClicked = { groupId ->
-                                innerPagesViewModel.onAddImagesClickedForGroup(groupId)
+                                requestPermissionOrLaunchPicker(groupId)
                             },
                             onEditGroupClicked = { groupToEdit ->
                                 innerPagesViewModel.onEditGroupClicked(groupToEdit)

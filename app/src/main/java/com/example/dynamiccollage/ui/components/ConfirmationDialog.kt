@@ -14,7 +14,9 @@ fun ConfirmationDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
     title: String,
-    message: String
+    message: String,
+    confirmButtonText: String = "Confirmar",
+    dismissButtonText: String = "Cancelar"
 ) {
     if (show) {
         AlertDialog(
@@ -28,15 +30,15 @@ fun ConfirmationDialog(
                         onDismiss() // Automatically dismiss after confirming
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
+                        containerColor = if (confirmButtonText == "Confirmar") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                     )
                 ) {
-                    Text("Confirmar")
+                    Text(confirmButtonText)
                 }
             },
             dismissButton = {
                 TextButton(onClick = onDismiss) {
-                    Text("Cancelar")
+                    Text(dismissButtonText)
                 }
             }
         )

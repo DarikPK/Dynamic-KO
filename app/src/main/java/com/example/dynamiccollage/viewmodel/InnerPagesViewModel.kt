@@ -69,7 +69,7 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         _showCreateGroupDialog.value = true
     }
 
-    fun onAddImagesClickedForGroup(groupId: String) {
+    fun setGroupAddingImages(groupId: String) {
         _currentGroupAddingImages.value = groupId
     }
 
