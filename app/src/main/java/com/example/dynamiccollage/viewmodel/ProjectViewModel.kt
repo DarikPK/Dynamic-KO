@@ -63,6 +63,7 @@ class ProjectViewModel : ViewModel() {
                 this[uri] = settings
             }
         }
+        saveProject(context)
     }
 
     fun updateImageRotation(context: Context, uri: String, degrees: Float) {
@@ -72,6 +73,7 @@ class ProjectViewModel : ViewModel() {
                 this[uri] = currentSettings.copy(rotationDegrees = degrees)
             }
         }
+        saveProject(context)
     }
 
     fun updateImageCrop(context: Context, uri: String, cropRect: SerializableNormalizedRectF?) {
@@ -81,6 +83,7 @@ class ProjectViewModel : ViewModel() {
                 this[uri] = currentSettings.copy(cropRect = cropRect)
             }
         }
+        saveProject(context)
     }
 
     fun resetImageTransforms(context: Context, uri: String) {
@@ -91,6 +94,7 @@ class ProjectViewModel : ViewModel() {
                 this[uri] = currentSettings.copy(rotationDegrees = 0f, cropRect = null)
             }
         }
+        saveProject(context)
     }
 
     fun updateTheme(newThemeName: String) {
@@ -133,6 +137,7 @@ class ProjectViewModel : ViewModel() {
         _currentPageGroups.update { currentList ->
             currentList.filterNot { it.id == groupId }
         }
+        saveProject(context)
     }
 
     fun resetPageGroups() {
@@ -295,6 +300,7 @@ class ProjectViewModel : ViewModel() {
                 updatePageGroup(groupId) { group ->
                     group.copy(imageUris = group.imageUris + permanentPaths)
                 }
+                saveProject(context)
             }
         }
     }
@@ -315,6 +321,7 @@ class ProjectViewModel : ViewModel() {
             }
 
             updateCoverConfig(finalConfig)
+            saveProject(context)
         }
     }
 
@@ -437,10 +444,6 @@ class ProjectViewModel : ViewModel() {
 
     fun resetSaveState() {
         _saveState.value = SaveState.Idle
-    }
-
-    fun triggerSave(context: Context) {
-        saveProject(context)
     }
 }
 
