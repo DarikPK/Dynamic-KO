@@ -165,5 +165,5 @@ private fun EditableItemRow(
             tint = MaterialTheme.colorScheme.primary
         )
     }
-    Divider()
+    HorizontalDivider()
 }
