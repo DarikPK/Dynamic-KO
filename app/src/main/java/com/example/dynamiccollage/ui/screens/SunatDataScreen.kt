@@ -385,7 +385,7 @@ fun SunatDataScreen(
                                 numeroDocumento = data.numeroDocumento,
                                 direccion = finalAddress
                             )
-                            projectViewModel.updateSunatData(selectedData)
+                            projectViewModel.updateSunatData(context, selectedData)
                             sunatDataViewModel.resetState()
                             navController.navigate(Screen.CoverSetup.route) {
                                 popUpTo(Screen.Main.route)

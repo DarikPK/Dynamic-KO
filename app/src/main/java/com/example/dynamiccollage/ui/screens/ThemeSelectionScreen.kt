@@ -111,8 +111,7 @@ fun ThemeSelectionScreen(
         bottomBar = {
             Button(
                 onClick = {
-                    projectViewModel.updateTheme(selectedThemeName)
-                    projectViewModel.saveProject(context)
+                    projectViewModel.updateTheme(context, selectedThemeName)
                     Toast.makeText(context, "Tema guardado", Toast.LENGTH_SHORT).show()
                     navController.popBackStack()
                 },

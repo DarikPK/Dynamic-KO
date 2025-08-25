@@ -36,8 +36,7 @@ fun SheetBackgroundScreen(
         savedStateHandle?.getLiveData<String>("selected_color_background")?.observeForever { colorHex ->
             if (colorHex != null) {
                 val color = Color(android.graphics.Color.parseColor("#$colorHex"))
-                projectViewModel.updatePageBackgroundColor(color)
-                projectViewModel.saveProject(context)
+                projectViewModel.updatePageBackgroundColor(context, color)
                 // Clean up the state handle so it doesn't trigger again
                 savedStateHandle.remove<String>("selected_color_background")
             }

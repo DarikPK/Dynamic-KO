@@ -97,34 +97,40 @@ class ProjectViewModel : ViewModel() {
         saveProject(context)
     }
 
-    fun updateTheme(newThemeName: String) {
+    fun updateTheme(context: Context, newThemeName: String) {
         _themeName.value = newThemeName
+        saveProject(context)
     }
 
-    fun updateSunatData(data: SelectedSunatData) {
+    fun updateSunatData(context: Context, data: SelectedSunatData) {
         _sunatData.value = data
+        saveProject(context)
     }
 
     fun updateCoverConfig(newConfig: CoverPageConfig) {
         _currentCoverConfig.value = newConfig
     }
 
-    fun updatePageBackgroundColor(color: Color) {
+    fun updatePageBackgroundColor(context: Context, color: Color) {
         _currentCoverConfig.update { it.copy(pageBackgroundColor = color.toArgb()) }
+        saveProject(context)
     }
 
-    fun updateImageBorderSettings(newSettingsMap: Map<String, ImageBorderSettings>) {
+    fun updateImageBorderSettings(context: Context, newSettingsMap: Map<String, ImageBorderSettings>) {
         _currentCoverConfig.update { it.copy(imageBorderSettingsMap = newSettingsMap) }
+        saveProject(context)
     }
 
-    fun addPageGroup(group: PageGroup) {
+    fun addPageGroup(context: Context, group: PageGroup) {
         _currentPageGroups.update { currentList -> currentList + group }
+        saveProject(context)
     }
 
-    fun updatePageGroup(groupId: String, transform: (PageGroup) -> PageGroup) {
+    fun updatePageGroup(context: Context, groupId: String, transform: (PageGroup) -> PageGroup) {
         _currentPageGroups.update { currentList ->
             currentList.map { if (it.id == groupId) transform(it) else it }
         }
+        saveProject(context)
     }
 
     fun deletePageGroup(context: Context, groupId: String) {
@@ -140,8 +146,9 @@ class ProjectViewModel : ViewModel() {
         saveProject(context)
     }
 
-    fun resetPageGroups() {
+    fun resetPageGroups(context: Context) {
         _currentPageGroups.value = emptyList()
+        saveProject(context)
     }
 
     fun resetProject(context: Context) {
@@ -274,23 +281,23 @@ class ProjectViewModel : ViewModel() {
         }
     }
 
-    fun removeImageFromPageGroup(groupId: String, uri: String) {
+    fun removeImageFromPageGroup(context: Context, groupId: String, uri: String) {
         viewModelScope.launch(Dispatchers.IO) {
             deleteLocalImage(uri)
         }
-        updatePageGroup(groupId) { group ->
+        updatePageGroup(context, groupId) { group ->
             group.copy(imageUris = group.imageUris.filterNot { it == uri })
         }
     }
 
-    fun removeAllImagesFromPageGroup(groupId: String) {
+    fun removeAllImagesFromPageGroup(context: Context, groupId: String) {
         viewModelScope.launch(Dispatchers.IO) {
             val group = _currentPageGroups.value.find { it.id == groupId }
             group?.imageUris?.forEach { uri ->
                 deleteLocalImage(uri)
             }
         }
-        updatePageGroup(groupId) { it.copy(imageUris = emptyList()) }
+        updatePageGroup(context, groupId) { it.copy(imageUris = emptyList()) }
     }
 
     fun copyAndAddImagesToPageGroup(context: Context, uriStrings: List<String>, groupId: String) {

@@ -79,12 +79,12 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         _currentGroupAddingImages.value = null
     }
 
-    fun removeSingleImageFromGroup(groupId: String, uri: String) {
-        projectViewModel.removeImageFromPageGroup(groupId, uri)
+    fun removeSingleImageFromGroup(context: android.content.Context, groupId: String, uri: String) {
+        projectViewModel.removeImageFromPageGroup(context, groupId, uri)
     }
 
-    fun removeImagesFromGroup(groupId: String) {
-        projectViewModel.removeAllImagesFromPageGroup(groupId)
+    fun removeImagesFromGroup(context: android.content.Context, groupId: String) {
+        projectViewModel.removeAllImagesFromPageGroup(context, groupId)
     }
 
     fun onRemoveGroupClicked(groupId: String) {
@@ -104,8 +104,8 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         _showDeleteImagesDialog.value = groupId
     }
 
-    fun onConfirmRemoveImages() {
-        _showDeleteImagesDialog.value?.let { removeImagesFromGroup(it) }
+    fun onConfirmRemoveImages(context: android.content.Context) {
+        _showDeleteImagesDialog.value?.let { removeImagesFromGroup(context, it) }
         _showDeleteImagesDialog.value = null
     }
 
@@ -170,18 +170,22 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         )
     }
 
-    fun commitEditingGroup() {
+    fun commitEditingGroup(context: android.content.Context) {
         viewModelScope.launch {
             _editingGroup.value?.let { groupToSave ->
                 val currentGroups = pageGroups.value
                 if (currentGroups.any { it.id == groupToSave.id }) {
-                    projectViewModel.updatePageGroup(groupToSave.id) { groupToSave }
+                    projectViewModel.updatePageGroup(context, groupToSave.id) { groupToSave }
                 } else {
-                    projectViewModel.addPageGroup(groupToSave)
+                    projectViewModel.addPageGroup(context, groupToSave)
                 }
                 onDismissCreateGroupDialog()
             }
         }
+    }
+
+    fun saveProject(context: android.content.Context) {
+        projectViewModel.saveProject(context)
     }
 }
 

@@ -169,7 +169,7 @@ fun CreateEditGroupDialog(
         },
         confirmButton = {
             Button(
-                onClick = { viewModel.commitEditingGroup() },
+                onClick = { viewModel.saveEditingGroup(context) },
                 enabled = isConfigValid && editingGroup.sheetCount > 0
             ) { Text(stringResource(R.string.save_button)) }
         },

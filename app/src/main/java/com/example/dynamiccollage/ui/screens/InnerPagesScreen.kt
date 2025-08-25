@@ -144,7 +144,7 @@ fun InnerPagesScreen(
     ConfirmationDialog(
         show = imagesToDelete != null,
         onDismiss = { innerPagesViewModel.onDismissRemoveImagesDialog() },
-        onConfirm = { innerPagesViewModel.onConfirmRemoveImages() },
+        onConfirm = { innerPagesViewModel.onConfirmRemoveImages(context) },
         title = "Eliminar Imágenes",
         message = "Estás seguro de que quieres eliminar todas las imágenes de este grupo?"
     )
@@ -221,7 +221,7 @@ fun InnerPagesScreen(
                         )
                     }
                     IconButton(onClick = {
-                        innerPagesViewModel.triggerSave(context)
+                        innerPagesViewModel.saveProject(context)
                         Toast.makeText(context, R.string.page_groups_saved_toast, Toast.LENGTH_SHORT).show()
                     }) {
                         Icon(

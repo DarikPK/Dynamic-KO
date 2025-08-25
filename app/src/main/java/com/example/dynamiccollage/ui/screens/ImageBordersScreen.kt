@@ -110,8 +110,7 @@ fun ImageBordersScreen(
 
             Button(
                 onClick = {
-                    projectViewModel.updateImageBorderSettings(tempBorderSettingsMap)
-                    projectViewModel.saveProject(context)
+                    projectViewModel.updateImageBorderSettings(context, tempBorderSettingsMap)
                     navController.popBackStack()
                 },
                 modifier = Modifier
