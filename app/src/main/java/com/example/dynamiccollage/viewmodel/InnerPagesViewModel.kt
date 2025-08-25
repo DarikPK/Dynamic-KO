@@ -22,7 +22,7 @@ import androidx.compose.runtime.setValue
 
 class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : ViewModel() {
 
-    var newGroupIsSmart by mutableStateOf(true)
+    var newGroupIsSmart by mutableStateOf(false)
 
     val pageGroups: StateFlow<List<PageGroup>> = projectViewModel.currentPageGroups
 
@@ -170,7 +170,7 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         )
     }
 
-    fun commitEditingGroup(context: android.content.Context) {
+    fun saveEditingGroup(context: android.content.Context) {
         viewModelScope.launch {
             _editingGroup.value?.let { groupToSave ->
                 val currentGroups = pageGroups.value

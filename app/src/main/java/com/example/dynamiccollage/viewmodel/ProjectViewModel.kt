@@ -304,7 +304,7 @@ class ProjectViewModel : ViewModel() {
         viewModelScope.launch {
             val permanentPaths = uriStrings.mapNotNull { copyUriToInternalStorage(context, it) }
             if (permanentPaths.isNotEmpty()) {
-                updatePageGroup(groupId) { group ->
+            updatePageGroup(context, groupId) { group ->
                     group.copy(imageUris = group.imageUris + permanentPaths)
                 }
                 saveProject(context)
