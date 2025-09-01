@@ -98,7 +98,7 @@ fun CoverSetupScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { navController.navigate("advanced_cover_options") }) {
+                    IconButton(onClick = { navController.navigate(com.example.dynamiccollage.ui.navigation.Screen.AdvancedCoverOptions.route) }) {
                         Icon(
                             imageVector = Icons.Default.Settings,
                             contentDescription = "Opciones Avanzadas"
