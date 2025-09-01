@@ -286,9 +286,10 @@ fun SunatDataScreen(
                                 ) {
                                     OutlinedTextField(
                                         value = manualDistrict,
-                                        onValueChange = { manualDistrict = it.uppercase() },
+                                        onValueChange = { manualDistrict = it.replace("\n", "").uppercase() },
                                         label = { Text("Distrito (Opcional)") },
-                                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                                        modifier = Modifier.menuAnchor().fillMaxWidth(),
+                                        singleLine = true
                                     )
                                     ExposedDropdownMenu(
                                         expanded = expanded,
@@ -340,9 +341,10 @@ fun SunatDataScreen(
                             ) {
                                 OutlinedTextField(
                                     value = manualDistrict,
-                                    onValueChange = { manualDistrict = it.uppercase() },
+                                    onValueChange = { manualDistrict = it.replace("\n", "").uppercase() },
                                     label = { Text("Distrito (Opcional)") },
-                                    modifier = Modifier.menuAnchor().fillMaxWidth()
+                                    modifier = Modifier.menuAnchor().fillMaxWidth(),
+                                    singleLine = true
                                 )
                                 ExposedDropdownMenu(
                                     expanded = expanded,
