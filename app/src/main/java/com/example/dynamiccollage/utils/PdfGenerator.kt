@@ -224,27 +224,22 @@ object PdfGenerator {
     ) {
         var startY = 20f // Default top margin for images
 
-        // Draw optional text if it's the first page of the group and text is visible
         if (pageData.isFirstPageOfGroup && pageData.optionalTextStyle != null && pageData.optionalTextStyle.isVisible) {
             val textStyle = pageData.optionalTextStyle
             val textPaint = createTextPaint(context, textStyle)
             val text = if (textStyle.allCaps) textStyle.content.uppercase() else textStyle.content
-
-            // Use a StaticLayout to measure and draw the text block
-            val textWidth = canvas.width - 40f // Margin
+            val textWidth = canvas.width - 40f
             val staticLayout = StaticLayout.Builder
                 .obtain(text, 0, text.length, textPaint, textWidth.toInt())
                 .setAlignment(getAndroidAlignment(textStyle.textAlign))
                 .build()
 
-            // Draw the text
-            canvas.save()
-            canvas.translate(20f, startY)
-            staticLayout.draw(canvas)
-            canvas.restore()
+            val rowHeight = staticLayout.height + textStyle.rowStyle.padding.top + textStyle.rowStyle.padding.bottom
+            val rowRect = RectF(20f, startY, canvas.width - 20f, startY + rowHeight)
 
-            // Update startY to position images below the text
-            startY += staticLayout.height + 15f // Add some spacing after the text
+            drawRow(canvas, context, text, textStyle, rowRect)
+
+            startY += rowHeight + 15f
         }
 
         val (cols, rows) = when (pageData.orientation) {

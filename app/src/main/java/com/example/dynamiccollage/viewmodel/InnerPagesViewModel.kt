@@ -52,10 +52,11 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
     val showDeleteImagesDialog: StateFlow<String?> = _showDeleteImagesDialog.asStateFlow()
 
     fun onAddNewGroupClicked() {
+        val coverConfig = projectViewModel.currentCoverConfig.value
         val currentGroupCount = pageGroups.value.size
         val newGroup = PageGroup(
             groupName = "Grupo ${currentGroupCount + 1}",
-            optionalTextStyle = com.example.dynamiccollage.data.model.TextStyleConfig(
+            optionalTextStyle = coverConfig.subtitleStyle.copy(
                 id = "pageGroupOptionalText",
                 content = ""
             ),
