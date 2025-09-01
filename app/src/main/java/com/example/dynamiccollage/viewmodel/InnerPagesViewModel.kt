@@ -22,7 +22,7 @@ import androidx.compose.runtime.setValue
 
 class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : ViewModel() {
 
-    var newGroupIsSmart by mutableStateOf(false)
+    var newGroupIsSmart by mutableStateOf(true)
 
     val pageGroups: StateFlow<List<PageGroup>> = projectViewModel.currentPageGroups
 
