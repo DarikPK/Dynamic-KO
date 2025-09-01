@@ -139,7 +139,7 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
 
     fun onEditingGroupOptionalTextChange(text: String) {
         _editingGroup.value = _editingGroup.value?.copy(
-            optionalTextStyle = _editingGroup.value!!.optionalTextStyle.copy(content = text)
+            optionalTextStyle = _editingGroup.value!!.optionalTextStyle.copy(content = text.replace("\n", ""))
         )
     }
 

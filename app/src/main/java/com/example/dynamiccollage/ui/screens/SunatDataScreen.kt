@@ -261,9 +261,10 @@ fun SunatDataScreen(
                             if (addAnotherAddress) {
                                 OutlinedTextField(
                                     value = manualAddress,
-                                    onValueChange = { manualAddress = it.uppercase() },
+                                    onValueChange = { manualAddress = it.replace("\n", "").uppercase() },
                                     label = { Text("Dirección") },
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true
                                 )
                                 val districts = listOf(
                                     "Ancón", "Ate", "Barranco", "Breña", "Callao", "Carabayllo", "Cercado de Lima",
@@ -314,9 +315,10 @@ fun SunatDataScreen(
                         if (useAddress) {
                             OutlinedTextField(
                                 value = manualAddress,
-                                onValueChange = { manualAddress = it.uppercase() },
+                                onValueChange = { manualAddress = it.replace("\n", "").uppercase() },
                                 label = { Text("Dirección") },
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
                             )
                             val districts = listOf(
                                 "Ancón", "Ate", "Barranco", "Breña", "Callao", "Carabayllo", "Cercado de Lima",
