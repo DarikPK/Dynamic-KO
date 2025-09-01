@@ -53,7 +53,9 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
 
     fun onAddNewGroupClicked() {
         val coverConfig = projectViewModel.currentCoverConfig.value
+        val currentGroupCount = pageGroups.value.size
         val newGroup = PageGroup(
+            groupName = "Grupo ${currentGroupCount + 1}",
             optionalTextStyle = coverConfig.subtitleStyle.copy(
                 id = "pageGroupOptionalText",
                 content = ""
