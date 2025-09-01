@@ -41,34 +41,36 @@ object PdfContentManager {
             }
         }
 
+        var isFirstPageOfGroup = true
+
         val verticalChunks = verticalPhotos.chunked(group.photosPerSheet)
-        verticalChunks.forEachIndexed { index, chunk ->
+        verticalChunks.forEach { chunk ->
             val orientation = if (chunk.size == 2) PageOrientation.Horizontal else PageOrientation.Vertical
             smartPages.add(
                 GeneratedPage(
                     imageUris = chunk,
                     orientation = orientation,
                     groupId = group.id,
-                    optionalTextStyle = if (index == 0) group.optionalTextStyle else null,
-                    isFirstPageOfGroup = index == 0
+                    optionalTextStyle = if (isFirstPageOfGroup) group.optionalTextStyle else null,
+                    isFirstPageOfGroup = isFirstPageOfGroup
                 )
             )
+            isFirstPageOfGroup = false // The flag is turned off after the first page is created
         }
 
         val horizontalChunks = horizontalPhotos.chunked(group.photosPerSheet)
-        horizontalChunks.forEachIndexed { index, chunk ->
+        horizontalChunks.forEach { chunk ->
             val orientation = if (chunk.size == 2) PageOrientation.Vertical else PageOrientation.Horizontal
-            // If there were no vertical photos, the first horizontal page is the first page of the group
-            val isFirstPage = index == 0 && verticalChunks.isEmpty()
             smartPages.add(
                 GeneratedPage(
                     imageUris = chunk,
                     orientation = orientation,
                     groupId = group.id,
-                    optionalTextStyle = if (isFirstPage) group.optionalTextStyle else null,
-                    isFirstPageOfGroup = isFirstPage
+                    optionalTextStyle = if (isFirstPageOfGroup) group.optionalTextStyle else null,
+                    isFirstPageOfGroup = isFirstPageOfGroup
                 )
             )
+            isFirstPageOfGroup = false // The flag is turned off after the first page is created
         }
 
         return smartPages

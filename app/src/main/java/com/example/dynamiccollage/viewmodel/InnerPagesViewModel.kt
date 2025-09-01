@@ -37,7 +37,12 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
 
     val isEditingGroupConfigValid: StateFlow<Boolean> = editingGroup
         .map { group ->
-            group?.let { it.totalPhotosRequired >= it.imageUris.size } ?: true
+            if (group == null) return@map true
+            if (group.smartLayoutEnabled) {
+                true // La cuota de fotos no aplica a grupos inteligentes en el diálogo de edición
+            } else {
+                group.totalPhotosRequired >= group.imageUris.size
+            }
         }
         .stateIn(
             scope = viewModelScope,
