@@ -172,11 +172,11 @@ fun CoverPageConfig.toSerializable() = SerializableCoverPageConfig(
 )
 
 fun SerializableCoverPageConfig.toDomain() = CoverPageConfig(
-    clientNameStyle = this.clientNameStyle.toDomain(),
+    clientNameStyle = this.clientNameStyle?.toDomain() ?: TextStyleConfig(id = DefaultCoverConfig.CLIENT_NAME_ID),
     showClientPrefix = this.showClientPrefix,
     documentType = DocumentType.values()[this.documentType],
-    rucStyle = this.rucStyle.toDomain(),
-    subtitleStyle = this.subtitleStyle.toDomain(),
+    rucStyle = this.rucStyle?.toDomain() ?: TextStyleConfig(id = DefaultCoverConfig.RUC_ID),
+    subtitleStyle = this.subtitleStyle?.toDomain() ?: TextStyleConfig(id = DefaultCoverConfig.SUBTITLE_ID),
     showAddressPrefix = this.showAddressPrefix,
     allCaps = this.allCaps,
     mainImageUri = this.mainImageUri,
