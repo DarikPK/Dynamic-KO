@@ -222,12 +222,37 @@ object PdfGenerator {
         quality: Int,
         imageEffectSettings: Map<String, ImageEffectSettings>
     ) {
+        var startY = 20f // Default top margin for images
+
+        // Draw optional text if it's the first page of the group and text is visible
+        if (pageData.isFirstPageOfGroup && pageData.optionalTextStyle != null && pageData.optionalTextStyle.isVisible) {
+            val textStyle = pageData.optionalTextStyle
+            val textPaint = createTextPaint(context, textStyle)
+            val text = if (textStyle.allCaps) textStyle.content.uppercase() else textStyle.content
+
+            // Use a StaticLayout to measure and draw the text block
+            val textWidth = canvas.width - 40f // Margin
+            val staticLayout = StaticLayout.Builder
+                .obtain(text, 0, text.length, textPaint, textWidth.toInt())
+                .setAlignment(getAndroidAlignment(textStyle.textAlign))
+                .build()
+
+            // Draw the text
+            canvas.save()
+            canvas.translate(20f, startY)
+            staticLayout.draw(canvas)
+            canvas.restore()
+
+            // Update startY to position images below the text
+            startY += staticLayout.height + 15f // Add some spacing after the text
+        }
+
         val (cols, rows) = when (pageData.orientation) {
             PageOrientation.Vertical -> if (pageData.imageUris.size > 1) Pair(1, 2) else Pair(1, 1)
             PageOrientation.Horizontal -> if (pageData.imageUris.size > 1) Pair(2, 1) else Pair(1, 1)
         }
 
-        val rects = getRectsForPage(canvas.width, canvas.height, 20f, cols, rows, 15f)
+        val rects = getRectsForPage(canvas.width, canvas.height, startY, cols, rows, 15f)
         val borderSettings = coverConfig.imageBorderSettingsMap[pageData.groupId]
 
         pageData.imageUris.forEachIndexed { index, uriString ->
@@ -236,7 +261,6 @@ object PdfGenerator {
                 try {
                     var bitmap = decodeAndCompressBitmapFromUri(context, Uri.parse(uriString), rect.width().toInt(), rect.height().toInt(), quality)
                     bitmap?.let {
-                        // Apply effects if they exist
                         val settings = imageEffectSettings[uriString]
                         if (settings != null) {
                             bitmap = applyAllEffects(it, settings)

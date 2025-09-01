@@ -34,7 +34,6 @@ object PdfContentManager {
         val verticalPhotos = mutableListOf<String>()
         val horizontalPhotos = mutableListOf<String>()
 
-        // Classify photos by their orientation
         group.imageUris.forEach { uri ->
             when (ImageUtils.getImageOrientation(context, uri)) {
                 PageOrientation.Vertical -> verticalPhotos.add(uri)
@@ -42,36 +41,32 @@ object PdfContentManager {
             }
         }
 
-        // Create pages for vertical photos
         val verticalChunks = verticalPhotos.chunked(group.photosPerSheet)
-        verticalChunks.forEach { chunk ->
-            val orientation = if (chunk.size == 2) {
-                PageOrientation.Horizontal // Pair of vertical photos on a horizontal page
-            } else {
-                PageOrientation.Vertical // Single vertical photo on a vertical page
-            }
+        verticalChunks.forEachIndexed { index, chunk ->
+            val orientation = if (chunk.size == 2) PageOrientation.Horizontal else PageOrientation.Vertical
             smartPages.add(
                 GeneratedPage(
                     imageUris = chunk,
                     orientation = orientation,
-                    groupId = group.id
+                    groupId = group.id,
+                    optionalTextStyle = if (index == 0) group.optionalTextStyle else null,
+                    isFirstPageOfGroup = index == 0
                 )
             )
         }
 
-        // Create pages for horizontal photos
         val horizontalChunks = horizontalPhotos.chunked(group.photosPerSheet)
-        horizontalChunks.forEach { chunk ->
-            val orientation = if (chunk.size == 2) {
-                PageOrientation.Vertical // Pair of horizontal photos on a vertical page
-            } else {
-                PageOrientation.Horizontal // Single horizontal photo on a horizontal page
-            }
+        horizontalChunks.forEachIndexed { index, chunk ->
+            val orientation = if (chunk.size == 2) PageOrientation.Vertical else PageOrientation.Horizontal
+            // If there were no vertical photos, the first horizontal page is the first page of the group
+            val isFirstPage = index == 0 && verticalChunks.isEmpty()
             smartPages.add(
                 GeneratedPage(
                     imageUris = chunk,
                     orientation = orientation,
-                    groupId = group.id
+                    groupId = group.id,
+                    optionalTextStyle = if (isFirstPage) group.optionalTextStyle else null,
+                    isFirstPageOfGroup = isFirstPage
                 )
             )
         }
@@ -87,12 +82,14 @@ object PdfContentManager {
 
         val imageChunks = group.imageUris.chunked(group.photosPerSheet)
 
-        imageChunks.forEach { chunk ->
+        imageChunks.forEachIndexed { index, chunk ->
             manualPages.add(
                 GeneratedPage(
                     imageUris = chunk,
                     orientation = group.orientation,
-                    groupId = group.id
+                    groupId = group.id,
+                    optionalTextStyle = if (index == 0) group.optionalTextStyle else null,
+                    isFirstPageOfGroup = index == 0
                 )
             )
         }
