@@ -109,6 +109,12 @@ class CoverSetupViewModel : ViewModel() {
         }
     }
 
+    fun clearMainImage() {
+        _coverConfig.update { currentState ->
+            currentState.copy(mainImageUri = null)
+        }
+    }
+
     // NUEVA FUNCIÓN
     fun onPageOrientationChange(newOrientation: PageOrientation) {
         _coverConfig.update { currentState ->
