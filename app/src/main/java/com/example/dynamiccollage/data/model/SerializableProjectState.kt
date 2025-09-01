@@ -48,7 +48,7 @@ data class SerializablePageGroup(
     val orientation: Int, // ordinal of PageOrientation enum
     val photosPerSheet: Int,
     val sheetCount: Int,
-    val optionalTextStyle: SerializableTextStyleConfig,
+    val optionalTextStyle: SerializableTextStyleConfig?,
     val imageUris: List<String>,
     val imageSpacing: Float,
     val smartLayoutEnabled: Boolean?

@@ -138,7 +138,7 @@ fun SerializablePageGroup.toDomain() = PageGroup(
     orientation = PageOrientation.values()[this.orientation],
     photosPerSheet = this.photosPerSheet,
     sheetCount = this.sheetCount,
-    optionalTextStyle = this.optionalTextStyle.toDomain(),
+    optionalTextStyle = this.optionalTextStyle?.toDomain() ?: TextStyleConfig(id = "pageGroupOptionalText"),
     imageUris = this.imageUris,
     imageSpacing = this.imageSpacing,
     smartLayoutEnabled = this.smartLayoutEnabled ?: false
