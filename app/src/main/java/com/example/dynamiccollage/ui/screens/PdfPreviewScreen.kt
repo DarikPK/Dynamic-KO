@@ -5,6 +5,7 @@ import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -258,20 +259,24 @@ private fun PdfPage(
                 )
 
                 // Overlays for clickable photos - DEBUGGING
-                if (photoRects.isNotEmpty()) {
-                    IconButton(
-                        onClick = { onPhotoClick(photoRects.first()) },
+                val imageWidth = with(LocalDensity.current) { it.width.toDp() }
+                val scaleFactor = imageWidth / (renderer.openPage(pageIndex).use { p -> p.width.dp })
+
+                photoRects.forEach { photoRect ->
+                    Box(
                         modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(8.dp)
-                            .background(Color.Red, shape = CircleShape)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.SwapHoriz,
-                            contentDescription = "Intercambiar foto (Debug)",
-                            tint = Color.White
-                        )
-                    }
+                            .offset(
+                                x = (photoRect.rect.left.dp * scaleFactor),
+                                y = (photoRect.rect.top.dp * scaleFactor)
+                            )
+                            .size(
+                                width = (photoRect.rect.width().dp * scaleFactor),
+                                height = (photoRect.rect.height().dp * scaleFactor)
+                            )
+                            .background(Color.Red.copy(alpha = 0.5f))
+                            .border(2.dp, Color.Blue)
+                            .clickable { onPhotoClick(photoRect) }
+                    )
                 }
             }
         }
