@@ -159,6 +159,14 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         _editingGroup.value = _editingGroup.value?.copy(imageSpacing = spacing)
     }
 
+    fun onEditingGroupVerticalAdjustmentChange(isChecked: Boolean) {
+        _editingGroup.value = _editingGroup.value?.copy(verticalAdjustment = isChecked)
+    }
+
+    fun onEditingGroupHorizontalAdjustmentChange(isChecked: Boolean) {
+        _editingGroup.value = _editingGroup.value?.copy(horizontalAdjustment = isChecked)
+    }
+
     fun onEditingGroupFontSizeChange(size: String) {
         _editingGroup.value = _editingGroup.value?.copy(
             optionalTextStyle = _editingGroup.value!!.optionalTextStyle.copy(fontSize = size.toIntOrNull() ?: 0)
