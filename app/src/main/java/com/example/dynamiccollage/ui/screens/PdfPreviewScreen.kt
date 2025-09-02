@@ -5,6 +5,7 @@ import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -12,10 +13,12 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -45,14 +48,14 @@ fun PdfPreviewScreen(
     val context = LocalContext.current
     val file = pdfPath?.let { File(it) }
     val pdfGenerationState by projectViewModel.pdfGenerationState.collectAsState()
-    var photoLayouts by remember { mutableStateOf<List<com.example.dynamiccollage.data.model.PhotoRect>>(emptyList()) }
+    var photoLayouts by remember { mutableStateOf<List<PhotoRect>>(emptyList()) }
     var showSwapDialog by remember { mutableStateOf(false) }
     var firstPhotoToSwap by remember { mutableStateOf<PhotoRect?>(null) }
     val allPhotos by remember { derivedStateOf { projectViewModel.getAllImageUris() } }
 
     LaunchedEffect(pdfGenerationState) {
         if (pdfGenerationState is ProjectViewModel.PdfGenerationState.Success) {
-            photoLayouts = (pdfGenerationState as ProjectViewModel.PdfGenerationState.Success).result.photoLayouts
+            photoLayouts = pdfGenerationState.result.photoLayouts
         }
     }
 
@@ -63,7 +66,6 @@ fun PdfPreviewScreen(
             firstPhotoUri = firstPhotoToSwap!!.uri,
             onPhotoSelected = { secondPhotoUri ->
                 projectViewModel.swapPhotos(context, firstPhotoToSwap!!.uri, secondPhotoUri)
-                // The file name here is temporary for regeneration; it won't be the final saved name.
                 projectViewModel.generatePdf(context, "preview_regenerated")
                 showSwapDialog = false
             }
@@ -205,9 +207,6 @@ fun PdfView(
         }
     }
 }
-
-import androidx.compose.foundation.clickable
-import androidx.compose.ui.graphics.drawscope.scale
 
 @Composable
 private fun PdfPage(
