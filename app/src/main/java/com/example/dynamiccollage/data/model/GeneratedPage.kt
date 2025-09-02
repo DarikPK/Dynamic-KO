@@ -5,7 +5,5 @@ data class GeneratedPage(
     val orientation: PageOrientation,
     val groupId: String, // To look up border settings
     val optionalTextStyle: TextStyleConfig? = null,
-    val isFirstPageOfGroup: Boolean = false,
-    val verticalAdjustment: Boolean = true,
-    val horizontalAdjustment: Boolean = true
+    val isFirstPageOfGroup: Boolean = false
 )

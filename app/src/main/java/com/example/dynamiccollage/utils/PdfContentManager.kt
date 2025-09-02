@@ -52,9 +52,7 @@ object PdfContentManager {
                     orientation = orientation,
                     groupId = group.id,
                     optionalTextStyle = if (isFirstPageOfGroup) group.optionalTextStyle else null,
-                    isFirstPageOfGroup = isFirstPageOfGroup,
-                    verticalAdjustment = group.verticalAdjustment,
-                    horizontalAdjustment = group.horizontalAdjustment
+                    isFirstPageOfGroup = isFirstPageOfGroup
                 )
             )
             isFirstPageOfGroup = false // The flag is turned off after the first page is created
@@ -69,9 +67,7 @@ object PdfContentManager {
                     orientation = orientation,
                     groupId = group.id,
                     optionalTextStyle = if (isFirstPageOfGroup) group.optionalTextStyle else null,
-                    isFirstPageOfGroup = isFirstPageOfGroup,
-                    verticalAdjustment = group.verticalAdjustment,
-                    horizontalAdjustment = group.horizontalAdjustment
+                    isFirstPageOfGroup = isFirstPageOfGroup
                 )
             )
             isFirstPageOfGroup = false // The flag is turned off after the first page is created
@@ -95,9 +91,7 @@ object PdfContentManager {
                     orientation = group.orientation,
                     groupId = group.id,
                     optionalTextStyle = if (index == 0) group.optionalTextStyle else null,
-                    isFirstPageOfGroup = index == 0,
-                    verticalAdjustment = group.verticalAdjustment,
-                    horizontalAdjustment = group.horizontalAdjustment
+                    isFirstPageOfGroup = index == 0
                 )
             )
         }

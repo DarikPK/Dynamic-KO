@@ -1,15 +1,7 @@
 package com.example.dynamiccollage.utils
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Canvas
-import android.graphics.Matrix
-import android.graphics.Paint
-import android.graphics.Path
-import android.graphics.Rect
-import android.graphics.RectF
-import android.graphics.Typeface
+import android.graphics.*
 import android.graphics.pdf.PdfDocument
 import android.net.Uri
 import android.os.Environment
@@ -296,25 +288,9 @@ object PdfGenerator {
     ) {
         var pageNumber = startPageNumber
         generatedPages.forEach { pageData ->
-            val margin = 20f // ~15dp
-
-            val contentBounds = calculateContentBounds(context, pageData)
-
-            val fullWidth = if (pageData.orientation == PageOrientation.Vertical) A4_WIDTH else A4_HEIGHT
-            val fullHeight = if (pageData.orientation == PageOrientation.Vertical) A4_HEIGHT else A4_WIDTH
-
-            val newWidth = if (pageData.horizontalAdjustment && !contentBounds.isEmpty) {
-                (contentBounds.width() + margin * 2).toInt()
-            } else {
-                fullWidth
-            }
-            val newHeight = if (pageData.verticalAdjustment && !contentBounds.isEmpty) {
-                (contentBounds.height() + margin * 2).toInt()
-            } else {
-                fullHeight
-            }
-
-            val pageInfo = PdfDocument.PageInfo.Builder(newWidth, newHeight, pageNumber++).create()
+            val pageWidth = if (pageData.orientation == PageOrientation.Vertical) A4_WIDTH else A4_HEIGHT
+            val pageHeight = if (pageData.orientation == PageOrientation.Vertical) A4_HEIGHT else A4_WIDTH
+            val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber++).create()
             val page = pdfDocument.startPage(pageInfo)
             val canvas = page.canvas
 
@@ -322,15 +298,8 @@ object PdfGenerator {
                 canvas.drawColor(color)
             }
 
-            canvas.save()
-            // Translate canvas so the content is drawn in the new, smaller page with the correct margins
-            if (!contentBounds.isEmpty) {
-                canvas.translate(margin - contentBounds.left, margin - contentBounds.top)
-            }
-
             drawPageOnCanvas(canvas, context, pageData, coverConfig, quality, imageEffectSettings)
 
-            canvas.restore()
             pdfDocument.finishPage(page)
         }
     }
@@ -344,68 +313,8 @@ object PdfGenerator {
     private fun getRectsForPage(pageWidth: Int, pageHeight: Int, startY: Float, cols: Int, rows: Int, spacing: Float): List<RectF> { val rects = mutableListOf<RectF>(); val totalSpacingX = spacing * (cols + 1); val totalSpacingY = spacing * (rows + 1); val cellWidth = (pageWidth - totalSpacingX) / cols; val availableHeight = pageHeight - startY; val cellHeight = (availableHeight - totalSpacingY) / rows; for (row in 0 until rows) { for (col in 0 until cols) { val left = totalSpacingX / (cols + 1) + col * (cellWidth + spacing); val top = startY + totalSpacingY / (rows + 1) + row * (cellHeight + spacing); val right = left + cellWidth; val bottom = top + cellHeight; rects.add(RectF(left, top, right, bottom)) } }; return rects }
 
 
-    private fun calculateContentBounds(
-        context: Context,
-        pageData: GeneratedPage
-    ): RectF {
-        val pageBounds = RectF()
-        var startY = 20f // Default top margin
-
-        val pageWidth = if (pageData.orientation == PageOrientation.Vertical) A4_WIDTH else A4_HEIGHT
-        val pageHeight = if (pageData.orientation == PageOrientation.Vertical) A4_HEIGHT else A4_WIDTH
-
-        // Calculate header bounds
-        if (pageData.isFirstPageOfGroup && pageData.optionalTextStyle != null && pageData.optionalTextStyle.isVisible) {
-            val textStyle = pageData.optionalTextStyle
-            val textPaint = createTextPaint(context, textStyle)
-            val text = if (textStyle.allCaps) textStyle.content.uppercase() else textStyle.content
-            val textWidth = pageWidth - 40f
-            val staticLayout = StaticLayout.Builder
-                .obtain(text, 0, text.length, textPaint, textWidth.toInt())
-                .setAlignment(getAndroidAlignment(textStyle.textAlign))
-                .build()
-            val rowHeight = staticLayout.height + textStyle.rowStyle.padding.top + textStyle.rowStyle.padding.bottom
-            val headerRect = RectF(20f, startY, textWidth + 20f, startY + rowHeight)
-            pageBounds.union(headerRect)
-            startY += rowHeight + 15f
-        }
-
-        // Calculate image bounds
-        if (pageData.imageUris.isNotEmpty()) {
-            val (cols, rows) = when (pageData.orientation) {
-                PageOrientation.Vertical -> if (pageData.imageUris.size > 1) Pair(1, 2) else Pair(1, 1)
-                PageOrientation.Horizontal -> if (pageData.imageUris.size > 1) Pair(2, 1) else Pair(1, 1)
-            }
-            val cellRects = getRectsForPage(pageWidth, pageHeight, startY, cols, rows, 15f)
-
-            pageData.imageUris.forEachIndexed { index, uriString ->
-                if (index < cellRects.size) {
-                    val cellRect = cellRects[index]
-                    val bitmapBounds = getBitmapBounds(context, uriString)
-                    if (bitmapBounds.width() > 0 && bitmapBounds.height() > 0) {
-                        val alignment = when {
-                            cols == 1 && rows == 1 -> ImageAlignment.CENTER
-                            cols == 2 -> if (index == 0) ImageAlignment.RIGHT else ImageAlignment.LEFT
-                            rows == 2 -> if (index == 0) ImageAlignment.BOTTOM else ImageAlignment.TOP
-                            else -> ImageAlignment.CENTER
-                        }
-                        val finalRect = getFinalBitmapRect(
-                            bitmapBounds.width().toFloat(),
-                            bitmapBounds.height().toFloat(),
-                            cellRect,
-                            alignment
-                        )
-                        pageBounds.union(finalRect)
-                    }
-                }
-            }
-        }
-
-        return pageBounds
-    }
-
     private fun drawBitmapToCanvas(canvas: Canvas, bitmap: Bitmap, cellRect: RectF, alignment: ImageAlignment, borderSettings: ImageBorderSettings?) {
-        val finalRect = getFinalBitmapRect(bitmap.width.toFloat(), bitmap.height.toFloat(), cellRect, alignment)
+        val finalRect = getFinalBitmapRect(bitmap, cellRect, alignment)
 
         canvas.save()
         try {
@@ -437,7 +346,9 @@ object PdfGenerator {
         }
     }
 
-    private fun getFinalBitmapRect(bitmapWidth: Float, bitmapHeight: Float, cellRect: RectF, alignment: ImageAlignment): RectF {
+    private fun getFinalBitmapRect(bitmap: Bitmap, cellRect: RectF, alignment: ImageAlignment): RectF {
+        val bitmapWidth = bitmap.width.toFloat()
+        val bitmapHeight = bitmap.height.toFloat()
         val cellWidth = cellRect.width()
         val cellHeight = cellRect.height()
 
@@ -488,18 +399,6 @@ object PdfGenerator {
             e.printStackTrace()
             null
         }
-    }
-
-    private fun getBitmapBounds(context: Context, uriString: String): Rect {
-        val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        try {
-            context.contentResolver.openInputStream(Uri.parse(uriString))?.use {
-                BitmapFactory.decodeStream(it, null, options)
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        return Rect(0, 0, options.outWidth, options.outHeight)
     }
 
     private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
