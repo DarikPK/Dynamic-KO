@@ -3,15 +3,15 @@ package com.example.dynamiccollage.ui.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PhotoLibrary // Asegurar que esta importación es correcta o ajustar el icono
@@ -23,7 +23,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -38,25 +37,18 @@ import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
 @Composable
 fun PageGroupItem(
     pageGroup: PageGroup,
-    slideState: SlideState,
     onAddImagesClicked: (String) -> Unit,
     onEditGroupClicked: (PageGroup) -> Unit,
     onDeleteGroupClicked: (String) -> Unit,
     onDeleteImagesClicked: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isFirst: Boolean,
+    isLast: Boolean,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit
 ) {
-    val itemHeightDp = 200.dp // Should match the estimate in the screen
-    val offset by animateDpAsState(
-        targetValue = when (slideState) {
-            SlideState.UP -> -itemHeightDp
-            SlideState.DOWN -> itemHeightDp
-            SlideState.NONE -> 0.dp
-        },
-        label = "offsetAnimation"
-    )
-
     Card(
-        modifier = modifier.fillMaxWidth().offset(y = offset),
+        modifier = modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
@@ -137,6 +129,13 @@ fun PageGroupItem(
                     Text(stringResource(R.string.group_item_add_images_button))
                 }
                 Row {
+                    IconButton(onClick = onMoveUp, enabled = !isFirst) {
+                        Icon(Icons.Default.ArrowUpward, contentDescription = "Mover arriba")
+                    }
+                    IconButton(onClick = onMoveDown, enabled = !isLast) {
+                        Icon(Icons.Default.ArrowDownward, contentDescription = "Mover abajo")
+                    }
+
                     if (pageGroup.imageUris.isNotEmpty()) {
                         IconButton(onClick = { onDeleteImagesClicked(pageGroup.id) }) {
                             Icon(Icons.Filled.Delete, contentDescription = "Delete Loaded Images", tint = MaterialTheme.colorScheme.error)
@@ -184,7 +183,10 @@ fun PageGroupItemPreview() {
                 optionalTextStyle = com.example.dynamiccollage.data.model.TextStyleConfig(content="Texto opcional de ejemplo"),
                 imageUris = List(5) { "uri_placeholder" } // 5 de 6 fotos cargadas
             ),
-            slideState = SlideState.NONE,
+            isFirst = false,
+            isLast = false,
+            onMoveUp = {},
+            onMoveDown = {},
             onAddImagesClicked = {},
             onEditGroupClicked = {},
             onDeleteGroupClicked = {},
@@ -205,7 +207,10 @@ fun PageGroupItemUnnamedPreview() {
                 sheetCount = 1,
                 imageUris = List(1) { "uri_placeholder" } // Cuota cumplida
             ),
-            slideState = SlideState.NONE,
+            isFirst = true,
+            isLast = true,
+            onMoveUp = {},
+            onMoveDown = {},
             onAddImagesClicked = {},
             onEditGroupClicked = {},
             onDeleteGroupClicked = {},
