@@ -257,32 +257,20 @@ private fun PdfPage(
                         .background(Color.White)
                 )
 
-                // Overlays for clickable photos
-                val imageWidth = with(LocalDensity.current) { it.width.toDp() }
-                val scaleFactor = imageWidth / (renderer.openPage(pageIndex).use { p -> p.width.dp })
-
-                photoRects.forEach { photoRect ->
-                    Box(
+                // Overlays for clickable photos - DEBUGGING
+                if (photoRects.isNotEmpty()) {
+                    IconButton(
+                        onClick = { onPhotoClick(photoRects.first()) },
                         modifier = Modifier
-                            .offset(
-                                x = (photoRect.rect.left.dp * scaleFactor),
-                                y = (photoRect.rect.top.dp * scaleFactor)
-                            )
-                            .size(
-                                width = (photoRect.rect.width().dp * scaleFactor),
-                                height = (photoRect.rect.height().dp * scaleFactor)
-                            )
+                            .align(Alignment.TopEnd)
+                            .padding(8.dp)
+                            .background(Color.Red, shape = CircleShape)
                     ) {
-                        IconButton(
-                            onClick = { onPhotoClick(photoRect) },
-                            modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).background(Color.Black.copy(alpha = 0.5f), shape = CircleShape)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.SwapHoriz,
-                                contentDescription = "Intercambiar foto",
-                                tint = Color.White
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Default.SwapHoriz,
+                            contentDescription = "Intercambiar foto (Debug)",
+                            tint = Color.White
+                        )
                     }
                 }
             }
