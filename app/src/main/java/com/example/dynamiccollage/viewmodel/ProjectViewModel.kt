@@ -24,24 +24,23 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
 
+// Top-level sealed classes as per user's latest instruction
+sealed class SaveState {
+    object Idle : SaveState()
+    data class RequiresConfirmation(val sizeInBytes: Long) : SaveState()
+    object Success : SaveState()
+    data class Error(val message: String) : SaveState()
+}
+
+sealed class PdfGenerationState {
+    object Idle : PdfGenerationState()
+    object Loading : PdfGenerationState()
+    data class Success(val result: PdfGenerationResult) : PdfGenerationState()
+    data class Error(val message: String) : PdfGenerationState()
+}
+
 class ProjectViewModel : ViewModel() {
 
-    // --- State Classes (as per user instruction) ---
-    sealed class SaveState {
-        object Idle : SaveState()
-        data class RequiresConfirmation(val sizeInBytes: Long) : SaveState()
-        object Success : SaveState()
-        data class Error(val message: String) : SaveState()
-    }
-
-    sealed class PdfGenerationState {
-        object Idle : PdfGenerationState()
-        object Loading : PdfGenerationState()
-        data class Success(val result: PdfGenerationResult) : PdfGenerationState()
-        data class Error(val message: String) : PdfGenerationState()
-    }
-
-    // --- StateFlows ---
     private val _currentCoverConfig = MutableStateFlow(CoverPageConfig())
     val currentCoverConfig: StateFlow<CoverPageConfig> = _currentCoverConfig.asStateFlow()
 
@@ -75,11 +74,10 @@ class ProjectViewModel : ViewModel() {
     private val _shareablePdfUri = MutableStateFlow<Uri?>(null)
     val shareablePdfUri: StateFlow<Uri?> = _shareablePdfUri.asStateFlow()
 
-    // --- Private Properties ---
     private val gson = Gson()
     private val projectFileName = "last_project.json"
 
-    // --- Public Functions ---
+
     fun setManagerSelectedUri(uri: String?) {
         _managerSelectedUri.value = uri
     }
@@ -282,7 +280,9 @@ class ProjectViewModel : ViewModel() {
             _shareablePdfUri.value = uri
         } catch (e: Exception) {
             e.printStackTrace()
-            _pdfGenerationState.value = PdfGenerationState.Error("No se pudo crear el enlace para compartir.")
+            // Do not reset the main state here, just show an error or log it.
+            // For now, let's just log, as the user might want to try again.
+            Log.e("ProjectViewModel", "Error creating shareable URI", e)
         }
     }
 

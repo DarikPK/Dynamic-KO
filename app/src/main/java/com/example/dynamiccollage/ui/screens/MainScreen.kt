@@ -45,6 +45,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.dynamiccollage.R
 import com.example.dynamiccollage.ui.navigation.Screen
 import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
+import com.example.dynamiccollage.viewmodel.PdfGenerationState
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 import com.example.dynamiccollage.viewmodel.SaveState
 
@@ -120,15 +121,17 @@ fun MainScreen(
 
     // Efecto para navegar cuando el PDF está listo para previsualizar
     LaunchedEffect(pdfGenerationState) {
-        if (pdfGenerationState is com.example.dynamiccollage.viewmodel.PdfGenerationState.Success) {
-            val file = (pdfGenerationState as com.example.dynamiccollage.viewmodel.PdfGenerationState.Success).file
-            val encodedPath = java.net.URLEncoder.encode(file.absolutePath, "UTF-8")
-            navController.navigate(Screen.PdfPreview.withArgs(encodedPath))
-            projectViewModel.resetPdfGenerationState()
-        } else if (pdfGenerationState is com.example.dynamiccollage.viewmodel.PdfGenerationState.Error) {
-            val message = (pdfGenerationState as com.example.dynamiccollage.viewmodel.PdfGenerationState.Error).message
-            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-            projectViewModel.resetPdfGenerationState()
+        when (val state = pdfGenerationState) {
+            is PdfGenerationState.Success -> {
+                val encodedPath = java.net.URLEncoder.encode(state.result.file.absolutePath, "UTF-8")
+                navController.navigate(Screen.PdfPreview.withArgs(encodedPath))
+                projectViewModel.resetPdfGenerationState()
+            }
+            is PdfGenerationState.Error -> {
+                Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
+                projectViewModel.resetPdfGenerationState()
+            }
+            else -> { /* No-op para Idle y Loading */ }
         }
     }
 
@@ -156,7 +159,7 @@ fun MainScreen(
         message = stringResource(id = R.string.delete_project_dialog_message)
     )
 
-    if (pdfGenerationState is com.example.dynamiccollage.viewmodel.PdfGenerationState.Loading) {
+    if (pdfGenerationState is PdfGenerationState.Loading) {
         LoadingDialog(message = "Generando PDF...")
     }
 

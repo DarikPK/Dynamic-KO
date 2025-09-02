@@ -45,16 +45,22 @@ fun PdfPreviewScreen(
     projectViewModel: ProjectViewModel
 ) {
     val context = LocalContext.current
-    val file = pdfPath?.let { File(it) }
+    val initialFile = pdfPath?.let { File(it) }
     val pdfGenerationState by projectViewModel.pdfGenerationState.collectAsState()
+
+    var currentFile by remember { mutableStateOf(initialFile) }
     var photoLayouts by remember { mutableStateOf<List<PhotoRect>>(emptyList()) }
     var showSwapDialog by remember { mutableStateOf(false) }
     var firstPhotoToSwap by remember { mutableStateOf<PhotoRect?>(null) }
     val allPhotos by remember { derivedStateOf { projectViewModel.getAllImageUris() } }
 
     LaunchedEffect(pdfGenerationState) {
-        if (pdfGenerationState is PdfGenerationState.Success) {
-            photoLayouts = pdfGenerationState.result.photoLayouts
+        when (val state = pdfGenerationState) {
+            is PdfGenerationState.Success -> {
+                currentFile = state.result.file
+                photoLayouts = state.result.photoLayouts
+            }
+            else -> { /* Do nothing for other states */ }
         }
     }
 
@@ -98,9 +104,9 @@ fun PdfPreviewScreen(
                     }
                 },
                 actions = {
-                    if (file != null) {
+                    currentFile?.let {
                         IconButton(onClick = {
-                            projectViewModel.createShareableUriForFile(context, file)
+                            projectViewModel.createShareableUriForFile(context, it)
                         }) {
                             Icon(
                                 imageVector = Icons.Filled.Share,
@@ -122,9 +128,9 @@ fun PdfPreviewScreen(
                     style = MaterialTheme.typography.titleMedium
                 )
             }
-            if (file != null && file.exists()) {
+            if (currentFile != null && currentFile!!.exists()) {
                 PdfView(
-                    uri = Uri.fromFile(file),
+                    uri = Uri.fromFile(currentFile!!),
                     photoLayouts = photoLayouts,
                     onPhotoClick = { photoRect ->
                         firstPhotoToSwap = photoRect
