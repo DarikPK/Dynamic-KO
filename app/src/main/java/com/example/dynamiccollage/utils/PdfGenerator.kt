@@ -72,7 +72,7 @@ object PdfGenerator {
         generatedPages: List<GeneratedPage>,
         fileName: String,
         imageEffectSettings: Map<String, ImageEffectSettings>
-    ): PdfGenerationResult? {
+    ): Pair<File, List<PhotoRect>>? {
         val pdfDocument = PdfDocument()
         val uncompressedPdfStream = ByteArrayOutputStream()
         val allPhotoLayouts = mutableListOf<PhotoRect>()
@@ -104,7 +104,7 @@ object PdfGenerator {
             pdDocument.save(pdfFile)
             pdDocument.close()
 
-            return PdfGenerationResult(file = pdfFile, photoLayouts = allPhotoLayouts)
+            return Pair(pdfFile, allPhotoLayouts)
         } catch (e: Exception) {
             Log.e("PdfGenerator", "Error al generar PDF", e)
             pdfDocument.close()

@@ -261,8 +261,9 @@ class ProjectViewModel : ViewModel() {
                 )
             }
             if (generationResult != null) {
-                _pdfSize.value = generationResult.file.length()
-                _pdfGenerationState.value = PdfGenerationState.Success(generationResult.file, generationResult.photoLayouts)
+                val (file, layouts) = generationResult
+                _pdfSize.value = file.length()
+                _pdfGenerationState.value = PdfGenerationState.Success(file, layouts)
             } else {
                 _pdfGenerationState.value = PdfGenerationState.Error("No se pudo generar el PDF.")
             }

@@ -123,7 +123,7 @@ fun MainScreen(
     LaunchedEffect(pdfGenerationState) {
         when (val state = pdfGenerationState) {
             is PdfGenerationState.Success -> {
-                val encodedPath = java.net.URLEncoder.encode(state.result.file.absolutePath, "UTF-8")
+                val encodedPath = java.net.URLEncoder.encode(state.file.absolutePath, "UTF-8")
                 navController.navigate(Screen.PdfPreview.withArgs(encodedPath))
                 projectViewModel.resetPdfGenerationState()
             }
