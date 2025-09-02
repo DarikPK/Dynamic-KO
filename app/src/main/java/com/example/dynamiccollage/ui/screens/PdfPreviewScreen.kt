@@ -22,6 +22,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.dynamiccollage.R
+import com.example.dynamiccollage.data.model.PhotoRect
+import com.example.dynamiccollage.ui.components.SwapPhotoDialog
 import com.example.dynamiccollage.ui.components.ZoomableImage
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 import java.io.File
@@ -42,6 +44,32 @@ fun PdfPreviewScreen(
 ) {
     val context = LocalContext.current
     val file = pdfPath?.let { File(it) }
+    val pdfGenerationState by projectViewModel.pdfGenerationState.collectAsState()
+    var photoLayouts by remember { mutableStateOf<List<com.example.dynamiccollage.data.model.PhotoRect>>(emptyList()) }
+    var showSwapDialog by remember { mutableStateOf(false) }
+    var firstPhotoToSwap by remember { mutableStateOf<PhotoRect?>(null) }
+    val allPhotos by remember { derivedStateOf { projectViewModel.getAllImageUris() } }
+
+    LaunchedEffect(pdfGenerationState) {
+        if (pdfGenerationState is ProjectViewModel.PdfGenerationState.Success) {
+            photoLayouts = (pdfGenerationState as ProjectViewModel.PdfGenerationState.Success).result.photoLayouts
+        }
+    }
+
+    if (showSwapDialog && firstPhotoToSwap != null) {
+        SwapPhotoDialog(
+            onDismissRequest = { showSwapDialog = false },
+            allPhotos = allPhotos,
+            firstPhotoUri = firstPhotoToSwap!!.uri,
+            onPhotoSelected = { secondPhotoUri ->
+                projectViewModel.swapPhotos(context, firstPhotoToSwap!!.uri, secondPhotoUri)
+                // The file name here is temporary for regeneration; it won't be the final saved name.
+                projectViewModel.generatePdf(context, "preview_regenerated")
+                showSwapDialog = false
+            }
+        )
+    }
+
     val shareablePdfUri by projectViewModel.shareablePdfUri.collectAsState()
 
     LaunchedEffect(shareablePdfUri) {
@@ -94,7 +122,14 @@ fun PdfPreviewScreen(
                 )
             }
             if (file != null && file.exists()) {
-                PdfView(uri = Uri.fromFile(file))
+                PdfView(
+                    uri = Uri.fromFile(file),
+                    photoLayouts = photoLayouts,
+                    onPhotoClick = { photoRect ->
+                        firstPhotoToSwap = photoRect
+                        showSwapDialog = true
+                    }
+                )
             } else {
                 Box(
                     modifier = Modifier
@@ -111,7 +146,12 @@ fun PdfPreviewScreen(
 
 
 @Composable
-fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
+fun PdfView(
+    modifier: Modifier = Modifier,
+    uri: Uri,
+    photoLayouts: List<PhotoRect>,
+    onPhotoClick: (PhotoRect) -> Unit
+) {
     val context = LocalContext.current
 
     val rendererState by remember(uri) {
@@ -151,7 +191,9 @@ fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
         items(count = rendererState.pageCount) { index ->
             PdfPage(
                 renderer = rendererState.renderer!!,
-                pageIndex = index
+                pageIndex = index,
+                photoRects = photoLayouts.filter { it.pageIndex == index },
+                onPhotoClick = onPhotoClick
             )
             if (index < rendererState.pageCount - 1) {
                 Divider(
@@ -164,10 +206,15 @@ fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
     }
 }
 
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.graphics.drawscope.scale
+
 @Composable
 private fun PdfPage(
     renderer: PdfRenderer,
-    pageIndex: Int
+    pageIndex: Int,
+    photoRects: List<PhotoRect>,
+    onPhotoClick: (PhotoRect) -> Unit
 ) {
     val density = LocalDensity.current.density
     var bitmap by remember(renderer, pageIndex) { mutableStateOf<Bitmap?>(null) }
@@ -196,12 +243,33 @@ private fun PdfPage(
         }
     } else {
         bitmap?.let {
-            ZoomableImage(
-                bitmap = it.asImageBitmap(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White)
-            )
+            Box(modifier = Modifier.fillMaxWidth()) {
+                ZoomableImage(
+                    bitmap = it.asImageBitmap(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.White)
+                )
+
+                // Overlays for clickable photos
+                val imageWidth = with(LocalDensity.current) { it.width.toDp() }
+                val scaleFactor = imageWidth / (renderer.openPage(pageIndex).use { p -> p.width.dp })
+
+                photoRects.forEach { photoRect ->
+                    Box(
+                        modifier = Modifier
+                            .offset(
+                                x = (photoRect.rect.left.dp * scaleFactor),
+                                y = (photoRect.rect.top.dp * scaleFactor)
+                            )
+                            .size(
+                                width = (photoRect.rect.width().dp * scaleFactor),
+                                height = (photoRect.rect.height().dp * scaleFactor)
+                            )
+                            .clickable { onPhotoClick(photoRect) }
+                    )
+                }
+            }
         }
     }
 }

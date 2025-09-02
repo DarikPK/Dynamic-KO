@@ -18,6 +18,7 @@ import com.example.dynamiccollage.data.model.CoverPageConfig
 import com.example.dynamiccollage.data.model.ImageEffectSettings
 import com.example.dynamiccollage.data.model.PageGroup
 import com.example.dynamiccollage.data.model.SerializableNormalizedRectF
+import com.example.dynamiccollage.data.model.PdfGenerationResult
 import com.example.dynamiccollage.data.model.SelectedSunatData
 import com.example.dynamiccollage.data.model.SerializableProjectState
 import com.example.dynamiccollage.utils.PdfGenerator
@@ -62,6 +63,39 @@ class ProjectViewModel : ViewModel() {
             currentMap.toMutableMap().apply {
                 this[uri] = settings
             }
+        }
+        saveProject(context)
+    }
+
+    fun swapPhotos(context: Context, uri1: String, uri2: String) {
+        _currentPageGroups.update { currentList ->
+            val list = currentList.toMutableList()
+
+            val groupIndex1 = list.indexOfFirst { it.imageUris.contains(uri1) }
+            val groupIndex2 = list.indexOfFirst { it.imageUris.contains(uri2) }
+
+            if (groupIndex1 == -1 || groupIndex2 == -1) return@update list
+
+            val group1 = list[groupIndex1]
+            val group2 = list[groupIndex2]
+
+            val imageIndex1 = group1.imageUris.indexOf(uri1)
+            val imageIndex2 = group2.imageUris.indexOf(uri2)
+
+            val newImages1 = group1.imageUris.toMutableList()
+            val newImages2 = group2.imageUris.toMutableList()
+
+            if (groupIndex1 == groupIndex2) {
+                newImages1[imageIndex1] = uri2
+                newImages1[imageIndex2] = uri1
+                list[groupIndex1] = group1.copy(imageUris = newImages1)
+            } else {
+                newImages1[imageIndex1] = uri2
+                newImages2[imageIndex2] = uri1
+                list[groupIndex1] = group1.copy(imageUris = newImages1)
+                list[groupIndex2] = group2.copy(imageUris = newImages2)
+            }
+            list.toList()
         }
         saveProject(context)
     }
@@ -223,7 +257,7 @@ class ProjectViewModel : ViewModel() {
         viewModelScope.launch {
             Log.d("ProjectViewModel", "generatePdf: Iniciando...")
             _pdfGenerationState.value = PdfGenerationState.Loading
-            val generatedFile = withContext(Dispatchers.IO) {
+            val generationResult = withContext(Dispatchers.IO) {
                 val generatedPages = com.example.dynamiccollage.utils.PdfContentManager.groupImagesForPdf(
                     context,
                     _currentPageGroups.value
@@ -238,12 +272,12 @@ class ProjectViewModel : ViewModel() {
                     imageEffectSettings = _imageEffectSettings.value
                 )
             }
-            if (generatedFile != null) {
-                Log.d("ProjectViewModel", "generatePdf: Éxito. Archivo: ${generatedFile.absolutePath}")
-                _pdfSize.value = generatedFile.length()
-                _pdfGenerationState.value = PdfGenerationState.Success(generatedFile)
+            if (generationResult != null) {
+                Log.d("ProjectViewModel", "generatePdf: Éxito. Archivo: ${generationResult.file.absolutePath}")
+                _pdfSize.value = generationResult.file.length()
+                _pdfGenerationState.value = PdfGenerationState.Success(generationResult)
             } else {
-                Log.e("ProjectViewModel", "generatePdf: Fallo. `generatedFile` es nulo.")
+                Log.e("ProjectViewModel", "generatePdf: Fallo. `generationResult` es nulo.")
                 _pdfGenerationState.value = PdfGenerationState.Error("No se pudo generar el PDF.")
             }
         }
@@ -477,6 +511,6 @@ sealed class SaveState {
 sealed class PdfGenerationState {
     object Idle : PdfGenerationState()
     object Loading : PdfGenerationState()
-    data class Success(val file: File) : PdfGenerationState()
+    data class Success(val result: PdfGenerationResult) : PdfGenerationState()
     data class Error(val message: String) : PdfGenerationState()
 }
