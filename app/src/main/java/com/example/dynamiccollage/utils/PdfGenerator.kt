@@ -1,7 +1,15 @@
 package com.example.dynamiccollage.utils
 
 import android.content.Context
-import android.graphics.*
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Matrix
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.Rect
+import android.graphics.RectF
+import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import android.net.Uri
 import android.os.Environment
@@ -362,15 +370,34 @@ object PdfGenerator {
             startY += rowHeight + 15f
         }
 
-        // Calculate image bounds based on their cells
+        // Calculate image bounds
         if (pageData.imageUris.isNotEmpty()) {
             val (cols, rows) = when (pageData.orientation) {
                 PageOrientation.Vertical -> if (pageData.imageUris.size > 1) Pair(1, 2) else Pair(1, 1)
                 PageOrientation.Horizontal -> if (pageData.imageUris.size > 1) Pair(2, 1) else Pair(1, 1)
             }
-            val rects = getRectsForPage(pageWidth, pageHeight, startY, cols, rows, 15f)
-            rects.forEach { rect ->
-                pageBounds.union(rect)
+            val cellRects = getRectsForPage(pageWidth, pageHeight, startY, cols, rows, 15f)
+
+            pageData.imageUris.forEachIndexed { index, uriString ->
+                if (index < cellRects.size) {
+                    val cellRect = cellRects[index]
+                    val bitmapBounds = getBitmapBounds(context, uriString)
+                    if (bitmapBounds.width() > 0 && bitmapBounds.height() > 0) {
+                        val alignment = when {
+                            cols == 1 && rows == 1 -> ImageAlignment.CENTER
+                            cols == 2 -> if (index == 0) ImageAlignment.RIGHT else ImageAlignment.LEFT
+                            rows == 2 -> if (index == 0) ImageAlignment.BOTTOM else ImageAlignment.TOP
+                            else -> ImageAlignment.CENTER
+                        }
+                        val finalRect = getFinalBitmapRect(
+                            bitmapBounds.width().toFloat(),
+                            bitmapBounds.height().toFloat(),
+                            cellRect,
+                            alignment
+                        )
+                        pageBounds.union(finalRect)
+                    }
+                }
             }
         }
 
@@ -378,7 +405,7 @@ object PdfGenerator {
     }
 
     private fun drawBitmapToCanvas(canvas: Canvas, bitmap: Bitmap, cellRect: RectF, alignment: ImageAlignment, borderSettings: ImageBorderSettings?) {
-        val finalRect = getFinalBitmapRect(bitmap, cellRect, alignment)
+        val finalRect = getFinalBitmapRect(bitmap.width.toFloat(), bitmap.height.toFloat(), cellRect, alignment)
 
         canvas.save()
         try {
@@ -410,9 +437,7 @@ object PdfGenerator {
         }
     }
 
-    private fun getFinalBitmapRect(bitmap: Bitmap, cellRect: RectF, alignment: ImageAlignment): RectF {
-        val bitmapWidth = bitmap.width.toFloat()
-        val bitmapHeight = bitmap.height.toFloat()
+    private fun getFinalBitmapRect(bitmapWidth: Float, bitmapHeight: Float, cellRect: RectF, alignment: ImageAlignment): RectF {
         val cellWidth = cellRect.width()
         val cellHeight = cellRect.height()
 
@@ -463,6 +488,18 @@ object PdfGenerator {
             e.printStackTrace()
             null
         }
+    }
+
+    private fun getBitmapBounds(context: Context, uriString: String): Rect {
+        val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        try {
+            context.contentResolver.openInputStream(Uri.parse(uriString))?.use {
+                BitmapFactory.decodeStream(it, null, options)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return Rect(0, 0, options.outWidth, options.outHeight)
     }
 
     private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {

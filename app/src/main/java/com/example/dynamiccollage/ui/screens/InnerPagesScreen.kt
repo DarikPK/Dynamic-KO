@@ -214,6 +214,12 @@ fun InnerPagesScreen(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 ),
                 actions = {
+                    IconButton(onClick = { innerPagesViewModel.onAddNewGroupClicked() }) {
+                        Icon(
+                            imageVector = Icons.Filled.Add,
+                            contentDescription = "Crear Grupo"
+                        )
+                    }
                     IconButton(onClick = { showSettingsDialog = true }) {
                         Icon(
                             imageVector = Icons.Filled.Settings,
@@ -232,14 +238,6 @@ fun InnerPagesScreen(
                 }
             )
         },
-        floatingActionButton = {
-            FloatingActionButton(onClick = { innerPagesViewModel.onAddNewGroupClicked() }) {
-                Icon(
-                    Icons.Filled.Add,
-                    contentDescription = stringResource(id = R.string.inner_pages_add_group_fab_description)
-                )
-            }
-        }
     ) { paddingValues ->
         Box(
             modifier = Modifier
