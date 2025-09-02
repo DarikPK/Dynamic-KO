@@ -35,7 +35,7 @@ sealed class SaveState {
 sealed class PdfGenerationState {
     object Idle : PdfGenerationState()
     object Loading : PdfGenerationState()
-    data class Success(val result: PdfGenerationResult) : PdfGenerationState()
+    data class Success(val file: File, val photoLayouts: List<PhotoRect>) : PdfGenerationState()
     data class Error(val message: String) : PdfGenerationState()
 }
 
@@ -262,7 +262,7 @@ class ProjectViewModel : ViewModel() {
             }
             if (generationResult != null) {
                 _pdfSize.value = generationResult.file.length()
-                _pdfGenerationState.value = PdfGenerationState.Success(generationResult)
+                _pdfGenerationState.value = PdfGenerationState.Success(generationResult.file, generationResult.photoLayouts)
             } else {
                 _pdfGenerationState.value = PdfGenerationState.Error("No se pudo generar el PDF.")
             }

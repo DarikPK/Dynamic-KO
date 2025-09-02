@@ -57,8 +57,8 @@ fun PdfPreviewScreen(
     LaunchedEffect(pdfGenerationState) {
         when (val state = pdfGenerationState) {
             is PdfGenerationState.Success -> {
-                currentFile = state.result.file
-                photoLayouts = state.result.photoLayouts
+                currentFile = state.file
+                photoLayouts = state.photoLayouts
             }
             else -> { /* Do nothing for other states */ }
         }
