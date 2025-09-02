@@ -177,6 +177,10 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         )
     }
 
+    fun onEditingGroupHeaderStyleChange(newStyle: com.example.dynamiccollage.data.model.TextStyleConfig) {
+        _editingGroup.value = _editingGroup.value?.copy(optionalTextStyle = newStyle)
+    }
+
     fun saveEditingGroup(context: android.content.Context) {
         viewModelScope.launch {
             _editingGroup.value?.let { groupToSave ->

@@ -150,7 +150,12 @@ fun CreateEditGroupDialog(
                     onClick = { navController.navigate(Screen.GroupHeaderStyle.route) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Agregar Encabezado a Grupo")
+                    val buttonText = if (editingGroup.optionalTextStyle.content.isNotBlank()) {
+                        stringResource(id = R.string.dialog_edit_header_button)
+                    } else {
+                        stringResource(id = R.string.dialog_add_header_button)
+                    }
+                    Text(buttonText)
                 }
 
                 if (originalGroup != null && originalGroup.imageUris.isNotEmpty() && !isConfigValid && editingGroup.sheetCount > 0) {

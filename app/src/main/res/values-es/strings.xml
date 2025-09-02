@@ -77,6 +77,8 @@
     <!-- Create/Edit Page Group Dialog -->
     <string name="dialog_create_group_title">Crear Nuevo Grupo</string>
     <string name="dialog_edit_group_title">Editar Grupo</string>
+    <string name="dialog_add_header_button">Agregar Encabezado a Grupo</string>
+    <string name="dialog_edit_header_button">Editar Encabezado de Grupo</string>
     <string name="group_name_label">Nombre del Grupo (Opcional)</string>
     <string name="group_orientation_label">Orientación</string>
     <string name="orientation_vertical">Vertical</string>

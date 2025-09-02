@@ -32,7 +32,16 @@ fun GroupHeaderStyleScreen(
     viewModel: InnerPagesViewModel
 ) {
     val editingGroup by viewModel.editingGroup.collectAsState()
-    val textStyle = editingGroup?.optionalTextStyle
+    val initialTextStyle = editingGroup?.optionalTextStyle
+
+    if (initialTextStyle == null) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("No hay un grupo en edición.")
+        }
+        return
+    }
+
+    var localTextStyle by remember { mutableStateOf(initialTextStyle) }
 
     // Listener para el resultado del ColorPickerScreen
     LaunchedEffect(key1 = navController.currentBackStackEntry) {
@@ -41,10 +50,9 @@ fun GroupHeaderStyleScreen(
             ?.getLiveData<String>("selected_color")
             ?.observe(navController.currentBackStackEntry!!) { result ->
                 val parts = result.split(":")
-                // val fieldId = parts[0] // No es necesario aquí, solo hay un campo de color
                 val colorHex = parts[1]
                 val newColor = Color(android.graphics.Color.parseColor("#$colorHex"))
-                viewModel.onEditingGroupFontColorChange(newColor)
+                localTextStyle = localTextStyle.copy(fontColor = newColor)
                 navController.currentBackStackEntry?.savedStateHandle?.remove<String>("selected_color")
             }
     }
@@ -61,97 +69,104 @@ fun GroupHeaderStyleScreen(
             )
         }
     ) { paddingValues ->
-        if (textStyle != null) {
-            var fontSizeInput by remember(textStyle.fontSize) { mutableStateOf(textStyle.fontSize.toString()) }
+        var fontSizeInput by remember(localTextStyle.fontSize) { mutableStateOf(localTextStyle.fontSize.toString()) }
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(paddingValues)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(paddingValues)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            OutlinedTextField(
+                value = localTextStyle.content,
+                onValueChange = { localTextStyle = localTextStyle.copy(content = it) },
+                label = { Text("Texto del Encabezado") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                OutlinedTextField(
-                    value = textStyle.content,
-                    onValueChange = { viewModel.onEditingGroupOptionalTextChange(it) },
-                    label = { Text("Texto del Encabezado") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                Text("Poner en mayúsculas")
+                Switch(
+                    checked = localTextStyle.allCaps,
+                    onCheckedChange = { localTextStyle = localTextStyle.copy(allCaps = it) }
                 )
+            }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Poner en mayúsculas")
-                    Switch(
-                        checked = textStyle.allCaps,
-                        onCheckedChange = { viewModel.onEditingGroupOptionalTextAllCapsChange(it) }
-                    )
-                }
+            Divider()
 
-                Divider()
+            OutlinedTextField(
+                value = fontSizeInput,
+                onValueChange = {
+                    fontSizeInput = it
+                    val newSize = it.toIntOrNull() ?: 0
+                    localTextStyle = localTextStyle.copy(fontSize = newSize)
+                },
+                label = { Text("Tamaño de Fuente") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
 
-                OutlinedTextField(
-                    value = fontSizeInput,
-                    onValueChange = {
-                        fontSizeInput = it
-                        viewModel.onEditingGroupFontSizeChange(it)
-                    },
-                    label = { Text("Tamaño de Fuente") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
+            Text("Alineación del Texto")
+            val alignmentOptions = listOf(
+                TextAlign.Start to "Izquierda",
+                TextAlign.Center to "Centro",
+                TextAlign.End to "Derecha"
+            )
+            val selectedAlignmentIndex = alignmentOptions.indexOfFirst { it.first == localTextStyle.textAlign }
 
-                Text("Alineación del Texto")
-                val alignmentOptions = listOf(
-                    TextAlign.Start to "Izquierda",
-                    TextAlign.Center to "Centro",
-                    TextAlign.End to "Derecha"
-                )
-                val selectedAlignmentIndex = alignmentOptions.indexOfFirst { it.first == textStyle.textAlign }
-
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                    alignmentOptions.forEachIndexed { index, option ->
-                        SegmentedButton(
-                            selected = index == selectedAlignmentIndex,
-                            onClick = { viewModel.onEditingGroupTextAlignChange(option.first) },
-                            shape = SegmentedButtonDefaults.itemShape(index = index, count = alignmentOptions.size)
-                        ) {
-                            Text(option.second)
-                        }
-                    }
-                }
-
-                Text("Color del Texto")
-                OutlinedButton(
-                    onClick = {
-                        val colorHex = String.format("%06X", (0xFFFFFF and textStyle.fontColor.toArgb()))
-                        navController.navigate(Screen.ColorPicker.withArgs(textStyle.id, colorHex))
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                alignmentOptions.forEachIndexed { index, option ->
+                    SegmentedButton(
+                        selected = index == selectedAlignmentIndex,
+                        onClick = { localTextStyle = localTextStyle.copy(textAlign = option.first) },
+                        shape = SegmentedButtonDefaults.itemShape(index = index, count = alignmentOptions.size)
                     ) {
-                Text("Color Actual", color = MaterialTheme.colorScheme.onSurface)
-                        Box(
-                            modifier = Modifier
-                                .size(24.dp)
-                                .background(textStyle.fontColor, shape = CircleShape)
-                                .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
-                        )
+                        Text(option.second)
                     }
                 }
             }
-        } else {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No hay un grupo en edición.")
+
+            Text("Color del Texto")
+            OutlinedButton(
+                onClick = {
+                    val colorHex = String.format("%06X", (0xFFFFFF and localTextStyle.fontColor.toArgb()))
+                    navController.navigate(Screen.ColorPicker.withArgs(localTextStyle.id, colorHex))
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Color Actual", color = MaterialTheme.colorScheme.onSurface)
+                    Box(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .background(localTextStyle.fontColor, shape = CircleShape)
+                            .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Button(
+                onClick = {
+                    viewModel.onEditingGroupHeaderStyleChange(localTextStyle)
+                    navController.popBackStack()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Guardar y Regresar")
             }
         }
     }
