@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -56,6 +57,7 @@ fun PdfPreviewScreen(
     var showSwapDialog by remember { mutableStateOf(false) }
     var firstPhotoToSwap by remember { mutableStateOf<PhotoRect?>(null) }
     val allPhotos by remember { derivedStateOf { projectViewModel.getAllImageUris() } }
+    var isInSwapMode by remember { mutableStateOf(false) }
 
     LaunchedEffect(pdfGenerationState) {
         when (val state = pdfGenerationState) {
@@ -107,6 +109,13 @@ fun PdfPreviewScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { isInSwapMode = !isInSwapMode }) {
+                        Icon(
+                            imageVector = Icons.Default.SwapHoriz,
+                            contentDescription = "Activar modo intercambio",
+                            tint = if (isInSwapMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                     currentFile?.let {
                         IconButton(onClick = {
                             projectViewModel.createShareableUriForFile(context, it)
@@ -135,6 +144,7 @@ fun PdfPreviewScreen(
                 PdfView(
                     uri = Uri.fromFile(currentFile!!),
                     photoLayouts = photoLayouts,
+                    isInSwapMode = isInSwapMode,
                     onPhotoClick = { photoRect ->
                         firstPhotoToSwap = photoRect
                         showSwapDialog = true
@@ -160,6 +170,7 @@ fun PdfView(
     modifier: Modifier = Modifier,
     uri: Uri,
     photoLayouts: List<PhotoRect>,
+    isInSwapMode: Boolean,
     onPhotoClick: (PhotoRect) -> Unit
 ) {
     val context = LocalContext.current
@@ -203,6 +214,7 @@ fun PdfView(
                 renderer = rendererState.renderer!!,
                 pageIndex = index,
                 photoRects = photoLayouts.filter { it.pageIndex == index },
+                isInSwapMode = isInSwapMode,
                 onPhotoClick = onPhotoClick
             )
             if (index < rendererState.pageCount - 1) {
@@ -221,6 +233,7 @@ private fun PdfPage(
     renderer: PdfRenderer,
     pageIndex: Int,
     photoRects: List<PhotoRect>,
+    isInSwapMode: Boolean,
     onPhotoClick: (PhotoRect) -> Unit
 ) {
     val density = LocalDensity.current.density
@@ -251,32 +264,51 @@ private fun PdfPage(
     } else {
         bitmap?.let {
             Box(modifier = Modifier.fillMaxWidth()) {
-                ZoomableImage(
-                    bitmap = it.asImageBitmap(),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color.White)
-                )
-
-                // Overlays for clickable photos - DEBUGGING
-                val imageWidth = with(LocalDensity.current) { it.width.toDp() }
-                val scaleFactor = imageWidth / (renderer.openPage(pageIndex).use { p -> p.width.dp })
-
-                photoRects.forEach { photoRect ->
-                    Box(
+                if (isInSwapMode) {
+                    Image(
+                        bitmap = it.asImageBitmap(),
+                        contentDescription = "PDF Page",
                         modifier = Modifier
-                            .offset(
-                                x = (photoRect.rect.left.dp * scaleFactor),
-                                y = (photoRect.rect.top.dp * scaleFactor)
-                            )
-                            .size(
-                                width = (photoRect.rect.width().dp * scaleFactor),
-                                height = (photoRect.rect.height().dp * scaleFactor)
-                            )
-                            .background(Color.Red.copy(alpha = 0.5f))
-                            .border(2.dp, Color.Blue)
-                            .clickable { onPhotoClick(photoRect) }
+                            .fillMaxWidth()
+                            .background(Color.White)
                     )
+                } else {
+                    ZoomableImage(
+                        bitmap = it.asImageBitmap(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.White)
+                    )
+                }
+
+                if (isInSwapMode) {
+                    val imageWidth = with(LocalDensity.current) { it.width.toDp() }
+                    val scaleFactor = imageWidth / (renderer.openPage(pageIndex).use { p -> p.width.dp })
+
+                    photoRects.forEach { photoRect ->
+                        Box(
+                            modifier = Modifier
+                                .offset(
+                                    x = (photoRect.rect.left.dp * scaleFactor),
+                                    y = (photoRect.rect.top.dp * scaleFactor)
+                                )
+                                .size(
+                                    width = (photoRect.rect.width().dp * scaleFactor),
+                                    height = (photoRect.rect.height().dp * scaleFactor)
+                                )
+                        ) {
+                            IconButton(
+                                onClick = { onPhotoClick(photoRect) },
+                                modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).background(Color.Black.copy(alpha = 0.5f), shape = CircleShape)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.SwapHoriz,
+                                    contentDescription = "Intercambiar foto",
+                                    tint = Color.White
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
