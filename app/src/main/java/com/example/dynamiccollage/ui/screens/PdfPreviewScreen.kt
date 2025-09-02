@@ -29,6 +29,7 @@ import com.example.dynamiccollage.data.model.PhotoRect
 import com.example.dynamiccollage.ui.components.SwapPhotoDialog
 import com.example.dynamiccollage.ui.components.ZoomableImage
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
+import com.example.dynamiccollage.viewmodel.ProjectViewModel.PdfGenerationState
 import java.io.File
 
 // Data class to hold the state for the PDF renderer.
@@ -54,7 +55,7 @@ fun PdfPreviewScreen(
     val allPhotos by remember { derivedStateOf { projectViewModel.getAllImageUris() } }
 
     LaunchedEffect(pdfGenerationState) {
-        if (pdfGenerationState is ProjectViewModel.PdfGenerationState.Success) {
+        if (pdfGenerationState is PdfGenerationState.Success) {
             photoLayouts = pdfGenerationState.result.photoLayouts
         }
     }
