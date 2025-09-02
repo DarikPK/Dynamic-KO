@@ -34,6 +34,20 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
 
+sealed class SaveState {
+    object Idle : SaveState()
+    data class RequiresConfirmation(val sizeInBytes: Long) : SaveState()
+    object Success : SaveState()
+    data class Error(val message: String) : SaveState()
+}
+
+sealed class PdfGenerationState {
+    object Idle : PdfGenerationState()
+    object Loading : PdfGenerationState()
+    data class Success(val result: PdfGenerationResult) : PdfGenerationState()
+    data class Error(val message: String) : PdfGenerationState()
+}
+
 class ProjectViewModel : ViewModel() {
 
     private val _currentCoverConfig = MutableStateFlow(CoverPageConfig())
@@ -53,6 +67,25 @@ class ProjectViewModel : ViewModel() {
 
     private val _managerSelectedUri = MutableStateFlow<String?>(null)
     val managerSelectedUri: StateFlow<String?> = _managerSelectedUri.asStateFlow()
+
+    private val _saveState = MutableStateFlow<SaveState>(SaveState.Idle)
+    val saveState: StateFlow<SaveState> = _saveState.asStateFlow()
+
+    private val _pdfGenerationState = MutableStateFlow<PdfGenerationState>(PdfGenerationState.Idle)
+    val pdfGenerationState: StateFlow<PdfGenerationState> = _pdfGenerationState.asStateFlow()
+
+    private val _pdfSize = MutableStateFlow(0L)
+    val pdfSize: StateFlow<Long> = _pdfSize.asStateFlow()
+
+    private val _pdfSizeMode = MutableStateFlow(1)
+    val pdfSizeMode: StateFlow<Int> = _pdfSizeMode.asStateFlow()
+
+    private val _shareablePdfUri = MutableStateFlow<Uri?>(null)
+    val shareablePdfUri: StateFlow<Uri?> = _shareablePdfUri.asStateFlow()
+
+    private val gson = Gson()
+    private val projectFileName = "last_project.json"
+
 
     fun setManagerSelectedUri(uri: String?) {
         _managerSelectedUri.value = uri
@@ -200,32 +233,19 @@ class ProjectViewModel : ViewModel() {
 
     fun resetProject(context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
-            // Delete images directory
             val imagesDir = File(context.applicationContext.filesDir, "images")
             if (imagesDir.exists()) {
                 imagesDir.deleteRecursively()
             }
-            // Delete saved project file
             val projectFile = File(context.applicationContext.filesDir, projectFileName)
             if (projectFile.exists()) {
                 projectFile.delete()
             }
         }
-        // Reset in-memory state
         _currentCoverConfig.value = CoverPageConfig()
         _currentPageGroups.value = emptyList()
         _sunatData.value = null
     }
-
-    // --- Generación de PDF ---
-    private val _pdfGenerationState = MutableStateFlow<PdfGenerationState>(PdfGenerationState.Idle)
-    val pdfGenerationState: StateFlow<PdfGenerationState> = _pdfGenerationState.asStateFlow()
-
-    private val _pdfSize = MutableStateFlow(0L)
-    val pdfSize: StateFlow<Long> = _pdfSize.asStateFlow()
-
-    private val _pdfSizeMode = MutableStateFlow(1)
-    val pdfSizeMode: StateFlow<Int> = _pdfSizeMode.asStateFlow()
 
     fun setPdfSizeMode(mode: Int) {
         _pdfSizeMode.value = mode
@@ -255,15 +275,12 @@ class ProjectViewModel : ViewModel() {
         }
 
         viewModelScope.launch {
-            Log.d("ProjectViewModel", "generatePdf: Iniciando...")
             _pdfGenerationState.value = PdfGenerationState.Loading
             val generationResult = withContext(Dispatchers.IO) {
                 val generatedPages = com.example.dynamiccollage.utils.PdfContentManager.groupImagesForPdf(
                     context,
                     _currentPageGroups.value
                 )
-
-                Log.d("ProjectViewModel", "generatePdf: En el hilo de IO, llamando a PdfGenerator.")
                 PdfGenerator.generate(
                     context = context,
                     coverConfig = _currentCoverConfig.value,
@@ -273,11 +290,9 @@ class ProjectViewModel : ViewModel() {
                 )
             }
             if (generationResult != null) {
-                Log.d("ProjectViewModel", "generatePdf: Éxito. Archivo: ${generationResult.file.absolutePath}")
                 _pdfSize.value = generationResult.file.length()
                 _pdfGenerationState.value = PdfGenerationState.Success(generationResult)
             } else {
-                Log.e("ProjectViewModel", "generatePdf: Fallo. `generationResult` es nulo.")
                 _pdfGenerationState.value = PdfGenerationState.Error("No se pudo generar el PDF.")
             }
         }
@@ -286,10 +301,6 @@ class ProjectViewModel : ViewModel() {
     fun resetPdfGenerationState() {
         _pdfGenerationState.value = PdfGenerationState.Idle
     }
-
-    // --- Lógica para Compartir PDF ---
-    private val _shareablePdfUri = MutableStateFlow<Uri?>(null)
-    val shareablePdfUri: StateFlow<Uri?> = _shareablePdfUri.asStateFlow()
 
     fun createShareableUriForFile(context: Context, file: File) {
         try {
@@ -399,14 +410,6 @@ class ProjectViewModel : ViewModel() {
         }
     }
 
-
-    // --- Lógica de Guardado y Carga de Proyecto ---
-    private val _saveState = MutableStateFlow<SaveState>(SaveState.Idle)
-    val saveState: StateFlow<SaveState> = _saveState.asStateFlow()
-
-    private val gson = Gson()
-    private val projectFileName = "last_project.json"
-
     fun saveProject(context: Context) {
         viewModelScope.launch {
             val serializableState = SerializableProjectState(
@@ -459,38 +462,30 @@ class ProjectViewModel : ViewModel() {
     fun loadProject(context: Context) {
         viewModelScope.launch {
             try {
-                Log.d("ProjectViewModel", "loadProject: Attempting to load project...")
                 val file = File(context.applicationContext.filesDir, projectFileName)
 
                 if (!file.exists()) {
-                    Log.d("ProjectViewModel", "loadProject: No project file found. Starting fresh.")
                     return@launch
                 }
 
-                Log.d("ProjectViewModel", "loadProject: Project file exists. Reading...")
                 val jsonString = withContext(Dispatchers.IO) {
                     try {
                         context.applicationContext.openFileInput(projectFileName).bufferedReader().use { it.readText() }
                     } catch (e: Exception) {
-                        Log.e("ProjectViewModel", "loadProject: Error reading file.", e)
                         null
                     }
                 }
 
                 if (jsonString != null) {
-                    Log.d("ProjectViewModel", "loadProject: File read success. Parsing JSON...")
                     val serializableState = gson.fromJson(jsonString, SerializableProjectState::class.java)
-                    Log.d("ProjectViewModel", "loadProject: JSON parsing success. Mapping to domain...")
                     val projectState = serializableState.toDomain()
                     _currentCoverConfig.value = projectState.coverConfig
                     _currentPageGroups.value = projectState.pageGroups
                     _sunatData.value = projectState.sunatData
                     _themeName.value = projectState.themeName
                     _imageEffectSettings.value = projectState.imageEffectSettings
-                    Log.d("ProjectViewModel", "loadProject: Project loaded and state restored successfully.")
                 }
             } catch (t: Throwable) {
-                Log.e("ProjectViewModel", "loadProject: A critical error occurred during project load. Starting fresh.", t)
                 _saveState.value = SaveState.Error("Fallo al cargar el proyecto guardado: ${t.javaClass.simpleName}")
             }
         }
@@ -499,18 +494,4 @@ class ProjectViewModel : ViewModel() {
     fun resetSaveState() {
         _saveState.value = SaveState.Idle
     }
-}
-
-sealed class SaveState {
-    object Idle : SaveState()
-    data class RequiresConfirmation(val sizeInBytes: Long) : SaveState()
-    object Success : SaveState()
-    data class Error(val message: String) : SaveState()
-}
-
-sealed class PdfGenerationState {
-    object Idle : PdfGenerationState()
-    object Loading : PdfGenerationState()
-    data class Success(val result: PdfGenerationResult) : PdfGenerationState()
-    data class Error(val message: String) : PdfGenerationState()
 }
