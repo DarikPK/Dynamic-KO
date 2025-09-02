@@ -8,9 +8,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -270,8 +272,18 @@ private fun PdfPage(
                                 width = (photoRect.rect.width().dp * scaleFactor),
                                 height = (photoRect.rect.height().dp * scaleFactor)
                             )
-                            .clickable { onPhotoClick(photoRect) }
-                    )
+                    ) {
+                        IconButton(
+                            onClick = { onPhotoClick(photoRect) },
+                            modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).background(Color.Black.copy(alpha = 0.5f), shape = CircleShape)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.SwapHoriz,
+                                contentDescription = "Intercambiar foto",
+                                tint = Color.White
+                            )
+                        }
+                    }
                 }
             }
         }
