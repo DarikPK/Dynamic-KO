@@ -24,7 +24,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
 
-// Top-level sealed classes as per user's latest instruction
 sealed class SaveState {
     object Idle : SaveState()
     data class RequiresConfirmation(val sizeInBytes: Long) : SaveState()

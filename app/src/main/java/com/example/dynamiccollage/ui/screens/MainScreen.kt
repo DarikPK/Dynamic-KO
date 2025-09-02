@@ -45,9 +45,9 @@ import androidx.navigation.compose.rememberNavController
 import com.example.dynamiccollage.R
 import com.example.dynamiccollage.ui.navigation.Screen
 import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
-import com.example.dynamiccollage.viewmodel.PdfGenerationState
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 import com.example.dynamiccollage.viewmodel.SaveState
+import com.example.dynamiccollage.viewmodel.PdfGenerationState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,12 +58,10 @@ fun MainScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    // Cargar el proyecto una sola vez cuando el composable entra en la composición
     LaunchedEffect(Unit) {
         projectViewModel.loadProject(context)
     }
 
-    // Guardar el proyecto automáticamente cuando la app se va a segundo plano
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_STOP) {
@@ -81,22 +79,22 @@ fun MainScreen(
     val shareablePdfUri by projectViewModel.shareablePdfUri.collectAsState()
     val saveState by projectViewModel.saveState.collectAsState()
 
-    // Efecto para mostrar Toasts de guardado o errores
     LaunchedEffect(saveState) {
         when (val state = saveState) {
             is SaveState.Success -> {
-                // El guardado exitoso ahora es silencioso.
                 projectViewModel.resetSaveState()
             }
             is SaveState.Error -> {
                 Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
                 projectViewModel.resetSaveState()
             }
-            else -> { /* No-op para Idle y RequiresConfirmation */ }
+            is SaveState.RequiresConfirmation -> {
+                // Handled by the dialog below
+            }
+            is SaveState.Idle -> { /* No-op */ }
         }
     }
 
-    // Diálogo de confirmación para archivos grandes
     if (saveState is SaveState.RequiresConfirmation) {
         val sizeInMb = "%.2f".format((saveState as SaveState.RequiresConfirmation).sizeInBytes / (1024.0 * 1024.0))
         AlertDialog(
@@ -118,8 +116,6 @@ fun MainScreen(
         )
     }
 
-
-    // Efecto para navegar cuando el PDF está listo para previsualizar
     LaunchedEffect(pdfGenerationState) {
         when (val state = pdfGenerationState) {
             is PdfGenerationState.Success -> {
@@ -131,11 +127,10 @@ fun MainScreen(
                 Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
                 projectViewModel.resetPdfGenerationState()
             }
-            else -> { /* No-op para Idle y Loading */ }
+            else -> { /* No-op */ }
         }
     }
 
-    // Efecto para lanzar el selector de compartir cuando el URI está listo
     LaunchedEffect(shareablePdfUri) {
         shareablePdfUri?.let { uri ->
             val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
@@ -162,7 +157,6 @@ fun MainScreen(
     if (pdfGenerationState is PdfGenerationState.Loading) {
         LoadingDialog(message = "Generando PDF...")
     }
-
 
     Scaffold(
         topBar = {

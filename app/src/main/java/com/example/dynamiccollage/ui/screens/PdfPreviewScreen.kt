@@ -27,7 +27,7 @@ import com.example.dynamiccollage.data.model.PhotoRect
 import com.example.dynamiccollage.ui.components.SwapPhotoDialog
 import com.example.dynamiccollage.ui.components.ZoomableImage
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
-import com.example.dynamiccollage.viewmodel.ProjectViewModel.PdfGenerationState
+import com.example.dynamiccollage.viewmodel.PdfGenerationState
 import java.io.File
 
 // Data class to hold the state for the PDF renderer.
