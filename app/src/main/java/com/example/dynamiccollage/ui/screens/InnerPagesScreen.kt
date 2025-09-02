@@ -45,10 +45,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -61,6 +65,8 @@ import com.example.dynamiccollage.ui.components.ConfirmationDialog
 import com.example.dynamiccollage.ui.components.CreateEditGroupDialog
 import com.example.dynamiccollage.ui.components.PageGroupItem
 import com.example.dynamiccollage.ui.components.SettingsDialog
+import com.example.dynamiccollage.ui.components.SlideState
+import com.example.dynamiccollage.ui.components.dragToReorder
 import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
 import com.example.dynamiccollage.viewmodel.InnerPagesViewModel
 import com.example.dynamiccollage.viewmodel.InnerPagesViewModelFactory
@@ -80,6 +86,12 @@ fun InnerPagesScreen(
     val groupToDelete by innerPagesViewModel.showDeleteGroupDialog.collectAsState()
     var showSettingsDialog by remember { mutableStateOf(false) }
     val imagesToDelete by innerPagesViewModel.showDeleteImagesDialog.collectAsState()
+
+    // Drag and drop state
+    val slideState = remember { mutableStateMapOf<String, SlideState>() }
+    var currentlyDraggedItem by remember { mutableStateOf<PageGroup?>(null) }
+    val localDensity = LocalDensity.current
+    val itemHeightPx = with(localDensity) { 200.dp.toPx() }.toInt() // Estimate for item height
 
     var showPermissionRationaleDialog by remember { mutableStateOf(false) }
     var showPermissionDeniedDialog by remember { mutableStateOf(false) }
@@ -280,8 +292,30 @@ fun InnerPagesScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(pageGroups, key = { group -> group.id }) { pageGroup ->
+                        val isDragged = currentlyDraggedItem?.id == pageGroup.id
+                        val elevation by animateDpAsState(if (isDragged) 8.dp else 0.dp)
+
                         PageGroupItem(
+                            modifier = Modifier
+                                .shadow(elevation)
+                                .dragToReorder(
+                                    item = pageGroup,
+                                    itemList = pageGroups,
+                                    itemHeight = itemHeightPx,
+                                    updateSlideState = { item, state ->
+                                        slideState[item.id] = state
+                                    },
+                                    onStartDrag = { index ->
+                                        currentlyDraggedItem = pageGroups[index]
+                                    },
+                                    onStopDrag = { from, to ->
+                                        innerPagesViewModel.movePageGroup(context, from, to)
+                                        slideState.clear()
+                                        currentlyDraggedItem = null
+                                    }
+                                ),
                             pageGroup = pageGroup,
+                            slideState = slideState[pageGroup.id] ?: SlideState.NONE,
                             onAddImagesClicked = { groupId ->
                                 requestPermissionOrLaunchPicker(groupId)
                             },

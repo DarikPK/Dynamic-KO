@@ -66,6 +66,19 @@ class ProjectViewModel : ViewModel() {
         saveProject(context)
     }
 
+    fun movePageGroup(context: Context, from: Int, to: Int) {
+        _currentPageGroups.update { currentList ->
+            if (from < 0 || from >= currentList.size || to < 0 || to >= currentList.size) {
+                return@update currentList // Invalid indices, return original list
+            }
+            val mutableList = currentList.toMutableList()
+            val movedItem = mutableList.removeAt(from)
+            mutableList.add(to, movedItem)
+            mutableList.toList()
+        }
+        saveProject(context)
+    }
+
     fun updateImageRotation(context: Context, uri: String, degrees: Float) {
         _imageEffectSettings.update { currentMap ->
             val currentSettings = currentMap[uri] ?: ImageEffectSettings()
