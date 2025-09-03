@@ -66,6 +66,63 @@ class ProjectViewModel : ViewModel() {
         saveProject(context)
     }
 
+    fun swapPhotos(context: Context, uri1: String, uri2: String) {
+        val coverUri = _currentCoverConfig.value.mainImageUri
+
+        // Case 1: Swapping with cover photo
+        if (uri1 == coverUri || uri2 == coverUri) {
+            val otherUri = if (uri1 == coverUri) uri2 else uri1
+
+            // Find the group containing the other photo
+            val groupIndex = _currentPageGroups.value.indexOfFirst { it.imageUris.contains(otherUri) }
+            if (groupIndex != -1) {
+                val group = _currentPageGroups.value[groupIndex]
+                val imageIndex = group.imageUris.indexOf(otherUri)
+
+                // Update the PageGroup
+                val newImageUris = group.imageUris.toMutableList()
+                newImageUris[imageIndex] = coverUri!! // The new URI for the group is the old cover URI
+
+                _currentPageGroups.update { list ->
+                    val mutableList = list.toMutableList()
+                    mutableList[groupIndex] = group.copy(imageUris = newImageUris)
+                    mutableList.toList()
+                }
+
+                // Update the CoverPageConfig
+                _currentCoverConfig.update { it.copy(mainImageUri = otherUri) }
+            }
+        } else {
+            // Case 2: Swapping between two PageGroups (existing logic)
+            _currentPageGroups.update { currentList ->
+                val list = currentList.toMutableList()
+                val groupIndex1 = list.indexOfFirst { it.imageUris.contains(uri1) }
+                val groupIndex2 = list.indexOfFirst { it.imageUris.contains(uri2) }
+                if (groupIndex1 == -1 || groupIndex2 == -1) return@update list
+
+                val group1 = list[groupIndex1]
+                val group2 = list[groupIndex2]
+                val imageIndex1 = group1.imageUris.indexOf(uri1)
+                val imageIndex2 = group2.imageUris.indexOf(uri2)
+                val newImages1 = group1.imageUris.toMutableList()
+                val newImages2 = group2.imageUris.toMutableList()
+
+                if (groupIndex1 == groupIndex2) {
+                    newImages1[imageIndex1] = uri2
+                    newImages1[imageIndex2] = uri1
+                    list[groupIndex1] = group1.copy(imageUris = newImages1)
+                } else {
+                    newImages1[imageIndex1] = uri2
+                    newImages2[imageIndex2] = uri1
+                    list[groupIndex1] = group1.copy(imageUris = newImages1)
+                    list[groupIndex2] = group2.copy(imageUris = newImages2)
+                }
+                list.toList()
+            }
+        }
+        saveProject(context)
+    }
+
     fun updateImageRotation(context: Context, uri: String, degrees: Float) {
         _imageEffectSettings.update { currentMap ->
             val currentSettings = currentMap[uri] ?: ImageEffectSettings()
