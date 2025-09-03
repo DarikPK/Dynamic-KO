@@ -4,13 +4,9 @@ import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Share
@@ -27,11 +23,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.dynamiccollage.R
-import com.example.dynamiccollage.data.model.PhotoRect
-import com.example.dynamiccollage.ui.components.SwapPhotoDialog
 import com.example.dynamiccollage.ui.components.ZoomableImage
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
-import com.example.dynamiccollage.viewmodel.PdfGenerationState
 import java.io.File
 
 // Data class to hold the state for the PDF renderer.
@@ -49,39 +42,7 @@ fun PdfPreviewScreen(
     projectViewModel: ProjectViewModel
 ) {
     val context = LocalContext.current
-    val initialFile = pdfPath?.let { File(it) }
-    val pdfGenerationState by projectViewModel.pdfGenerationState.collectAsState()
-
-    var currentFile by remember { mutableStateOf(initialFile) }
-    var photoLayouts by remember { mutableStateOf<List<PhotoRect>>(emptyList()) }
-    var showSwapDialog by remember { mutableStateOf(false) }
-    var firstPhotoToSwap by remember { mutableStateOf<PhotoRect?>(null) }
-    val allPhotos by remember { derivedStateOf { projectViewModel.getAllImageUris() } }
-    var isInSwapMode by remember { mutableStateOf(false) }
-
-    LaunchedEffect(pdfGenerationState) {
-        when (val state = pdfGenerationState) {
-            is PdfGenerationState.Success -> {
-                currentFile = state.file
-                photoLayouts = state.photoLayouts
-            }
-            else -> { /* Do nothing for other states */ }
-        }
-    }
-
-    if (showSwapDialog && firstPhotoToSwap != null) {
-        SwapPhotoDialog(
-            onDismissRequest = { showSwapDialog = false },
-            allPhotos = allPhotos,
-            firstPhotoUri = firstPhotoToSwap!!.uri,
-            onPhotoSelected = { secondPhotoUri ->
-                projectViewModel.swapPhotos(context, firstPhotoToSwap!!.uri, secondPhotoUri)
-                projectViewModel.generatePdf(context, "preview_regenerated")
-                showSwapDialog = false
-            }
-        )
-    }
-
+    val file = pdfPath?.let { File(it) }
     val shareablePdfUri by projectViewModel.shareablePdfUri.collectAsState()
 
     LaunchedEffect(shareablePdfUri) {
@@ -109,16 +70,15 @@ fun PdfPreviewScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { isInSwapMode = !isInSwapMode }) {
+                    IconButton(onClick = { navController.navigate(com.example.dynamiccollage.ui.navigation.Screen.PhotoSwap.route) }) {
                         Icon(
                             imageVector = Icons.Default.SwapHoriz,
-                            contentDescription = "Activar modo intercambio",
-                            tint = if (isInSwapMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                            contentDescription = "Intercambiar Fotos"
                         )
                     }
-                    currentFile?.let {
+                    if (file != null) {
                         IconButton(onClick = {
-                            projectViewModel.createShareableUriForFile(context, it)
+                            projectViewModel.createShareableUriForFile(context, file)
                         }) {
                             Icon(
                                 imageVector = Icons.Filled.Share,
@@ -140,16 +100,8 @@ fun PdfPreviewScreen(
                     style = MaterialTheme.typography.titleMedium
                 )
             }
-            if (currentFile != null && currentFile!!.exists()) {
-                PdfView(
-                    uri = Uri.fromFile(currentFile!!),
-                    photoLayouts = photoLayouts,
-                    isInSwapMode = isInSwapMode,
-                    onPhotoClick = { photoRect ->
-                        firstPhotoToSwap = photoRect
-                        showSwapDialog = true
-                    }
-                )
+            if (file != null && file.exists()) {
+                PdfView(uri = Uri.fromFile(file))
             } else {
                 Box(
                     modifier = Modifier
@@ -166,13 +118,7 @@ fun PdfPreviewScreen(
 
 
 @Composable
-fun PdfView(
-    modifier: Modifier = Modifier,
-    uri: Uri,
-    photoLayouts: List<PhotoRect>,
-    isInSwapMode: Boolean,
-    onPhotoClick: (PhotoRect) -> Unit
-) {
+fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
     val context = LocalContext.current
 
     val rendererState by remember(uri) {
@@ -212,10 +158,7 @@ fun PdfView(
         items(count = rendererState.pageCount) { index ->
             PdfPage(
                 renderer = rendererState.renderer!!,
-                pageIndex = index,
-                photoRects = photoLayouts.filter { it.pageIndex == index },
-                isInSwapMode = isInSwapMode,
-                onPhotoClick = onPhotoClick
+                pageIndex = index
             )
             if (index < rendererState.pageCount - 1) {
                 Divider(
@@ -231,10 +174,7 @@ fun PdfView(
 @Composable
 private fun PdfPage(
     renderer: PdfRenderer,
-    pageIndex: Int,
-    photoRects: List<PhotoRect>,
-    isInSwapMode: Boolean,
-    onPhotoClick: (PhotoRect) -> Unit
+    pageIndex: Int
 ) {
     val density = LocalDensity.current.density
     var bitmap by remember(renderer, pageIndex) { mutableStateOf<Bitmap?>(null) }
@@ -263,54 +203,12 @@ private fun PdfPage(
         }
     } else {
         bitmap?.let {
-            Box(modifier = Modifier.fillMaxWidth()) {
-                if (isInSwapMode) {
-                    Image(
-                        bitmap = it.asImageBitmap(),
-                        contentDescription = "PDF Page",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color.White)
-                    )
-                } else {
-                    ZoomableImage(
-                        bitmap = it.asImageBitmap(),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color.White)
-                    )
-                }
-
-                if (isInSwapMode) {
-                    val imageWidth = with(LocalDensity.current) { it.width.toDp() }
-                    val scaleFactor = imageWidth / (renderer.openPage(pageIndex).use { p -> p.width.dp })
-
-                    photoRects.forEach { photoRect ->
-                        Box(
-                            modifier = Modifier
-                                .offset(
-                                    x = (photoRect.rect.left.dp * scaleFactor),
-                                    y = (photoRect.rect.top.dp * scaleFactor)
-                                )
-                                .size(
-                                    width = (photoRect.rect.width().dp * scaleFactor),
-                                    height = (photoRect.rect.height().dp * scaleFactor)
-                                )
-                        ) {
-                            IconButton(
-                                onClick = { onPhotoClick(photoRect) },
-                                modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).background(Color.Black.copy(alpha = 0.5f), shape = CircleShape)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.SwapHoriz,
-                                    contentDescription = "Intercambiar foto",
-                                    tint = Color.White
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+            ZoomableImage(
+                bitmap = it.asImageBitmap(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White)
+            )
         }
     }
 }

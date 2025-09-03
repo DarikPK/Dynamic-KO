@@ -72,10 +72,9 @@ object PdfGenerator {
         generatedPages: List<GeneratedPage>,
         fileName: String,
         imageEffectSettings: Map<String, ImageEffectSettings>
-    ): Pair<File, List<PhotoRect>>? {
+    ): File? {
         val pdfDocument = PdfDocument()
         val uncompressedPdfStream = ByteArrayOutputStream()
-        val allPhotoLayouts = mutableListOf<PhotoRect>()
 
         try {
             val quality = coverConfig.quality
@@ -86,11 +85,9 @@ object PdfGenerator {
                     coverConfig.mainImageUri != null
 
             if (shouldDrawCover) {
-                val coverLayouts = drawCoverPage(pdfDocument, context, coverConfig, quality, imageEffectSettings)
-                allPhotoLayouts.addAll(coverLayouts)
+                drawCoverPage(pdfDocument, context, coverConfig, quality, imageEffectSettings)
             }
-            val innerPagesLayouts = drawInnerPages(pdfDocument, context, generatedPages, coverConfig, if (shouldDrawCover) 2 else 1, quality, imageEffectSettings)
-            allPhotoLayouts.addAll(innerPagesLayouts)
+            drawInnerPages(pdfDocument, context, generatedPages, coverConfig, if (shouldDrawCover) 2 else 1, quality, imageEffectSettings)
 
             pdfDocument.writeTo(uncompressedPdfStream)
             pdfDocument.close()
@@ -104,7 +101,7 @@ object PdfGenerator {
             pdDocument.save(pdfFile)
             pdDocument.close()
 
-            return Pair(pdfFile, allPhotoLayouts)
+            return pdfFile
         } catch (e: Exception) {
             Log.e("PdfGenerator", "Error al generar PDF", e)
             pdfDocument.close()
@@ -112,7 +109,7 @@ object PdfGenerator {
         }
     }
 
-    private fun drawCoverPage(pdfDocument: PdfDocument, context: Context, config: CoverPageConfig, quality: Int, imageEffectSettings: Map<String, ImageEffectSettings>): List<PhotoRect> {
+    private fun drawCoverPage(pdfDocument: PdfDocument, context: Context, config: CoverPageConfig, quality: Int, imageEffectSettings: Map<String, ImageEffectSettings>) {
         val pageWidth = if (config.pageOrientation == PageOrientation.Vertical) A4_WIDTH else A4_HEIGHT
         val pageHeight = if (config.pageOrientation == PageOrientation.Vertical) A4_HEIGHT else A4_WIDTH
         val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
@@ -123,13 +120,11 @@ object PdfGenerator {
             canvas.drawColor(color)
         }
 
-        val layouts = drawCoverPageContent(canvas, context, config, quality, pageWidth, pageHeight, imageEffectSettings)
+        drawCoverPageContent(canvas, context, config, quality, pageWidth, pageHeight, imageEffectSettings)
         pdfDocument.finishPage(page)
-        return layouts
     }
 
-    private fun drawCoverPageContent(canvas: Canvas, context: Context, config: CoverPageConfig, quality: Int, pageWidth: Int, pageHeight: Int, imageEffectSettings: Map<String, ImageEffectSettings>): List<PhotoRect> {
-        val photoLayouts = mutableListOf<PhotoRect>()
+    private fun drawCoverPageContent(canvas: Canvas, context: Context, config: CoverPageConfig, quality: Int, pageWidth: Int, pageHeight: Int, imageEffectSettings: Map<String, ImageEffectSettings>) {
         val marginTop = config.marginTop * CM_TO_POINTS
         val marginBottom = config.marginBottom * CM_TO_POINTS
         val marginLeft = config.marginLeft * CM_TO_POINTS
@@ -168,8 +163,7 @@ object PdfGenerator {
                                 }
 
                                 val borderSettings = config.imageBorderSettingsMap["cover"]
-                                val drawnRect = drawBitmapToCanvas(canvas, bitmap!!, paddedRect, ImageAlignment.CENTER, borderSettings)
-                                photoLayouts.add(PhotoRect(uri = uriString, pageIndex = 0, rect = drawnRect))
+                                drawBitmapToCanvas(canvas, bitmap!!, paddedRect, ImageAlignment.CENTER, borderSettings)
                                 it.recycle()
                             }
                         } catch (e: Exception) { e.printStackTrace() }
@@ -218,7 +212,6 @@ object PdfGenerator {
                 if (id == "address") { currentY += 5f } else if (!(id == "client" && nextId == "ruc")) { currentY += separationHeight }
             }
         }
-        return photoLayouts
     }
 
     private fun drawPageOnCanvas(
@@ -227,10 +220,8 @@ object PdfGenerator {
         pageData: GeneratedPage,
         coverConfig: CoverPageConfig,
         quality: Int,
-        imageEffectSettings: Map<String, ImageEffectSettings>,
-        pageIndex: Int
-    ): List<PhotoRect> {
-        val photoLayouts = mutableListOf<PhotoRect>()
+        imageEffectSettings: Map<String, ImageEffectSettings>
+    ) {
         var startY = 20f // Default top margin for images
 
         if (pageData.isFirstPageOfGroup && pageData.optionalTextStyle != null && pageData.optionalTextStyle.isVisible) {
@@ -276,8 +267,7 @@ object PdfGenerator {
                             rows == 2 -> if (index == 0) ImageAlignment.BOTTOM else ImageAlignment.TOP
                             else -> ImageAlignment.CENTER
                         }
-                        val drawnRect = drawBitmapToCanvas(canvas, bitmap!!, rect, alignment, borderSettings)
-                        photoLayouts.add(PhotoRect(uri = uriString, pageIndex = pageIndex, rect = drawnRect))
+                        drawBitmapToCanvas(canvas, bitmap!!, rect, alignment, borderSettings)
                         it.recycle()
                     }
                 } catch (e: Exception) {
@@ -285,7 +275,6 @@ object PdfGenerator {
                 }
             }
         }
-        return photoLayouts
     }
 
     private fun drawInnerPages(
@@ -296,8 +285,7 @@ object PdfGenerator {
         startPageNumber: Int,
         quality: Int,
         imageEffectSettings: Map<String, ImageEffectSettings>
-    ): List<PhotoRect> {
-        val allPhotoLayouts = mutableListOf<PhotoRect>()
+    ) {
         var pageNumber = startPageNumber
         generatedPages.forEach { pageData ->
             val pageWidth = if (pageData.orientation == PageOrientation.Vertical) A4_WIDTH else A4_HEIGHT
@@ -310,12 +298,10 @@ object PdfGenerator {
                 canvas.drawColor(color)
             }
 
-            val pageLayouts = drawPageOnCanvas(canvas, context, pageData, coverConfig, quality, imageEffectSettings, pageNumber - 1)
-            allPhotoLayouts.addAll(pageLayouts)
+            drawPageOnCanvas(canvas, context, pageData, coverConfig, quality, imageEffectSettings)
 
             pdfDocument.finishPage(page)
         }
-        return allPhotoLayouts
     }
 
     // ... (omitting getAndroidAlignment, drawRow, drawRowBackgroundAndBorders, createTextPaint, drawTextInRect, getRectsForPage for brevity)
@@ -327,7 +313,7 @@ object PdfGenerator {
     private fun getRectsForPage(pageWidth: Int, pageHeight: Int, startY: Float, cols: Int, rows: Int, spacing: Float): List<RectF> { val rects = mutableListOf<RectF>(); val totalSpacingX = spacing * (cols + 1); val totalSpacingY = spacing * (rows + 1); val cellWidth = (pageWidth - totalSpacingX) / cols; val availableHeight = pageHeight - startY; val cellHeight = (availableHeight - totalSpacingY) / rows; for (row in 0 until rows) { for (col in 0 until cols) { val left = totalSpacingX / (cols + 1) + col * (cellWidth + spacing); val top = startY + totalSpacingY / (rows + 1) + row * (cellHeight + spacing); val right = left + cellWidth; val bottom = top + cellHeight; rects.add(RectF(left, top, right, bottom)) } }; return rects }
 
 
-    private fun drawBitmapToCanvas(canvas: Canvas, bitmap: Bitmap, cellRect: RectF, alignment: ImageAlignment, borderSettings: ImageBorderSettings?): RectF {
+    private fun drawBitmapToCanvas(canvas: Canvas, bitmap: Bitmap, cellRect: RectF, alignment: ImageAlignment, borderSettings: ImageBorderSettings?) {
         val finalRect = getFinalBitmapRect(bitmap, cellRect, alignment)
 
         canvas.save()
@@ -358,7 +344,6 @@ object PdfGenerator {
         } finally {
             canvas.restore()
         }
-        return finalRect
     }
 
     private fun getFinalBitmapRect(bitmap: Bitmap, cellRect: RectF, alignment: ImageAlignment): RectF {

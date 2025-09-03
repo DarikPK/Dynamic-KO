@@ -34,7 +34,7 @@ sealed class SaveState {
 sealed class PdfGenerationState {
     object Idle : PdfGenerationState()
     object Loading : PdfGenerationState()
-    data class Success(val file: File, val photoLayouts: List<PhotoRect>) : PdfGenerationState()
+    data class Success(val file: File) : PdfGenerationState()
     data class Error(val message: String) : PdfGenerationState()
 }
 
@@ -246,7 +246,7 @@ class ProjectViewModel : ViewModel() {
         }
         viewModelScope.launch {
             _pdfGenerationState.value = PdfGenerationState.Loading
-            val generationResult = withContext(Dispatchers.IO) {
+            val generatedFile = withContext(Dispatchers.IO) {
                 val generatedPages = com.example.dynamiccollage.utils.PdfContentManager.groupImagesForPdf(
                     context,
                     _currentPageGroups.value
@@ -259,10 +259,9 @@ class ProjectViewModel : ViewModel() {
                     imageEffectSettings = _imageEffectSettings.value
                 )
             }
-            if (generationResult != null) {
-                val (file, layouts) = generationResult
-                _pdfSize.value = file.length()
-                _pdfGenerationState.value = PdfGenerationState.Success(file, layouts)
+            if (generatedFile != null) {
+                _pdfSize.value = generatedFile.length()
+                _pdfGenerationState.value = PdfGenerationState.Success(generatedFile)
             } else {
                 _pdfGenerationState.value = PdfGenerationState.Error("No se pudo generar el PDF.")
             }
