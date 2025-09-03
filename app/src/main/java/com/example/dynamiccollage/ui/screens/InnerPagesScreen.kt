@@ -19,7 +19,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.foundation.layout.Spacer
@@ -214,12 +214,6 @@ fun InnerPagesScreen(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 ),
                 actions = {
-                    IconButton(onClick = { innerPagesViewModel.onAddNewGroupClicked() }) {
-                        Icon(
-                            imageVector = Icons.Filled.Add,
-                            contentDescription = "Crear Grupo"
-                        )
-                    }
                     IconButton(onClick = { showSettingsDialog = true }) {
                         Icon(
                             imageVector = Icons.Filled.Settings,
@@ -238,6 +232,14 @@ fun InnerPagesScreen(
                 }
             )
         },
+        floatingActionButton = {
+            FloatingActionButton(onClick = { innerPagesViewModel.onAddNewGroupClicked() }) {
+                Icon(
+                    Icons.Filled.Add,
+                    contentDescription = stringResource(id = R.string.inner_pages_add_group_fab_description)
+                )
+            }
+        }
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -279,13 +281,9 @@ fun InnerPagesScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    itemsIndexed(pageGroups, key = { _, group -> group.id }) { index, pageGroup ->
+                    items(pageGroups, key = { group -> group.id }) { pageGroup ->
                         PageGroupItem(
                             pageGroup = pageGroup,
-                            isFirst = index == 0,
-                            isLast = index == pageGroups.lastIndex,
-                            onMoveUp = { innerPagesViewModel.movePageGroup(context, index, index - 1) },
-                            onMoveDown = { innerPagesViewModel.movePageGroup(context, index, index + 1) },
                             onAddImagesClicked = { groupId ->
                                 requestPermissionOrLaunchPicker(groupId)
                             },

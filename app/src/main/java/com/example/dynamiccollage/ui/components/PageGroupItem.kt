@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PhotoLibrary // Asegurar que esta importación es correcta o ajustar el icono
@@ -41,11 +39,7 @@ fun PageGroupItem(
     onEditGroupClicked: (PageGroup) -> Unit,
     onDeleteGroupClicked: (String) -> Unit,
     onDeleteImagesClicked: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    isFirst: Boolean,
-    isLast: Boolean,
-    onMoveUp: () -> Unit,
-    onMoveDown: () -> Unit
+    modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -129,13 +123,6 @@ fun PageGroupItem(
                     Text(stringResource(R.string.group_item_add_images_button))
                 }
                 Row {
-                    IconButton(onClick = onMoveUp, enabled = !isFirst) {
-                        Icon(Icons.Default.ArrowUpward, contentDescription = "Mover arriba")
-                    }
-                    IconButton(onClick = onMoveDown, enabled = !isLast) {
-                        Icon(Icons.Default.ArrowDownward, contentDescription = "Mover abajo")
-                    }
-
                     if (pageGroup.imageUris.isNotEmpty()) {
                         IconButton(onClick = { onDeleteImagesClicked(pageGroup.id) }) {
                             Icon(Icons.Filled.Delete, contentDescription = "Delete Loaded Images", tint = MaterialTheme.colorScheme.error)
@@ -183,10 +170,6 @@ fun PageGroupItemPreview() {
                 optionalTextStyle = com.example.dynamiccollage.data.model.TextStyleConfig(content="Texto opcional de ejemplo"),
                 imageUris = List(5) { "uri_placeholder" } // 5 de 6 fotos cargadas
             ),
-            isFirst = false,
-            isLast = false,
-            onMoveUp = {},
-            onMoveDown = {},
             onAddImagesClicked = {},
             onEditGroupClicked = {},
             onDeleteGroupClicked = {},
@@ -207,10 +190,6 @@ fun PageGroupItemUnnamedPreview() {
                 sheetCount = 1,
                 imageUris = List(1) { "uri_placeholder" } // Cuota cumplida
             ),
-            isFirst = true,
-            isLast = true,
-            onMoveUp = {},
-            onMoveDown = {},
             onAddImagesClicked = {},
             onEditGroupClicked = {},
             onDeleteGroupClicked = {},

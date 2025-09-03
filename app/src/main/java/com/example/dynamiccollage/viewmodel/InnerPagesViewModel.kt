@@ -198,10 +198,6 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
     fun saveProject(context: android.content.Context) {
         projectViewModel.saveProject(context)
     }
-
-    fun movePageGroup(context: android.content.Context, from: Int, to: Int) {
-        projectViewModel.movePageGroup(context, from, to)
-    }
 }
 
 // Factory para InnerPagesViewModel
