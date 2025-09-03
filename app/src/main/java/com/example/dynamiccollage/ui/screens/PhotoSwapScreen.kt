@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -132,6 +133,8 @@ fun PhotoSwapScreen(
                         },
                         enabled = hasUnsavedChanges && pdfGenerationState != PdfGenerationState.Loading
                     ) {
+                        Icon(Icons.Default.Save, contentDescription = "Guardar")
+                        Spacer(Modifier.width(8.dp))
                         Text("Guardar")
                     }
                 }
@@ -142,8 +145,6 @@ fun PhotoSwapScreen(
                 FloatingActionButton(onClick = {
                     projectViewModel.swapPhotos(context, firstSelection!!, secondSelection!!)
                     hasUnsavedChanges = true
-                    firstSelection = null
-                    secondSelection = null
                     swapCounter++
                 }) {
                     Icon(Icons.Default.Check, contentDescription = "Confirmar Intercambio")
