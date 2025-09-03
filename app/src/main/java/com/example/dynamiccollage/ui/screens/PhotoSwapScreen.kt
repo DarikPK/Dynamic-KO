@@ -7,10 +7,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -32,6 +34,7 @@ fun PhotoSwapScreen(
 ) {
     val context = LocalContext.current
     val allPhotos by remember { derivedStateOf { projectViewModel.getAllImageUris() } }
+    val coverPhotoUri by projectViewModel.currentCoverConfig.collectAsState()
     var firstSelection by remember { mutableStateOf<String?>(null) }
     var secondSelection by remember { mutableStateOf<String?>(null) }
 
@@ -56,6 +59,7 @@ fun PhotoSwapScreen(
             if (firstSelection != null && secondSelection != null) {
                 FloatingActionButton(onClick = {
                     projectViewModel.swapPhotos(context, firstSelection!!, secondSelection!!)
+                    projectViewModel.generatePdf(context, "swapped_preview")
                     navController.popBackStack()
                 }) {
                     Icon(Icons.Default.Check, contentDescription = "Confirmar Intercambio")
@@ -69,9 +73,15 @@ fun PhotoSwapScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(allPhotos, key = { it }) { uri ->
+            itemsIndexed(allPhotos, key = { _, uri -> uri }) { index, uri ->
                 val isSelected = uri == firstSelection || uri == secondSelection
-                val isCompatible = firstSelection == null || ImageUtils.getImageOrientation(context, uri) == firstPhotoOrientation
+                val isCover = uri == coverPhotoUri.mainImageUri
+                val isFirstSelectionCover = firstSelection == coverPhotoUri.mainImageUri
+
+                val isCompatible = firstSelection == null ||
+                        isFirstSelectionCover ||
+                        isCover ||
+                        (ImageUtils.getImageOrientation(context, uri) == firstPhotoOrientation)
 
                 Box(
                     modifier = Modifier
@@ -88,11 +98,9 @@ fun PhotoSwapScreen(
                                 if (uri != firstSelection) {
                                     secondSelection = uri
                                 } else {
-                                    // Deselect if tapping the same image again
                                     firstSelection = null
                                 }
                             } else {
-                                // Both are selected, reset and start a new selection
                                 if (uri == firstSelection) {
                                     firstSelection = secondSelection
                                     secondSelection = null
@@ -108,8 +116,30 @@ fun PhotoSwapScreen(
                     AsyncImage(
                         model = Uri.parse(uri),
                         contentDescription = "Foto para intercambiar",
-                        contentScale = ContentScale.Crop
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
                     )
+                    Text(
+                        text = (index + 1).toString(),
+                        color = Color.White,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(4.dp)
+                            .background(Color.Black.copy(alpha = 0.5f), shape = CircleShape)
+                            .padding(4.dp)
+                    )
+                    if (isCover) {
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = "Foto de portada",
+                            tint = Color.Yellow,
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(4.dp)
+                                .background(Color.Black.copy(alpha = 0.5f), shape = CircleShape)
+                                .padding(4.dp)
+                        )
+                    }
                 }
             }
         }
