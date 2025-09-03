@@ -1,5 +1,6 @@
 package com.example.dynamiccollage.ui.screens
 
+
 import android.Manifest
 import android.app.Activity
 import android.content.Context
@@ -55,6 +56,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.dynamiccollage.R
+import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
 import com.example.dynamiccollage.ui.components.ConfirmationDialog
 import com.example.dynamiccollage.ui.components.CreateEditGroupDialog
 import com.example.dynamiccollage.ui.components.PageGroupItem
