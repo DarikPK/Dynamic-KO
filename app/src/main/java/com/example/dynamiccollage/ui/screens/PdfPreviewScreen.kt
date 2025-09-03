@@ -10,7 +10,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -70,12 +69,6 @@ fun PdfPreviewScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { navController.navigate(com.example.dynamiccollage.ui.navigation.Screen.PhotoSwap.route) }) {
-                        Icon(
-                            imageVector = Icons.Default.SwapHoriz,
-                            contentDescription = "Intercambiar Fotos"
-                        )
-                    }
                     if (file != null) {
                         IconButton(onClick = {
                             projectViewModel.createShareableUriForFile(context, file)

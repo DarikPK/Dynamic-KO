@@ -154,11 +154,5 @@ fun AppNavigation(
                 projectViewModel = projectViewModel
             )
         }
-        composable(Screen.PhotoSwap.route) {
-            PhotoSwapScreen(
-                navController = navController,
-                projectViewModel = projectViewModel
-            )
-        }
     }
 }
