@@ -1,5 +1,7 @@
 package com.example.dynamiccollage.ui.screens
 
+data class PhotoItem(val uri: String, val groupIndex: Int)
+
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -51,25 +53,29 @@ fun PhotoSwapScreen(
 
     val allPhotos by remember(pageGroups, coverConfig, swapCounter) {
         derivedStateOf {
-            val innerImages = pageGroups.flatMap { it.imageUris }
-            val all = mutableListOf<String>()
-            coverConfig.mainImageUri?.let { all.add(it) }
-            all.addAll(innerImages)
-            all
+            val photoItems = mutableListOf<PhotoItem>()
+            coverConfig.mainImageUri?.let { photoItems.add(PhotoItem(it, -1)) } // -1 for cover
+            pageGroups.forEachIndexed { index, group ->
+                group.imageUris.forEach { uri ->
+                    photoItems.add(PhotoItem(uri, index))
+                }
+            }
+            photoItems
         }
     }
 
-    var firstSelection by remember { mutableStateOf<String?>(null) }
-    var secondSelection by remember { mutableStateOf<String?>(null) }
+    var firstSelection by remember { mutableStateOf<PhotoItem?>(null) }
+    var secondSelection by remember { mutableStateOf<PhotoItem?>(null) }
     var hasUnsavedChanges by remember { mutableStateOf(false) }
     var showExitConfirmDialog by remember { mutableStateOf(false) }
     var isDeleteMode by remember { mutableStateOf(false) }
     var showDeleteConfirmDialogSingle by remember { mutableStateOf<String?>(null) }
+    var showIntergroupSwapConfirmDialog by remember { mutableStateOf(false) }
 
 
     val firstPhotoOrientation by remember(firstSelection) {
         derivedStateOf {
-            firstSelection?.let { ImageUtils.getImageOrientation(context, it) }
+            firstSelection?.let { ImageUtils.getImageOrientation(context, it.uri) }
         }
     }
 
@@ -132,6 +138,29 @@ fun PhotoSwapScreen(
         }
     }
 
+    if (showIntergroupSwapConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showIntergroupSwapConfirmDialog = false },
+            title = { Text("Confirmar Intercambio") },
+            text = { Text("Estás a punto de intercambiar fotos entre diferentes grupos. ¿Quieres continuar?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        projectViewModel.swapPhotos(context, firstSelection!!.uri, secondSelection!!.uri)
+                        hasUnsavedChanges = true
+                        swapCounter++
+                        firstSelection = null
+                        secondSelection = null
+                        showIntergroupSwapConfirmDialog = false
+                    }
+                ) { Text("Continuar") }
+            },
+            dismissButton = {
+                Button(onClick = { showIntergroupSwapConfirmDialog = false }) { Text("Cancelar") }
+            }
+        )
+    }
+
     if (showDeleteConfirmDialogSingle != null) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirmDialogSingle = null },
@@ -191,11 +220,15 @@ fun PhotoSwapScreen(
         floatingActionButton = {
             if (!isDeleteMode && firstSelection != null && secondSelection != null) {
                 FloatingActionButton(onClick = {
-                    projectViewModel.swapPhotos(context, firstSelection!!, secondSelection!!)
-                    hasUnsavedChanges = true
-                    swapCounter++
-                    firstSelection = null
-                    secondSelection = null
+                    if (firstSelection!!.groupIndex != secondSelection!!.groupIndex) {
+                        showIntergroupSwapConfirmDialog = true
+                    } else {
+                        projectViewModel.swapPhotos(context, firstSelection!!.uri, secondSelection!!.uri)
+                        hasUnsavedChanges = true
+                        swapCounter++
+                        firstSelection = null
+                        secondSelection = null
+                    }
                 }) {
                     Icon(Icons.Default.Check, contentDescription = "Confirmar Intercambio")
                 }
@@ -209,15 +242,15 @@ fun PhotoSwapScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                itemsIndexed(allPhotos, key = { _, uri -> uri }) { index, uri ->
-                    val isSelected = uri == firstSelection || uri == secondSelection
-                    val isCover = uri == coverConfig.mainImageUri
-                    val isFirstSelectionCover = firstSelection == coverConfig.mainImageUri
+                itemsIndexed(allPhotos, key = { _, item -> item.uri }) { index, item ->
+                    val isSelected = item.uri == firstSelection?.uri || item.uri == secondSelection?.uri
+                    val isCover = item.uri == coverConfig.mainImageUri
+                    val isFirstSelectionCover = firstSelection?.uri == coverConfig.mainImageUri
 
                     val isCompatible = firstSelection == null ||
                             isFirstSelectionCover ||
                             isCover ||
-                            (ImageUtils.getImageOrientation(context, uri) == firstPhotoOrientation)
+                            (ImageUtils.getImageOrientation(context, item.uri) == firstPhotoOrientation)
 
                     Box(
                         modifier = Modifier
@@ -229,24 +262,24 @@ fun PhotoSwapScreen(
                             .alpha(if (isDeleteMode || isCompatible) 1f else 0.4f)
                             .clickable(enabled = isDeleteMode || isCompatible) {
                                 if (isDeleteMode) {
-                                    showDeleteConfirmDialogSingle = uri
+                                    showDeleteConfirmDialogSingle = item.uri
                                 } else {
                                     if (firstSelection == null) {
-                                        firstSelection = uri
+                                        firstSelection = item
                                     } else if (secondSelection == null) {
-                                        if (uri != firstSelection) {
-                                            secondSelection = uri
+                                        if (item.uri != firstSelection?.uri) {
+                                            secondSelection = item
                                         } else {
                                             firstSelection = null
                                         }
                                     } else {
-                                        if (uri == firstSelection) {
+                                        if (item.uri == firstSelection?.uri) {
                                             firstSelection = secondSelection
                                             secondSelection = null
-                                        } else if (uri == secondSelection) {
+                                        } else if (item.uri == secondSelection?.uri) {
                                             secondSelection = null
                                         } else {
-                                            firstSelection = uri
+                                            firstSelection = item
                                             secondSelection = null
                                         }
                                     }
@@ -254,19 +287,10 @@ fun PhotoSwapScreen(
                             }
                     ) {
                         AsyncImage(
-                            model = Uri.parse(uri),
+                            model = Uri.parse(item.uri),
                             contentDescription = "Foto para intercambiar",
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
-                        )
-                        Text(
-                            text = (index + 1).toString(),
-                            color = Color.White,
-                            modifier = Modifier
-                                .align(Alignment.TopStart)
-                                .padding(4.dp)
-                                .background(Color.Black.copy(alpha = 0.5f), shape = CircleShape)
-                                .padding(4.dp)
                         )
                         if (isCover) {
                             Icon(
@@ -278,6 +302,16 @@ fun PhotoSwapScreen(
                                     .padding(4.dp)
                                     .background(Color.Black.copy(alpha = 0.5f), shape = CircleShape)
                                     .padding(4.dp)
+                            )
+                        } else {
+                            Text(
+                                text = (item.groupIndex + 1).toString(),
+                                color = Color.White,
+                                modifier = Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .padding(4.dp)
+                                    .background(Color.Black.copy(alpha = 0.5f), shape = CircleShape)
+                                    .padding(8.dp)
                             )
                         }
                         if (isDeleteMode) {
