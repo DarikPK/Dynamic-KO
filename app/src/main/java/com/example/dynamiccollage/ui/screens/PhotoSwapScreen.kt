@@ -65,7 +65,6 @@ fun PhotoSwapScreen(
     var showExitConfirmDialog by remember { mutableStateOf(false) }
     var isDeleteMode by remember { mutableStateOf(false) }
     var showDeleteConfirmDialogSingle by remember { mutableStateOf<String?>(null) }
-    var isEditModeActive by remember { mutableStateOf(false) }
 
 
     val firstPhotoOrientation by remember(firstSelection) {
@@ -164,24 +163,19 @@ fun PhotoSwapScreen(
                     }
                 },
                 actions = {
-                    if (isEditModeActive) {
-                        IconButton(onClick = { isDeleteMode = false }) {
-                            Icon(
-                                Icons.Default.SwapHoriz,
-                                contentDescription = "Modo Intercambio",
-                                tint = if (!isDeleteMode) MaterialTheme.colorScheme.primary else Color.Gray
-                            )
-                        }
-                        IconButton(onClick = { isDeleteMode = true }) {
-                            Icon(
-                                Icons.Default.Delete,
-                                contentDescription = "Modo Eliminar",
-                                tint = if (isDeleteMode) MaterialTheme.colorScheme.primary else Color.Gray
-                            )
-                        }
+                    IconButton(onClick = { isDeleteMode = false }) {
+                        Icon(
+                            Icons.Default.SwapHoriz,
+                            contentDescription = "Modo Intercambio",
+                            tint = if (!isDeleteMode) MaterialTheme.colorScheme.primary else Color.Gray
+                        )
                     }
-                    IconButton(onClick = { isEditModeActive = !isEditModeActive }) {
-                        Icon(Icons.Default.Edit, contentDescription = "Editar")
+                    IconButton(onClick = { isDeleteMode = true }) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Modo Eliminar",
+                            tint = if (isDeleteMode) MaterialTheme.colorScheme.primary else Color.Gray
+                        )
                     }
                     IconButton(
                         onClick = {
@@ -232,30 +226,28 @@ fun PhotoSwapScreen(
                                 width = if (isSelected) 4.dp else 0.dp,
                                 color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
                             )
-                            .alpha(if (!isEditModeActive || isDeleteMode || isCompatible) 1f else 0.4f)
-                            .clickable(enabled = isEditModeActive && (isDeleteMode || isCompatible)) {
-                                if (isEditModeActive) {
-                                    if (isDeleteMode) {
-                                        showDeleteConfirmDialogSingle = uri
-                                    } else {
-                                        if (firstSelection == null) {
-                                            firstSelection = uri
-                                        } else if (secondSelection == null) {
-                                            if (uri != firstSelection) {
-                                                secondSelection = uri
-                                            } else {
-                                                firstSelection = null
-                                            }
+                            .alpha(if (isDeleteMode || isCompatible) 1f else 0.4f)
+                            .clickable(enabled = isDeleteMode || isCompatible) {
+                                if (isDeleteMode) {
+                                    showDeleteConfirmDialogSingle = uri
+                                } else {
+                                    if (firstSelection == null) {
+                                        firstSelection = uri
+                                    } else if (secondSelection == null) {
+                                        if (uri != firstSelection) {
+                                            secondSelection = uri
                                         } else {
-                                            if (uri == firstSelection) {
-                                                firstSelection = secondSelection
-                                                secondSelection = null
-                                            } else if (uri == secondSelection) {
-                                                secondSelection = null
-                                            } else {
-                                                firstSelection = uri
-                                                secondSelection = null
-                                            }
+                                            firstSelection = null
+                                        }
+                                    } else {
+                                        if (uri == firstSelection) {
+                                            firstSelection = secondSelection
+                                            secondSelection = null
+                                        } else if (uri == secondSelection) {
+                                            secondSelection = null
+                                        } else {
+                                            firstSelection = uri
+                                            secondSelection = null
                                         }
                                     }
                                 }
