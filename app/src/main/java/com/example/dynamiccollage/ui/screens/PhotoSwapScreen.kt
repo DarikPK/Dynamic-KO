@@ -34,8 +34,8 @@ import com.example.dynamiccollage.ui.navigation.Screen
 import com.example.dynamiccollage.utils.ImageUtils
 import com.example.dynamiccollage.viewmodel.PdfGenerationState
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
-import com.example.dynamiccollage.viewmodel.PhotoArrangementItem
-import com.example.dynamiccollage.viewmodel.SheetType
+import com.example.dynamiccollage.data.model.PhotoArrangementItem
+import com.example.dynamiccollage.data.model.SheetType
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
