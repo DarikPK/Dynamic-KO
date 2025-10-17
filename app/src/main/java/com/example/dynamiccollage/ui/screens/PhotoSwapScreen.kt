@@ -36,7 +36,15 @@ import com.example.dynamiccollage.viewmodel.PdfGenerationState
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 import kotlinx.coroutines.launch
 
-data class PhotoItem(val uri: String, val groupIndex: Int)
+enum class SheetType {
+    SINGLE, DOUBLE
+}
+
+data class PhotoArrangementItem(
+    val uri: String,
+    var order: Int,
+    var sheetType: SheetType
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,28 +53,18 @@ fun PhotoSwapScreen(
     projectViewModel: ProjectViewModel
 ) {
     val context = LocalContext.current
-    val pageGroups by projectViewModel.currentPageGroups.collectAsState()
-    val coverConfig by projectViewModel.currentCoverConfig.collectAsState()
     val pdfGenerationState by projectViewModel.pdfGenerationState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    var swapCounter by remember { mutableStateOf(0) }
 
-    val allPhotos by remember(pageGroups, coverConfig, swapCounter) {
-        derivedStateOf {
-            val photoItems = mutableListOf<PhotoItem>()
-            coverConfig.mainImageUri?.let { photoItems.add(PhotoItem(it, -1)) } // -1 for cover
-            pageGroups.forEachIndexed { index, group ->
-                group.imageUris.forEach { uri ->
-                    photoItems.add(PhotoItem(uri, index))
-                }
-            }
-            photoItems
-        }
+    LaunchedEffect(Unit) {
+        projectViewModel.initializePhotoArrangement()
     }
 
-    var firstSelection by remember { mutableStateOf<PhotoItem?>(null) }
-    var secondSelection by remember { mutableStateOf<PhotoItem?>(null) }
+    val photoArrangement by projectViewModel.photoArrangement.collectAsState()
+
+    var firstSelection by remember { mutableStateOf<PhotoArrangementItem?>(null) }
+    var secondSelection by remember { mutableStateOf<PhotoArrangementItem?>(null) }
     var hasUnsavedChanges by remember { mutableStateOf(false) }
     var showExitConfirmDialog by remember { mutableStateOf(false) }
     var isDeleteMode by remember { mutableStateOf(false) }
@@ -144,13 +142,12 @@ fun PhotoSwapScreen(
         AlertDialog(
             onDismissRequest = { showIntergroupSwapConfirmDialog = false },
             title = { Text("Confirmar Intercambio") },
-            text = { Text("Estás a punto de intercambiar fotos entre diferentes grupos. ¿Quieres continuar?") },
+            text = { Text("Estás a punto de intercambiar fotos entre diferentes tipos de hoja. ¿Quieres continuar?") },
             confirmButton = {
                 Button(
                     onClick = {
-                        projectViewModel.swapPhotos(context, firstSelection!!.uri, secondSelection!!.uri)
+                        projectViewModel.swapPhotoOrder(firstSelection!!, secondSelection!!)
                         hasUnsavedChanges = true
-                        swapCounter++
                         firstSelection = null
                         secondSelection = null
                         showIntergroupSwapConfirmDialog = false
@@ -223,6 +220,7 @@ fun PhotoSwapScreen(
                     }
                     IconButton(
                         onClick = {
+                            projectViewModel.saveArrangement(context)
                             projectViewModel.generatePdf(context, "updated_project")
                         },
                         enabled = hasUnsavedChanges && pdfGenerationState != PdfGenerationState.Loading
@@ -233,14 +231,13 @@ fun PhotoSwapScreen(
             )
         },
         floatingActionButton = {
-            if (!isDeleteMode && firstSelection != null && secondSelection != null) {
+            if (!isDeleteMode && !isDragMode && firstSelection != null && secondSelection != null) {
                 FloatingActionButton(onClick = {
-                    if (firstSelection!!.groupIndex != secondSelection!!.groupIndex) {
+                    if (firstSelection!!.sheetType != secondSelection!!.sheetType) {
                         showIntergroupSwapConfirmDialog = true
                     } else {
-                        projectViewModel.swapPhotos(context, firstSelection!!.uri, secondSelection!!.uri)
+                        projectViewModel.swapPhotoOrder(firstSelection!!, secondSelection!!)
                         hasUnsavedChanges = true
-                        swapCounter++
                         firstSelection = null
                         secondSelection = null
                     }
@@ -257,15 +254,14 @@ fun PhotoSwapScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                itemsIndexed(allPhotos, key = { _, item -> item.uri }) { index, item ->
+                items(photoArrangement.sortedBy { it.order }, key = { item -> item.uri }) { item ->
                     val isSelected = item.uri == firstSelection?.uri || item.uri == secondSelection?.uri
-                    val isCover = item.uri == coverConfig.mainImageUri
-                    val isFirstSelectionCover = firstSelection?.uri == coverConfig.mainImageUri
+                    val isCover = item.order == 1
 
                     val isCompatible = firstSelection == null ||
-                            isFirstSelectionCover ||
                             isCover ||
-                            (ImageUtils.getImageOrientation(context, item.uri) == firstPhotoOrientation)
+                            (item.sheetType == SheetType.SINGLE || firstSelection?.sheetType == SheetType.SINGLE) ||
+                            (ImageUtils.getImageOrientation(context, item.uri) == firstSelection?.let { ImageUtils.getImageOrientation(context, it.uri) })
 
                     Box(
                         modifier = Modifier
@@ -282,12 +278,11 @@ fun PhotoSwapScreen(
                                     if (firstSelection == null) {
                                         firstSelection = item
                                     } else {
-                                        projectViewModel.movePhoto(context, firstSelection!!.uri, item.uri)
+                                        projectViewModel.movePhotoOrder(firstSelection!!, item)
                                         hasUnsavedChanges = true
-                                        swapCounter++
                                         firstSelection = null
                                     }
-                                } else {
+                                } else { // Swap Mode
                                     if (firstSelection == null) {
                                         firstSelection = item
                                     } else if (secondSelection == null) {
@@ -316,6 +311,15 @@ fun PhotoSwapScreen(
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
                         )
+                        Text(
+                            text = "Orden ${item.order}",
+                            color = Color.White,
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .padding(4.dp)
+                                .background(Color.Black.copy(alpha = 0.5f), shape = CircleShape)
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
                         if (isCover) {
                             Icon(
                                 imageVector = Icons.Default.Star,
@@ -328,8 +332,8 @@ fun PhotoSwapScreen(
                                     .padding(4.dp)
                             )
                         } else {
-                            Text(
-                                text = "Grupo ${item.groupIndex + 1}",
+                             Text(
+                                text = if (item.sheetType == SheetType.SINGLE) "Hoja Única" else "Hoja Doble",
                                 color = Color.White,
                                 modifier = Modifier
                                     .align(Alignment.BottomEnd)
@@ -338,18 +342,7 @@ fun PhotoSwapScreen(
                                     .padding(horizontal = 8.dp, vertical = 4.dp)
                             )
                         }
-                        if (isDeleteMode) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "Eliminar",
-                                tint = Color.White,
-                                modifier = Modifier
-                                    .align(Alignment.Center)
-                                    .background(Color.Black.copy(alpha = 0.5f), shape = CircleShape)
-                                    .padding(8.dp)
-                                    .size(40.dp)
-                            )
-                        }
+                        // Icons for modes will be handled in the TopAppBar
                     }
                 }
             }

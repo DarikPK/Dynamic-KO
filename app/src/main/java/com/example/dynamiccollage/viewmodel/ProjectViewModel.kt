@@ -56,6 +56,24 @@ class ProjectViewModel : ViewModel() {
     private val _recycledUris = MutableStateFlow<List<String>>(emptyList())
     val recycledUris: StateFlow<List<String>> = _recycledUris.asStateFlow()
 
+    private val _photoArrangement = MutableStateFlow<List<PhotoArrangementItem>>(emptyList())
+    val photoArrangement: StateFlow<List<PhotoArrangementItem>> = _photoArrangement.asStateFlow()
+
+    fun initializePhotoArrangement() {
+        val arrangement = mutableListOf<PhotoArrangementItem>()
+        var order = 1
+        currentCoverConfig.value.mainImageUri?.let {
+            arrangement.add(PhotoArrangementItem(it, order++, SheetType.SINGLE))
+        }
+        currentPageGroups.value.forEach { group ->
+            val sheetType = if (group.photosPerSheet > 1) SheetType.DOUBLE else SheetType.SINGLE
+            group.imageUris.forEach { uri ->
+                arrangement.add(PhotoArrangementItem(uri, order++, sheetType))
+            }
+        }
+        _photoArrangement.value = arrangement
+    }
+
     fun setManagerSelectedUri(uri: String?) {
         _managerSelectedUri.value = uri
     }
@@ -69,86 +87,79 @@ class ProjectViewModel : ViewModel() {
         saveProject(context)
     }
 
-    fun movePhoto(context: Context, fromUri: String, toUri: String) {
-        val allUris = getAllImageUris().toMutableList()
-        val fromIndex = allUris.indexOf(fromUri)
-        val toIndex = allUris.indexOf(toUri)
-
-        if (fromIndex != -1 && toIndex != -1) {
-            val movedUri = allUris.removeAt(fromIndex)
-            allUris.add(toIndex, movedUri)
-
-            // Separate cover from inner pages
-            val newCoverUri = allUris.firstOrNull()
-            _currentCoverConfig.update { it.copy(mainImageUri = newCoverUri) }
-
-            val remainingUris = allUris.drop(if (newCoverUri != null) 1 else 0).toMutableList()
-            val updatedGroups = _currentPageGroups.value.map { group ->
-                val capacity = group.photosPerSheet * group.sheetCount
-                val urisForGroup = remainingUris.take(capacity)
-                remainingUris.removeAll(urisForGroup)
-                group.copy(imageUris = urisForGroup)
+    fun swapPhotoOrder(item1: PhotoArrangementItem, item2: PhotoArrangementItem) {
+        _photoArrangement.update { currentList ->
+            currentList.map {
+                when (it.uri) {
+                    item1.uri -> it.copy(order = item2.order)
+                    item2.uri -> it.copy(order = item1.order)
+                    else -> it
+                }
             }
-
-            _currentPageGroups.value = updatedGroups
         }
-        saveProject(context)
     }
 
-    fun swapPhotos(context: Context, uri1: String, uri2: String) {
-        val coverUri = _currentCoverConfig.value.mainImageUri
+    fun movePhotoOrder(fromItem: PhotoArrangementItem, toItem: PhotoArrangementItem) {
+        _photoArrangement.update { currentList ->
+            val fromOrder = fromItem.order
+            val toOrder = toItem.order
+            val newList = currentList.toMutableList()
 
-        // Case 1: Swapping with cover photo
-        if (uri1 == coverUri || uri2 == coverUri) {
-            val otherUri = if (uri1 == coverUri) uri2 else uri1
-
-            // Find the group containing the other photo
-            val groupIndex = _currentPageGroups.value.indexOfFirst { it.imageUris.contains(otherUri) }
-            if (groupIndex != -1) {
-                val group = _currentPageGroups.value[groupIndex]
-                val imageIndex = group.imageUris.indexOf(otherUri)
-
-                // Update the PageGroup
-                val newImageUris = group.imageUris.toMutableList()
-                newImageUris[imageIndex] = coverUri!! // The new URI for the group is the old cover URI
-
-                _currentPageGroups.update { list ->
-                    val mutableList = list.toMutableList()
-                    mutableList[groupIndex] = group.copy(imageUris = newImageUris)
-                    mutableList.toList()
-                }
-
-                // Update the CoverPageConfig
-                _currentCoverConfig.update { it.copy(mainImageUri = otherUri) }
-            }
-        } else {
-            // Case 2: Swapping between two PageGroups (existing logic)
-            _currentPageGroups.update { currentList ->
-                val list = currentList.toMutableList()
-                val groupIndex1 = list.indexOfFirst { it.imageUris.contains(uri1) }
-                val groupIndex2 = list.indexOfFirst { it.imageUris.contains(uri2) }
-                if (groupIndex1 == -1 || groupIndex2 == -1) return@update list
-
-                val group1 = list[groupIndex1]
-                val group2 = list[groupIndex2]
-                val imageIndex1 = group1.imageUris.indexOf(uri1)
-                val imageIndex2 = group2.imageUris.indexOf(uri2)
-                val newImages1 = group1.imageUris.toMutableList()
-                val newImages2 = group2.imageUris.toMutableList()
-
-                if (groupIndex1 == groupIndex2) {
-                    newImages1[imageIndex1] = uri2
-                    newImages1[imageIndex2] = uri1
-                    list[groupIndex1] = group1.copy(imageUris = newImages1)
+            val itemToMove = newList.find { it.order == fromOrder }
+            if (itemToMove != null) {
+                if (fromOrder < toOrder) {
+                    newList.filter { it.order > fromOrder && it.order <= toOrder }.forEach { it.order-- }
                 } else {
-                    newImages1[imageIndex1] = uri2
-                    newImages2[imageIndex2] = uri1
-                    list[groupIndex1] = group1.copy(imageUris = newImages1)
-                    list[groupIndex2] = group2.copy(imageUris = newImages2)
+                    newList.filter { it.order >= toOrder && it.order < fromOrder }.forEach { it.order++ }
                 }
-                list.toList()
+                itemToMove.order = toOrder
+            }
+            newList
+        }
+    }
+
+    fun saveArrangement(context: Context) {
+        val sortedArrangement = _photoArrangement.value.sortedBy { it.order }
+        val newCoverUri = sortedArrangement.firstOrNull()?.uri
+        _currentCoverConfig.update { it.copy(mainImageUri = newCoverUri) }
+
+        val innerPhotos = sortedArrangement.drop(if (newCoverUri != null) 1 else 0)
+        val newPageGroups = mutableListOf<PageGroup>()
+        var i = 0
+        while (i < innerPhotos.size) {
+            val currentPhoto = innerPhotos[i]
+            if (currentPhoto.sheetType == SheetType.SINGLE) {
+                newPageGroups.add(
+                    PageGroup(
+                        id = UUID.randomUUID().toString(),
+                        groupName = "Grupo ${newPageGroups.size + 1}",
+                        orientation = PageOrientation.Vertical, // O la que corresponda
+                        photosPerSheet = 1,
+                        sheetCount = 1,
+                        imageUris = listOf(currentPhoto.uri)
+                    )
+                )
+                i++
+            } else {
+                val groupUris = mutableListOf(currentPhoto.uri)
+                if (i + 1 < innerPhotos.size && innerPhotos[i + 1].sheetType == SheetType.DOUBLE) {
+                    groupUris.add(innerPhotos[i + 1].uri)
+                    i++
+                }
+                newPageGroups.add(
+                    PageGroup(
+                        id = UUID.randomUUID().toString(),
+                        groupName = "Grupo ${newPageGroups.size + 1}",
+                        orientation = PageOrientation.Vertical, // O la que corresponda
+                        photosPerSheet = 2,
+                        sheetCount = 1,
+                        imageUris = groupUris
+                    )
+                )
+                i++
             }
         }
+        _currentPageGroups.value = newPageGroups
         saveProject(context)
     }
 
@@ -621,3 +632,13 @@ sealed class PdfGenerationState {
     data class Success(val file: File) : PdfGenerationState()
     data class Error(val message: String) : PdfGenerationState()
 }
+
+enum class SheetType {
+    SINGLE, DOUBLE
+}
+
+data class PhotoArrangementItem(
+    val uri: String,
+    var order: Int,
+    var sheetType: SheetType
+)
