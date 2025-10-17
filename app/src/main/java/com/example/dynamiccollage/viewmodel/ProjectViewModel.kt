@@ -70,28 +70,27 @@ class ProjectViewModel : ViewModel() {
     }
 
     fun movePhoto(context: Context, fromUri: String, toUri: String) {
-        val allPhotos = getAllImageUris().toMutableList()
-        val fromIndex = allPhotos.indexOf(fromUri)
-        val toIndex = allPhotos.indexOf(toUri)
+        val allUris = getAllImageUris().toMutableList()
+        val fromIndex = allUris.indexOf(fromUri)
+        val toIndex = allUris.indexOf(toUri)
 
         if (fromIndex != -1 && toIndex != -1) {
-            val photoToMove = allPhotos.removeAt(fromIndex)
-            allPhotos.add(toIndex, photoToMove)
+            val movedUri = allUris.removeAt(fromIndex)
+            allUris.add(toIndex, movedUri)
 
-            // Rebuild the cover and page groups from the new list order
-            _currentCoverConfig.update { it.copy(mainImageUri = allPhotos.firstOrNull()) }
-            val innerImages = allPhotos.drop(1)
+            // Separate cover from inner pages
+            val newCoverUri = allUris.firstOrNull()
+            _currentCoverConfig.update { it.copy(mainImageUri = newCoverUri) }
 
-            // This is a simplified logic. A more robust implementation would need to
-            // consider the original group structure and how to rebuild it.
-            // For now, let's just update the first group.
-            _currentPageGroups.update { currentList ->
-                val list = currentList.toMutableList()
-                if (list.isNotEmpty()) {
-                    list[0] = list[0].copy(imageUris = innerImages)
-                }
-                list.toList()
+            val remainingUris = allUris.drop(if (newCoverUri != null) 1 else 0).toMutableList()
+            val updatedGroups = _currentPageGroups.value.map { group ->
+                val capacity = group.photosPerSheet * group.sheetCount
+                val urisForGroup = remainingUris.take(capacity)
+                remainingUris.removeAll(urisForGroup)
+                group.copy(imageUris = urisForGroup)
             }
+
+            _currentPageGroups.value = updatedGroups
         }
         saveProject(context)
     }
