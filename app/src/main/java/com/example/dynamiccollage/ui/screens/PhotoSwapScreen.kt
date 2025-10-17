@@ -60,6 +60,9 @@ fun PhotoSwapScreen(
     var secondSelection by remember { mutableStateOf<String?>(null) }
     var hasUnsavedChanges by remember { mutableStateOf(false) }
     var showExitConfirmDialog by remember { mutableStateOf(false) }
+    var isDeleteMode by remember { mutableStateOf(false) }
+    var showDeleteConfirmDialogSingle by remember { mutableStateOf<String?>(null) }
+
 
     val firstPhotoOrientation by remember(firstSelection) {
         derivedStateOf {
@@ -82,11 +85,13 @@ fun PhotoSwapScreen(
     LaunchedEffect(pdfGenerationState) {
         when (pdfGenerationState) {
             is PdfGenerationState.Success -> {
-                scope.launch {
-                    snackbarHostState.showSnackbar("PDF guardado correctamente.")
+                val file = (pdfGenerationState as PdfGenerationState.Success).file
+                val encodedPath = java.net.URLEncoder.encode(file.absolutePath, "UTF-8")
+                navController.navigate(Screen.PdfPreview.withArgs(encodedPath)) {
+                    // Pop up to MainScreen to clear the back stack
+                    popUpTo(Screen.Main.route)
                 }
                 projectViewModel.resetPdfGenerationState()
-                navController.popBackStack()
             }
             is PdfGenerationState.Error -> {
                 scope.launch {
@@ -117,36 +122,65 @@ fun PhotoSwapScreen(
         )
     }
 
+    if (showDeleteConfirmDialogSingle != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialogSingle = null },
+            title = { Text("Confirmar Eliminación") },
+            text = { Text("¿Estás seguro que quieres mover esta foto a la papelera?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        projectViewModel.deletePhoto(context, showDeleteConfirmDialogSingle!!)
+                        hasUnsavedChanges = true
+                        showDeleteConfirmDialogSingle = null
+                    }
+                ) { Text("Eliminar") }
+            },
+            dismissButton = {
+                Button(onClick = { showDeleteConfirmDialogSingle = null }) { Text("Cancelar") }
+            }
+        )
+    }
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Intercambiar Fotos") },
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(if (isDeleteMode) "Eliminar Fotos" else "Intercambiar Fotos")
+                        Spacer(Modifier.width(8.dp))
+                        Switch(
+                            checked = isDeleteMode,
+                            onCheckedChange = { isDeleteMode = it }
+                        )
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = { handleBackNavigation() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
                     }
                 },
                 actions = {
-                    Button(
+                    IconButton(
                         onClick = {
                             projectViewModel.generatePdf(context, "updated_project")
                         },
                         enabled = hasUnsavedChanges && pdfGenerationState != PdfGenerationState.Loading
                     ) {
                         Icon(Icons.Default.Save, contentDescription = "Guardar")
-                        Spacer(Modifier.width(8.dp))
-                        Text("Guardar")
                     }
                 }
             )
         },
         floatingActionButton = {
-            if (firstSelection != null && secondSelection != null) {
+            if (!isDeleteMode && firstSelection != null && secondSelection != null) {
                 FloatingActionButton(onClick = {
                     projectViewModel.swapPhotos(context, firstSelection!!, secondSelection!!)
                     hasUnsavedChanges = true
                     swapCounter++
+                    firstSelection = null
+                    secondSelection = null
                 }) {
                     Icon(Icons.Default.Check, contentDescription = "Confirmar Intercambio")
                 }
@@ -177,25 +211,29 @@ fun PhotoSwapScreen(
                                 width = if (isSelected) 4.dp else 0.dp,
                                 color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
                             )
-                            .alpha(if (isCompatible) 1f else 0.4f)
-                            .clickable(enabled = isCompatible) {
-                                if (firstSelection == null) {
-                                    firstSelection = uri
-                                } else if (secondSelection == null) {
-                                    if (uri != firstSelection) {
-                                        secondSelection = uri
-                                    } else {
-                                        firstSelection = null
-                                    }
+                            .alpha(if (isDeleteMode || isCompatible) 1f else 0.4f)
+                            .clickable(enabled = isDeleteMode || isCompatible) {
+                                if (isDeleteMode) {
+                                    showDeleteConfirmDialogSingle = uri
                                 } else {
-                                    if (uri == firstSelection) {
-                                        firstSelection = secondSelection
-                                        secondSelection = null
-                                    } else if (uri == secondSelection) {
-                                        secondSelection = null
-                                    } else {
+                                    if (firstSelection == null) {
                                         firstSelection = uri
-                                        secondSelection = null
+                                    } else if (secondSelection == null) {
+                                        if (uri != firstSelection) {
+                                            secondSelection = uri
+                                        } else {
+                                            firstSelection = null
+                                        }
+                                    } else {
+                                        if (uri == firstSelection) {
+                                            firstSelection = secondSelection
+                                            secondSelection = null
+                                        } else if (uri == secondSelection) {
+                                            secondSelection = null
+                                        } else {
+                                            firstSelection = uri
+                                            secondSelection = null
+                                        }
                                     }
                                 }
                             }
@@ -227,24 +265,16 @@ fun PhotoSwapScreen(
                                     .padding(4.dp)
                             )
                         }
-                        IconButton(
-                            onClick = {
-                                // Lógica para borrar la foto
-                                projectViewModel.deletePhoto(context, uri)
-                                hasUnsavedChanges = true
-                                // Opcional: resetear selección si la foto borrada estaba seleccionada
-                                if (firstSelection == uri) firstSelection = null
-                                if (secondSelection == uri) secondSelection = null
-                            },
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(4.dp)
-                                .background(Color.Black.copy(alpha = 0.5f), shape = CircleShape)
-                        ) {
+                        if (isDeleteMode) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
-                                contentDescription = "Eliminar foto",
-                                tint = Color.White
+                                contentDescription = "Eliminar",
+                                tint = Color.White,
+                                modifier = Modifier
+                                    .align(Alignment.Center)
+                                    .background(Color.Black.copy(alpha = 0.5f), shape = CircleShape)
+                                    .padding(8.dp)
+                                    .size(40.dp)
                             )
                         }
                     }
