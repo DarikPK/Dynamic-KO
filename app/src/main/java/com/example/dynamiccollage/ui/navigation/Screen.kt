@@ -21,6 +21,7 @@ sealed class Screen(val route: String) {
     object ImageBorders : Screen("image_borders_screen")
     object ThemeSelection : Screen("theme_selection_screen")
     object PhotoSwap : Screen("photo_swap_screen")
+    object RecycleBin : Screen("recycle_bin_screen")
     // object Settings : Screen("settings_screen") // Ejemplo si se necesitara
 
     fun withArgs(vararg args: String): String {

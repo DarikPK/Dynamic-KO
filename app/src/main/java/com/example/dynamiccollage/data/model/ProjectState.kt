@@ -5,5 +5,6 @@ data class ProjectState(
     val pageGroups: List<PageGroup>,
     val sunatData: SelectedSunatData?,
     val themeName: String,
-    val imageEffectSettings: Map<String, ImageEffectSettings>
+    val imageEffectSettings: Map<String, ImageEffectSettings>,
+    val recycledUris: List<String>
 )

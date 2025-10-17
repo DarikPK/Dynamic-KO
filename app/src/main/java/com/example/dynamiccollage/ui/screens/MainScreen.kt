@@ -212,6 +212,12 @@ fun MainScreen(
                     navController.navigate(Screen.ImageManager.route)
                 }
             )
+            MainButton(
+                text = "Papelera",
+                onClick = {
+                    navController.navigate(Screen.RecycleBin.route)
+                }
+            )
             Spacer(modifier = Modifier.height(16.dp))
             MainButton(
                 text = stringResource(R.string.main_btn_delete_project),

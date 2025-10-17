@@ -53,6 +53,9 @@ class ProjectViewModel : ViewModel() {
     private val _managerSelectedUri = MutableStateFlow<String?>(null)
     val managerSelectedUri: StateFlow<String?> = _managerSelectedUri.asStateFlow()
 
+    private val _recycledUris = MutableStateFlow<List<String>>(emptyList())
+    val recycledUris: StateFlow<List<String>> = _recycledUris.asStateFlow()
+
     fun setManagerSelectedUri(uri: String?) {
         _managerSelectedUri.value = uri
     }
@@ -124,17 +127,12 @@ class ProjectViewModel : ViewModel() {
     }
 
     fun deletePhoto(context: Context, uri: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            deleteLocalImage(uri)
-        }
+        // Move the photo to the recycled bin
+        _recycledUris.update { it + uri }
 
         // Check if it's the cover photo
         if (_currentCoverConfig.value.mainImageUri == uri) {
             _currentCoverConfig.update { it.copy(mainImageUri = null) }
-            // Also remove any associated settings
-            _imageEffectSettings.update { it - uri }
-            _currentCoverConfig.update { it.copy(imageBorderSettingsMap = it.imageBorderSettingsMap - uri) }
-
         } else {
             // Find the group containing the photo and remove it
             _currentPageGroups.update { currentList ->
@@ -146,11 +144,49 @@ class ProjectViewModel : ViewModel() {
                     }
                 }
             }
-            // Also remove any associated settings
-            _imageEffectSettings.update { it - uri }
-            _currentCoverConfig.update { it.copy(imageBorderSettingsMap = it.imageBorderSettingsMap - uri) }
         }
+        // Don't remove settings, they will be kept in case of restoration
         setManagerSelectedUri(null)
+        saveProject(context)
+    }
+
+    fun restorePhoto(context: Context, uri: String) {
+        // Remove from recycled bin
+        _recycledUris.update { it.filterNot { it == uri } }
+
+        // Add back to the main collage - for simplicity, let's add it as the main image if it's empty
+        // or to the first page group. A more complex logic could be to restore it to its original position.
+        if (_currentCoverConfig.value.mainImageUri == null) {
+            _currentCoverConfig.update { it.copy(mainImageUri = uri) }
+        } else {
+            _currentPageGroups.update { currentList ->
+                val list = currentList.toMutableList()
+                if (list.isNotEmpty()) {
+                    val firstGroup = list[0]
+                    list[0] = firstGroup.copy(imageUris = firstGroup.imageUris + uri)
+                } else {
+                    // Or create a new group if none exist
+                    // This case might need more specific handling depending on desired UX
+                }
+                list.toList()
+            }
+        }
+        saveProject(context)
+    }
+
+    fun deletePhotoPermanently(context: Context, uri: String) {
+        // Remove from recycled bin
+        _recycledUris.update { it.filterNot { it == uri } }
+
+        // And delete the file
+        viewModelScope.launch(Dispatchers.IO) {
+            deleteLocalImage(uri)
+        }
+
+        // Also remove any associated settings
+        _imageEffectSettings.update { it - uri }
+        _currentCoverConfig.update { it.copy(imageBorderSettingsMap = it.imageBorderSettingsMap - uri) }
+
         saveProject(context)
     }
 
@@ -256,6 +292,7 @@ class ProjectViewModel : ViewModel() {
         _currentCoverConfig.value = CoverPageConfig()
         _currentPageGroups.value = emptyList()
         _sunatData.value = null
+        _recycledUris.value = emptyList()
     }
 
     // --- Generación de PDF ---
@@ -455,7 +492,8 @@ class ProjectViewModel : ViewModel() {
                 pageGroups = _currentPageGroups.value.map { it.toSerializable() },
                 sunatData = _sunatData.value,
                 themeName = _themeName.value,
-                imageEffectSettings = _imageEffectSettings.value
+                imageEffectSettings = _imageEffectSettings.value,
+                recycledUris = _recycledUris.value
             )
             val jsonString = gson.toJson(serializableState)
             val sizeInBytes = jsonString.toByteArray().size.toLong()
@@ -476,7 +514,8 @@ class ProjectViewModel : ViewModel() {
                 pageGroups = _currentPageGroups.value.map { it.toSerializable() },
                 sunatData = _sunatData.value,
                 themeName = _themeName.value,
-                imageEffectSettings = _imageEffectSettings.value
+                imageEffectSettings = _imageEffectSettings.value,
+                recycledUris = _recycledUris.value
             )
             val jsonString = gson.toJson(serializableState)
             writeJsonToFile(context, jsonString)
@@ -528,6 +567,7 @@ class ProjectViewModel : ViewModel() {
                     _sunatData.value = projectState.sunatData
                     _themeName.value = projectState.themeName
                     _imageEffectSettings.value = projectState.imageEffectSettings
+                    _recycledUris.value = projectState.recycledUris
                     Log.d("ProjectViewModel", "loadProject: Project loaded and state restored successfully.")
                 }
             } catch (t: Throwable) {

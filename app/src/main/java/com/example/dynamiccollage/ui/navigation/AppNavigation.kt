@@ -160,5 +160,11 @@ fun AppNavigation(
                 projectViewModel = projectViewModel
             )
         }
+        composable(Screen.RecycleBin.route) {
+            RecycleBinScreen(
+                navController = navController,
+                projectViewModel = projectViewModel
+            )
+        }
     }
 }

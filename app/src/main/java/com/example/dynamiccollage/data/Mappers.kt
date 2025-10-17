@@ -214,5 +214,6 @@ fun SerializableProjectState.toDomain() = ProjectState(
     pageGroups = this.pageGroups.map { it.toDomain() },
     sunatData = this.sunatData,
     themeName = this.themeName ?: "Oscuro",
-    imageEffectSettings = this.imageEffectSettings ?: emptyMap()
+    imageEffectSettings = this.imageEffectSettings ?: emptyMap(),
+    recycledUris = this.recycledUris ?: emptyList()
 )
