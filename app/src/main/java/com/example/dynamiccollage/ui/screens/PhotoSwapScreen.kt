@@ -246,7 +246,7 @@ fun PhotoSwapScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(photoArrangement.sortedBy { it.order }, key = { item -> item.uri }) { item ->
+                itemsIndexed(photoArrangement.sortedBy { it.order }, key = { _, item -> item.uri }) { index, item ->
                     val isSelected = item.uri == firstSelection?.uri || item.uri == secondSelection?.uri
                     val isCover = item.order == 1
 
