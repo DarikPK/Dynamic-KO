@@ -1,7 +1,5 @@
 package com.example.dynamiccollage.ui.screens
 
-data class PhotoItem(val uri: String, val groupIndex: Int)
-
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -36,6 +34,8 @@ import com.example.dynamiccollage.utils.ImageUtils
 import com.example.dynamiccollage.viewmodel.PdfGenerationState
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 import kotlinx.coroutines.launch
+
+data class PhotoItem(val uri: String, val groupIndex: Int)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
