@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.example.dynamiccollage.ui.navigation.Screen
 import com.example.dynamiccollage.utils.ImageUtils
 import com.example.dynamiccollage.viewmodel.PdfGenerationState
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
