@@ -18,7 +18,6 @@ import com.example.dynamiccollage.data.model.CoverPageConfig
 import com.example.dynamiccollage.data.model.ImageEffectSettings
 import com.example.dynamiccollage.data.model.PageGroup
 import com.example.dynamiccollage.data.model.PageOrientation
-import com.example.dynamiccollage.data.model.PageOrientation
 import com.example.dynamiccollage.data.model.PhotoArrangementItem
 import com.example.dynamiccollage.data.model.SheetType
 import com.example.dynamiccollage.data.model.SerializableNormalizedRectF
