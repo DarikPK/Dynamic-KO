@@ -74,7 +74,7 @@ object PdfGenerator {
         imageEffectSettings: Map<String, ImageEffectSettings>
     ): File? {
         val pdfDocument = PdfDocument()
-        val uncompressedPdfStream = ByteArrayOutputStream()
+        val tempFile = File.createTempFile("uncompressed_pdf", ".pdf", context.cacheDir)
 
         try {
             val quality = coverConfig.quality
@@ -89,14 +89,18 @@ object PdfGenerator {
             }
             drawInnerPages(pdfDocument, context, generatedPages, coverConfig, if (shouldDrawCover) 2 else 1, quality, imageEffectSettings)
 
-            pdfDocument.writeTo(uncompressedPdfStream)
+            // Write to temporary file instead of memory stream
+            val fileOutputStream = FileOutputStream(tempFile)
+            pdfDocument.writeTo(fileOutputStream)
+            fileOutputStream.close()
             pdfDocument.close()
 
             val storageDir: File? = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
             storageDir?.mkdirs()
             val pdfFile = File(storageDir, "$fileName.pdf")
 
-            val pdDocument = PDDocument.load(uncompressedPdfStream.toByteArray())
+            // Load from the temporary file
+            val pdDocument = PDDocument.load(tempFile)
             pdDocument.version = 1.5f
             pdDocument.save(pdfFile)
             pdDocument.close()
@@ -106,6 +110,11 @@ object PdfGenerator {
             Log.e("PdfGenerator", "Error al generar PDF", e)
             pdfDocument.close()
             return null
+        } finally {
+            // Clean up the temporary file
+            if (tempFile.exists()) {
+                tempFile.delete()
+            }
         }
     }
 
