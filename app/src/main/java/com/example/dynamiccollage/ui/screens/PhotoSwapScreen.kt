@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
@@ -224,6 +225,26 @@ fun PhotoSwapScreen(
                                     .padding(4.dp)
                                     .background(Color.Black.copy(alpha = 0.5f), shape = CircleShape)
                                     .padding(4.dp)
+                            )
+                        }
+                        IconButton(
+                            onClick = {
+                                // Lógica para borrar la foto
+                                projectViewModel.deletePhoto(context, uri)
+                                hasUnsavedChanges = true
+                                // Opcional: resetear selección si la foto borrada estaba seleccionada
+                                if (firstSelection == uri) firstSelection = null
+                                if (secondSelection == uri) secondSelection = null
+                            },
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(4.dp)
+                                .background(Color.Black.copy(alpha = 0.5f), shape = CircleShape)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Eliminar foto",
+                                tint = Color.White
                             )
                         }
                     }

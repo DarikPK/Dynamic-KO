@@ -123,6 +123,37 @@ class ProjectViewModel : ViewModel() {
         saveProject(context)
     }
 
+    fun deletePhoto(context: Context, uri: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            deleteLocalImage(uri)
+        }
+
+        // Check if it's the cover photo
+        if (_currentCoverConfig.value.mainImageUri == uri) {
+            _currentCoverConfig.update { it.copy(mainImageUri = null) }
+            // Also remove any associated settings
+            _imageEffectSettings.update { it - uri }
+            _currentCoverConfig.update { it.copy(imageBorderSettingsMap = it.imageBorderSettingsMap - uri) }
+
+        } else {
+            // Find the group containing the photo and remove it
+            _currentPageGroups.update { currentList ->
+                currentList.map { group ->
+                    if (group.imageUris.contains(uri)) {
+                        group.copy(imageUris = group.imageUris.filterNot { it == uri })
+                    } else {
+                        group
+                    }
+                }
+            }
+            // Also remove any associated settings
+            _imageEffectSettings.update { it - uri }
+            _currentCoverConfig.update { it.copy(imageBorderSettingsMap = it.imageBorderSettingsMap - uri) }
+        }
+        setManagerSelectedUri(null)
+        saveProject(context)
+    }
+
     fun updateImageRotation(context: Context, uri: String, degrees: Float) {
         _imageEffectSettings.update { currentMap ->
             val currentSettings = currentMap[uri] ?: ImageEffectSettings()
