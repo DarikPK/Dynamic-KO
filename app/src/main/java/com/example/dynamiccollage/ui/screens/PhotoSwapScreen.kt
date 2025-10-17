@@ -14,8 +14,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -63,6 +65,7 @@ fun PhotoSwapScreen(
     var showExitConfirmDialog by remember { mutableStateOf(false) }
     var isDeleteMode by remember { mutableStateOf(false) }
     var showDeleteConfirmDialogSingle by remember { mutableStateOf<String?>(null) }
+    var isEditModeActive by remember { mutableStateOf(false) }
 
 
     val firstPhotoOrientation by remember(firstSelection) {
@@ -123,6 +126,13 @@ fun PhotoSwapScreen(
         )
     }
 
+    LaunchedEffect(isDeleteMode) {
+        if (isDeleteMode) {
+            firstSelection = null
+            secondSelection = null
+        }
+    }
+
     if (showDeleteConfirmDialogSingle != null) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirmDialogSingle = null },
@@ -147,22 +157,32 @@ fun PhotoSwapScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             CenterAlignedTopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(if (isDeleteMode) "Eliminar Fotos" else "Intercambiar Fotos")
-                        Spacer(Modifier.width(8.dp))
-                        Switch(
-                            checked = isDeleteMode,
-                            onCheckedChange = { isDeleteMode = it }
-                        )
-                    }
-                },
+                title = { Text("Ordenar Fotos") },
                 navigationIcon = {
                     IconButton(onClick = { handleBackNavigation() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
                     }
                 },
                 actions = {
+                    if (isEditModeActive) {
+                        IconButton(onClick = { isDeleteMode = false }) {
+                            Icon(
+                                Icons.Default.SwapHoriz,
+                                contentDescription = "Modo Intercambio",
+                                tint = if (!isDeleteMode) MaterialTheme.colorScheme.primary else Color.Gray
+                            )
+                        }
+                        IconButton(onClick = { isDeleteMode = true }) {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = "Modo Eliminar",
+                                tint = if (isDeleteMode) MaterialTheme.colorScheme.primary else Color.Gray
+                            )
+                        }
+                    }
+                    IconButton(onClick = { isEditModeActive = !isEditModeActive }) {
+                        Icon(Icons.Default.Edit, contentDescription = "Editar")
+                    }
                     IconButton(
                         onClick = {
                             projectViewModel.generatePdf(context, "updated_project")
@@ -212,28 +232,30 @@ fun PhotoSwapScreen(
                                 width = if (isSelected) 4.dp else 0.dp,
                                 color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
                             )
-                            .alpha(if (isDeleteMode || isCompatible) 1f else 0.4f)
-                            .clickable(enabled = isDeleteMode || isCompatible) {
-                                if (isDeleteMode) {
-                                    showDeleteConfirmDialogSingle = uri
-                                } else {
-                                    if (firstSelection == null) {
-                                        firstSelection = uri
-                                    } else if (secondSelection == null) {
-                                        if (uri != firstSelection) {
-                                            secondSelection = uri
-                                        } else {
-                                            firstSelection = null
-                                        }
+                            .alpha(if (!isEditModeActive || isDeleteMode || isCompatible) 1f else 0.4f)
+                            .clickable(enabled = isEditModeActive && (isDeleteMode || isCompatible)) {
+                                if (isEditModeActive) {
+                                    if (isDeleteMode) {
+                                        showDeleteConfirmDialogSingle = uri
                                     } else {
-                                        if (uri == firstSelection) {
-                                            firstSelection = secondSelection
-                                            secondSelection = null
-                                        } else if (uri == secondSelection) {
-                                            secondSelection = null
-                                        } else {
+                                        if (firstSelection == null) {
                                             firstSelection = uri
-                                            secondSelection = null
+                                        } else if (secondSelection == null) {
+                                            if (uri != firstSelection) {
+                                                secondSelection = uri
+                                            } else {
+                                                firstSelection = null
+                                            }
+                                        } else {
+                                            if (uri == firstSelection) {
+                                                firstSelection = secondSelection
+                                                secondSelection = null
+                                            } else if (uri == secondSelection) {
+                                                secondSelection = null
+                                            } else {
+                                                firstSelection = uri
+                                                secondSelection = null
+                                            }
                                         }
                                     }
                                 }

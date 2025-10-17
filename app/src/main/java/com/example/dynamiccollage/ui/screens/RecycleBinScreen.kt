@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -31,9 +32,15 @@ fun RecycleBinScreen(
 ) {
     val recycledUris by projectViewModel.recycledUris.collectAsState()
     val context = LocalContext.current
+    var selectedImageUri by remember { mutableStateOf<String?>(null) }
 
-    Scaffold(
-        topBar = {
+    if (selectedImageUri != null) {
+        FullScreenImageView(uri = selectedImageUri!!) {
+            selectedImageUri = null
+        }
+    } else {
+        Scaffold(
+            topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Papelera") },
                 navigationIcon = {
@@ -59,7 +66,9 @@ fun RecycleBinScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(recycledUris, key = { it }) { uri ->
-                    Box(modifier = Modifier.aspectRatio(1f)) {
+                    Box(modifier = Modifier
+                        .aspectRatio(1f)
+                        .clickable { selectedImageUri = uri }) {
                         AsyncImage(
                             model = Uri.parse(uri),
                             contentDescription = "Imagen en la papelera",
@@ -83,6 +92,33 @@ fun RecycleBinScreen(
                     }
                 }
             }
+        }
+    }
+    }
+}
+
+@Composable
+fun FullScreenImageView(uri: String, onDismiss: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .clickable { onDismiss() },
+        contentAlignment = Alignment.Center
+    ) {
+        AsyncImage(
+            model = Uri.parse(uri),
+            contentDescription = "Imagen a pantalla completa",
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.fillMaxSize()
+        )
+        Button(
+            onClick = onDismiss,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(16.dp)
+        ) {
+            Text("Volver")
         }
     }
 }
