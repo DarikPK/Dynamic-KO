@@ -34,17 +34,9 @@ import com.example.dynamiccollage.ui.navigation.Screen
 import com.example.dynamiccollage.utils.ImageUtils
 import com.example.dynamiccollage.viewmodel.PdfGenerationState
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
+import com.example.dynamiccollage.viewmodel.PhotoArrangementItem
+import com.example.dynamiccollage.viewmodel.SheetType
 import kotlinx.coroutines.launch
-
-enum class SheetType {
-    SINGLE, DOUBLE
-}
-
-data class PhotoArrangementItem(
-    val uri: String,
-    var order: Int,
-    var sheetType: SheetType
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

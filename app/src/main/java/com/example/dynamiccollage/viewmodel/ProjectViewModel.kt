@@ -17,6 +17,7 @@ import com.example.dynamiccollage.data.toSerializable
 import com.example.dynamiccollage.data.model.CoverPageConfig
 import com.example.dynamiccollage.data.model.ImageEffectSettings
 import com.example.dynamiccollage.data.model.PageGroup
+import com.example.dynamiccollage.data.model.PageOrientation
 import com.example.dynamiccollage.data.model.SerializableNormalizedRectF
 import com.example.dynamiccollage.data.model.SelectedSunatData
 import com.example.dynamiccollage.data.model.SerializableProjectState
