@@ -15,6 +15,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -69,6 +70,7 @@ fun PhotoSwapScreen(
     var hasUnsavedChanges by remember { mutableStateOf(false) }
     var showExitConfirmDialog by remember { mutableStateOf(false) }
     var isDeleteMode by remember { mutableStateOf(false) }
+    var isDragMode by remember { mutableStateOf(false) }
     var showDeleteConfirmDialogSingle by remember { mutableStateOf<String?>(null) }
     var showIntergroupSwapConfirmDialog by remember { mutableStateOf(false) }
 
@@ -131,8 +133,8 @@ fun PhotoSwapScreen(
         )
     }
 
-    LaunchedEffect(isDeleteMode) {
-        if (isDeleteMode) {
+    LaunchedEffect(isDeleteMode, isDragMode) {
+        if (isDeleteMode || isDragMode) {
             firstSelection = null
             secondSelection = null
         }
@@ -199,11 +201,24 @@ fun PhotoSwapScreen(
                             tint = if (!isDeleteMode) MaterialTheme.colorScheme.primary else Color.Gray
                         )
                     }
-                    IconButton(onClick = { isDeleteMode = true }) {
+                    IconButton(onClick = {
+                        isDeleteMode = true
+                        isDragMode = false
+                    }) {
                         Icon(
                             Icons.Default.Delete,
                             contentDescription = "Modo Eliminar",
                             tint = if (isDeleteMode) MaterialTheme.colorScheme.primary else Color.Gray
+                        )
+                    }
+                    IconButton(onClick = {
+                        isDragMode = true
+                        isDeleteMode = false
+                    }) {
+                        Icon(
+                            Icons.Default.DragHandle,
+                            contentDescription = "Modo Arrastrar",
+                            tint = if (isDragMode) MaterialTheme.colorScheme.primary else Color.Gray
                         )
                     }
                     IconButton(
@@ -259,10 +274,19 @@ fun PhotoSwapScreen(
                                 width = if (isSelected) 4.dp else 0.dp,
                                 color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
                             )
-                            .alpha(if (isDeleteMode || isCompatible) 1f else 0.4f)
-                            .clickable(enabled = isDeleteMode || isCompatible) {
+                            .alpha(if (isDeleteMode || isDragMode || isCompatible) 1f else 0.4f)
+                            .clickable(enabled = isDeleteMode || isDragMode || isCompatible) {
                                 if (isDeleteMode) {
                                     showDeleteConfirmDialogSingle = item.uri
+                                } else if (isDragMode) {
+                                    if (firstSelection == null) {
+                                        firstSelection = item
+                                    } else {
+                                        projectViewModel.movePhoto(context, firstSelection!!.uri, item.uri)
+                                        hasUnsavedChanges = true
+                                        swapCounter++
+                                        firstSelection = null
+                                    }
                                 } else {
                                     if (firstSelection == null) {
                                         firstSelection = item
@@ -305,13 +329,13 @@ fun PhotoSwapScreen(
                             )
                         } else {
                             Text(
-                                text = (item.groupIndex + 1).toString(),
+                                text = "Grupo ${item.groupIndex + 1}",
                                 color = Color.White,
                                 modifier = Modifier
                                     .align(Alignment.BottomEnd)
                                     .padding(4.dp)
                                     .background(Color.Black.copy(alpha = 0.5f), shape = CircleShape)
-                                    .padding(8.dp)
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
                             )
                         }
                         if (isDeleteMode) {
