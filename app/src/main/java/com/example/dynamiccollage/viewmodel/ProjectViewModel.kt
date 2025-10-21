@@ -277,7 +277,6 @@ class ProjectViewModel : ViewModel() {
 
     fun updateForceFullResCover(context: Context, forceFullRes: Boolean) {
         _currentCoverConfig.update { it.copy(forceFullResCover = forceFullRes) }
-        saveProject(context)
     }
 
     fun updatePageBackgroundColor(context: Context, color: Color) {
