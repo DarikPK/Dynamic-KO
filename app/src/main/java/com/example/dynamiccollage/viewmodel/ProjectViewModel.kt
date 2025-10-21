@@ -275,6 +275,10 @@ class ProjectViewModel : ViewModel() {
         _currentCoverConfig.value = newConfig
     }
 
+    fun updateUseImageCompression(useCompression: Boolean) {
+        _currentCoverConfig.update { it.copy(useImageCompression = useCompression) }
+    }
+
     fun updatePageBackgroundColor(context: Context, color: Color) {
         _currentCoverConfig.update { it.copy(pageBackgroundColor = color.toArgb()) }
         saveProject(context)

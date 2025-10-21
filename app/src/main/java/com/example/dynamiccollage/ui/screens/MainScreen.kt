@@ -4,6 +4,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,6 +17,7 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import com.example.dynamiccollage.ui.components.ConfirmationDialog
@@ -197,6 +199,17 @@ fun MainScreen(
                     projectViewModel.generatePdf(context, "collage_report")
                 }
             )
+            Row(
+                modifier = Modifier.fillMaxWidth(0.8f),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = stringResource(R.string.main_btn_use_image_compression))
+                Switch(
+                    checked = projectViewModel.currentCoverConfig.collectAsState().value.useImageCompression,
+                    onCheckedChange = { projectViewModel.updateUseImageCompression(it) }
+                )
+            }
             MainButton(
                 text = "Diseño Avanzado",
                 onClick = { navController.navigate(Screen.AdvancedDesign.route) }

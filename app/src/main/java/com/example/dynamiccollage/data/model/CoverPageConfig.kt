@@ -118,6 +118,7 @@ data class CoverPageConfig(
 
     // PDF Size Management
     val quality: Int = 90,
+    val useImageCompression: Boolean = true,
 
     // Advanced Design
     val pageBackgroundColor: Int? = null,
