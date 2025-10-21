@@ -2,7 +2,7 @@
     <string name="app_name">Pixel Collage</string>
 
     <!-- MainScreen Buttons -->
-    <string name="main_btn_use_image_compression">Forzar Portada en Alta Resolución</string>
+    <string name="main_btn_use_image_compression">Portada en alta resolución</string>
     <string name="main_btn_get_data">OBTENER DATOS SUNAT</string>
     <string name="main_btn_cover_setup">Configurar Portada</string>
     <string name="main_btn_inner_pages">Gestionar Páginas Interiores</string>

@@ -26,6 +26,7 @@ import com.example.dynamiccollage.data.model.SerializableProjectState
 import com.example.dynamiccollage.utils.PdfGenerator
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -277,6 +278,7 @@ class ProjectViewModel : ViewModel() {
 
     fun updateForceFullResCover(context: Context, forceFullRes: Boolean) {
         _currentCoverConfig.update { it.copy(forceFullResCover = forceFullRes) }
+        saveProject(context)
     }
 
     fun updatePageBackgroundColor(context: Context, color: Color) {
@@ -377,9 +379,7 @@ class ProjectViewModel : ViewModel() {
         }
 
         viewModelScope.launch {
-            Log.d("ProjectViewModel", "generatePdf: Forzando guardado antes de generar...")
-            performSave(context, force = true) // Forzar guardado para asegurar que el estado está actualizado
-
+            saveJob?.join() // Espera a que el guardado actual termine.
             Log.d("ProjectViewModel", "generatePdf: Iniciando...")
             _pdfGenerationState.value = PdfGenerationState.Loading
             val generatedFile = withContext(Dispatchers.IO) {
@@ -531,35 +531,36 @@ class ProjectViewModel : ViewModel() {
 
     private val gson = Gson()
     private val projectFileName = "last_project.json"
+    private var saveJob: Job? = null
 
     fun saveProject(context: Context) {
-        viewModelScope.launch {
-            performSave(context)
+        saveJob?.cancel()
+        saveJob = viewModelScope.launch {
+            val serializableState = SerializableProjectState(
+                coverConfig = _currentCoverConfig.value.toSerializable(),
+                pageGroups = _currentPageGroups.value.map { it.toSerializable() },
+                sunatData = _sunatData.value,
+                themeName = _themeName.value,
+                imageEffectSettings = _imageEffectSettings.value,
+                recycledUris = _recycledUris.value
+            )
+            val jsonString = gson.toJson(serializableState)
+            writeJsonToFile(context, jsonString)
         }
     }
 
     fun forceSaveProject(context: Context) {
-        viewModelScope.launch {
-            performSave(context, force = true)
-        }
-    }
-
-    private suspend fun performSave(context: Context, force: Boolean = false) {
-        val serializableState = SerializableProjectState(
-            coverConfig = _currentCoverConfig.value.toSerializable(),
-            pageGroups = _currentPageGroups.value.map { it.toSerializable() },
-            sunatData = _sunatData.value,
-            themeName = _themeName.value,
-            imageEffectSettings = _imageEffectSettings.value,
-            recycledUris = _recycledUris.value
-        )
-        val jsonString = gson.toJson(serializableState)
-        val sizeInBytes = jsonString.toByteArray().size.toLong()
-        val sizeLimitBytes = 50 * 1024 * 1024 // 50MB
-
-        if (sizeInBytes > sizeLimitBytes && !force) {
-            _saveState.value = SaveState.RequiresConfirmation(sizeInBytes)
-        } else {
+        saveJob?.cancel()
+        saveJob = viewModelScope.launch {
+            val serializableState = SerializableProjectState(
+                coverConfig = _currentCoverConfig.value.toSerializable(),
+                pageGroups = _currentPageGroups.value.map { it.toSerializable() },
+                sunatData = _sunatData.value,
+                themeName = _themeName.value,
+                imageEffectSettings = _imageEffectSettings.value,
+                recycledUris = _recycledUris.value
+            )
+            val jsonString = gson.toJson(serializableState)
             writeJsonToFile(context, jsonString)
         }
     }
