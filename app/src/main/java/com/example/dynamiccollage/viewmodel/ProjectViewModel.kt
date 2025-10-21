@@ -378,6 +378,9 @@ class ProjectViewModel : ViewModel() {
         }
 
         viewModelScope.launch {
+            Log.d("ProjectViewModel", "generatePdf: Forzando guardado antes de generar...")
+            performSave(context, force = true) // Forzar guardado para asegurar que el estado está actualizado
+
             Log.d("ProjectViewModel", "generatePdf: Iniciando...")
             _pdfGenerationState.value = PdfGenerationState.Loading
             val generatedFile = withContext(Dispatchers.IO) {
@@ -532,37 +535,32 @@ class ProjectViewModel : ViewModel() {
 
     fun saveProject(context: Context) {
         viewModelScope.launch {
-            val serializableState = SerializableProjectState(
-                coverConfig = _currentCoverConfig.value.toSerializable(),
-                pageGroups = _currentPageGroups.value.map { it.toSerializable() },
-                sunatData = _sunatData.value,
-                themeName = _themeName.value,
-                imageEffectSettings = _imageEffectSettings.value,
-                recycledUris = _recycledUris.value
-            )
-            val jsonString = gson.toJson(serializableState)
-            val sizeInBytes = jsonString.toByteArray().size.toLong()
-            val sizeLimitBytes = 50 * 1024 * 1024 // 50MB
-
-            if (sizeInBytes > sizeLimitBytes) {
-                _saveState.value = SaveState.RequiresConfirmation(sizeInBytes)
-            } else {
-                writeJsonToFile(context, jsonString)
-            }
+            performSave(context)
         }
     }
 
     fun forceSaveProject(context: Context) {
         viewModelScope.launch {
-            val serializableState = SerializableProjectState(
-                coverConfig = _currentCoverConfig.value.toSerializable(),
-                pageGroups = _currentPageGroups.value.map { it.toSerializable() },
-                sunatData = _sunatData.value,
-                themeName = _themeName.value,
-                imageEffectSettings = _imageEffectSettings.value,
-                recycledUris = _recycledUris.value
-            )
-            val jsonString = gson.toJson(serializableState)
+            performSave(context, force = true)
+        }
+    }
+
+    private suspend fun performSave(context: Context, force: Boolean = false) {
+        val serializableState = SerializableProjectState(
+            coverConfig = _currentCoverConfig.value.toSerializable(),
+            pageGroups = _currentPageGroups.value.map { it.toSerializable() },
+            sunatData = _sunatData.value,
+            themeName = _themeName.value,
+            imageEffectSettings = _imageEffectSettings.value,
+            recycledUris = _recycledUris.value
+        )
+        val jsonString = gson.toJson(serializableState)
+        val sizeInBytes = jsonString.toByteArray().size.toLong()
+        val sizeLimitBytes = 50 * 1024 * 1024 // 50MB
+
+        if (sizeInBytes > sizeLimitBytes && !force) {
+            _saveState.value = SaveState.RequiresConfirmation(sizeInBytes)
+        } else {
             writeJsonToFile(context, jsonString)
         }
     }
