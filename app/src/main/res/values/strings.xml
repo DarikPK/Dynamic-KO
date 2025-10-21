@@ -2,7 +2,7 @@
     <string name="app_name">Pixel Collage</string>
 
     <!-- MainScreen Buttons -->
-    <string name="main_btn_use_image_compression">High-Res Cover</string>
+    <string name="main_btn_use_image_compression">Ignore cover image reduction</string>
     <string name="main_btn_get_data">Get Data</string>
     <string name="main_btn_cover_setup">Cover Setup</string>
     <string name="main_btn_inner_pages">Manage Inner Pages</string>
