@@ -210,11 +210,27 @@ fun CoverSetupScreen(
 
             if (coverConfig.mainImageUri != null) {
                 Box(modifier = Modifier.fillMaxWidth()) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(context)
+                    val request = if (coverConfig.forceFullResCover) {
+                        ImageRequest.Builder(context)
                             .data(coverConfig.mainImageUri)
+                            .allowHardware(false)
+                            .size(coil.size.Size.ORIGINAL)
+                            .diskCachePolicy(coil.request.CachePolicy.ENABLED)
+                            .memoryCachePolicy(coil.request.CachePolicy.ENABLED)
+                            .build()
+                    } else {
+                        ImageRequest.Builder(context)
+                            .data(coverConfig.mainImageUri)
+                            .allowHardware(true)
+                            .size(coil.size.Size(1080, 1080))
+                            .diskCachePolicy(coil.request.CachePolicy.ENABLED)
+                            .memoryCachePolicy(coil.request.CachePolicy.ENABLED)
                             .crossfade(true)
-                            .build(),
+                            .build()
+                    }
+
+                    AsyncImage(
+                        model = request,
                         contentDescription = stringResource(R.string.cover_image_selected_description),
                         modifier = Modifier
                             .fillMaxWidth()
