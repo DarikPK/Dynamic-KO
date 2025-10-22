@@ -129,49 +129,140 @@ object PdfGenerator {
         }
     }
 
-    private fun generateWithPdfBox(
-        context: Context,
-        coverConfig: CoverPageConfig,
-        generatedPages: List<GeneratedPage>,
-        fileName: String,
-        imageEffectSettings: Map<String, ImageEffectSettings>
-    ): File? {
-        val pdDocument = PDDocument()
-        return try {
-            Log.d("PdfGenerator", "Iniciando ruta PDFBox segura...")
+// === FUNCIONES CORREGIDAS PARA PDFBOX EN ANDROID ===
 
-            val shouldDrawCover = coverConfig.clientNameStyle.content.isNotBlank() ||
-                    coverConfig.rucStyle.content.isNotBlank() ||
-                    coverConfig.subtitleStyle.content.isNotBlank() ||
-                    coverConfig.mainImageUri != null
+private fun generateWithPdfBox(
+    context: Context,
+    coverConfig: CoverPageConfig,
+    generatedPages: List<GeneratedPage>,
+    fileName: String,
+    imageEffectSettings: Map<String, ImageEffectSettings>
+): File? {
+    val pdDocument = PDDocument()
+    return try {
+        Log.d("PdfGenerator", "Iniciando ruta PDFBox (alta calidad)...")
 
-            if (shouldDrawCover) {
-                drawCoverPageWithPdfBox(context, pdDocument, coverConfig, imageEffectSettings)
-            }
-            drawInnerPagesWithPdfBox(context, pdDocument, generatedPages, coverConfig, imageEffectSettings)
+        val shouldDrawCover = coverConfig.clientNameStyle.content.isNotBlank() ||
+                coverConfig.rucStyle.content.isNotBlank() ||
+                coverConfig.subtitleStyle.content.isNotBlank() ||
+                coverConfig.mainImageUri != null
 
-            val storageDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-            storageDir?.mkdirs()
-            val pdfFile = File(storageDir, "$fileName.pdf")
-
-            pdDocument.save(pdfFile)
-            Log.d("PdfGenerator", "PDF guardado correctamente en: ${pdfFile.absolutePath}")
-            pdfFile
-        } catch (e: Exception) {
-            Log.e("PdfBoxCrash", "Error PDFBox: ${Log.getStackTraceString(e)}")
-            null
-        } finally {
-            try { pdDocument.close() } catch (_: Exception) {}
+        if (shouldDrawCover) {
+            drawCoverPageWithPdfBox(context, pdDocument, coverConfig, imageEffectSettings)
         }
-    }
+        drawInnerPagesWithPdfBox(context, pdDocument, generatedPages, coverConfig, imageEffectSettings)
 
-    private fun drawCoverPageWithPdfBox(
-        context: Context,
-        pdDocument: PDDocument,
-        config: CoverPageConfig,
-        imageEffectSettings: Map<String, ImageEffectSettings>
-    ) {
-        val isVertical = config.pageOrientation == PageOrientation.Vertical
+        val storageDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+        storageDir?.mkdirs()
+        val pdfFile = File(storageDir, "$fileName.pdf")
+
+        pdDocument.save(pdfFile)
+        Log.d("PdfGenerator", "PDFBox: PDF guardado correctamente en ${pdfFile.absolutePath}")
+        pdfFile
+    } catch (e: Exception) {
+        Log.e("PdfBoxCrash", "Error al generar PDF con PDFBox: ${Log.getStackTraceString(e)}")
+        null
+    } finally {
+        try { pdDocument.close() } catch (_: Exception) {}
+    }
+}
+
+private fun drawCoverPageWithPdfBox(
+    context: Context,
+    pdDocument: PDDocument,
+    config: CoverPageConfig,
+    imageEffectSettings: Map<String, ImageEffectSettings>
+) {
+    val isVertical = config.pageOrientation == PageOrientation.Vertical
+    val mediaBox = if (isVertical) PDRectangle.A4 else PDRectangle(PDRectangle.A4.height, PDRectangle.A4.width)
+    val page = PDPage(mediaBox)
+    pdDocument.addPage(page)
+    val contentStream = PDPageContentStream(pdDocument, page)
+
+    try {
+        val pageWidth = page.mediaBox.width
+        val pageHeight = page.mediaBox.height
+
+        config.pageBackgroundColor?.let {
+            val r = (it shr 16) and 0xFF
+            val g = (it shr 8) and 0xFF
+            val b = it and 0xFF
+            contentStream.setNonStrokingColor(r, g, b)
+            contentStream.addRect(0f, 0f, pageWidth, pageHeight)
+            contentStream.fill()
+        }
+
+        val marginTop = config.marginTop * CM_TO_POINTS
+        val marginBottom = config.marginBottom * CM_TO_POINTS
+        val marginLeft = config.marginLeft * CM_TO_POINTS
+        val marginRight = config.marginRight * CM_TO_POINTS
+        val contentArea = RectF(marginLeft, marginTop, (pageWidth - marginRight), (pageHeight - marginBottom))
+
+        val rows = mutableListOf<Map<String, Any>>()
+        if (config.clientNameStyle.content.isNotBlank()) {
+            rows.add(mapOf("id" to "client", "weight" to config.clientWeight, "style" to config.clientNameStyle, "content" to config.clientNameStyle.content))
+        }
+        if (config.rucStyle.content.isNotBlank()) {
+            rows.add(mapOf("id" to "ruc", "weight" to config.rucWeight, "style" to config.rucStyle, "content" to config.rucStyle.content))
+        }
+        if (config.subtitleStyle.content.isNotBlank()) {
+            rows.add(mapOf("id" to "address", "weight" to 0f, "style" to config.subtitleStyle, "content" to config.subtitleStyle.content))
+        }
+        if (config.mainImageUri != null) {
+            rows.add(mapOf("id" to "photo", "weight" to config.photoWeight, "uri" to config.mainImageUri!!))
+        }
+
+        val totalWeight = rows.sumOf { (it["weight"] as Float).toDouble() }.toFloat()
+        var currentY = contentArea.top
+
+        rows.forEach { row ->
+            val id = row["id"] as String
+            val height = if (totalWeight > 0) contentArea.height() * ((row["weight"] as Float) / totalWeight) else 0f
+            val rect = RectF(contentArea.left, currentY, contentArea.right, currentY + height)
+
+            if (id == "photo") {
+                val uri = Uri.parse(row["uri"] as String)
+                try {
+                    val tmpFile = File.createTempFile("pdf_img", ".jpg", context.cacheDir)
+                    context.contentResolver.openInputStream(uri)?.use { input ->
+                        tmpFile.outputStream().use { out -> input.copyTo(out) }
+                    }
+                    val image = PDImageXObject.createFromFileByContent(tmpFile, pdDocument)
+                    tmpFile.delete()
+                    contentStream.drawImage(image, rect.left, pageHeight - rect.bottom, rect.width(), rect.height())
+                } catch (e: Exception) {
+                    Log.e("PdfBoxCrash", "Error cargando imagen: ${e.message}")
+                }
+            } else if (row.containsKey("content")) {
+                val text = row["content"] as String
+                val style = row["style"] as TextStyleConfig
+                val font = getPdfBoxFont(context, pdDocument, style.fontWeight ?: FontWeight.Normal, style.fontStyle ?: FontStyle.Normal)
+                val fontSize = style.fontSize.toFloat()
+                val textWidth = font.getStringWidth(text) / 1000 * fontSize
+                val textX = rect.left + (rect.width() - textWidth) / 2f
+                val textY = pageHeight - rect.top - (rect.height() / 2f) - (fontSize / 4f)
+                contentStream.beginText()
+                contentStream.setFont(font, fontSize)
+                contentStream.newLineAtOffset(textX, textY)
+                contentStream.showText(text)
+                contentStream.endText()
+            }
+            currentY += height + 5f
+        }
+    } finally {
+        try { contentStream.close() } catch (_: Exception) {}
+    }
+}
+
+private fun drawInnerPagesWithPdfBox(
+    context: Context,
+    pdDocument: PDDocument,
+    generatedPages: List<GeneratedPage>,
+    coverConfig: CoverPageConfig,
+    imageEffectSettings: Map<String, ImageEffectSettings>
+) {
+    generatedPages.forEach { pageData ->
+        val isVertical = pageData.orientation == PageOrientation.Vertical
         val mediaBox = if (isVertical) PDRectangle.A4 else PDRectangle(PDRectangle.A4.height, PDRectangle.A4.width)
         val page = PDPage(mediaBox)
         pdDocument.addPage(page)
@@ -181,133 +272,53 @@ object PdfGenerator {
             val pageWidth = page.mediaBox.width
             val pageHeight = page.mediaBox.height
 
-            config.pageBackgroundColor?.let {
-                val color = java.awt.Color(
-                    (it shr 16) and 0xFF,
-                    (it shr 8) and 0xFF,
-                    it and 0xFF
-                )
-                contentStream.setNonStrokingColor(color)
+            coverConfig.pageBackgroundColor?.let {
+                val r = (it shr 16) and 0xFF
+                val g = (it shr 8) and 0xFF
+                val b = it and 0xFF
+                contentStream.setNonStrokingColor(r, g, b)
                 contentStream.addRect(0f, 0f, pageWidth, pageHeight)
                 contentStream.fill()
             }
 
-            val marginTop = config.marginTop * CM_TO_POINTS
-            val marginBottom = config.marginBottom * CM_TO_POINTS
-            val marginLeft = config.marginLeft * CM_TO_POINTS
-            val marginRight = config.marginRight * CM_TO_POINTS
-            val contentArea = RectF(marginLeft, marginTop, (pageWidth - marginRight), (pageHeight - marginBottom))
-
-            val allRows = mutableListOf<Map<String, Any>>()
-            if (config.clientNameStyle.content.isNotBlank()) {
-                allRows.add(mapOf("id" to "client", "weight" to config.clientWeight, "style" to config.clientNameStyle, "content" to config.clientNameStyle.content))
-            }
-            if (config.rucStyle.content.isNotBlank()) {
-                allRows.add(mapOf("id" to "ruc", "weight" to config.rucWeight, "style" to config.rucStyle, "content" to config.rucStyle.content))
-            }
-            if (config.subtitleStyle.content.isNotBlank()) {
-                allRows.add(mapOf("id" to "address", "weight" to 0f, "style" to config.subtitleStyle, "content" to config.subtitleStyle.content))
-            }
-            if (config.mainImageUri != null) {
-                allRows.add(mapOf("id" to "photo", "weight" to config.photoWeight, "uri" to config.mainImageUri!!))
-            }
-
-            var currentY = contentArea.top
-            val totalWeight = allRows.sumOf { (it["weight"] as Float).toDouble() }.toFloat()
-
-            allRows.forEach { rowData ->
-                val id = rowData["id"] as String
-                val itemHeight = if (totalWeight > 0) contentArea.height() * ((rowData["weight"] as Float) / totalWeight) else 0f
-                val rect = RectF(contentArea.left, currentY, contentArea.right, currentY + itemHeight)
-
-                if (id == "photo") {
-                    val uri = Uri.parse(rowData["uri"] as String)
-                    try {
-                        val tempFile = File.createTempFile("pdf_img", ".jpg", context.cacheDir)
-                        context.contentResolver.openInputStream(uri)?.use { input ->
-                            tempFile.outputStream().use { output -> input.copyTo(output) }
-                        }
-                        val image = PDImageXObject.createFromFileByContent(tempFile, pdDocument)
-                        tempFile.delete()
-                        val imgWidth = rect.width()
-                        val imgHeight = rect.height()
-                        contentStream.drawImage(image, rect.left, pageHeight - rect.bottom, imgWidth, imgHeight)
-                    } catch (imgEx: Exception) {
-                        Log.e("PdfBoxCrash", "Error cargando imagen portada: ${imgEx.message}")
+            pageData.imageUris.forEach { uriString ->
+                val uri = Uri.parse(uriString)
+                try {
+                    val tmpFile = File.createTempFile("pdf_img", ".jpg", context.cacheDir)
+                    context.contentResolver.openInputStream(uri)?.use { input ->
+                        tmpFile.outputStream().use { out -> input.copyTo(out) }
                     }
-                } else if (rowData.containsKey("content")) {
-                    val content = rowData["content"] as String
-                    val style = rowData["style"] as TextStyleConfig
-                    val font = getPdfBoxFont(context, pdDocument, style.fontWeight ?: FontWeight.Normal, style.fontStyle ?: FontStyle.Normal)
-                    val fontSize = style.fontSize.toFloat()
-                    val textWidth = font.getStringWidth(content) / 1000 * fontSize
-                    val textX = rect.left + (rect.width() - textWidth) / 2
-                    val textY = pageHeight - rect.top - (rect.height() / 2) - (fontSize / 4)
-                    contentStream.beginText()
-                    contentStream.setFont(font, fontSize)
-                    contentStream.newLineAtOffset(textX, textY)
-                    contentStream.showText(content)
-                    contentStream.endText()
+                    val image = PDImageXObject.createFromFileByContent(tmpFile, pdDocument)
+                    tmpFile.delete()
+                    val imgWidth = pageWidth / 2f
+                    val imgHeight = pageHeight / 2f
+                    val posX = (pageWidth - imgWidth) / 2f
+                    val posY = (pageHeight - imgHeight) / 2f
+                    contentStream.drawImage(image, posX, posY, imgWidth, imgHeight)
+                } catch (e: Exception) {
+                    Log.e("PdfBoxCrash", "Error cargando imagen página interna: ${e.message}")
                 }
-
-                currentY += itemHeight + 5f
             }
-        } catch (e: Exception) {
-            Log.e("PdfBoxCrash", "Error en drawCoverPageWithPdfBox: ${e.message}")
         } finally {
             try { contentStream.close() } catch (_: Exception) {}
         }
     }
+}
 
-    private fun drawInnerPagesWithPdfBox(
-        context: Context,
-        pdDocument: PDDocument,
-        generatedPages: List<GeneratedPage>,
-        coverConfig: CoverPageConfig,
-        imageEffectSettings: Map<String, ImageEffectSettings>
-    ) {
-        generatedPages.forEach { pageData ->
-            val isVertical = pageData.orientation == PageOrientation.Vertical
-            val mediaBox = if (isVertical) PDRectangle.A4 else PDRectangle(PDRectangle.A4.height, PDRectangle.A4.width)
-            val page = PDPage(mediaBox)
-            pdDocument.addPage(page)
-            val contentStream = PDPageContentStream(pdDocument, page)
-            try {
-                val pageWidth = page.mediaBox.width.toInt()
-                val pageHeight = page.mediaBox.height.toInt()
-
-                coverConfig.pageBackgroundColor?.let {
-                    val color = java.awt.Color((it shr 16) and 0xFF, (it shr 8) and 0xFF, it and 0xFF)
-                    contentStream.setNonStrokingColor(color)
-                    contentStream.addRect(0f, 0f, pageWidth.toFloat(), pageHeight.toFloat())
-                    contentStream.fill()
-                }
-
-                pageData.imageUris.forEachIndexed { index, uriString ->
-                    val uri = Uri.parse(uriString)
-                    try {
-                        val tempFile = File.createTempFile("pdf_img", ".jpg", context.cacheDir)
-                        context.contentResolver.openInputStream(uri)?.use { input ->
-                            tempFile.outputStream().use { output -> input.copyTo(output) }
-                        }
-                        val image = PDImageXObject.createFromFileByContent(tempFile, pdDocument)
-                        tempFile.delete()
-                        val imgWidth = pageWidth / 2f
-                        val imgHeight = pageHeight / 2f
-                        val posX = (pageWidth - imgWidth) / 2f
-                        val posY = (pageHeight - imgHeight) / 2f
-                        contentStream.drawImage(image, posX, posY, imgWidth, imgHeight)
-                    } catch (imgEx: Exception) {
-                        Log.e("PdfBoxCrash", "Error cargando imagen interior: ${imgEx.message}")
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("PdfBoxCrash", "Error en página interna: ${e.message}")
-            } finally {
-                try { contentStream.close() } catch (_: Exception) {}
-            }
-        }
+private fun getPdfBoxFont(
+    context: Context,
+    pdDocument: PDDocument,
+    weight: FontWeight,
+    style: FontStyle
+): PDType0Font {
+    val fontName = when {
+        weight == FontWeight.Bold && style == FontStyle.Italic -> "Roboto-BoldItalic.ttf"
+        weight == FontWeight.Bold -> "Roboto-Bold.ttf"
+        style == FontStyle.Italic -> "Roboto-Italic.ttf"
+        else -> "Roboto-Regular.ttf"
     }
+    return PDType0Font.load(pdDocument, context.assets.open("fonts/$fontName"))
+}
 
     private fun drawCoverPage(pdfDocument: PdfDocument, context: Context, config: CoverPageConfig, quality: Int, imageEffectSettings: Map<String, ImageEffectSettings>) {
         val pageWidth = if (config.pageOrientation == PageOrientation.Vertical) A4_WIDTH else A4_HEIGHT
