@@ -169,7 +169,6 @@ object PdfGenerator {
                                 paddedRect.width().toInt(),
                                 paddedRect.height().toInt(),
                                 quality,
-                                compress = !config.forceFullResCover,
                                 forceFullRes = config.forceFullResCover
                             )
                             bitmap?.let {
@@ -277,7 +276,6 @@ object PdfGenerator {
                         rect.width().toInt(),
                         rect.height().toInt(),
                         quality,
-                        compress = true,
                         forceFullRes = false
                     )
                     bitmap?.let {
@@ -417,27 +415,40 @@ object PdfGenerator {
         return inSampleSize
     }
 
-    private fun decodeSampledBitmapFromUri(context: Context, uri: Uri, reqWidth: Int, reqHeight: Int, quality: Int, compress: Boolean, forceFullRes: Boolean = false): Bitmap? {
+    private fun decodeSampledBitmapFromUri(context: Context, uri: Uri, reqWidth: Int, reqHeight: Int, quality: Int, forceFullRes: Boolean = false): Bitmap? {
         return try {
-            val inputStream = context.contentResolver.openInputStream(uri) ?: return null
+            // Si se fuerza la resolución completa, cargamos directamente el stream sin muestreo.
+            if (forceFullRes) {
+                Log.d("PdfGenerator", "Cargando imagen de portada en resolución completa.")
+                context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                    return BitmapFactory.decodeStream(inputStream)
+                }
+            }
+
+            // --- Proceso estándar de muestreo y compresión para eficiencia de memoria ---
+
+            // 1. Decodificar solo los bordes para calcular inSampleSize
+            var inputStream = context.contentResolver.openInputStream(uri) ?: return null
             val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeStream(inputStream, null, options)
-            inputStream.close()
-            options.inSampleSize = if (forceFullRes) 1 else calculateInSampleSize(options, reqWidth, reqHeight)
+            inputStream.close() // Es importante cerrar este stream inicial
+
+            // 2. Calcular el sample size y decodificar el bitmap muestreado
+            options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight)
             options.inJustDecodeBounds = false
             val sampledBitmap = context.contentResolver.openInputStream(uri)?.use {
                 BitmapFactory.decodeStream(it, null, options)
             } ?: return null
 
-            if (!compress) {
-                return sampledBitmap
-            }
-
+            // 3. Comprimir el bitmap muestreado a formato JPEG para reducir su tamaño en el PDF
             val outputStream = ByteArrayOutputStream()
             sampledBitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)
-            sampledBitmap.recycle()
+            sampledBitmap.recycle() // Liberar la memoria del bitmap muestreado
+
+            // 4. Decodificar el bitmap final desde el stream de bytes comprimido
             val finalInputStream = ByteArrayInputStream(outputStream.toByteArray())
             BitmapFactory.decodeStream(finalInputStream)
+
         } catch (e: Exception) {
             e.printStackTrace()
             null
