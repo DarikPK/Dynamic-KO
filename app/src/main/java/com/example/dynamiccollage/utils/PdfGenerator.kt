@@ -20,7 +20,6 @@ import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
 import com.tom_roush.pdfbox.pdmodel.common.PDRectangle
 import com.tom_roush.pdfbox.pdmodel.font.PDFont
 import com.tom_roush.pdfbox.pdmodel.font.PDType0Font
-import com.tom_roush.pdfbox.pdmodel.font.PDType1Font
 import com.tom_roush.pdfbox.pdmodel.graphics.image.PDImageXObject
 import android.graphics.Color
 import java.io.ByteArrayInputStream
@@ -313,24 +312,20 @@ private fun getPdfBoxFont(
     weight: FontWeight,
     style: FontStyle
 ): PDFont {
+    val fallbackFont = "Roboto-Regular.ttf"
+    val fontName = when {
+        weight == FontWeight.Bold && style == FontStyle.Italic -> "Roboto-BoldItalic.ttf"
+        weight == FontWeight.Bold -> "Roboto-Bold.ttf"
+        style == FontStyle.Italic -> "Roboto-Italic.ttf"
+        else -> fallbackFont
+    }
+
     return try {
-        // Intentar cargar fuentes TTF desde assets/fonts/
-        val fontName = when {
-            weight == FontWeight.Bold && style == FontStyle.Italic -> "Roboto-BoldItalic.ttf"
-            weight == FontWeight.Bold -> "Roboto-Bold.ttf"
-            style == FontStyle.Italic -> "Roboto-Italic.ttf"
-            else -> "Roboto-Regular.ttf"
-        }
+        // Carga Roboto directamente desde assets/fonts/
         PDType0Font.load(pdDocument, context.assets.open("fonts/$fontName"))
     } catch (e: Exception) {
-        // Si la fuente no existe o falla, usar una estándar
-        Log.w("PdfGenerator", "⚠️ Fuente personalizada no encontrada, usando Helvetica por defecto.")
-        when {
-            weight == FontWeight.Bold && style == FontStyle.Italic -> PDType1Font.HELVETICA_BOLD_OBLIQUE
-            weight == FontWeight.Bold -> PDType1Font.HELVETICA_BOLD
-            style == FontStyle.Italic -> PDType1Font.HELVETICA_OBLIQUE
-            else -> PDType1Font.HELVETICA
-        }
+        Log.e("PdfGenerator", "⚠️ No se pudo cargar la fuente $fontName, usando respaldo.", e)
+        PDType0Font.load(pdDocument, context.assets.open("fonts/$fallbackFont"))
     }
 }
 
