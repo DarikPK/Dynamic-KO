@@ -119,17 +119,32 @@ object PdfGenerator {
     }
 
     private fun drawCoverPage(pdfDocument: PdfDocument, context: Context, config: CoverPageConfig, quality: Int, imageEffectSettings: Map<String, ImageEffectSettings>) {
-        val pageWidth = if (config.pageOrientation == PageOrientation.Vertical) A4_WIDTH else A4_HEIGHT
-        val pageHeight = if (config.pageOrientation == PageOrientation.Vertical) A4_HEIGHT else A4_WIDTH
-        val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
-        val page = pdfDocument.startPage(pageInfo)
-        val canvas = page.canvas
+        val DPI_SCALE = 300f / 72f
+        val basePageWidth = if (config.pageOrientation == PageOrientation.Vertical) A4_WIDTH else A4_HEIGHT
+        val basePageHeight = if (config.pageOrientation == PageOrientation.Vertical) A4_HEIGHT else A4_WIDTH
+
+        val pageInfo: PdfDocument.PageInfo
+        val page: PdfDocument.Page
+        val canvas: Canvas
+
+        if (config.forceFullResCover) {
+            val scaledWidth = (basePageWidth * DPI_SCALE).toInt()
+            val scaledHeight = (basePageHeight * DPI_SCALE).toInt()
+            pageInfo = PdfDocument.PageInfo.Builder(scaledWidth, scaledHeight, 1).create()
+            page = pdfDocument.startPage(pageInfo)
+            canvas = page.canvas
+            canvas.scale(DPI_SCALE, DPI_SCALE)
+        } else {
+            pageInfo = PdfDocument.PageInfo.Builder(basePageWidth, basePageHeight, 1).create()
+            page = pdfDocument.startPage(pageInfo)
+            canvas = page.canvas
+        }
 
         config.pageBackgroundColor?.let { color ->
             canvas.drawColor(color)
         }
 
-        drawCoverPageContent(canvas, context, config, quality, pageWidth, pageHeight, imageEffectSettings)
+        drawCoverPageContent(canvas, context, config, quality, basePageWidth, basePageHeight, imageEffectSettings)
         pdfDocument.finishPage(page)
     }
 
