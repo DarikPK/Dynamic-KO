@@ -19,7 +19,7 @@ import com.tom_roush.pdfbox.pdmodel.PDPage
 import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
 import com.tom_roush.pdfbox.pdmodel.common.PDRectangle
 import com.tom_roush.pdfbox.pdmodel.font.PDFont
-import com.tom_roush.pdfbox.pdmodel.font.PDType1Font
+import com.tom_roush.pdfbox.pdmodel.font.PDType0Font
 import com.tom_roush.pdfbox.pdmodel.graphics.image.PDImageXObject
 import android.graphics.Color
 import java.io.ByteArrayInputStream
@@ -237,7 +237,7 @@ private fun drawCoverPageWithPdfBox(
             } else if (row.containsKey("content")) {
                 val text = row["content"] as String
                 val style = row["style"] as TextStyleConfig
-                val font = getPdfBoxFont(style.fontWeight ?: FontWeight.Normal, style.fontStyle ?: FontStyle.Normal)
+                val font = getPdfBoxFont(context, pdDocument, style.fontWeight ?: FontWeight.Normal, style.fontStyle ?: FontStyle.Normal)
                 val fontSize = style.fontSize.toFloat()
                 val textWidth = font.getStringWidth(text) / 1000 * fontSize
                 val textX = rect.left + (rect.width() - textWidth) / 2f
@@ -307,10 +307,26 @@ private fun drawInnerPagesWithPdfBox(
 }
 
 private fun getPdfBoxFont(
+    context: Context,
+    pdDocument: PDDocument,
     weight: FontWeight,
     style: FontStyle
 ): PDFont {
-    return PDType1Font.HELVETICA_BOLD
+    val fallbackFont = "Roboto-Regular.ttf"
+    val fontName = when {
+        weight == FontWeight.Bold && style == FontStyle.Italic -> "Roboto-BoldItalic.ttf"
+        weight == FontWeight.Bold -> "Roboto-Bold.ttf"
+        style == FontStyle.Italic -> "Roboto-Italic.ttf"
+        else -> fallbackFont
+    }
+
+    return try {
+        // Carga Roboto directamente desde assets/fonts/
+        PDType0Font.load(pdDocument, context.assets.open("fonts/$fontName"))
+    } catch (e: Exception) {
+        Log.e("PdfGenerator", "⚠️ No se pudo cargar la fuente $fontName, usando respaldo.", e)
+        PDType0Font.load(pdDocument, context.assets.open("fonts/$fallbackFont"))
+    }
 }
 
     private fun drawCoverPage(pdfDocument: PdfDocument, context: Context, config: CoverPageConfig, quality: Int, imageEffectSettings: Map<String, ImageEffectSettings>) {
