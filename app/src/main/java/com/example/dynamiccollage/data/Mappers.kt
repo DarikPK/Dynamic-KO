@@ -168,7 +168,8 @@ fun CoverPageConfig.toSerializable() = SerializableCoverPageConfig(
     quality = this.quality,
     pageBackgroundColor = this.pageBackgroundColor,
     imageBorderSettingsMap = this.imageBorderSettingsMap.mapValues { it.value.toSerializable() },
-    templateName = this.templateName
+    templateName = this.templateName,
+    forceFullResCover = this.forceFullResCover
 )
 
 fun SerializableCoverPageConfig.toDomain() = CoverPageConfig(
@@ -194,7 +195,8 @@ fun SerializableCoverPageConfig.toDomain() = CoverPageConfig(
     quality = this.quality ?: 90,
     pageBackgroundColor = this.pageBackgroundColor,
     imageBorderSettingsMap = this.imageBorderSettingsMap?.mapValues { it.value.toDomain() } ?: emptyMap(),
-    templateName = this.templateName
+    templateName = this.templateName,
+    forceFullResCover = this.forceFullResCover ?: false
 )
 
 // Mappers for ImageBorderSettings

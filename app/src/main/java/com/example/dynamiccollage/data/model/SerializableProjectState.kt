@@ -35,7 +35,8 @@ data class SerializableCoverPageConfig(
     val quality: Int?,
     val pageBackgroundColor: Int?,
     val imageBorderSettingsMap: Map<String, SerializableImageBorderSettings>?,
-    val templateName: String?
+    val templateName: String?,
+    val forceFullResCover: Boolean? = false
 )
 
 data class SerializableImageBorderSettings(
