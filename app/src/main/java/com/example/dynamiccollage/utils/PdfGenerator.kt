@@ -257,7 +257,7 @@ object PdfGenerator {
                 } else if (rowData.containsKey("content")) {
                     val content = rowData["content"] as String
                     val style = rowData["style"] as TextStyleConfig
-                    val font = getPdfBoxFont(style.fontWeight, style.fontStyle)
+                    val font = getPdfBoxFont(style.fontWeight ?: FontWeight.Normal, style.fontStyle ?: FontStyle.Normal)
                     val fontSize = style.fontSize.toFloat()
                     val textWidth = font.getStringWidth(content) / 1000 * fontSize
 
@@ -270,7 +270,7 @@ object PdfGenerator {
 
                     contentStream.beginText()
                     contentStream.setFont(font, fontSize)
-                    val fontColor = java.awt.Color(style.fontColor.toArgb())
+                    val fontColor = Color(style.fontColor.toArgb())
                     contentStream.setNonStrokingColor(fontColor)
                     contentStream.newLineAtOffset(textX, textY)
                     contentStream.showText(content)
@@ -307,7 +307,7 @@ object PdfGenerator {
                 val pageHeight = page.mediaBox.height.toInt()
 
                 coverConfig.pageBackgroundColor?.let {
-                    val color = java.awt.Color(it)
+                    val color = Color(it)
                     contentStream.setNonStrokingColor(color)
                     contentStream.addRect(0f, 0f, pageWidth.toFloat(), pageHeight.toFloat())
                     contentStream.fill()
@@ -327,7 +327,7 @@ object PdfGenerator {
                         val rect = rects[index]
                         try {
                             context.contentResolver.openInputStream(Uri.parse(uriString))?.use { inputStream ->
-                                val image = PDImageXObject.createFromStream(pdDocument, inputStream)
+                                val image = PDImageXObject.createFromInputStream(pdDocument, inputStream)
                                 val alignment = when {
                                     cols == 1 && rows == 1 -> ImageAlignment.CENTER
                                     cols == 2 -> if (index == 0) ImageAlignment.RIGHT else ImageAlignment.LEFT
