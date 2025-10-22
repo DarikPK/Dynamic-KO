@@ -14,11 +14,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import android.util.Log
 import com.example.dynamiccollage.data.model.*
+import com.tom_roush.pdfbox.pdmodel.PDDocument
+import com.tom_roush.pdfbox.pdmodel.PDPage
+import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
+import com.tom_roush.pdfbox.pdmodel.common.PDRectangle
+import com.tom_roush.pdfbox.pdmodel.font.PDType1Font
+import com.tom_roush.pdfbox.pdmodel.graphics.image.PDImageXObject
+import java.awt.Color
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
-import com.tom_roush.pdfbox.pdmodel.PDDocument
 
 object PdfGenerator {
 
@@ -286,7 +292,7 @@ object PdfGenerator {
         pdDocument: PDDocument,
         context: Context,
         generatedPages: List<GeneratedPage>,
-        coverConfig: CoverPage-Config,
+        coverConfig: CoverPageConfig,
         imageEffectSettings: Map<String, ImageEffectSettings>
     ) {
         generatedPages.forEach { pageData ->
