@@ -137,7 +137,9 @@ object PdfGenerator {
         imageEffectSettings: Map<String, ImageEffectSettings>
     ): File? {
         val pdDocument = PDDocument()
-        try {
+        return try {
+            Log.d("PdfGenerator", "Iniciando ruta PDFBox segura...")
+
             val shouldDrawCover = coverConfig.clientNameStyle.content.isNotBlank() ||
                     coverConfig.rucStyle.content.isNotBlank() ||
                     coverConfig.subtitleStyle.content.isNotBlank() ||
@@ -146,7 +148,6 @@ object PdfGenerator {
             if (shouldDrawCover) {
                 drawCoverPageWithPdfBox(context, pdDocument, coverConfig, imageEffectSettings)
             }
-
             drawInnerPagesWithPdfBox(context, pdDocument, generatedPages, coverConfig, imageEffectSettings)
 
             val storageDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
@@ -154,30 +155,13 @@ object PdfGenerator {
             val pdfFile = File(storageDir, "$fileName.pdf")
 
             pdDocument.save(pdfFile)
-            return pdfFile
+            Log.d("PdfGenerator", "PDF guardado correctamente en: ${pdfFile.absolutePath}")
+            pdfFile
         } catch (e: Exception) {
-            Log.e("PdfGenerator", "Error exacto PDFBox: ${e.message}", e)
-            e.printStackTrace()
-            return null
+            Log.e("PdfBoxCrash", "Error PDFBox: ${Log.getStackTraceString(e)}")
+            null
         } finally {
             try { pdDocument.close() } catch (_: Exception) {}
-        }
-    }
-
-    private fun getPdfBoxFont(
-        context: Context,
-        pdDocument: PDDocument,
-        fontWeight: FontWeight,
-        fontStyle: FontStyle
-    ): PDType0Font {
-        val fontName = when {
-            fontWeight == FontWeight.Bold && fontStyle == FontStyle.Italic -> "fonts/Roboto-BoldItalic.ttf"
-            fontWeight == FontWeight.Bold -> "fonts/Roboto-Bold.ttf"
-            fontStyle == FontStyle.Italic -> "fonts/Roboto-Italic.ttf"
-            else -> "fonts/Roboto-Regular.ttf"
-        }
-        context.assets.open(fontName).use { input ->
-            return PDType0Font.load(pdDocument, input)
         }
     }
 
@@ -198,10 +182,12 @@ object PdfGenerator {
             val pageHeight = page.mediaBox.height
 
             config.pageBackgroundColor?.let {
-                val r = Color.red(it)
-                val g = Color.green(it)
-                val b = Color.blue(it)
-                contentStream.setNonStrokingColor(r, g, b)
+                val color = java.awt.Color(
+                    (it shr 16) and 0xFF,
+                    (it shr 8) and 0xFF,
+                    it and 0xFF
+                )
+                contentStream.setNonStrokingColor(color)
                 contentStream.addRect(0f, 0f, pageWidth, pageHeight)
                 contentStream.fill()
             }
@@ -214,91 +200,62 @@ object PdfGenerator {
 
             val allRows = mutableListOf<Map<String, Any>>()
             if (config.clientNameStyle.content.isNotBlank()) {
-                allRows.add(mapOf("id" to "client", "weight" to config.clientWeight, "style" to config.clientNameStyle, "content" to "Cliente: ${config.clientNameStyle.content.let { if (config.allCaps) it.uppercase() else it }}"))
+                allRows.add(mapOf("id" to "client", "weight" to config.clientWeight, "style" to config.clientNameStyle, "content" to config.clientNameStyle.content))
             }
             if (config.rucStyle.content.isNotBlank()) {
-                allRows.add(mapOf("id" to "ruc", "weight" to config.rucWeight, "style" to config.rucStyle, "content" to "RUC: ${config.rucStyle.content.let { if (config.allCaps) it.uppercase() else it }}"))
+                allRows.add(mapOf("id" to "ruc", "weight" to config.rucWeight, "style" to config.rucStyle, "content" to config.rucStyle.content))
             }
             if (config.subtitleStyle.content.isNotBlank()) {
-                allRows.add(mapOf("id" to "address", "weight" to 0f, "style" to config.subtitleStyle, "content" to "Dirección: ${config.subtitleStyle.content.let { if (config.allCaps) it.uppercase() else it }}"))
+                allRows.add(mapOf("id" to "address", "weight" to 0f, "style" to config.subtitleStyle, "content" to config.subtitleStyle.content))
             }
             if (config.mainImageUri != null) {
                 allRows.add(mapOf("id" to "photo", "weight" to config.photoWeight, "uri" to config.mainImageUri!!))
             }
 
-            var addressRowHeight = 0f
-            val addressRowData = allRows.find { it["id"] == "address" }
-            if (addressRowData != null) {
-                val style = addressRowData["style"] as TextStyleConfig
-                addressRowHeight = 20f // Simplified height for now
-            }
-
-            val weightedRows = allRows.filter { it["id"] != "address" }
-            val totalWeight = weightedRows.sumOf { (it["weight"] as Float).toDouble() }.toFloat()
-            var separations = 0
-            for (i in 0 until allRows.size - 1) {
-                val currentId = allRows[i]["id"] as String
-                val nextId = allRows[i+1]["id"] as String
-                if (currentId == "client" && nextId == "ruc") continue
-                if (currentId == "address") continue
-                separations++
-            }
-            val totalSeparationWeight = config.separationWeight * separations
-            val finalTotalWeight = totalWeight + totalSeparationWeight
-            val fixedSpace = if (addressRowData != null) addressRowHeight + 5f else 0f
-            val availableHeight = contentArea.height() - fixedSpace
-            val separationHeight = if (finalTotalWeight > 0) availableHeight * (config.separationWeight / finalTotalWeight) else 0f
             var currentY = contentArea.top
+            val totalWeight = allRows.sumOf { (it["weight"] as Float).toDouble() }.toFloat()
 
-            allRows.forEachIndexed { index, rowData ->
+            allRows.forEach { rowData ->
                 val id = rowData["id"] as String
-                val itemHeight = if (id == "address") addressRowHeight else {
-                    if (finalTotalWeight > 0) availableHeight * ((rowData["weight"] as Float) / finalTotalWeight) else 0f
-                }
+                val itemHeight = if (totalWeight > 0) contentArea.height() * ((rowData["weight"] as Float) / totalWeight) else 0f
                 val rect = RectF(contentArea.left, currentY, contentArea.right, currentY + itemHeight)
 
                 if (id == "photo") {
                     val uri = Uri.parse(rowData["uri"] as String)
-                    val tempFile = File.createTempFile("cover_img", ".jpg", context.cacheDir)
-                    context.contentResolver.openInputStream(uri)?.use { input -> tempFile.outputStream().use { input.copyTo(it) } }
-                    val image = PDImageXObject.createFromFileByContent(tempFile, pdDocument)
-                    val imageRect = getFinalBitmapRect(Bitmap.createBitmap(image.width, image.height, Bitmap.Config.ARGB_8888), rect, ImageAlignment.CENTER)
-                    contentStream.drawImage(image as PDImageXObject, imageRect.left, pageHeight - imageRect.bottom, imageRect.width(), imageRect.height())
-                    tempFile.delete()
+                    try {
+                        val tempFile = File.createTempFile("pdf_img", ".jpg", context.cacheDir)
+                        context.contentResolver.openInputStream(uri)?.use { input ->
+                            tempFile.outputStream().use { output -> input.copyTo(output) }
+                        }
+                        val image = PDImageXObject.createFromFileByContent(tempFile, pdDocument)
+                        tempFile.delete()
+                        val imgWidth = rect.width()
+                        val imgHeight = rect.height()
+                        contentStream.drawImage(image, rect.left, pageHeight - rect.bottom, imgWidth, imgHeight)
+                    } catch (imgEx: Exception) {
+                        Log.e("PdfBoxCrash", "Error cargando imagen portada: ${imgEx.message}")
+                    }
                 } else if (rowData.containsKey("content")) {
                     val content = rowData["content"] as String
                     val style = rowData["style"] as TextStyleConfig
                     val font = getPdfBoxFont(context, pdDocument, style.fontWeight ?: FontWeight.Normal, style.fontStyle ?: FontStyle.Normal)
                     val fontSize = style.fontSize.toFloat()
                     val textWidth = font.getStringWidth(content) / 1000 * fontSize
-
-                    val textX = when (style.textAlign) {
-                        TextAlign.Center -> rect.left + (rect.width() - textWidth) / 2
-                        TextAlign.End -> rect.right - textWidth
-                        else -> rect.left
-                    }
-                    val textY = pageHeight - (rect.top + rect.height() / 2) - (fontSize / 4)
-
+                    val textX = rect.left + (rect.width() - textWidth) / 2
+                    val textY = pageHeight - rect.top - (rect.height() / 2) - (fontSize / 4)
                     contentStream.beginText()
                     contentStream.setFont(font, fontSize)
-                    val fontColorInt = style.fontColor.toArgb()
-                    val r = Color.red(fontColorInt)
-                    val g = Color.green(fontColorInt)
-                    val b = Color.blue(fontColorInt)
-                    contentStream.setNonStrokingColor(r, g, b)
                     contentStream.newLineAtOffset(textX, textY)
                     contentStream.showText(content)
                     contentStream.endText()
                 }
 
-                currentY += itemHeight
-                if (index < allRows.size - 1) {
-                    val nextId = allRows[index + 1]["id"] as String
-                    if (id == "address") { currentY += 5f } else if (!(id == "client" && nextId == "ruc")) { currentY += separationHeight }
-                }
+                currentY += itemHeight + 5f
             }
+        } catch (e: Exception) {
+            Log.e("PdfBoxCrash", "Error en drawCoverPageWithPdfBox: ${e.message}")
         } finally {
-            contentStream.close()
+            try { contentStream.close() } catch (_: Exception) {}
         }
     }
 
@@ -315,52 +272,39 @@ object PdfGenerator {
             val page = PDPage(mediaBox)
             pdDocument.addPage(page)
             val contentStream = PDPageContentStream(pdDocument, page)
-
             try {
                 val pageWidth = page.mediaBox.width.toInt()
                 val pageHeight = page.mediaBox.height.toInt()
 
                 coverConfig.pageBackgroundColor?.let {
-                    val r = Color.red(it)
-                    val g = Color.green(it)
-                    val b = Color.blue(it)
-                    contentStream.setNonStrokingColor(r, g, b)
+                    val color = java.awt.Color((it shr 16) and 0xFF, (it shr 8) and 0xFF, it and 0xFF)
+                    contentStream.setNonStrokingColor(color)
                     contentStream.addRect(0f, 0f, pageWidth.toFloat(), pageHeight.toFloat())
                     contentStream.fill()
                 }
 
-                var startY = 20f
-
-                val (cols, rows) = when (pageData.orientation) {
-                    PageOrientation.Vertical -> if (pageData.imageUris.size > 1) Pair(1, 2) else Pair(1, 1)
-                    PageOrientation.Horizontal -> if (pageData.imageUris.size > 1) Pair(2, 1) else Pair(1, 1)
-                }
-
-                val rects = getRectsForPage(pageWidth, pageHeight, startY, cols, rows, 15f)
-
                 pageData.imageUris.forEachIndexed { index, uriString ->
-                    if (index < rects.size) {
-                        val rect = rects[index]
-                        try {
-                            val tempFile = File.createTempFile("inner_img", ".jpg", context.cacheDir)
-                            context.contentResolver.openInputStream(Uri.parse(uriString))?.use { input -> tempFile.outputStream().use { input.copyTo(it) } }
-                            val image = PDImageXObject.createFromFileByContent(tempFile, pdDocument)
-                            val alignment = when {
-                                cols == 1 && rows == 1 -> ImageAlignment.CENTER
-                                cols == 2 -> if (index == 0) ImageAlignment.RIGHT else ImageAlignment.LEFT
-                                rows == 2 -> if (index == 0) ImageAlignment.BOTTOM else ImageAlignment.TOP
-                                else -> ImageAlignment.CENTER
-                            }
-                            val imageRect = getFinalBitmapRect(Bitmap.createBitmap(image.width, image.height, Bitmap.Config.ARGB_8888), rect, alignment)
-                            contentStream.drawImage(image as PDImageXObject, imageRect.left, pageHeight - imageRect.bottom, imageRect.width(), imageRect.height())
-                            tempFile.delete()
-                        } catch (e: Exception) {
-                            e.printStackTrace()
+                    val uri = Uri.parse(uriString)
+                    try {
+                        val tempFile = File.createTempFile("pdf_img", ".jpg", context.cacheDir)
+                        context.contentResolver.openInputStream(uri)?.use { input ->
+                            tempFile.outputStream().use { output -> input.copyTo(output) }
                         }
+                        val image = PDImageXObject.createFromFileByContent(tempFile, pdDocument)
+                        tempFile.delete()
+                        val imgWidth = pageWidth / 2f
+                        val imgHeight = pageHeight / 2f
+                        val posX = (pageWidth - imgWidth) / 2f
+                        val posY = (pageHeight - imgHeight) / 2f
+                        contentStream.drawImage(image, posX, posY, imgWidth, imgHeight)
+                    } catch (imgEx: Exception) {
+                        Log.e("PdfBoxCrash", "Error cargando imagen interior: ${imgEx.message}")
                     }
                 }
+            } catch (e: Exception) {
+                Log.e("PdfBoxCrash", "Error en página interna: ${e.message}")
             } finally {
-                contentStream.close()
+                try { contentStream.close() } catch (_: Exception) {}
             }
         }
     }
