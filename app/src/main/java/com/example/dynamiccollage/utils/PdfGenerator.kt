@@ -19,7 +19,7 @@ import com.tom_roush.pdfbox.pdmodel.PDPage
 import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
 import com.tom_roush.pdfbox.pdmodel.common.PDRectangle
 import com.tom_roush.pdfbox.pdmodel.font.PDFont
-import com.tom_roush.pdfbox.pdmodel.font.PDType0Font
+import com.tom_roush.pdfbox.pdmodel.font.PDTrueTypeFont
 import com.tom_roush.pdfbox.pdmodel.graphics.image.PDImageXObject
 import android.graphics.Color
 import java.io.ByteArrayInputStream
@@ -309,23 +309,22 @@ private fun drawInnerPagesWithPdfBox(
 private fun getPdfBoxFont(
     context: Context,
     pdDocument: PDDocument,
-    weight: FontWeight,
-    style: FontStyle
+    fontWeight: FontWeight,
+    fontStyle: FontStyle
 ): PDFont {
     val fallbackFont = "Roboto-Regular.ttf"
     val fontName = when {
-        weight == FontWeight.Bold && style == FontStyle.Italic -> "Roboto-BoldItalic.ttf"
-        weight == FontWeight.Bold -> "Roboto-Bold.ttf"
-        style == FontStyle.Italic -> "Roboto-Italic.ttf"
+        fontWeight == FontWeight.Bold && fontStyle == FontStyle.Italic -> "Roboto-BoldItalic.ttf"
+        fontWeight == FontWeight.Bold -> "Roboto-Bold.ttf"
+        fontStyle == FontStyle.Italic -> "Roboto-Italic.ttf"
         else -> fallbackFont
     }
 
     return try {
-        // Carga Roboto directamente desde assets/fonts/
-        PDType0Font.load(pdDocument, context.assets.open("fonts/$fontName"))
+        PDTrueTypeFont.loadTTF(pdDocument, context.assets.open("fonts/$fontName"))
     } catch (e: Exception) {
         Log.e("PdfGenerator", "⚠️ No se pudo cargar la fuente $fontName, usando respaldo.", e)
-        PDType0Font.load(pdDocument, context.assets.open("fonts/$fallbackFont"))
+        PDTrueTypeFont.loadTTF(pdDocument, context.assets.open("fonts/$fallbackFont"))
     }
 }
 
