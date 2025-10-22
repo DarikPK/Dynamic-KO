@@ -144,21 +144,23 @@ object PdfGenerator {
                     coverConfig.mainImageUri != null
 
             if (shouldDrawCover) {
-                drawCoverPageWithPdfBox(pdDocument, context, coverConfig, imageEffectSettings)
+                drawCoverPageWithPdfBox(context, pdDocument, coverConfig, imageEffectSettings)
             }
-            drawInnerPagesWithPdfBox(pdDocument, context, generatedPages, coverConfig, imageEffectSettings)
 
-            val storageDir: File? = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+            drawInnerPagesWithPdfBox(context, pdDocument, generatedPages, coverConfig, imageEffectSettings)
+
+            val storageDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
             storageDir?.mkdirs()
             val pdfFile = File(storageDir, "$fileName.pdf")
 
             pdDocument.save(pdfFile)
             return pdfFile
         } catch (e: Exception) {
-            Log.e("PdfGenerator", "Error al generar PDF con PDFBox", e)
+            Log.e("PdfGenerator", "Error exacto PDFBox: ${e.message}", e)
+            e.printStackTrace()
             return null
         } finally {
-            pdDocument.close()
+            try { pdDocument.close() } catch (_: Exception) {}
         }
     }
 
@@ -180,8 +182,8 @@ object PdfGenerator {
     }
 
     private fun drawCoverPageWithPdfBox(
-        pdDocument: PDDocument,
         context: Context,
+        pdDocument: PDDocument,
         config: CoverPageConfig,
         imageEffectSettings: Map<String, ImageEffectSettings>
     ) {
@@ -257,15 +259,12 @@ object PdfGenerator {
 
                 if (id == "photo") {
                     val uri = Uri.parse(rowData["uri"] as String)
-                    context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                        val tempBytes = inputStream.readBytes()
-                        val tempFile = File.createTempFile("img_", ".jpg", context.cacheDir)
-                        FileOutputStream(tempFile).use { it.write(tempBytes) }
-                        val image = PDImageXObject.createFromFileByContent(tempFile, pdDocument)
-                        val imageRect = getFinalBitmapRect(Bitmap.createBitmap(image.width, image.height, Bitmap.Config.ARGB_8888), rect, ImageAlignment.CENTER)
-                        contentStream.drawImage(image as PDImageXObject, imageRect.left, pageHeight - imageRect.bottom, imageRect.width(), imageRect.height())
-                        tempFile.delete()
-                    }
+                    val tempFile = File.createTempFile("cover_img", ".jpg", context.cacheDir)
+                    context.contentResolver.openInputStream(uri)?.use { input -> tempFile.outputStream().use { input.copyTo(it) } }
+                    val image = PDImageXObject.createFromFileByContent(tempFile, pdDocument)
+                    val imageRect = getFinalBitmapRect(Bitmap.createBitmap(image.width, image.height, Bitmap.Config.ARGB_8888), rect, ImageAlignment.CENTER)
+                    contentStream.drawImage(image as PDImageXObject, imageRect.left, pageHeight - imageRect.bottom, imageRect.width(), imageRect.height())
+                    tempFile.delete()
                 } else if (rowData.containsKey("content")) {
                     val content = rowData["content"] as String
                     val style = rowData["style"] as TextStyleConfig
@@ -304,8 +303,8 @@ object PdfGenerator {
     }
 
     private fun drawInnerPagesWithPdfBox(
-        pdDocument: PDDocument,
         context: Context,
+        pdDocument: PDDocument,
         generatedPages: List<GeneratedPage>,
         coverConfig: CoverPageConfig,
         imageEffectSettings: Map<String, ImageEffectSettings>
@@ -343,21 +342,18 @@ object PdfGenerator {
                     if (index < rects.size) {
                         val rect = rects[index]
                         try {
-                            context.contentResolver.openInputStream(Uri.parse(uriString))?.use { inputStream ->
-                                val tempBytes = inputStream.readBytes()
-                                val tempFile = File.createTempFile("img_", ".jpg", context.cacheDir)
-                                FileOutputStream(tempFile).use { it.write(tempBytes) }
-                                val image = PDImageXObject.createFromFileByContent(tempFile, pdDocument)
-                                val alignment = when {
-                                    cols == 1 && rows == 1 -> ImageAlignment.CENTER
-                                    cols == 2 -> if (index == 0) ImageAlignment.RIGHT else ImageAlignment.LEFT
-                                    rows == 2 -> if (index == 0) ImageAlignment.BOTTOM else ImageAlignment.TOP
-                                    else -> ImageAlignment.CENTER
-                                }
-                                val imageRect = getFinalBitmapRect(Bitmap.createBitmap(image.width, image.height, Bitmap.Config.ARGB_8888), rect, alignment)
-                                contentStream.drawImage(image as PDImageXObject, imageRect.left, pageHeight - imageRect.bottom, imageRect.width(), imageRect.height())
-                                tempFile.delete()
+                            val tempFile = File.createTempFile("inner_img", ".jpg", context.cacheDir)
+                            context.contentResolver.openInputStream(Uri.parse(uriString))?.use { input -> tempFile.outputStream().use { input.copyTo(it) } }
+                            val image = PDImageXObject.createFromFileByContent(tempFile, pdDocument)
+                            val alignment = when {
+                                cols == 1 && rows == 1 -> ImageAlignment.CENTER
+                                cols == 2 -> if (index == 0) ImageAlignment.RIGHT else ImageAlignment.LEFT
+                                rows == 2 -> if (index == 0) ImageAlignment.BOTTOM else ImageAlignment.TOP
+                                else -> ImageAlignment.CENTER
                             }
+                            val imageRect = getFinalBitmapRect(Bitmap.createBitmap(image.width, image.height, Bitmap.Config.ARGB_8888), rect, alignment)
+                            contentStream.drawImage(image as PDImageXObject, imageRect.left, pageHeight - imageRect.bottom, imageRect.width(), imageRect.height())
+                            tempFile.delete()
                         } catch (e: Exception) {
                             e.printStackTrace()
                         }
