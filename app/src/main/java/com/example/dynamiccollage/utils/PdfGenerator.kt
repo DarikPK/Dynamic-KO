@@ -163,11 +163,15 @@ object PdfGenerator {
                             val uriString = config.mainImageUri
                             val padding = config.photoStyle.padding
                             val paddedRect = RectF(rect.left + padding.left, rect.top + padding.top, rect.right - padding.right, rect.bottom - padding.bottom)
-                            var bitmap = if (config.forceFullResCover) {
-                                decodeBitmapFromUri(context, Uri.parse(uriString), paddedRect.width().toInt(), paddedRect.height().toInt(), forceFullRes = true)
-                            } else {
-                                decodeAndCompressBitmapFromUri(context, Uri.parse(uriString), paddedRect.width().toInt(), paddedRect.height().toInt(), quality)
-                            }
+                            var bitmap = decodeSampledBitmapFromUri(
+                                context,
+                                Uri.parse(uriString),
+                                paddedRect.width().toInt(),
+                                paddedRect.height().toInt(),
+                                quality,
+                                compress = !config.forceFullResCover,
+                                forceFullRes = config.forceFullResCover
+                            )
                             bitmap?.let {
                                 // Apply effects if they exist
                                 val settings = imageEffectSettings[uriString]
@@ -267,7 +271,15 @@ object PdfGenerator {
             if (index < rects.size) {
                 val rect = rects[index]
                 try {
-                    var bitmap = decodeAndCompressBitmapFromUri(context, Uri.parse(uriString), rect.width().toInt(), rect.height().toInt(), quality)
+                    var bitmap = decodeSampledBitmapFromUri(
+                        context,
+                        Uri.parse(uriString),
+                        rect.width().toInt(),
+                        rect.height().toInt(),
+                        quality,
+                        compress = true,
+                        forceFullRes = false
+                    )
                     bitmap?.let {
                         val settings = imageEffectSettings[uriString]
                         if (settings != null) {
@@ -392,28 +404,6 @@ object PdfGenerator {
         return RectF(x, y, x + newWidth, y + newHeight)
     }
 
-    private fun decodeAndCompressBitmapFromUri(context: Context, uri: Uri, reqWidth: Int, reqHeight: Int, quality: Int, forceFullRes: Boolean = false): Bitmap? {
-        return try {
-            val inputStream = context.contentResolver.openInputStream(uri) ?: return null
-            val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-            BitmapFactory.decodeStream(inputStream, null, options)
-            inputStream.close()
-            options.inSampleSize = if (forceFullRes) 1 else calculateInSampleSize(options, reqWidth, reqHeight)
-            options.inJustDecodeBounds = false
-            val sampledBitmap = context.contentResolver.openInputStream(uri)?.use {
-                BitmapFactory.decodeStream(it, null, options)
-            } ?: return null
-            val outputStream = ByteArrayOutputStream()
-            sampledBitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)
-            sampledBitmap.recycle()
-            val finalInputStream = ByteArrayInputStream(outputStream.toByteArray())
-            BitmapFactory.decodeStream(finalInputStream)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
-
     private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
         val (height: Int, width: Int) = options.run { outHeight to outWidth }
         var inSampleSize = 1
@@ -427,7 +417,7 @@ object PdfGenerator {
         return inSampleSize
     }
 
-    private fun decodeBitmapFromUri(context: Context, uri: Uri, reqWidth: Int, reqHeight: Int, forceFullRes: Boolean = false): Bitmap? {
+    private fun decodeSampledBitmapFromUri(context: Context, uri: Uri, reqWidth: Int, reqHeight: Int, quality: Int, compress: Boolean, forceFullRes: Boolean = false): Bitmap? {
         return try {
             val inputStream = context.contentResolver.openInputStream(uri) ?: return null
             val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
@@ -435,9 +425,19 @@ object PdfGenerator {
             inputStream.close()
             options.inSampleSize = if (forceFullRes) 1 else calculateInSampleSize(options, reqWidth, reqHeight)
             options.inJustDecodeBounds = false
-            context.contentResolver.openInputStream(uri)?.use {
+            val sampledBitmap = context.contentResolver.openInputStream(uri)?.use {
                 BitmapFactory.decodeStream(it, null, options)
+            } ?: return null
+
+            if (!compress) {
+                return sampledBitmap
             }
+
+            val outputStream = ByteArrayOutputStream()
+            sampledBitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)
+            sampledBitmap.recycle()
+            val finalInputStream = ByteArrayInputStream(outputStream.toByteArray())
+            BitmapFactory.decodeStream(finalInputStream)
         } catch (e: Exception) {
             e.printStackTrace()
             null
