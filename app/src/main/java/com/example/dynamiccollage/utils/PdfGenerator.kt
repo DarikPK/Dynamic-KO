@@ -250,7 +250,7 @@ object PdfGenerator {
                 if (id == "photo") {
                     val uri = Uri.parse(rowData["uri"] as String)
                     context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                        val image = PDImageXObject.createFromStream(pdDocument, inputStream)
+                        val image = PDImageXObject.createFromInputStream(pdDocument, inputStream)
                         val imageRect = getFinalBitmapRect(Bitmap.createBitmap(image.width, image.height, Bitmap.Config.ARGB_8888), rect, ImageAlignment.CENTER)
                         contentStream.drawImage(image, imageRect.left, pageHeight - imageRect.bottom, imageRect.width(), imageRect.height())
                     }
@@ -270,7 +270,7 @@ object PdfGenerator {
 
                     contentStream.beginText()
                     contentStream.setFont(font, fontSize)
-                    val fontColor = Color(style.fontColor.toArgb())
+                    val fontColor = java.awt.Color(style.fontColor.toArgb())
                     contentStream.setNonStrokingColor(fontColor)
                     contentStream.newLineAtOffset(textX, textY)
                     contentStream.showText(content)
@@ -307,7 +307,7 @@ object PdfGenerator {
                 val pageHeight = page.mediaBox.height.toInt()
 
                 coverConfig.pageBackgroundColor?.let {
-                    val color = Color(it)
+                    val color = java.awt.Color(it)
                     contentStream.setNonStrokingColor(color)
                     contentStream.addRect(0f, 0f, pageWidth.toFloat(), pageHeight.toFloat())
                     contentStream.fill()
