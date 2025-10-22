@@ -18,7 +18,7 @@ import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.pdmodel.PDPage
 import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
 import com.tom_roush.pdfbox.pdmodel.common.PDRectangle
-import com.tom_roush.pdfbox.pdmodel.font.PDType1Font
+import com.tom_roush.pdfbox.pdmodel.font.PDType0Font
 import com.tom_roush.pdfbox.pdmodel.graphics.image.PDImageXObject
 import android.graphics.Color
 import java.io.ByteArrayInputStream
@@ -162,14 +162,20 @@ object PdfGenerator {
         }
     }
 
-    private fun getPdfBoxFont(fontWeight: FontWeight, fontStyle: FontStyle): PDType1Font {
-        val isBold = fontWeight == FontWeight.Bold
-        val isItalic = fontStyle == FontStyle.Italic
-        return when {
-            isBold && isItalic -> PDType1Font.HELVETICA_BOLD_OBLIQUE
-            isBold -> PDType1Font.HELVETICA_BOLD
-            isItalic -> PDType1Font.HELVETICA_OBLIQUE
-            else -> PDType1Font.HELVETICA
+    private fun getPdfBoxFont(
+        context: Context,
+        pdDocument: PDDocument,
+        fontWeight: FontWeight,
+        fontStyle: FontStyle
+    ): PDType0Font {
+        val fontName = when {
+            fontWeight == FontWeight.Bold && fontStyle == FontStyle.Italic -> "fonts/Roboto-BoldItalic.ttf"
+            fontWeight == FontWeight.Bold -> "fonts/Roboto-Bold.ttf"
+            fontStyle == FontStyle.Italic -> "fonts/Roboto-Italic.ttf"
+            else -> "fonts/Roboto-Regular.ttf"
+        }
+        context.assets.open(fontName).use { input ->
+            return PDType0Font.load(pdDocument, input)
         }
     }
 
@@ -263,7 +269,7 @@ object PdfGenerator {
                 } else if (rowData.containsKey("content")) {
                     val content = rowData["content"] as String
                     val style = rowData["style"] as TextStyleConfig
-                    val font = getPdfBoxFont(style.fontWeight ?: FontWeight.Normal, style.fontStyle ?: FontStyle.Normal)
+                    val font = getPdfBoxFont(context, pdDocument, style.fontWeight ?: FontWeight.Normal, style.fontStyle ?: FontStyle.Normal)
                     val fontSize = style.fontSize.toFloat()
                     val textWidth = font.getStringWidth(content) / 1000 * fontSize
 
