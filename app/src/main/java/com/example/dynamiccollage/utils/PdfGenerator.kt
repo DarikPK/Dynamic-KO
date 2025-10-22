@@ -20,7 +20,7 @@ import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
 import com.tom_roush.pdfbox.pdmodel.common.PDRectangle
 import com.tom_roush.pdfbox.pdmodel.font.PDType1Font
 import com.tom_roush.pdfbox.pdmodel.graphics.image.PDImageXObject
-import java.awt.Color
+import android.graphics.Color
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -190,8 +190,10 @@ object PdfGenerator {
             val pageHeight = page.mediaBox.height
 
             config.pageBackgroundColor?.let {
-                val color = java.awt.Color(it)
-                contentStream.setNonStrokingColor(color)
+                val r = Color.red(it)
+                val g = Color.green(it)
+                val b = Color.blue(it)
+                contentStream.setNonStrokingColor(r, g, b)
                 contentStream.addRect(0f, 0f, pageWidth, pageHeight)
                 contentStream.fill()
             }
@@ -250,9 +252,13 @@ object PdfGenerator {
                 if (id == "photo") {
                     val uri = Uri.parse(rowData["uri"] as String)
                     context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                        val image = PDImageXObject.createFromInputStream(pdDocument, inputStream)
+                        val tempBytes = inputStream.readBytes()
+                        val tempFile = File.createTempFile("img_", ".jpg", context.cacheDir)
+                        FileOutputStream(tempFile).use { it.write(tempBytes) }
+                        val image = PDImageXObject.createFromFileByContent(tempFile, pdDocument)
                         val imageRect = getFinalBitmapRect(Bitmap.createBitmap(image.width, image.height, Bitmap.Config.ARGB_8888), rect, ImageAlignment.CENTER)
-                        contentStream.drawImage(image, imageRect.left, pageHeight - imageRect.bottom, imageRect.width(), imageRect.height())
+                        contentStream.drawImage(image as PDImageXObject, imageRect.left, pageHeight - imageRect.bottom, imageRect.width(), imageRect.height())
+                        tempFile.delete()
                     }
                 } else if (rowData.containsKey("content")) {
                     val content = rowData["content"] as String
@@ -270,8 +276,11 @@ object PdfGenerator {
 
                     contentStream.beginText()
                     contentStream.setFont(font, fontSize)
-                    val fontColor = java.awt.Color(style.fontColor.toArgb())
-                    contentStream.setNonStrokingColor(fontColor)
+                    val fontColorInt = style.fontColor.toArgb()
+                    val r = Color.red(fontColorInt)
+                    val g = Color.green(fontColorInt)
+                    val b = Color.blue(fontColorInt)
+                    contentStream.setNonStrokingColor(r, g, b)
                     contentStream.newLineAtOffset(textX, textY)
                     contentStream.showText(content)
                     contentStream.endText()
@@ -307,8 +316,10 @@ object PdfGenerator {
                 val pageHeight = page.mediaBox.height.toInt()
 
                 coverConfig.pageBackgroundColor?.let {
-                    val color = java.awt.Color(it)
-                    contentStream.setNonStrokingColor(color)
+                    val r = Color.red(it)
+                    val g = Color.green(it)
+                    val b = Color.blue(it)
+                    contentStream.setNonStrokingColor(r, g, b)
                     contentStream.addRect(0f, 0f, pageWidth.toFloat(), pageHeight.toFloat())
                     contentStream.fill()
                 }
@@ -327,7 +338,10 @@ object PdfGenerator {
                         val rect = rects[index]
                         try {
                             context.contentResolver.openInputStream(Uri.parse(uriString))?.use { inputStream ->
-                                val image = PDImageXObject.createFromInputStream(pdDocument, inputStream)
+                                val tempBytes = inputStream.readBytes()
+                                val tempFile = File.createTempFile("img_", ".jpg", context.cacheDir)
+                                FileOutputStream(tempFile).use { it.write(tempBytes) }
+                                val image = PDImageXObject.createFromFileByContent(tempFile, pdDocument)
                                 val alignment = when {
                                     cols == 1 && rows == 1 -> ImageAlignment.CENTER
                                     cols == 2 -> if (index == 0) ImageAlignment.RIGHT else ImageAlignment.LEFT
@@ -335,7 +349,8 @@ object PdfGenerator {
                                     else -> ImageAlignment.CENTER
                                 }
                                 val imageRect = getFinalBitmapRect(Bitmap.createBitmap(image.width, image.height, Bitmap.Config.ARGB_8888), rect, alignment)
-                                contentStream.drawImage(image, imageRect.left, pageHeight - imageRect.bottom, imageRect.width(), imageRect.height())
+                                contentStream.drawImage(image as PDImageXObject, imageRect.left, pageHeight - imageRect.bottom, imageRect.width(), imageRect.height())
+                                tempFile.delete()
                             }
                         } catch (e: Exception) {
                             e.printStackTrace()
