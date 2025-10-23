@@ -18,10 +18,9 @@ import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.pdmodel.PDPage
 import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
 import com.tom_roush.pdfbox.pdmodel.common.PDRectangle
-import com.tom_roush.pdfbox.pdmodel.font.PDFont
-import com.tom_roush.pdfbox.pdmodel.font.PDTrueTypeFont
+import com.tom_roush.pdfbox.pdmodel.font.PDType1Font
 import com.tom_roush.pdfbox.pdmodel.graphics.image.PDImageXObject
-import android.graphics.Color
+import java.awt.Color as AWTColor
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -185,10 +184,7 @@ private fun drawCoverPageWithPdfBox(
         val pageHeight = page.mediaBox.height
 
         config.pageBackgroundColor?.let {
-            val r = (it shr 16) and 0xFF
-            val g = (it shr 8) and 0xFF
-            val b = it and 0xFF
-            contentStream.setNonStrokingColor(r, g, b)
+            contentStream.setNonStrokingColor(AWTColor(it))
             contentStream.addRect(0f, 0f, pageWidth, pageHeight)
             contentStream.fill()
         }
@@ -237,13 +233,14 @@ private fun drawCoverPageWithPdfBox(
             } else if (row.containsKey("content")) {
                 val text = row["content"] as String
                 val style = row["style"] as TextStyleConfig
-                val font = getPdfBoxFont(context, pdDocument, style.fontWeight ?: FontWeight.Normal, style.fontStyle ?: FontStyle.Normal)
+                val font = PDType1Font.HELVETICA_BOLD
                 val fontSize = style.fontSize.toFloat()
                 val textWidth = font.getStringWidth(text) / 1000 * fontSize
                 val textX = rect.left + (rect.width() - textWidth) / 2f
                 val textY = pageHeight - rect.top - (rect.height() / 2f) - (fontSize / 4f)
                 contentStream.beginText()
                 contentStream.setFont(font, fontSize)
+                contentStream.setNonStrokingColor(AWTColor(style.fontColor.toArgb()))
                 contentStream.newLineAtOffset(textX, textY)
                 contentStream.showText(text)
                 contentStream.endText()
@@ -274,10 +271,7 @@ private fun drawInnerPagesWithPdfBox(
             val pageHeight = page.mediaBox.height
 
             coverConfig.pageBackgroundColor?.let {
-                val r = (it shr 16) and 0xFF
-                val g = (it shr 8) and 0xFF
-                val b = it and 0xFF
-                contentStream.setNonStrokingColor(r, g, b)
+                contentStream.setNonStrokingColor(AWTColor(it))
                 contentStream.addRect(0f, 0f, pageWidth, pageHeight)
                 contentStream.fill()
             }
@@ -294,7 +288,7 @@ private fun drawInnerPagesWithPdfBox(
                     val imgWidth = pageWidth / 2f
                     val imgHeight = pageHeight / 2f
                     val posX = (pageWidth - imgWidth) / 2f
-                    val posY = (pageHeight - imgHeight) / 2f
+                    val posY = (pageHeight.toFloat() - imgHeight) / 2f
                     contentStream.drawImage(image, posX, posY, imgWidth, imgHeight)
                 } catch (e: Exception) {
                     Log.e("PdfBoxCrash", "Error cargando imagen página interna: ${e.message}")
@@ -303,28 +297,6 @@ private fun drawInnerPagesWithPdfBox(
         } finally {
             try { contentStream.close() } catch (_: Exception) {}
         }
-    }
-}
-
-private fun getPdfBoxFont(
-    context: Context,
-    pdDocument: PDDocument,
-    fontWeight: FontWeight,
-    fontStyle: FontStyle
-): PDFont {
-    val fallbackFont = "Roboto-Regular.ttf"
-    val fontName = when {
-        fontWeight == FontWeight.Bold && fontStyle == FontStyle.Italic -> "Roboto-BoldItalic.ttf"
-        fontWeight == FontWeight.Bold -> "Roboto-Bold.ttf"
-        fontStyle == FontStyle.Italic -> "Roboto-Italic.ttf"
-        else -> fallbackFont
-    }
-
-    return try {
-        PDTrueTypeFont.loadTTF(pdDocument, context.assets.open("fonts/$fontName"))
-    } catch (e: Exception) {
-        Log.e("PdfGenerator", "⚠️ No se pudo cargar la fuente $fontName, usando respaldo.", e)
-        PDTrueTypeFont.loadTTF(pdDocument, context.assets.open("fonts/$fallbackFont"))
     }
 }
 
