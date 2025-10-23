@@ -20,7 +20,7 @@ import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
 import com.tom_roush.pdfbox.pdmodel.common.PDRectangle
 import com.tom_roush.pdfbox.pdmodel.font.PDType1Font
 import com.tom_roush.pdfbox.pdmodel.graphics.image.PDImageXObject
-import java.awt.Color as AWTColor
+import android.graphics.Color
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -184,7 +184,10 @@ private fun drawCoverPageWithPdfBox(
         val pageHeight = page.mediaBox.height
 
         config.pageBackgroundColor?.let {
-            contentStream.setNonStrokingColor(AWTColor(it))
+            val r = Color.red(it)
+            val g = Color.green(it)
+            val b = Color.blue(it)
+            contentStream.setNonStrokingColor(r, g, b)
             contentStream.addRect(0f, 0f, pageWidth, pageHeight)
             contentStream.fill()
         }
@@ -240,7 +243,11 @@ private fun drawCoverPageWithPdfBox(
                 val textY = pageHeight - rect.top - (rect.height() / 2f) - (fontSize / 4f)
                 contentStream.beginText()
                 contentStream.setFont(font, fontSize)
-                contentStream.setNonStrokingColor(AWTColor(style.fontColor.toArgb()))
+                val fontColorInt = style.fontColor.toArgb()
+                val r = Color.red(fontColorInt)
+                val g = Color.green(fontColorInt)
+                val b = Color.blue(fontColorInt)
+                contentStream.setNonStrokingColor(r, g, b)
                 contentStream.newLineAtOffset(textX, textY)
                 contentStream.showText(text)
                 contentStream.endText()
@@ -271,7 +278,10 @@ private fun drawInnerPagesWithPdfBox(
             val pageHeight = page.mediaBox.height
 
             coverConfig.pageBackgroundColor?.let {
-                contentStream.setNonStrokingColor(AWTColor(it))
+                val r = Color.red(it)
+                val g = Color.green(it)
+                val b = Color.blue(it)
+                contentStream.setNonStrokingColor(r, g, b)
                 contentStream.addRect(0f, 0f, pageWidth, pageHeight)
                 contentStream.fill()
             }
