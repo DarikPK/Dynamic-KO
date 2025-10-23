@@ -15,7 +15,7 @@ import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 
 class MainActivity : ComponentActivity() {
-    private val projectViewModel: ProjectViewModel by viewModels()
+    internal val projectViewModel: ProjectViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

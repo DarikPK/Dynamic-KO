@@ -46,10 +46,12 @@ class PdfGenerationTest {
         composeTestRule.onNodeWithText("Save").performClick()
 
         // 6. Add images to the page group
-        composeTestRule.activity.projectViewModel.addPageGroupToProject(
-            composeTestRule.activity.projectViewModel.currentPageGroups.value[0].copy(
-                imageUris = listOf(imageUri.toString())
-            )
+        val samplePageGroup = composeTestRule.activity.projectViewModel.currentPageGroups.value[0].copy(
+            imageUris = listOf(imageUri.toString())
+        )
+        composeTestRule.activity.projectViewModel.addPageGroup(
+            context = composeTestRule.activity.applicationContext,
+            group = samplePageGroup
         )
 
         // 7. Save the page groups
