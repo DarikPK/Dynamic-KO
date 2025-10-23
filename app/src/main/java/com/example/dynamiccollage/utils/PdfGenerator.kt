@@ -141,6 +141,7 @@ private fun generateWithPdfBox(
 ): File? {
     val pdDocument = PDDocument()
     return try {
+        preloadCMaps(context) // asegurar CMaps antes de PDType0Font.load(...)
         Log.d("PdfGenerator", "Iniciando ruta PDFBox (alta calidad)...")
 
         val shouldDrawCover = coverConfig.clientNameStyle.content.isNotBlank() ||
@@ -667,6 +668,28 @@ private fun getPdfBoxFont(
         } catch (e: Exception) {
             e.printStackTrace()
             null
+        }
+    }
+
+    private fun preloadCMaps(context: Context) {
+        try {
+            val cmapParser = com.tom_roush.fontbox.cmap.CMapParser()
+            val cmapFolder = "com/tom_roush/pdfbox/resources/cmap"
+            val cmapManager = com.tom_roush.pdfbox.pdmodel.font.CMapManager()
+
+            listOf("Identity-H", "Identity-V").forEach { name ->
+                try {
+                    context.assets.open("$cmapFolder/$name").use { input ->
+                        val cmap = cmapParser.parse(input)
+                        cmapManager.addPredefinedCMap(name, cmap)
+                    }
+                    Log.d("PdfGenerator", "CMap precargado correctamente: $name")
+                } catch (e: Exception) {
+                    Log.e("PdfGenerator", "Error precargando CMap $name: ${e.message}")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("PdfGenerator", "Error general precargando CMaps: ${e.message}")
         }
     }
 }
