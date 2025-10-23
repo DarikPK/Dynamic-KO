@@ -675,13 +675,12 @@ private fun getPdfBoxFont(
         try {
             val cmapParser = com.tom_roush.fontbox.cmap.CMapParser()
             val cmapFolder = "com/tom_roush/pdfbox/resources/cmap"
-            val cmapManager = com.tom_roush.pdfbox.pdmodel.font.CMapManager()
 
             listOf("Identity-H", "Identity-V").forEach { name ->
                 try {
                     context.assets.open("$cmapFolder/$name").use { input ->
                         val cmap = cmapParser.parse(input)
-                        cmapManager.addPredefinedCMap(name, cmap)
+                        com.tom_roush.pdfbox.pdmodel.font.CMapManager.addPredefinedCMap(name, cmap)
                     }
                     Log.d("PdfGenerator", "CMap precargado correctamente: $name")
                 } catch (e: Exception) {
