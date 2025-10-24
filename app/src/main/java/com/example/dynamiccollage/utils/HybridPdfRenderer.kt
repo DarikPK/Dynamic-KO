@@ -425,6 +425,51 @@ internal fun decodeSampledBitmapFromUri(context: Context, uri: Uri, reqWidth: In
     }
 }
 
+private fun applyPdfBoxClippingPath(
+    contentStream: PDPageContentStream,
+    borderSettings: ImageBorderSettings,
+    finalRect: RectF,
+    pageHeight: Float
+) {
+    val size = borderSettings.size
+    val left = finalRect.left
+    val right = finalRect.right
+    val top = pageHeight - finalRect.top
+    val bottom = pageHeight - finalRect.bottom
+
+    contentStream.saveGraphicsState()
+
+    when (borderSettings.style) {
+        ImageBorderStyle.CURVED -> {
+            val k = 0.552284749831f
+            contentStream.moveTo(left + size, top)
+            contentStream.lineTo(right - size, top)
+            contentStream.curveTo(right - size + size * k, top, right, top - size + size * k, right, top - size)
+            contentStream.lineTo(right, bottom + size)
+            contentStream.curveTo(right, bottom + size - size * k, right - size + size * k, bottom, right - size, bottom)
+            contentStream.lineTo(left + size, bottom)
+            contentStream.curveTo(left + size - size * k, bottom, left, bottom + size - size * k, left, bottom + size)
+            contentStream.lineTo(left, top - size)
+            contentStream.curveTo(left, top - size + size * k, left + size - size * k, top, left + size, top)
+            contentStream.closePath()
+        }
+        ImageBorderStyle.CHAMFERED -> {
+            contentStream.moveTo(left + size, top)
+            contentStream.lineTo(right - size, top)
+            contentStream.lineTo(right, top - size)
+            contentStream.lineTo(right, bottom + size)
+            contentStream.lineTo(right - size, bottom)
+            contentStream.lineTo(left + size, bottom)
+            contentStream.lineTo(left, bottom + size)
+            contentStream.lineTo(left, top - size)
+            contentStream.closePath()
+        }
+        ImageBorderStyle.NONE -> {}
+    }
+    contentStream.clip()
+}
+
+
 private fun drawImagesWithPdfBox(context: Context, pdDocument: PDDocument, config: CoverPageConfig, imageEffectSettings: Map<String, ImageEffectSettings>, pageIndex: Int) {
     if (config.mainImageUri == null) return
 
@@ -472,11 +517,21 @@ private fun drawImagesWithPdfBox(context: Context, pdDocument: PDDocument, confi
                 }
 
                 val finalRect = getFinalBitmapRect(bitmap, paddedRect, ImageAlignment.CENTER)
-                val imageXObject = PDImageXObject.createFromFile(tempFile.absolutePath, pdDocument)
 
-                // Convertir coordenadas de Android a PDFBox (Y-up)
+                val borderSettings = config.imageBorderSettingsMap["cover"]
+                val clippingApplied = borderSettings != null && borderSettings.style != ImageBorderStyle.NONE
+
+                if (clippingApplied) {
+                    applyPdfBoxClippingPath(contentStream, borderSettings!!, finalRect, pageHeight)
+                }
+
+                val imageXObject = PDImageXObject.createFromFile(tempFile.absolutePath, pdDocument)
                 val pdfBoxY = pageHeight - finalRect.bottom
                 contentStream.drawImage(imageXObject, finalRect.left, pdfBoxY, finalRect.width(), finalRect.height())
+
+                if (clippingApplied) {
+                    contentStream.restoreGraphicsState()
+                }
 
                 bitmap.recycle()
                 tempFile.delete()
@@ -493,35 +548,92 @@ private fun drawImagesWithPdfBox(context: Context, pdDocument: PDDocument, confi
     }
 }
 
-private fun drawImagesWithPdfBox(context: Context, pdDocument: PDDocument, pageData: GeneratedPage, coverConfig: CoverPageConfig, imageEffectSettings: Map<String, ImageEffectSettings>, pageIndex: Int) {
+private fun drawImagesWithPdfBox(
+    context: Context,
+    pdDocument: PDDocument,
+    pageData: GeneratedPage,
+    coverConfig: CoverPageConfig,
+    imageEffectSettings: Map<String, ImageEffectSettings>,
+    pageIndex: Int
+) {
     val page = pdDocument.getPage(pageIndex)
-    val contentStream = PDPageContentStream(pdDocument, page, PDPageContentStream.AppendMode.APPEND, true, true)
-
-    val pageWidth = if (pageData.orientation == PageOrientation.Vertical) A4_WIDTH else A4_HEIGHT
-    val pageHeight = if (pageData.orientation == PageOrientation.Vertical) A4_HEIGHT else A4_WIDTH
-
-    var startY = 20f
-    if (pageData.isFirstPageOfGroup && pageData.optionalTextStyle != null && pageData.optionalTextStyle.isVisible) {
-        // ... (cálculo de la altura del texto omitido por brevedad)
-        startY += 50f
+    val pageHeight = page.mediaBox.height
+    val contentStream: PDPageContentStream
+    try {
+        contentStream = PDPageContentStream(pdDocument, page, PDPageContentStream.AppendMode.APPEND, true, true)
+    } catch (e: IOException) {
+        Log.e("HybridPdf", "Error creating content stream for inner page.", e)
+        return
     }
 
-    val (cols, rows) = when (pageData.orientation) {
-        PageOrientation.Vertical -> if (pageData.imageUris.size > 1) Pair(1, 2) else Pair(1, 1)
-        PageOrientation.Horizontal -> if (pageData.imageUris.size > 1) Pair(2, 1) else Pair(1, 1)
-    }
-    val rects = getRectsForPage(pageWidth, pageHeight, startY, cols, rows, 15f)
+    try {
+        val pageWidth = page.mediaBox.width
+        var startY = 20f
+        if (pageData.isFirstPageOfGroup && pageData.optionalTextStyle != null && pageData.optionalTextStyle.isVisible) {
+            val textStyle = pageData.optionalTextStyle
+            val textPaint = createTextPaint(context, textStyle)
+            val text = if (textStyle.allCaps) textStyle.content.uppercase() else textStyle.content
+            val textWidth = pageWidth - 40f
+            val staticLayout = StaticLayout.Builder.obtain(text, 0, text.length, textPaint, textWidth.toInt()).setAlignment(getAndroidAlignment(textStyle.textAlign)).build()
+            startY += staticLayout.height + textStyle.rowStyle.padding.top + textStyle.rowStyle.padding.bottom + 15f
+        }
 
-    pageData.imageUris.forEachIndexed { index, uriString ->
-        if (index < rects.size) {
-            val rect = rects[index]
-            try {
-                val image = PDImageXObject.createFromFile(Uri.parse(uriString).path, pdDocument)
-                contentStream.drawImage(image, rect.left, pageHeight - rect.bottom, rect.width(), rect.height())
-            } catch (e: Exception) {
-                Log.e("HybridPdf", "Error dibujando imagen de página interior con PDFBox", e)
+        val (cols, rows) = when (pageData.orientation) {
+            PageOrientation.Vertical -> if (pageData.imageUris.size > 1) Pair(1, 2) else Pair(1, 1)
+            PageOrientation.Horizontal -> if (pageData.imageUris.size > 1) Pair(2, 1) else Pair(1, 1)
+        }
+        val rects = getRectsForPage(pageWidth, pageHeight.toInt(), startY, cols, rows, 15f)
+        val borderSettings = coverConfig.imageBorderSettingsMap[pageData.groupId]
+
+        pageData.imageUris.forEachIndexed { index, uriString ->
+            if (index < rects.size) {
+                val rect = rects[index]
+                try {
+                    val uri = Uri.parse(uriString)
+                    context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                        val tempFile = File.createTempFile("hybrid_inner", ".jpg", context.cacheDir)
+                        FileOutputStream(tempFile).use { outputStream -> inputStream.copyTo(outputStream) }
+
+                        var bitmap = BitmapFactory.decodeFile(tempFile.absolutePath)
+                        imageEffectSettings[uriString]?.let {
+                            bitmap = applyAllEffects(bitmap, it)
+                        }
+
+                        val alignment = when {
+                            cols == 1 && rows == 1 -> ImageAlignment.CENTER
+                            cols == 2 -> if (index == 0) ImageAlignment.RIGHT else ImageAlignment.LEFT
+                            rows == 2 -> if (index == 0) ImageAlignment.BOTTOM else ImageAlignment.TOP
+                            else -> ImageAlignment.CENTER
+                        }
+
+                        val finalRect = getFinalBitmapRect(bitmap, rect, alignment)
+                        val clippingApplied = borderSettings != null && borderSettings.style != ImageBorderStyle.NONE
+
+                        if (clippingApplied) {
+                            applyPdfBoxClippingPath(contentStream, borderSettings!!, finalRect, pageHeight)
+                        }
+
+                        val imageXObject = PDImageXObject.createFromFile(tempFile.absolutePath, pdDocument)
+                        val pdfBoxY = pageHeight - finalRect.bottom
+                        contentStream.drawImage(imageXObject, finalRect.left, pdfBoxY, finalRect.width(), finalRect.height())
+
+                        if (clippingApplied) {
+                            contentStream.restoreGraphicsState()
+                        }
+
+                        bitmap.recycle()
+                        tempFile.delete()
+                    }
+                } catch (e: Exception) {
+                    Log.e("HybridPdf", "Error drawing inner page image with PDFBox", e)
+                }
             }
         }
+    } finally {
+        try {
+            contentStream.close()
+        } catch (e: IOException) {
+            Log.e("HybridPdf", "Error closing content stream for inner page.", e)
+        }
     }
-    contentStream.close()
 }
