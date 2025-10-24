@@ -171,7 +171,8 @@ fun CoverPageConfig.toSerializable() = SerializableCoverPageConfig(
     templateName = this.templateName,
     forceFullResCover = this.forceFullResCover,
     useHybridPdfMode = this.useHybridPdfMode,
-    hybridImageQuality = this.hybridImageQuality
+    hybridCoverImageQuality = this.hybridCoverImageQuality,
+    hybridInnerImagesQuality = this.hybridInnerImagesQuality
 )
 
 fun SerializableCoverPageConfig.toDomain() = CoverPageConfig(
