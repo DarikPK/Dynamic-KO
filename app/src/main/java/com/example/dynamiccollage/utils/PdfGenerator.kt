@@ -181,7 +181,6 @@ private fun drawCoverPageWithPdfBox(
     val contentStream = PDPageContentStream(pdDocument, page)
 
     try {
-        preloadCMaps(context) // asegura que los CMaps estén registrados
         val pageWidth = page.mediaBox.width
         val pageHeight = page.mediaBox.height
 
@@ -333,27 +332,6 @@ private fun getPdfBoxFont(
         PDType0Font.load(pdDocument, context.assets.open("fonts/$fallbackFont"))
     }
 }
-
-    private fun preloadCMaps(context: Context) {
-        try {
-            val cmapParser = com.tom_roush.fontbox.cmap.CMapParser()
-            val cmapFolder = "com/tom_roush/pdfbox/resources/cmap"
-
-            listOf("Identity-H", "Identity-V").forEach { name ->
-                try {
-                    context.assets.open("$cmapFolder/$name").use { input ->
-                        val cmap = cmapParser.parse(input)
-                        com.tom_roush.pdfbox.pdmodel.font.CMapManager.addPredefinedCMap(name, cmap)
-                    }
-                    Log.d("PdfGenerator", "CMap precargado correctamente: $name")
-                } catch (e: Exception) {
-                    Log.e("PdfGenerator", "Error precargando CMap $name: ${e.message}")
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("PdfGenerator", "Error general precargando CMaps: ${e.message}")
-        }
-    }
 
     private fun drawCoverPage(pdfDocument: PdfDocument, context: Context, config: CoverPageConfig, quality: Int, imageEffectSettings: Map<String, ImageEffectSettings>) {
         val pageWidth = if (config.pageOrientation == PageOrientation.Vertical) A4_WIDTH else A4_HEIGHT
