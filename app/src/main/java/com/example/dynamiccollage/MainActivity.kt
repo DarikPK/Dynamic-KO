@@ -13,12 +13,14 @@ import androidx.compose.ui.Modifier
 import com.example.dynamiccollage.ui.navigation.AppNavigation
 import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
+import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 
 class MainActivity : ComponentActivity() {
     internal val projectViewModel: ProjectViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        PDFBoxResourceLoader.init(applicationContext)
         setContent {
             val themeName by projectViewModel.themeName.collectAsState()
             DynamicCollageTheme(themeName = themeName) {
