@@ -56,7 +56,6 @@ fun HybridQualityScreen(
                         projectViewModel.updateHybridImageQuality(context, newValue.roundToInt())
                     },
                     valueRange = 10f..100f,
-                    steps = 8,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Row(
