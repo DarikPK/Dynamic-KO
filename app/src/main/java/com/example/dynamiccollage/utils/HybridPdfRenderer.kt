@@ -141,55 +141,23 @@ internal fun drawCoverPage(pdfDocument: PdfDocument, context: Context, config: C
     pdfDocument.finishPage(page)
 }
 
-internal fun drawCoverPageContent(canvas: Canvas, context: Context, config: CoverPageConfig, quality: Int, pageWidth: Int, pageHeight: Int, imageEffectSettings: Map<String, ImageEffectSettings>, renderImages: Boolean = true) {
-    val marginTop = config.marginTop * CM_TO_POINTS
-    val marginBottom = config.marginBottom * CM_TO_POINTS
-    val marginLeft = config.marginLeft * CM_TO_POINTS
-    val marginRight = config.marginRight * CM_TO_POINTS
-    val contentArea = RectF(marginLeft, marginTop, (pageWidth - marginRight), (pageHeight - marginBottom))
+internal fun calculateCoverPageLayout(context: Context, config: CoverPageConfig, contentArea: RectF): Map<String, RectF> {
+    val layoutRects = mutableMapOf<String, RectF>()
     val allRows = mutableListOf<Map<String, Any>>()
+
     if (config.clientNameStyle.content.isNotBlank()) {
-        allRows.add(mapOf("id" to "client", "weight" to config.clientWeight, "draw" to { rect: RectF -> drawRow(canvas, context, "Cliente: ${config.clientNameStyle.content.let { if (config.allCaps) it.uppercase() else it }}", config.clientNameStyle, rect) }))
+        allRows.add(mapOf("id" to "client", "weight" to config.clientWeight, "style" to config.clientNameStyle, "content" to config.clientNameStyle.content))
     }
     if (config.rucStyle.content.isNotBlank()) {
-        allRows.add(mapOf("id" to "ruc", "weight" to config.rucWeight, "draw" to { rect: RectF -> drawRow(canvas, context, "RUC: ${config.rucStyle.content.let { if (config.allCaps) it.uppercase() else it }}", config.rucStyle, rect) }))
+        allRows.add(mapOf("id" to "ruc", "weight" to config.rucWeight, "style" to config.rucStyle, "content" to config.rucStyle.content))
     }
     if (config.subtitleStyle.content.isNotBlank()) {
-        allRows.add(mapOf("id" to "address","weight" to 0f,"style" to config.subtitleStyle,"content" to "Dirección: ${config.subtitleStyle.content.let { if (config.allCaps) it.uppercase() else it }}","draw" to { rect: RectF -> drawRow(canvas, context, "Dirección: ${config.subtitleStyle.content.let { if (config.allCaps) it.uppercase() else it }}", config.subtitleStyle, rect) }))
+        allRows.add(mapOf("id" to "address", "weight" to 0f, "style" to config.subtitleStyle, "content" to "Dirección: ${config.subtitleStyle.content.let { if (config.allCaps) it.uppercase() else it }}"))
     }
     if (config.mainImageUri != null) {
-        allRows.add(mapOf(
-            "id" to "photo",
-            "weight" to config.photoWeight,
-            "draw" to { rect: RectF ->
-                drawRowBackgroundAndBorders(canvas, config.photoStyle, rect)
-                if (renderImages && config.mainImageUri != null) {
-                    try {
-                        val uriString = config.mainImageUri
-                        val padding = config.photoStyle.padding
-                        val paddedRect = RectF(rect.left + padding.left, rect.top + padding.top, rect.right - padding.right, rect.bottom - padding.bottom)
-                        var bitmap = decodeSampledBitmapFromUri(
-                            context,
-                            Uri.parse(uriString),
-                            paddedRect.width().toInt(),
-                            paddedRect.height().toInt(),
-                            quality,
-                            forceFullRes = config.forceFullResCover
-                        )
-                        bitmap?.let {
-                            val settings = imageEffectSettings[uriString]
-                            if (settings != null) {
-                                bitmap = applyAllEffects(it, settings)
-                            }
-                            val borderSettings = config.imageBorderSettingsMap["cover"]
-                            drawBitmapToCanvas(canvas, bitmap!!, paddedRect, ImageAlignment.CENTER, borderSettings)
-                            it.recycle()
-                        }
-                    } catch (e: Exception) { e.printStackTrace() }
-                }
-            }
-        ))
+        allRows.add(mapOf("id" to "photo", "weight" to config.photoWeight))
     }
+
     var addressRowHeight = 0f
     val addressRowData = allRows.find { it["id"] == "address" }
     if (addressRowData != null) {
@@ -199,6 +167,7 @@ internal fun drawCoverPageContent(canvas: Canvas, context: Context, config: Cove
         val staticLayout = StaticLayout.Builder.obtain(content, 0, content.length, textPaint, contentArea.width().toInt()).setAlignment(getAndroidAlignment(style.textAlign)).build()
         addressRowHeight = staticLayout.height.toFloat() + style.rowStyle.padding.top + style.rowStyle.padding.bottom
     }
+
     val weightedRows = allRows.filter { it["id"] != "address" }
     val totalWeight = weightedRows.sumOf { (it["weight"] as Float).toDouble() }.toFloat()
     var separations = 0
@@ -209,24 +178,73 @@ internal fun drawCoverPageContent(canvas: Canvas, context: Context, config: Cove
         if (currentId == "address") continue
         separations++
     }
+
     val totalSeparationWeight = config.separationWeight * separations
     val finalTotalWeight = totalWeight + totalSeparationWeight
     val fixedSpace = if (addressRowData != null) addressRowHeight + 5f else 0f
     val availableHeight = contentArea.height() - fixedSpace
     val separationHeight = if (finalTotalWeight > 0) availableHeight * (config.separationWeight / finalTotalWeight) else 0f
     var currentY = contentArea.top
+
     allRows.forEachIndexed { index, rowData ->
         val id = rowData["id"] as String
-        val drawFunc = rowData["draw"] as? (RectF) -> Unit
         val itemHeight = if (id == "address") addressRowHeight else {
             if (finalTotalWeight > 0) availableHeight * ((rowData["weight"] as Float) / finalTotalWeight) else 0f
         }
         val rect = RectF(contentArea.left, currentY, contentArea.right, currentY + itemHeight)
-        drawFunc?.invoke(rect)
+        layoutRects[id] = rect
         currentY += itemHeight
         if (index < allRows.size - 1) {
             val nextId = allRows[index + 1]["id"] as String
             if (id == "address") { currentY += 5f } else if (!(id == "client" && nextId == "ruc")) { currentY += separationHeight }
+        }
+    }
+    return layoutRects
+}
+
+internal fun drawCoverPageContent(canvas: Canvas, context: Context, config: CoverPageConfig, quality: Int, pageWidth: Int, pageHeight: Int, imageEffectSettings: Map<String, ImageEffectSettings>, renderImages: Boolean = true) {
+    val marginTop = config.marginTop * CM_TO_POINTS
+    val marginBottom = config.marginBottom * CM_TO_POINTS
+    val marginLeft = config.marginLeft * CM_TO_POINTS
+    val marginRight = config.marginRight * CM_TO_POINTS
+    val contentArea = RectF(marginLeft, marginTop, (pageWidth - marginRight), (pageHeight - marginBottom))
+
+    val layoutRects = calculateCoverPageLayout(context, config, contentArea)
+
+    layoutRects["client"]?.let { rect ->
+        drawRow(canvas, context, "Cliente: ${config.clientNameStyle.content.let { if (config.allCaps) it.uppercase() else it }}", config.clientNameStyle, rect)
+    }
+    layoutRects["ruc"]?.let { rect ->
+        drawRow(canvas, context, "RUC: ${config.rucStyle.content.let { if (config.allCaps) it.uppercase() else it }}", config.rucStyle, rect)
+    }
+    layoutRects["address"]?.let { rect ->
+        drawRow(canvas, context, "Dirección: ${config.subtitleStyle.content.let { if (config.allCaps) it.uppercase() else it }}", config.subtitleStyle, rect)
+    }
+    layoutRects["photo"]?.let { rect ->
+        drawRowBackgroundAndBorders(canvas, config.photoStyle, rect)
+        if (renderImages && config.mainImageUri != null) {
+            try {
+                val uriString = config.mainImageUri
+                val padding = config.photoStyle.padding
+                val paddedRect = RectF(rect.left + padding.left, rect.top + padding.top, rect.right - padding.right, rect.bottom - padding.bottom)
+                var bitmap = decodeSampledBitmapFromUri(
+                    context,
+                    Uri.parse(uriString),
+                    paddedRect.width().toInt(),
+                    paddedRect.height().toInt(),
+                    quality,
+                    forceFullRes = config.forceFullResCover
+                )
+                bitmap?.let {
+                    val settings = imageEffectSettings[uriString]
+                    if (settings != null) {
+                        bitmap = applyAllEffects(it, settings)
+                    }
+                    val borderSettings = config.imageBorderSettingsMap["cover"]
+                    drawBitmapToCanvas(canvas, bitmap!!, paddedRect, ImageAlignment.CENTER, borderSettings)
+                    it.recycle()
+                }
+            } catch (e: Exception) { e.printStackTrace() }
         }
     }
 }
@@ -409,32 +427,70 @@ internal fun decodeSampledBitmapFromUri(context: Context, uri: Uri, reqWidth: In
 
 private fun drawImagesWithPdfBox(context: Context, pdDocument: PDDocument, config: CoverPageConfig, imageEffectSettings: Map<String, ImageEffectSettings>, pageIndex: Int) {
     if (config.mainImageUri == null) return
+
     val page = pdDocument.getPage(pageIndex)
-    val contentStream = PDPageContentStream(pdDocument, page, PDPageContentStream.AppendMode.APPEND, true, true)
-
-    val pageWidth = if (config.pageOrientation == PageOrientation.Vertical) A4_WIDTH else A4_HEIGHT
-    val pageHeight = if (config.pageOrientation == PageOrientation.Vertical) A4_HEIGHT else A4_WIDTH
-
-    val marginTop = config.marginTop * CM_TO_POINTS
-    val marginBottom = config.marginBottom * CM_TO_POINTS
-    val marginLeft = config.marginLeft * CM_TO_POINTS
-    val marginRight = config.marginRight * CM_TO_POINTS
-    val contentArea = RectF(marginLeft, marginTop, (pageWidth - marginRight), (pageHeight - marginBottom))
-
-    val photoWeight = config.photoWeight
-    val totalWeight = config.clientWeight + config.rucWeight + photoWeight // Simplificado
-
-    val photoHeight = contentArea.height() * (photoWeight / totalWeight)
-    val photoRect = RectF(contentArea.left, contentArea.bottom - photoHeight, contentArea.right, contentArea.bottom)
+    val pageHeight = page.mediaBox.height
+    val contentStream: PDPageContentStream
+    try {
+        contentStream = PDPageContentStream(pdDocument, page, PDPageContentStream.AppendMode.APPEND, true, true)
+    } catch (e: IOException) {
+        Log.e("HybridPdf", "Error creating content stream for cover page.", e)
+        return
+    }
 
     try {
-        val uriString = config.mainImageUri!!
-        val image = PDImageXObject.createFromFile(Uri.parse(uriString).path, pdDocument)
-        contentStream.drawImage(image, photoRect.left, pageHeight - photoRect.bottom, photoRect.width(), photoRect.height())
+        val pageWidth = page.mediaBox.width
+        val marginTop = config.marginTop * CM_TO_POINTS
+        val marginBottom = config.marginBottom * CM_TO_POINTS
+        val marginLeft = config.marginLeft * CM_TO_POINTS
+        val marginRight = config.marginRight * CM_TO_POINTS
+        val contentArea = RectF(marginLeft, marginTop, pageWidth - marginRight, pageHeight - marginBottom)
+
+        val layoutRects = calculateCoverPageLayout(context, config, contentArea)
+        val photoRect = layoutRects["photo"]
+
+        if (photoRect != null) {
+            val padding = config.photoStyle.padding
+            val paddedRect = RectF(
+                photoRect.left + padding.left,
+                photoRect.top + padding.top,
+                photoRect.right - padding.right,
+                photoRect.bottom - padding.bottom
+            )
+
+            val uri = Uri.parse(config.mainImageUri)
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                val tempFile = File.createTempFile("hybrid_img", ".jpg", context.cacheDir)
+                FileOutputStream(tempFile).use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+
+                var bitmap = BitmapFactory.decodeFile(tempFile.absolutePath)
+                val settings = imageEffectSettings[config.mainImageUri]
+                if (settings != null) {
+                    bitmap = applyAllEffects(bitmap, settings)
+                }
+
+                val finalRect = getFinalBitmapRect(bitmap, paddedRect, ImageAlignment.CENTER)
+                val imageXObject = PDImageXObject.createFromFile(tempFile.absolutePath, pdDocument)
+
+                // Convertir coordenadas de Android a PDFBox (Y-up)
+                val pdfBoxY = pageHeight - finalRect.bottom
+                contentStream.drawImage(imageXObject, finalRect.left, pdfBoxY, finalRect.width(), finalRect.height())
+
+                bitmap.recycle()
+                tempFile.delete()
+            }
+        }
     } catch (e: Exception) {
         Log.e("HybridPdf", "Error dibujando imagen de portada con PDFBox", e)
+    } finally {
+        try {
+            contentStream.close()
+        } catch (e: IOException) {
+            Log.e("HybridPdf", "Error closing content stream for cover page.", e)
+        }
     }
-    contentStream.close()
 }
 
 private fun drawImagesWithPdfBox(context: Context, pdDocument: PDDocument, pageData: GeneratedPage, coverConfig: CoverPageConfig, imageEffectSettings: Map<String, ImageEffectSettings>, pageIndex: Int) {
