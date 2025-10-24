@@ -166,5 +166,11 @@ fun AppNavigation(
                 projectViewModel = projectViewModel
             )
         }
+        composable(Screen.HybridQuality.route) {
+            HybridQualityScreen(
+                navController = navController,
+                projectViewModel = projectViewModel
+            )
+        }
     }
 }
