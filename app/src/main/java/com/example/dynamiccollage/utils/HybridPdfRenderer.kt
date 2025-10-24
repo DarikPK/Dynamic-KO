@@ -526,8 +526,8 @@ private fun drawImagesWithPdfBox(context: Context, pdDocument: PDDocument, confi
                 }
 
                 val imageXObject: PDImageXObject
-                if (config.hybridImageQuality < 100) {
-                    val quality = config.hybridImageQuality
+                if (config.hybridCoverImageQuality < 100) {
+                    val quality = config.hybridCoverImageQuality
                     val scale = quality / 100f
                     val newWidth = (bitmap.width * scale).toInt()
                     val newHeight = (bitmap.height * scale).toInt()
@@ -633,8 +633,8 @@ private fun drawImagesWithPdfBox(
                         }
 
                         val imageXObject: PDImageXObject
-                        if (coverConfig.hybridImageQuality < 100) {
-                            val quality = coverConfig.hybridImageQuality
+                        if (coverConfig.hybridInnerImagesQuality < 100) {
+                            val quality = coverConfig.hybridInnerImagesQuality
                             val scale = quality / 100f
                             val newWidth = (bitmap.width * scale).toInt()
                             val newHeight = (bitmap.height * scale).toInt()

@@ -46,14 +46,15 @@ fun HybridQualityScreen(
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                // Slider for Cover Image Quality
                 Text(
-                    text = "Calidad de Imagen: ${coverConfig.hybridImageQuality}%",
+                    text = "Calidad de Imagen de Portada: ${coverConfig.hybridCoverImageQuality}%",
                     style = MaterialTheme.typography.titleMedium
                 )
                 Slider(
-                    value = coverConfig.hybridImageQuality.toFloat(),
+                    value = coverConfig.hybridCoverImageQuality.toFloat(),
                     onValueChange = { newValue ->
-                        projectViewModel.updateHybridImageQuality(context, newValue.roundToInt())
+                        projectViewModel.updateHybridCoverImageQuality(context, newValue.roundToInt())
                     },
                     valueRange = 10f..100f,
                     modifier = Modifier.fillMaxWidth()
@@ -62,8 +63,31 @@ fun HybridQualityScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Baja (archivo más pequeño)")
-                    Text("Alta (archivo más grande)")
+                    Text("Baja")
+                    Text("Alta")
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Slider for Inner Images Quality
+                Text(
+                    text = "Calidad de Imágenes Interiores: ${coverConfig.hybridInnerImagesQuality}%",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Slider(
+                    value = coverConfig.hybridInnerImagesQuality.toFloat(),
+                    onValueChange = { newValue ->
+                        projectViewModel.updateHybridInnerImagesQuality(context, newValue.roundToInt())
+                    },
+                    valueRange = 10f..100f,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Baja (archivos más pequeños)")
+                    Text("Alta (archivos más grandes)")
                 }
             }
             Button(

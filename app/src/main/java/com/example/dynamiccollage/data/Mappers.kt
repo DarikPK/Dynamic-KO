@@ -200,7 +200,8 @@ fun SerializableCoverPageConfig.toDomain() = CoverPageConfig(
     templateName = this.templateName,
     forceFullResCover = this.forceFullResCover ?: false,
     useHybridPdfMode = this.useHybridPdfMode ?: false,
-    hybridImageQuality = this.hybridImageQuality ?: 100
+    hybridCoverImageQuality = this.hybridCoverImageQuality ?: 100,
+    hybridInnerImagesQuality = this.hybridInnerImagesQuality ?: 100
 )
 
 // Mappers for ImageBorderSettings

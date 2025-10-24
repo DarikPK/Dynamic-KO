@@ -286,8 +286,13 @@ class ProjectViewModel : ViewModel() {
         saveProject(context)
     }
 
-    fun updateHybridImageQuality(context: Context, quality: Int) {
-        _currentCoverConfig.update { it.copy(hybridImageQuality = quality) }
+    fun updateHybridCoverImageQuality(context: Context, quality: Int) {
+        _currentCoverConfig.update { it.copy(hybridCoverImageQuality = quality) }
+        saveProject(context)
+    }
+
+    fun updateHybridInnerImagesQuality(context: Context, quality: Int) {
+        _currentCoverConfig.update { it.copy(hybridInnerImagesQuality = quality) }
         saveProject(context)
     }
 

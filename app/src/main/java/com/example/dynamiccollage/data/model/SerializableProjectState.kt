@@ -38,7 +38,8 @@ data class SerializableCoverPageConfig(
     val templateName: String?,
     val forceFullResCover: Boolean? = false,
     val useHybridPdfMode: Boolean? = false,
-    val hybridImageQuality: Int? = 100
+    val hybridCoverImageQuality: Int? = 100,
+    val hybridInnerImagesQuality: Int? = 100
 )
 
 data class SerializableImageBorderSettings(
