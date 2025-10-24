@@ -13,6 +13,7 @@ import android.util.Log
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 
 fun generateHybridPdf(
     context: Context,
@@ -41,10 +42,19 @@ fun generateHybridPdf(
         }
         // drawInnerPages(pdfDocument, context, generatedPages, coverConfig, if (shouldDrawCover) 2 else 1, quality, imageEffectSettings)
 
-        val fileOutputStream = FileOutputStream(tempFile)
-        pdfDocument.writeTo(fileOutputStream)
-        fileOutputStream.close()
+        val outputStream = FileOutputStream(tempFile)
+        pdfDocument.writeTo(outputStream)
+
+        // ✅ Asegurar cierre completo antes de cargar en PDFBox
+        outputStream.flush()
+        outputStream.close()
         pdfDocument.close()
+
+        Log.d("HybridPdf", "PdfDocument cerrado correctamente. Tamaño final: ${tempFile.length()} bytes")
+
+        if (tempFile.length() == 0L) {
+            throw IOException("El archivo PDF temporal está vacío antes de cargar en PDFBox")
+        }
 
         val storageDir: File? = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
         storageDir?.mkdirs()
