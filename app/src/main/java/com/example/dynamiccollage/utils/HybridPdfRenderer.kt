@@ -2,6 +2,7 @@ package com.example.dynamiccollage.utils
 
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.Paint
 import android.graphics.pdf.PdfDocument
 import android.net.Uri
 import android.os.Environment
@@ -41,6 +42,17 @@ fun generateHybridPdf(
             // drawCoverPage(pdfDocument, context, coverConfig, quality, imageEffectSettings)
         }
         // drawInnerPages(pdfDocument, context, generatedPages, coverConfig, if (shouldDrawCover) 2 else 1, quality, imageEffectSettings)
+
+        // ✅ Crear una página temporal para asegurar contenido
+        val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create() // tamaño A4
+        val page = pdfDocument.startPage(pageInfo)
+        val canvas = page.canvas
+
+        // Dibujar contenido mínimo o marcador (puede ser transparente)
+        val paint = Paint().apply { alpha = 0 } // invisible
+        canvas.drawRect(0f, 0f, 1f, 1f, paint)
+
+        pdfDocument.finishPage(page)
 
         val outputStream = FileOutputStream(tempFile)
         pdfDocument.writeTo(outputStream)
