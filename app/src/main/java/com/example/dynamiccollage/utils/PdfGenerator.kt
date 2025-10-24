@@ -80,6 +80,10 @@ object PdfGenerator {
         fileName: String,
         imageEffectSettings: Map<String, ImageEffectSettings>
     ): File? {
+        if (coverConfig.useHybridPdfMode) {
+            return generateHybridPdf(context, coverConfig, generatedPages, fileName, imageEffectSettings)
+        }
+
         if (coverConfig.forceFullResCover) {
             // TODO: Implementar la ruta de generación con PDFBox
             Log.d("PdfGenerator", "Usando la ruta de alta calidad con PDFBox.")

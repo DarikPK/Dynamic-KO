@@ -36,7 +36,8 @@ data class SerializableCoverPageConfig(
     val pageBackgroundColor: Int?,
     val imageBorderSettingsMap: Map<String, SerializableImageBorderSettings>?,
     val templateName: String?,
-    val forceFullResCover: Boolean? = false
+    val forceFullResCover: Boolean? = false,
+    val useHybridPdfMode: Boolean? = false
 )
 
 data class SerializableImageBorderSettings(

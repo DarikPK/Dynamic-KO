@@ -169,7 +169,8 @@ fun CoverPageConfig.toSerializable() = SerializableCoverPageConfig(
     pageBackgroundColor = this.pageBackgroundColor,
     imageBorderSettingsMap = this.imageBorderSettingsMap.mapValues { it.value.toSerializable() },
     templateName = this.templateName,
-    forceFullResCover = this.forceFullResCover
+    forceFullResCover = this.forceFullResCover,
+    useHybridPdfMode = this.useHybridPdfMode
 )
 
 fun SerializableCoverPageConfig.toDomain() = CoverPageConfig(
@@ -196,7 +197,8 @@ fun SerializableCoverPageConfig.toDomain() = CoverPageConfig(
     pageBackgroundColor = this.pageBackgroundColor,
     imageBorderSettingsMap = this.imageBorderSettingsMap?.mapValues { it.value.toDomain() } ?: emptyMap(),
     templateName = this.templateName,
-    forceFullResCover = this.forceFullResCover ?: false
+    forceFullResCover = this.forceFullResCover ?: false,
+    useHybridPdfMode = this.useHybridPdfMode ?: false
 )
 
 // Mappers for ImageBorderSettings

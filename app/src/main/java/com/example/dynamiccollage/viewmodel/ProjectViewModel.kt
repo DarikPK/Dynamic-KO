@@ -281,6 +281,11 @@ class ProjectViewModel : ViewModel() {
         saveProject(context)
     }
 
+    fun updateUseHybridPdfMode(context: Context, useHybrid: Boolean) {
+        _currentCoverConfig.update { it.copy(useHybridPdfMode = useHybrid) }
+        saveProject(context)
+    }
+
     fun updatePageBackgroundColor(context: Context, color: Color) {
         _currentCoverConfig.update { it.copy(pageBackgroundColor = color.toArgb()) }
         saveProject(context)

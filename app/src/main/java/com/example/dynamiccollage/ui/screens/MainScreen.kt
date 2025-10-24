@@ -206,8 +206,8 @@ fun MainScreen(
             ) {
                 Text(text = stringResource(R.string.main_btn_use_image_compression))
                 Switch(
-                    checked = projectViewModel.currentCoverConfig.collectAsState().value.forceFullResCover,
-                    onCheckedChange = { projectViewModel.updateForceFullResCover(context, it) }
+                    checked = projectViewModel.currentCoverConfig.collectAsState().value.useHybridPdfMode,
+                    onCheckedChange = { projectViewModel.updateUseHybridPdfMode(context, it) }
                 )
             }
             MainButton(
