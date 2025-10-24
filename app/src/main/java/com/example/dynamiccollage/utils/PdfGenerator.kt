@@ -104,9 +104,9 @@ object PdfGenerator {
                     coverConfig.mainImageUri != null
 
             if (shouldDrawCover) {
-                drawCoverPage(pdfDocument, context, coverConfig, quality, imageEffectSettings)
+                drawCoverPage(pdfDocument, context, coverConfig, quality, imageEffectSettings, renderImages = true)
             }
-            drawInnerPages(pdfDocument, context, generatedPages, coverConfig, if (shouldDrawCover) 2 else 1, quality, imageEffectSettings)
+            drawInnerPages(pdfDocument, context, generatedPages, coverConfig, if (shouldDrawCover) 2 else 1, quality, imageEffectSettings, renderImages = true)
 
             val fileOutputStream = FileOutputStream(tempFile)
             pdfDocument.writeTo(fileOutputStream)

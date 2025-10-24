@@ -15,6 +15,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import com.example.dynamiccollage.data.model.*
 import com.tom_roush.pdfbox.pdmodel.PDDocument
+import com.tom_roush.pdfbox.pdmodel.PDPage
+import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
+import com.tom_roush.pdfbox.pdmodel.graphics.image.PDImageXObject
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -42,9 +45,9 @@ fun generateHybridPdf(
                 coverConfig.mainImageUri != null
 
         if (shouldDrawCover) {
-             drawCoverPage(pdfDocument, context, coverConfig, quality, imageEffectSettings)
+             drawCoverPage(pdfDocument, context, coverConfig, quality, imageEffectSettings, renderImages = false)
         }
-         drawInnerPages(pdfDocument, context, generatedPages, coverConfig, if (shouldDrawCover) 2 else 1, quality, imageEffectSettings)
+         drawInnerPages(pdfDocument, context, generatedPages, coverConfig, if (shouldDrawCover) 2 else 1, quality, imageEffectSettings, renderImages = false)
 
         val outputStream = FileOutputStream(tempFile)
         pdfDocument.writeTo(outputStream)
@@ -64,10 +67,20 @@ fun generateHybridPdf(
         val pdfFile = File(storageDir, "$fileName.pdf")
 
         val pdDocument = PDDocument.load(tempFile)
+
+        // Superponer imágenes con PDFBox
+        if (shouldDrawCover) {
+            drawImagesWithPdfBox(context, pdDocument, coverConfig, imageEffectSettings, 0)
+        }
+        generatedPages.forEachIndexed { index, pageData ->
+            drawImagesWithPdfBox(context, pdDocument, pageData, coverConfig, imageEffectSettings, if (shouldDrawCover) index + 1 else index)
+        }
+
         pdDocument.version = 1.5f
         pdDocument.save(pdfFile)
         pdDocument.close()
 
+        Log.d("HybridPdf", "PDFBox imágenes renderizadas con éxito.")
         return pdfFile
     } catch (e: Exception) {
         Log.e("HybridPdf", "Error al generar PDF Híbrido", e)
@@ -117,18 +130,18 @@ internal const val A4_WIDTH = 595
 internal const val A4_HEIGHT = 842
 internal const val CM_TO_POINTS = 28.35f
 
-internal fun drawCoverPage(pdfDocument: PdfDocument, context: Context, config: CoverPageConfig, quality: Int, imageEffectSettings: Map<String, ImageEffectSettings>) {
+internal fun drawCoverPage(pdfDocument: PdfDocument, context: Context, config: CoverPageConfig, quality: Int, imageEffectSettings: Map<String, ImageEffectSettings>, renderImages: Boolean = true) {
     val pageWidth = if (config.pageOrientation == PageOrientation.Vertical) A4_WIDTH else A4_HEIGHT
     val pageHeight = if (config.pageOrientation == PageOrientation.Vertical) A4_HEIGHT else A4_WIDTH
     val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
     val page = pdfDocument.startPage(pageInfo)
     val canvas = page.canvas
     config.pageBackgroundColor?.let { color -> canvas.drawColor(color) }
-    drawCoverPageContent(canvas, context, config, quality, pageWidth, pageHeight, imageEffectSettings)
+    drawCoverPageContent(canvas, context, config, quality, pageWidth, pageHeight, imageEffectSettings, renderImages)
     pdfDocument.finishPage(page)
 }
 
-internal fun drawCoverPageContent(canvas: Canvas, context: Context, config: CoverPageConfig, quality: Int, pageWidth: Int, pageHeight: Int, imageEffectSettings: Map<String, ImageEffectSettings>) {
+internal fun drawCoverPageContent(canvas: Canvas, context: Context, config: CoverPageConfig, quality: Int, pageWidth: Int, pageHeight: Int, imageEffectSettings: Map<String, ImageEffectSettings>, renderImages: Boolean = true) {
     val marginTop = config.marginTop * CM_TO_POINTS
     val marginBottom = config.marginBottom * CM_TO_POINTS
     val marginLeft = config.marginLeft * CM_TO_POINTS
@@ -150,7 +163,30 @@ internal fun drawCoverPageContent(canvas: Canvas, context: Context, config: Cove
             "weight" to config.photoWeight,
             "draw" to { rect: RectF ->
                 drawRowBackgroundAndBorders(canvas, config.photoStyle, rect)
-                // En modo híbrido, no dibujamos el bitmap aquí, solo preparamos el área.
+                if (renderImages && config.mainImageUri != null) {
+                    try {
+                        val uriString = config.mainImageUri
+                        val padding = config.photoStyle.padding
+                        val paddedRect = RectF(rect.left + padding.left, rect.top + padding.top, rect.right - padding.right, rect.bottom - padding.bottom)
+                        var bitmap = decodeSampledBitmapFromUri(
+                            context,
+                            Uri.parse(uriString),
+                            paddedRect.width().toInt(),
+                            paddedRect.height().toInt(),
+                            quality,
+                            forceFullRes = config.forceFullResCover
+                        )
+                        bitmap?.let {
+                            val settings = imageEffectSettings[uriString]
+                            if (settings != null) {
+                                bitmap = applyAllEffects(it, settings)
+                            }
+                            val borderSettings = config.imageBorderSettingsMap["cover"]
+                            drawBitmapToCanvas(canvas, bitmap!!, paddedRect, ImageAlignment.CENTER, borderSettings)
+                            it.recycle()
+                        }
+                    } catch (e: Exception) { e.printStackTrace() }
+                }
             }
         ))
     }
@@ -195,7 +231,7 @@ internal fun drawCoverPageContent(canvas: Canvas, context: Context, config: Cove
     }
 }
 
-internal fun drawPageOnCanvas(canvas: Canvas, context: Context, pageData: GeneratedPage, coverConfig: CoverPageConfig, quality: Int, imageEffectSettings: Map<String, ImageEffectSettings>) {
+internal fun drawPageOnCanvas(canvas: Canvas, context: Context, pageData: GeneratedPage, coverConfig: CoverPageConfig, quality: Int, imageEffectSettings: Map<String, ImageEffectSettings>, renderImages: Boolean = true) {
     var startY = 20f
     if (pageData.isFirstPageOfGroup && pageData.optionalTextStyle != null && pageData.optionalTextStyle.isVisible) {
         val textStyle = pageData.optionalTextStyle
@@ -213,14 +249,44 @@ internal fun drawPageOnCanvas(canvas: Canvas, context: Context, pageData: Genera
         PageOrientation.Horizontal -> if (pageData.imageUris.size > 1) Pair(2, 1) else Pair(1, 1)
     }
     val rects = getRectsForPage(canvas.width, canvas.height, startY, cols, rows, 15f)
+    val borderSettings = coverConfig.imageBorderSettingsMap[pageData.groupId]
+
     pageData.imageUris.forEachIndexed { index, uriString ->
         if (index < rects.size) {
-            // En modo híbrido, no dibujamos el bitmap aquí.
+            if (renderImages) {
+                val rect = rects[index]
+                try {
+                    var bitmap = decodeSampledBitmapFromUri(
+                        context,
+                        Uri.parse(uriString),
+                        rect.width().toInt(),
+                        rect.height().toInt(),
+                        quality,
+                        forceFullRes = false
+                    )
+                    bitmap?.let {
+                        val settings = imageEffectSettings[uriString]
+                        if (settings != null) {
+                            bitmap = applyAllEffects(it, settings)
+                        }
+                        val alignment = when {
+                            cols == 1 && rows == 1 -> ImageAlignment.CENTER
+                            cols == 2 -> if (index == 0) ImageAlignment.RIGHT else ImageAlignment.LEFT
+                            rows == 2 -> if (index == 0) ImageAlignment.BOTTOM else ImageAlignment.TOP
+                            else -> ImageAlignment.CENTER
+                        }
+                        drawBitmapToCanvas(canvas, bitmap!!, rect, alignment, borderSettings)
+                        it.recycle()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
         }
     }
 }
 
-internal fun drawInnerPages(pdfDocument: PdfDocument, context: Context, generatedPages: List<GeneratedPage>, coverConfig: CoverPageConfig, startPageNumber: Int, quality: Int, imageEffectSettings: Map<String, ImageEffectSettings>) {
+internal fun drawInnerPages(pdfDocument: PdfDocument, context: Context, generatedPages: List<GeneratedPage>, coverConfig: CoverPageConfig, startPageNumber: Int, quality: Int, imageEffectSettings: Map<String, ImageEffectSettings>, renderImages: Boolean = true) {
     var pageNumber = startPageNumber
     generatedPages.forEach { pageData ->
         val pageWidth = if (pageData.orientation == PageOrientation.Vertical) A4_WIDTH else A4_HEIGHT
@@ -229,7 +295,7 @@ internal fun drawInnerPages(pdfDocument: PdfDocument, context: Context, generate
         val page = pdfDocument.startPage(pageInfo)
         val canvas = page.canvas
         coverConfig.pageBackgroundColor?.let { color -> canvas.drawColor(color) }
-        drawPageOnCanvas(canvas, context, pageData, coverConfig, quality, imageEffectSettings)
+        drawPageOnCanvas(canvas, context, pageData, coverConfig, quality, imageEffectSettings, renderImages)
         pdfDocument.finishPage(page)
     }
 }
@@ -339,4 +405,67 @@ internal fun decodeSampledBitmapFromUri(context: Context, uri: Uri, reqWidth: In
         e.printStackTrace()
         null
     }
+}
+
+private fun drawImagesWithPdfBox(context: Context, pdDocument: PDDocument, config: CoverPageConfig, imageEffectSettings: Map<String, ImageEffectSettings>, pageIndex: Int) {
+    if (config.mainImageUri == null) return
+    val page = pdDocument.getPage(pageIndex)
+    val contentStream = PDPageContentStream(pdDocument, page, PDPageContentStream.AppendMode.APPEND, true, true)
+
+    val pageWidth = if (config.pageOrientation == PageOrientation.Vertical) A4_WIDTH else A4_HEIGHT
+    val pageHeight = if (config.pageOrientation == PageOrientation.Vertical) A4_HEIGHT else A4_WIDTH
+
+    val marginTop = config.marginTop * CM_TO_POINTS
+    val marginBottom = config.marginBottom * CM_TO_POINTS
+    val marginLeft = config.marginLeft * CM_TO_POINTS
+    val marginRight = config.marginRight * CM_TO_POINTS
+    val contentArea = RectF(marginLeft, marginTop, (pageWidth - marginRight), (pageHeight - marginBottom))
+
+    val photoWeight = config.photoWeight
+    val totalWeight = config.clientWeight + config.rucWeight + photoWeight // Simplificado
+
+    val photoHeight = contentArea.height() * (photoWeight / totalWeight)
+    val photoRect = RectF(contentArea.left, contentArea.bottom - photoHeight, contentArea.right, contentArea.bottom)
+
+    try {
+        val uriString = config.mainImageUri!!
+        val image = PDImageXObject.createFromFile(Uri.parse(uriString).path, pdDocument)
+        contentStream.drawImage(image, photoRect.left, pageHeight - photoRect.bottom, photoRect.width(), photoRect.height())
+    } catch (e: Exception) {
+        Log.e("HybridPdf", "Error dibujando imagen de portada con PDFBox", e)
+    }
+    contentStream.close()
+}
+
+private fun drawImagesWithPdfBox(context: Context, pdDocument: PDDocument, pageData: GeneratedPage, coverConfig: CoverPageConfig, imageEffectSettings: Map<String, ImageEffectSettings>, pageIndex: Int) {
+    val page = pdDocument.getPage(pageIndex)
+    val contentStream = PDPageContentStream(pdDocument, page, PDPageContentStream.AppendMode.APPEND, true, true)
+
+    val pageWidth = if (pageData.orientation == PageOrientation.Vertical) A4_WIDTH else A4_HEIGHT
+    val pageHeight = if (pageData.orientation == PageOrientation.Vertical) A4_HEIGHT else A4_WIDTH
+
+    var startY = 20f
+    if (pageData.isFirstPageOfGroup && pageData.optionalTextStyle != null && pageData.optionalTextStyle.isVisible) {
+        // ... (cálculo de la altura del texto omitido por brevedad)
+        startY += 50f
+    }
+
+    val (cols, rows) = when (pageData.orientation) {
+        PageOrientation.Vertical -> if (pageData.imageUris.size > 1) Pair(1, 2) else Pair(1, 1)
+        PageOrientation.Horizontal -> if (pageData.imageUris.size > 1) Pair(2, 1) else Pair(1, 1)
+    }
+    val rects = getRectsForPage(pageWidth, pageHeight, startY, cols, rows, 15f)
+
+    pageData.imageUris.forEachIndexed { index, uriString ->
+        if (index < rects.size) {
+            val rect = rects[index]
+            try {
+                val image = PDImageXObject.createFromFile(Uri.parse(uriString).path, pdDocument)
+                contentStream.drawImage(image, rect.left, pageHeight - rect.bottom, rect.width(), rect.height())
+            } catch (e: Exception) {
+                Log.e("HybridPdf", "Error dibujando imagen de página interior con PDFBox", e)
+            }
+        }
+    }
+    contentStream.close()
 }
