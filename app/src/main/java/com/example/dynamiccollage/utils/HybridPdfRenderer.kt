@@ -82,7 +82,7 @@ fun generateHybridPdf(
 
 // --- Funciones de Dibujo Transferidas de PdfGenerator ---
 
-private fun applyAllEffects(input: Bitmap, settings: ImageEffectSettings): Bitmap {
+internal fun applyAllEffects(input: Bitmap, settings: ImageEffectSettings): Bitmap {
     var processedBitmap = input
     settings.cropRect?.let { normalizedRect ->
         if (normalizedRect.width > 0 && normalizedRect.height > 0) {
@@ -111,13 +111,13 @@ private fun applyAllEffects(input: Bitmap, settings: ImageEffectSettings): Bitma
     return processedBitmap
 }
 
-private enum class ImageAlignment { TOP, BOTTOM, LEFT, RIGHT, CENTER }
+internal enum class ImageAlignment { TOP, BOTTOM, LEFT, RIGHT, CENTER }
 
-private const val A4_WIDTH = 595
-private const val A4_HEIGHT = 842
-private const val CM_TO_POINTS = 28.35f
+internal const val A4_WIDTH = 595
+internal const val A4_HEIGHT = 842
+internal const val CM_TO_POINTS = 28.35f
 
-private fun drawCoverPage(pdfDocument: PdfDocument, context: Context, config: CoverPageConfig, quality: Int, imageEffectSettings: Map<String, ImageEffectSettings>) {
+internal fun drawCoverPage(pdfDocument: PdfDocument, context: Context, config: CoverPageConfig, quality: Int, imageEffectSettings: Map<String, ImageEffectSettings>) {
     val pageWidth = if (config.pageOrientation == PageOrientation.Vertical) A4_WIDTH else A4_HEIGHT
     val pageHeight = if (config.pageOrientation == PageOrientation.Vertical) A4_HEIGHT else A4_WIDTH
     val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
@@ -128,7 +128,7 @@ private fun drawCoverPage(pdfDocument: PdfDocument, context: Context, config: Co
     pdfDocument.finishPage(page)
 }
 
-private fun drawCoverPageContent(canvas: Canvas, context: Context, config: CoverPageConfig, quality: Int, pageWidth: Int, pageHeight: Int, imageEffectSettings: Map<String, ImageEffectSettings>) {
+internal fun drawCoverPageContent(canvas: Canvas, context: Context, config: CoverPageConfig, quality: Int, pageWidth: Int, pageHeight: Int, imageEffectSettings: Map<String, ImageEffectSettings>) {
     val marginTop = config.marginTop * CM_TO_POINTS
     val marginBottom = config.marginBottom * CM_TO_POINTS
     val marginLeft = config.marginLeft * CM_TO_POINTS
@@ -195,7 +195,7 @@ private fun drawCoverPageContent(canvas: Canvas, context: Context, config: Cover
     }
 }
 
-private fun drawPageOnCanvas(canvas: Canvas, context: Context, pageData: GeneratedPage, coverConfig: CoverPageConfig, quality: Int, imageEffectSettings: Map<String, ImageEffectSettings>) {
+internal fun drawPageOnCanvas(canvas: Canvas, context: Context, pageData: GeneratedPage, coverConfig: CoverPageConfig, quality: Int, imageEffectSettings: Map<String, ImageEffectSettings>) {
     var startY = 20f
     if (pageData.isFirstPageOfGroup && pageData.optionalTextStyle != null && pageData.optionalTextStyle.isVisible) {
         val textStyle = pageData.optionalTextStyle
@@ -220,7 +220,7 @@ private fun drawPageOnCanvas(canvas: Canvas, context: Context, pageData: Generat
     }
 }
 
-private fun drawInnerPages(pdfDocument: PdfDocument, context: Context, generatedPages: List<GeneratedPage>, coverConfig: CoverPageConfig, startPageNumber: Int, quality: Int, imageEffectSettings: Map<String, ImageEffectSettings>) {
+internal fun drawInnerPages(pdfDocument: PdfDocument, context: Context, generatedPages: List<GeneratedPage>, coverConfig: CoverPageConfig, startPageNumber: Int, quality: Int, imageEffectSettings: Map<String, ImageEffectSettings>) {
     var pageNumber = startPageNumber
     generatedPages.forEach { pageData ->
         val pageWidth = if (pageData.orientation == PageOrientation.Vertical) A4_WIDTH else A4_HEIGHT
@@ -234,14 +234,14 @@ private fun drawInnerPages(pdfDocument: PdfDocument, context: Context, generated
     }
 }
 
-private fun getAndroidAlignment(textAlign: TextAlign): Layout.Alignment = when (textAlign) { TextAlign.Center -> Layout.Alignment.ALIGN_CENTER; TextAlign.End -> Layout.Alignment.ALIGN_OPPOSITE; else -> Layout.Alignment.ALIGN_NORMAL }
-private fun drawRow(canvas: Canvas, context: Context, text: String, style: TextStyleConfig, rect: RectF) { drawRowBackgroundAndBorders(canvas, style.rowStyle, rect); drawTextInRect(canvas, context, text, style, rect) }
-private fun drawRowBackgroundAndBorders(canvas: Canvas, rowStyle: RowStyle, rect: RectF) { val backgroundPaint = Paint().apply { color = rowStyle.backgroundColor.toArgb(); style = Paint.Style.FILL }; canvas.drawRect(rect, backgroundPaint); val borderPaint = Paint().apply { color = rowStyle.border.color.toArgb(); style = Paint.Style.STROKE; strokeWidth = rowStyle.border.thickness }; val border = rowStyle.border; if (border.top) canvas.drawLine(rect.left, rect.top, rect.right, rect.top, borderPaint); if (border.bottom) canvas.drawLine(rect.left, rect.bottom, rect.right, rect.bottom, borderPaint); if (border.left) canvas.drawLine(rect.left, rect.top, rect.left, rect.bottom, borderPaint); if (border.right) canvas.drawLine(rect.right, rect.top, rect.right, rect.bottom, borderPaint) }
-private fun createTextPaint(context: Context, style: TextStyleConfig): TextPaint { return TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = style.fontColor.toArgb(); textSize = style.fontSize.toFloat(); val isBold = style.fontWeight == FontWeight.Bold; val isItalic = style.fontStyle == FontStyle.Italic; val typefaceStyle = when { isBold && isItalic -> Typeface.BOLD_ITALIC; isBold -> Typeface.BOLD; isItalic -> Typeface.ITALIC; else -> Typeface.NORMAL }; typeface = Typeface.create(Typeface.SANS_SERIF, typefaceStyle) } }
-private fun drawTextInRect(canvas: Canvas, context: Context, text: String, style: TextStyleConfig, rect: RectF) { if (text.isBlank()) return; val padding = style.rowStyle.padding; val paddedRect = RectF(rect.left + padding.left, rect.top + padding.top, rect.right - padding.right, rect.bottom - padding.bottom); if (paddedRect.width() <= 0 || paddedRect.height() <= 0) return; val textPaint = createTextPaint(context, style); val staticLayout = StaticLayout.Builder.obtain(text, 0, text.length, textPaint, paddedRect.width().toInt()).setAlignment(getAndroidAlignment(style.textAlign)).build(); val textY = paddedRect.top + (paddedRect.height() - staticLayout.height) / 2; canvas.save(); canvas.translate(paddedRect.left, textY); staticLayout.draw(canvas); canvas.restore() }
-private fun getRectsForPage(pageWidth: Int, pageHeight: Int, startY: Float, cols: Int, rows: Int, spacing: Float): List<RectF> { val rects = mutableListOf<RectF>(); val totalSpacingX = spacing * (cols + 1); val totalSpacingY = spacing * (rows + 1); val cellWidth = (pageWidth - totalSpacingX) / cols; val availableHeight = pageHeight - startY; val cellHeight = (availableHeight - totalSpacingY) / rows; for (row in 0 until rows) { for (col in 0 until cols) { val left = totalSpacingX / (cols + 1) + col * (cellWidth + spacing); val top = startY + totalSpacingY / (rows + 1) + row * (cellHeight + spacing); val right = left + cellWidth; val bottom = top + cellHeight; rects.add(RectF(left, top, right, bottom)) } }; return rects }
+internal fun getAndroidAlignment(textAlign: TextAlign): Layout.Alignment = when (textAlign) { TextAlign.Center -> Layout.Alignment.ALIGN_CENTER; TextAlign.End -> Layout.Alignment.ALIGN_OPPOSITE; else -> Layout.Alignment.ALIGN_NORMAL }
+internal fun drawRow(canvas: Canvas, context: Context, text: String, style: TextStyleConfig, rect: RectF) { drawRowBackgroundAndBorders(canvas, style.rowStyle, rect); drawTextInRect(canvas, context, text, style, rect) }
+internal fun drawRowBackgroundAndBorders(canvas: Canvas, rowStyle: RowStyle, rect: RectF) { val backgroundPaint = Paint().apply { color = rowStyle.backgroundColor.toArgb(); style = Paint.Style.FILL }; canvas.drawRect(rect, backgroundPaint); val borderPaint = Paint().apply { color = rowStyle.border.color.toArgb(); style = Paint.Style.STROKE; strokeWidth = rowStyle.border.thickness }; val border = rowStyle.border; if (border.top) canvas.drawLine(rect.left, rect.top, rect.right, rect.top, borderPaint); if (border.bottom) canvas.drawLine(rect.left, rect.bottom, rect.right, rect.bottom, borderPaint); if (border.left) canvas.drawLine(rect.left, rect.top, rect.left, rect.bottom, borderPaint); if (border.right) canvas.drawLine(rect.right, rect.top, rect.right, rect.bottom, borderPaint) }
+internal fun createTextPaint(context: Context, style: TextStyleConfig): TextPaint { return TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = style.fontColor.toArgb(); textSize = style.fontSize.toFloat(); val isBold = style.fontWeight == FontWeight.Bold; val isItalic = style.fontStyle == FontStyle.Italic; val typefaceStyle = when { isBold && isItalic -> Typeface.BOLD_ITALIC; isBold -> Typeface.BOLD; isItalic -> Typeface.ITALIC; else -> Typeface.NORMAL }; typeface = Typeface.create(Typeface.SANS_SERIF, typefaceStyle) } }
+internal fun drawTextInRect(canvas: Canvas, context: Context, text: String, style: TextStyleConfig, rect: RectF) { if (text.isBlank()) return; val padding = style.rowStyle.padding; val paddedRect = RectF(rect.left + padding.left, rect.top + padding.top, rect.right - padding.right, rect.bottom - padding.bottom); if (paddedRect.width() <= 0 || paddedRect.height() <= 0) return; val textPaint = createTextPaint(context, style); val staticLayout = StaticLayout.Builder.obtain(text, 0, text.length, textPaint, paddedRect.width().toInt()).setAlignment(getAndroidAlignment(style.textAlign)).build(); val textY = paddedRect.top + (paddedRect.height() - staticLayout.height) / 2; canvas.save(); canvas.translate(paddedRect.left, textY); staticLayout.draw(canvas); canvas.restore() }
+internal fun getRectsForPage(pageWidth: Int, pageHeight: Int, startY: Float, cols: Int, rows: Int, spacing: Float): List<RectF> { val rects = mutableListOf<RectF>(); val totalSpacingX = spacing * (cols + 1); val totalSpacingY = spacing * (rows + 1); val cellWidth = (pageWidth - totalSpacingX) / cols; val availableHeight = pageHeight - startY; val cellHeight = (availableHeight - totalSpacingY) / rows; for (row in 0 until rows) { for (col in 0 until cols) { val left = totalSpacingX / (cols + 1) + col * (cellWidth + spacing); val top = startY + totalSpacingY / (rows + 1) + row * (cellHeight + spacing); val right = left + cellWidth; val bottom = top + cellHeight; rects.add(RectF(left, top, right, bottom)) } }; return rects }
 
-private fun drawBitmapToCanvas(canvas: Canvas, bitmap: Bitmap, cellRect: RectF, alignment: ImageAlignment, borderSettings: ImageBorderSettings?) {
+internal fun drawBitmapToCanvas(canvas: Canvas, bitmap: Bitmap, cellRect: RectF, alignment: ImageAlignment, borderSettings: ImageBorderSettings?) {
     val finalRect = getFinalBitmapRect(bitmap, cellRect, alignment)
     canvas.save()
     try {
@@ -271,7 +271,7 @@ private fun drawBitmapToCanvas(canvas: Canvas, bitmap: Bitmap, cellRect: RectF, 
     }
 }
 
-private fun getFinalBitmapRect(bitmap: Bitmap, cellRect: RectF, alignment: ImageAlignment): RectF {
+internal fun getFinalBitmapRect(bitmap: Bitmap, cellRect: RectF, alignment: ImageAlignment): RectF {
     val bitmapWidth = bitmap.width.toFloat()
     val bitmapHeight = bitmap.height.toFloat()
     val cellWidth = cellRect.width()
@@ -300,7 +300,7 @@ private fun getFinalBitmapRect(bitmap: Bitmap, cellRect: RectF, alignment: Image
     return RectF(x, y, x + newWidth, y + newHeight)
 }
 
-private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
+internal fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
     val (height: Int, width: Int) = options.run { outHeight to outWidth }
     var inSampleSize = 1
     if (height > reqHeight || width > reqWidth) {
@@ -313,7 +313,7 @@ private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int,
     return inSampleSize
 }
 
-private fun decodeSampledBitmapFromUri(context: Context, uri: Uri, reqWidth: Int, reqHeight: Int, quality: Int, forceFullRes: Boolean = false): Bitmap? {
+internal fun decodeSampledBitmapFromUri(context: Context, uri: Uri, reqWidth: Int, reqHeight: Int, quality: Int, forceFullRes: Boolean = false): Bitmap? {
     return try {
         if (forceFullRes) {
             Log.d("PdfGenerator", "Cargando imagen de portada en resolución completa.")
