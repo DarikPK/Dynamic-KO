@@ -286,6 +286,11 @@ class ProjectViewModel : ViewModel() {
         saveProject(context)
     }
 
+    fun updateHybridImageQuality(context: Context, quality: Int) {
+        _currentCoverConfig.update { it.copy(hybridImageQuality = quality) }
+        saveProject(context)
+    }
+
     fun updatePageBackgroundColor(context: Context, color: Color) {
         _currentCoverConfig.update { it.copy(pageBackgroundColor = color.toArgb()) }
         saveProject(context)

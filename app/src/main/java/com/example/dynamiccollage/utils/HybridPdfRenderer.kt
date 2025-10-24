@@ -525,7 +525,26 @@ private fun drawImagesWithPdfBox(context: Context, pdDocument: PDDocument, confi
                     applyPdfBoxClippingPath(contentStream, borderSettings!!, finalRect, pageHeight)
                 }
 
-                val imageXObject = PDImageXObject.createFromFile(tempFile.absolutePath, pdDocument)
+                val imageXObject: PDImageXObject
+                if (config.hybridImageQuality < 100) {
+                    val quality = config.hybridImageQuality
+                    val scale = quality / 100f
+                    val newWidth = (bitmap.width * scale).toInt()
+                    val newHeight = (bitmap.height * scale).toInt()
+
+                    val scaledBitmap = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
+
+                    val resizedTempFile = File.createTempFile("resized_hybrid", ".jpg", context.cacheDir)
+                    FileOutputStream(resizedTempFile).use { out ->
+                        scaledBitmap.compress(Bitmap.CompressFormat.JPEG, quality, out)
+                    }
+                    imageXObject = PDImageXObject.createFromFile(resizedTempFile.absolutePath, pdDocument)
+                    resizedTempFile.delete()
+                    scaledBitmap.recycle()
+                } else {
+                    imageXObject = PDImageXObject.createFromFile(tempFile.absolutePath, pdDocument)
+                }
+
                 val pdfBoxY = pageHeight - finalRect.bottom
                 contentStream.drawImage(imageXObject, finalRect.left, pdfBoxY, finalRect.width(), finalRect.height())
 
@@ -613,7 +632,26 @@ private fun drawImagesWithPdfBox(
                             applyPdfBoxClippingPath(contentStream, borderSettings!!, finalRect, pageHeight)
                         }
 
-                        val imageXObject = PDImageXObject.createFromFile(tempFile.absolutePath, pdDocument)
+                        val imageXObject: PDImageXObject
+                        if (coverConfig.hybridImageQuality < 100) {
+                            val quality = coverConfig.hybridImageQuality
+                            val scale = quality / 100f
+                            val newWidth = (bitmap.width * scale).toInt()
+                            val newHeight = (bitmap.height * scale).toInt()
+
+                            val scaledBitmap = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
+
+                            val resizedTempFile = File.createTempFile("resized_hybrid_inner", ".jpg", context.cacheDir)
+                            FileOutputStream(resizedTempFile).use { out ->
+                                scaledBitmap.compress(Bitmap.CompressFormat.JPEG, quality, out)
+                            }
+                            imageXObject = PDImageXObject.createFromFile(resizedTempFile.absolutePath, pdDocument)
+                            resizedTempFile.delete()
+                            scaledBitmap.recycle()
+                        } else {
+                            imageXObject = PDImageXObject.createFromFile(tempFile.absolutePath, pdDocument)
+                        }
+
                         val pdfBoxY = pageHeight - finalRect.bottom
                         contentStream.drawImage(imageXObject, finalRect.left, pdfBoxY, finalRect.width(), finalRect.height())
 
