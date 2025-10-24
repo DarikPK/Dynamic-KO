@@ -582,7 +582,7 @@ private fun drawImagesWithPdfBox(
             PageOrientation.Vertical -> if (pageData.imageUris.size > 1) Pair(1, 2) else Pair(1, 1)
             PageOrientation.Horizontal -> if (pageData.imageUris.size > 1) Pair(2, 1) else Pair(1, 1)
         }
-        val rects = getRectsForPage(pageWidth, pageHeight.toInt(), startY, cols, rows, 15f)
+        val rects = getRectsForPage(pageWidth.toInt(), pageHeight.toInt(), startY, cols, rows, 15f)
         val borderSettings = coverConfig.imageBorderSettingsMap[pageData.groupId]
 
         pageData.imageUris.forEachIndexed { index, uriString ->
