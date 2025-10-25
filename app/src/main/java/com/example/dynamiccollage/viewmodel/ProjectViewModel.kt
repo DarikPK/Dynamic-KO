@@ -241,11 +241,25 @@ class ProjectViewModel : ViewModel() {
         saveProject(context)
     }
 
-    fun updateImageCrop(context: Context, uri: String, cropRect: SerializableNormalizedRectF?) {
+    fun updateImageCrop(context: Context, uri: String, newRelativeCrop: SerializableNormalizedRectF?) {
         _imageEffectSettings.update { currentMap ->
             val currentSettings = currentMap[uri] ?: ImageEffectSettings()
+            val existingCrop = currentSettings.cropRect
+
+            val finalCrop = if (existingCrop != null && newRelativeCrop != null) {
+                // Compose the new crop with the existing one
+                SerializableNormalizedRectF(
+                    left = existingCrop.left + newRelativeCrop.left * existingCrop.width,
+                    top = existingCrop.top + newRelativeCrop.top * existingCrop.height,
+                    width = existingCrop.width * newRelativeCrop.width,
+                    height = existingCrop.height * newRelativeCrop.height
+                )
+            } else {
+                newRelativeCrop
+            }
+
             currentMap.toMutableMap().apply {
-                this[uri] = currentSettings.copy(cropRect = cropRect)
+                this[uri] = currentSettings.copy(cropRect = finalCrop)
             }
         }
         saveProject(context)

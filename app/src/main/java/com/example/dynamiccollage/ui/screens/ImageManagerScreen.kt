@@ -125,28 +125,59 @@ fun ImageManagerScreen(
                     .weight(1f),
                 contentAlignment = Alignment.Center
             ) {
-                if (currentSelectedUri != null) {
+                var bitmapForCropper by remember { mutableStateOf<Bitmap?>(null) }
+
+                LaunchedEffect(currentSelectedUri, effectSettingsMap) {
+                    if (currentSelectedUri != null) {
+                        coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                            // Load the original, full-resolution bitmap
+                            val originalBitmap = context.contentResolver.openInputStream(currentSelectedUri)?.use {
+                                android.graphics.BitmapFactory.decodeStream(it)
+                            }
+
+                            if (originalBitmap != null) {
+                                val cropRect = effectSettingsMap[currentSelectedUriString]?.cropRect
+                                if (cropRect != null) {
+                                    // Apply the existing crop to the original bitmap
+                                    val left = (cropRect.left * originalBitmap.width).toInt()
+                                    val top = (cropRect.top * originalBitmap.height).toInt()
+                                    val width = (cropRect.width * originalBitmap.width).toInt()
+                                    val height = (cropRect.height * originalBitmap.height).toInt()
+
+                                    if(width > 0 && height > 0 && (left + width) <= originalBitmap.width && (top + height) <= originalBitmap.height) {
+                                        bitmapForCropper = Bitmap.createBitmap(originalBitmap, left, top, width, height)
+                                    } else {
+                                        bitmapForCropper = originalBitmap
+                                    }
+                                } else {
+                                    // If no crop, use the original
+                                    bitmapForCropper = originalBitmap
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (bitmapForCropper != null) {
                     key(currentSelectedUriString, cropViewResetKey) {
                         CropView(
-                            uri = currentSelectedUri,
-                            transformations = listOf(ProjectEffectsTransformation(currentSettings)),
+                            bitmap = bitmapForCropper!!,
                             onCrop = { cropRect, imageBounds ->
-                                coroutineScope.launch {
-                                    if (imageBounds.width > 0 && imageBounds.height > 0) {
-                                        val normalizedRect = SerializableNormalizedRectF(
-                                            left = (cropRect.left - imageBounds.left) / imageBounds.width,
-                                            top = (cropRect.top - imageBounds.top) / imageBounds.height,
-                                            width = cropRect.width / imageBounds.width,
-                                            height = cropRect.height / imageBounds.height
-                                        )
-                                        projectViewModel.updateImageCrop(context, currentSelectedUriString!!, normalizedRect)
-                                        // Increment key to signal CropView should reset its overlay
-                                        cropViewResetKey++
-                                    }
+                                if (imageBounds.width > 0 && imageBounds.height > 0) {
+                                    val normalizedRect = SerializableNormalizedRectF(
+                                        left = (cropRect.left - imageBounds.left) / imageBounds.width,
+                                        top = (cropRect.top - imageBounds.top) / imageBounds.height,
+                                        width = cropRect.width / imageBounds.width,
+                                        height = cropRect.height / imageBounds.height
+                                    )
+                                    projectViewModel.updateImageCrop(context, currentSelectedUriString!!, normalizedRect)
+                                    cropViewResetKey++
                                 }
                             }
                         )
                     }
+                } else if (currentSelectedUri != null) {
+                    CircularProgressIndicator()
                 } else {
                     Text("No hay imágenes para editar.")
                 }
