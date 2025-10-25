@@ -44,7 +44,9 @@ fun generateHybridPdf(
                 coverConfig.subtitleStyle.content.isNotBlank() ||
                 coverConfig.mainImageUri != null
 
-        val colorTheme = ColorTheme.fromString(coverConfig.templateName)
+        val colorTheme = coverConfig.templateName?.let { name ->
+            ColorThemes.themes.find { it.name == name }
+        } ?: ColorThemes.themes.first()
         if (shouldDrawCover) {
             drawCoverPage(pdfDocument, context, coverConfig, quality, imageEffectSettings, renderImages = false, colorTheme)
         }

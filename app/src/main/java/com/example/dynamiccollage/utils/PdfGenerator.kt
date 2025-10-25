@@ -103,10 +103,13 @@ object PdfGenerator {
                     coverConfig.subtitleStyle.content.isNotBlank() ||
                     coverConfig.mainImageUri != null
 
+            val colorTheme = coverConfig.templateName?.let { name ->
+                ColorThemes.themes.find { it.name == name }
+            } ?: ColorThemes.themes.first()
             if (shouldDrawCover) {
-                drawCoverPage(pdfDocument, context, coverConfig, quality, imageEffectSettings, renderImages = true)
+                drawCoverPage(pdfDocument, context, coverConfig, quality, imageEffectSettings, renderImages = true, colorTheme)
             }
-            drawInnerPages(pdfDocument, context, generatedPages, coverConfig, if (shouldDrawCover) 2 else 1, quality, imageEffectSettings, renderImages = true)
+            drawInnerPages(pdfDocument, context, generatedPages, coverConfig, if (shouldDrawCover) 2 else 1, quality, imageEffectSettings, renderImages = true, colorTheme)
 
             val fileOutputStream = FileOutputStream(tempFile)
             pdfDocument.writeTo(fileOutputStream)
@@ -152,7 +155,9 @@ private fun generateWithPdfBox(
                 coverConfig.subtitleStyle.content.isNotBlank() ||
                 coverConfig.mainImageUri != null
 
-        val colorTheme = ColorTheme.fromString(coverConfig.templateName)
+        val colorTheme = coverConfig.templateName?.let { name ->
+            ColorThemes.themes.find { it.name == name }
+        } ?: ColorThemes.themes.first()
         if (shouldDrawCover) {
             drawCoverPageWithPdfBox(context, pdDocument, coverConfig, imageEffectSettings, colorTheme)
         }
