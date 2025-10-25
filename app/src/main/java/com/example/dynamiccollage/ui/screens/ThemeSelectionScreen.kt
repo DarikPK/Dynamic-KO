@@ -1,30 +1,16 @@
 package com.example.dynamiccollage.ui.screens
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.dynamiccollage.data.model.ColorTheme
-import com.example.dynamiccollage.data.model.ColorThemes
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,13 +20,12 @@ fun ThemeSelectionScreen(
     projectViewModel: ProjectViewModel
 ) {
     val context = LocalContext.current
-    val coverConfig by projectViewModel.currentCoverConfig.collectAsState()
-    val selectedThemeName = coverConfig.templateName ?: "SkyBlue"
+    val currentTheme by projectViewModel.themeName.collectAsState()
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Seleccionar Tema de Color") },
+            TopAppBar(
+                title = { Text("Seleccionar Tema") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
@@ -49,72 +34,31 @@ fun ThemeSelectionScreen(
             )
         }
     ) { paddingValues ->
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            contentPadding = paddingValues,
-            modifier = Modifier.padding(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(ColorThemes.themes) { theme ->
-                ThemeCard(
-                    theme = theme,
-                    isSelected = theme.name == selectedThemeName,
-                    onClick = {
-                        projectViewModel.applyColorTheme(context, theme)
-                    }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun ThemeCard(
-    theme: ColorTheme,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .clickable(onClick = onClick)
-            .border(
-                width = if (isSelected) 3.dp else 1.dp,
-                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-                shape = RoundedCornerShape(12.dp)
-            ),
-        shape = RoundedCornerShape(12.dp)
-    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(paddingValues)
                 .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = theme.name,
-                style = MaterialTheme.typography.titleMedium,
-                textAlign = TextAlign.Center
-            )
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+            Button(
+                onClick = {
+                    projectViewModel.updateTheme(context, "Claro")
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = currentTheme != "Claro"
             ) {
-                ColorCircle(color = theme.textColor)
-                ColorCircle(color = theme.rucBackgroundColor)
-                ColorCircle(color = theme.borderColor)
+                Text("Tema Claro")
+            }
+            Button(
+                onClick = {
+                    projectViewModel.updateTheme(context, "Oscuro")
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = currentTheme != "Oscuro"
+            ) {
+                Text("Tema Oscuro")
             }
         }
     }
-}
-
-@Composable
-fun ColorCircle(color: Color) {
-    Box(
-        modifier = Modifier
-            .size(24.dp)
-            .background(color, shape = CircleShape)
-            .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
-    )
 }

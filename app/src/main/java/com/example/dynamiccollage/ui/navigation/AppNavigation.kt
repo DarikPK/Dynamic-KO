@@ -173,7 +173,7 @@ fun AppNavigation(
             )
         }
         composable(Screen.ColorThemeSelection.route) {
-            ThemeSelectionScreen(
+            ColorThemeSelectionScreen(
                 navController = navController,
                 projectViewModel = projectViewModel
             )
