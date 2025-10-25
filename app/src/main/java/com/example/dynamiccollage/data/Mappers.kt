@@ -172,7 +172,8 @@ fun CoverPageConfig.toSerializable() = SerializableCoverPageConfig(
     forceFullResCover = this.forceFullResCover,
     useHybridPdfMode = this.useHybridPdfMode,
     hybridCoverImageQuality = this.hybridCoverImageQuality,
-    hybridInnerImagesQuality = this.hybridInnerImagesQuality
+    hybridInnerImagesQuality = this.hybridInnerImagesQuality,
+    generatedBackgroundConfig = this.generatedBackgroundConfig?.toSerializable()
 )
 
 fun SerializableCoverPageConfig.toDomain() = CoverPageConfig(
@@ -202,7 +203,25 @@ fun SerializableCoverPageConfig.toDomain() = CoverPageConfig(
     forceFullResCover = this.forceFullResCover ?: false,
     useHybridPdfMode = this.useHybridPdfMode ?: false,
     hybridCoverImageQuality = this.hybridCoverImageQuality ?: 100,
-    hybridInnerImagesQuality = this.hybridInnerImagesQuality ?: 100
+    hybridInnerImagesQuality = this.hybridInnerImagesQuality ?: 100,
+    generatedBackgroundConfig = this.generatedBackgroundConfig?.toDomain()
+)
+
+// Mappers for GeneratedBackgroundConfig
+fun GeneratedBackgroundConfig.toSerializable() = SerializableGeneratedBackgroundConfig(
+    patternType = this.patternType.ordinal,
+    opacity = this.opacity,
+    size = this.size,
+    density = this.density,
+    enabled = this.enabled
+)
+
+fun SerializableGeneratedBackgroundConfig.toDomain() = GeneratedBackgroundConfig(
+    patternType = BackgroundPatternType.values()[this.patternType],
+    opacity = this.opacity,
+    size = this.size,
+    density = this.density,
+    enabled = this.enabled
 )
 
 // Mappers for ImageBorderSettings
