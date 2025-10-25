@@ -364,11 +364,6 @@ class ProjectViewModel : ViewModel() {
     }
 
     fun updateGeneratedBackgroundConfig(context: Context, config: GeneratedBackgroundConfig) {
-        _currentCoverConfig.update { it.copy(generatedBackgroundConfig = config) }
-        saveProject(context)
-    }
-
-    fun updateGeneratedBackgroundConfig(context: Context, config: GeneratedBackgroundConfig) {
         val current = _currentCoverConfig.value
         // Forzamos una nueva instancia incluso si no cambió nada visible
         val updated = current.copy(generatedBackgroundConfig = config.copy())
