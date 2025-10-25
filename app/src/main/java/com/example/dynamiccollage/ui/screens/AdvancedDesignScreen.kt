@@ -51,6 +51,12 @@ fun AdvancedDesignScreen(
                 Text("Bordes de Imágenes")
             }
             Button(
+                onClick = { navController.navigate(Screen.ColorThemeSelection.route) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Color Texto/Tablas")
+            }
+            Button(
                 onClick = { navController.navigate(Screen.HybridQuality.route) },
                 modifier = Modifier.fillMaxWidth()
             ) {

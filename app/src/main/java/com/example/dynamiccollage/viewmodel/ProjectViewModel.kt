@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.dynamiccollage.data.model.ColorTheme
 import com.example.dynamiccollage.data.model.ImageBorderSettings
 import com.example.dynamiccollage.data.toDomain
 import com.example.dynamiccollage.data.toSerializable
@@ -288,6 +289,34 @@ class ProjectViewModel : ViewModel() {
 
     fun updateCoverConfig(newConfig: CoverPageConfig) {
         _currentCoverConfig.value = newConfig
+    }
+
+    fun applyColorTheme(context: Context, theme: ColorTheme) {
+        _currentCoverConfig.update { config ->
+            config.copy(
+                templateName = theme.name,
+                clientNameStyle = config.clientNameStyle.copy(
+                    fontColor = theme.textColor,
+                    rowStyle = config.clientNameStyle.rowStyle.copy(
+                        border = config.clientNameStyle.rowStyle.border.copy(color = theme.borderColor)
+                    )
+                ),
+                rucStyle = config.rucStyle.copy(
+                    fontColor = theme.textColor,
+                    rowStyle = config.rucStyle.rowStyle.copy(
+                        backgroundColor = theme.rucBackgroundColor,
+                        border = config.rucStyle.rowStyle.border.copy(color = theme.borderColor)
+                    )
+                ),
+                subtitleStyle = config.subtitleStyle.copy(
+                    fontColor = theme.textColor,
+                    rowStyle = config.subtitleStyle.rowStyle.copy(
+                        border = config.subtitleStyle.rowStyle.border.copy(color = theme.borderColor)
+                    )
+                )
+            )
+        }
+        saveProject(context)
     }
 
     fun updateForceFullResCover(context: Context, forceFullRes: Boolean) {
