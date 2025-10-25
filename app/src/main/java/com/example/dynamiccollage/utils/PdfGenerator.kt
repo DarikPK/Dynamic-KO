@@ -152,10 +152,11 @@ private fun generateWithPdfBox(
                 coverConfig.subtitleStyle.content.isNotBlank() ||
                 coverConfig.mainImageUri != null
 
+        val colorTheme = ColorTheme.fromString(coverConfig.templateName)
         if (shouldDrawCover) {
-            drawCoverPageWithPdfBox(context, pdDocument, coverConfig, imageEffectSettings)
+            drawCoverPageWithPdfBox(context, pdDocument, coverConfig, imageEffectSettings, colorTheme)
         }
-        drawInnerPagesWithPdfBox(context, pdDocument, generatedPages, coverConfig, imageEffectSettings)
+        drawInnerPagesWithPdfBox(context, pdDocument, generatedPages, coverConfig, imageEffectSettings, colorTheme)
 
         val storageDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
         storageDir?.mkdirs()
@@ -176,7 +177,8 @@ private fun drawCoverPageWithPdfBox(
     context: Context,
     pdDocument: PDDocument,
     config: CoverPageConfig,
-    imageEffectSettings: Map<String, ImageEffectSettings>
+    imageEffectSettings: Map<String, ImageEffectSettings>,
+    colorTheme: ColorTheme
 ) {
     val isVertical = config.pageOrientation == PageOrientation.Vertical
     val mediaBox = if (isVertical) PDRectangle.A4 else PDRectangle(PDRectangle.A4.height, PDRectangle.A4.width)
@@ -195,6 +197,23 @@ private fun drawCoverPageWithPdfBox(
             contentStream.setNonStrokingColor(r, g, b)
             contentStream.addRect(0f, 0f, pageWidth, pageHeight)
             contentStream.fill()
+        }
+
+        config.generatedBackgroundConfig?.let {
+            if (it.enabled) {
+                val backgroundBitmap = Bitmap.createBitmap(pageWidth.toInt(), pageHeight.toInt(), Bitmap.Config.ARGB_8888)
+                val canvas = Canvas(backgroundBitmap)
+                BackgroundGenerator.drawGeneratedBackground(canvas, it, pageWidth, pageHeight, colorTheme)
+
+                val tempFile = File.createTempFile("background", ".png", context.cacheDir)
+                FileOutputStream(tempFile).use { out ->
+                    backgroundBitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                }
+                val pdImage = PDImageXObject.createFromFile(tempFile.absolutePath, pdDocument)
+                contentStream.drawImage(pdImage, 0f, 0f, pageWidth, pageHeight)
+                tempFile.delete()
+                backgroundBitmap.recycle()
+            }
         }
 
         val marginTop = config.marginTop * CM_TO_POINTS
@@ -269,7 +288,8 @@ private fun drawInnerPagesWithPdfBox(
     pdDocument: PDDocument,
     generatedPages: List<GeneratedPage>,
     coverConfig: CoverPageConfig,
-    imageEffectSettings: Map<String, ImageEffectSettings>
+    imageEffectSettings: Map<String, ImageEffectSettings>,
+    colorTheme: ColorTheme
 ) {
     generatedPages.forEach { pageData ->
         val isVertical = pageData.orientation == PageOrientation.Vertical
@@ -289,6 +309,23 @@ private fun drawInnerPagesWithPdfBox(
                 contentStream.setNonStrokingColor(r, g, b)
                 contentStream.addRect(0f, 0f, pageWidth, pageHeight)
                 contentStream.fill()
+            }
+
+            coverConfig.generatedBackgroundConfig?.let {
+                if (it.enabled) {
+                    val backgroundBitmap = Bitmap.createBitmap(pageWidth.toInt(), pageHeight.toInt(), Bitmap.Config.ARGB_8888)
+                    val canvas = Canvas(backgroundBitmap)
+                    BackgroundGenerator.drawGeneratedBackground(canvas, it, pageWidth, pageHeight, colorTheme)
+
+                    val tempFile = File.createTempFile("background_inner", ".png", context.cacheDir)
+                    FileOutputStream(tempFile).use { out ->
+                        backgroundBitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                    }
+                    val pdImage = PDImageXObject.createFromFile(tempFile.absolutePath, pdDocument)
+                    contentStream.drawImage(pdImage, 0f, 0f, pageWidth, pageHeight)
+                    tempFile.delete()
+                    backgroundBitmap.recycle()
+                }
             }
 
             pageData.imageUris.forEach { uriString ->

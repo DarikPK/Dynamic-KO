@@ -44,10 +44,11 @@ fun generateHybridPdf(
                 coverConfig.subtitleStyle.content.isNotBlank() ||
                 coverConfig.mainImageUri != null
 
+        val colorTheme = ColorTheme.fromString(coverConfig.templateName)
         if (shouldDrawCover) {
-             drawCoverPage(pdfDocument, context, coverConfig, quality, imageEffectSettings, renderImages = false)
+            drawCoverPage(pdfDocument, context, coverConfig, quality, imageEffectSettings, renderImages = false, colorTheme)
         }
-         drawInnerPages(pdfDocument, context, generatedPages, coverConfig, if (shouldDrawCover) 2 else 1, quality, imageEffectSettings, renderImages = false)
+         drawInnerPages(pdfDocument, context, generatedPages, coverConfig, if (shouldDrawCover) 2 else 1, quality, imageEffectSettings, renderImages = false, colorTheme)
 
         val outputStream = FileOutputStream(tempFile)
         pdfDocument.writeTo(outputStream)
@@ -130,13 +131,19 @@ internal const val A4_WIDTH = 595
 internal const val A4_HEIGHT = 842
 internal const val CM_TO_POINTS = 28.35f
 
-internal fun drawCoverPage(pdfDocument: PdfDocument, context: Context, config: CoverPageConfig, quality: Int, imageEffectSettings: Map<String, ImageEffectSettings>, renderImages: Boolean = true) {
+internal fun drawCoverPage(pdfDocument: PdfDocument, context: Context, config: CoverPageConfig, quality: Int, imageEffectSettings: Map<String, ImageEffectSettings>, renderImages: Boolean = true, colorTheme: ColorTheme) {
     val pageWidth = if (config.pageOrientation == PageOrientation.Vertical) A4_WIDTH else A4_HEIGHT
     val pageHeight = if (config.pageOrientation == PageOrientation.Vertical) A4_HEIGHT else A4_WIDTH
     val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
     val page = pdfDocument.startPage(pageInfo)
     val canvas = page.canvas
+
     config.pageBackgroundColor?.let { color -> canvas.drawColor(color) }
+
+    config.generatedBackgroundConfig?.let {
+        BackgroundGenerator.drawGeneratedBackground(canvas, it, pageWidth.toFloat(), pageHeight.toFloat(), colorTheme)
+    }
+
     drawCoverPageContent(canvas, context, config, quality, pageWidth, pageHeight, imageEffectSettings, renderImages)
     pdfDocument.finishPage(page)
 }
@@ -304,7 +311,7 @@ internal fun drawPageOnCanvas(canvas: Canvas, context: Context, pageData: Genera
     }
 }
 
-internal fun drawInnerPages(pdfDocument: PdfDocument, context: Context, generatedPages: List<GeneratedPage>, coverConfig: CoverPageConfig, startPageNumber: Int, quality: Int, imageEffectSettings: Map<String, ImageEffectSettings>, renderImages: Boolean = true) {
+internal fun drawInnerPages(pdfDocument: PdfDocument, context: Context, generatedPages: List<GeneratedPage>, coverConfig: CoverPageConfig, startPageNumber: Int, quality: Int, imageEffectSettings: Map<String, ImageEffectSettings>, renderImages: Boolean = true, colorTheme: ColorTheme) {
     var pageNumber = startPageNumber
     generatedPages.forEach { pageData ->
         val pageWidth = if (pageData.orientation == PageOrientation.Vertical) A4_WIDTH else A4_HEIGHT
@@ -312,7 +319,13 @@ internal fun drawInnerPages(pdfDocument: PdfDocument, context: Context, generate
         val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber++).create()
         val page = pdfDocument.startPage(pageInfo)
         val canvas = page.canvas
+
         coverConfig.pageBackgroundColor?.let { color -> canvas.drawColor(color) }
+
+        coverConfig.generatedBackgroundConfig?.let {
+            BackgroundGenerator.drawGeneratedBackground(canvas, it, pageWidth.toFloat(), pageHeight.toFloat(), colorTheme)
+        }
+
         drawPageOnCanvas(canvas, context, pageData, coverConfig, quality, imageEffectSettings, renderImages)
         pdfDocument.finishPage(page)
     }
