@@ -288,7 +288,8 @@ fun ColorSelector(label: String, fieldId: String, selectedColor: Color, navContr
         Text(label, style = MaterialTheme.typography.labelLarge)
         Button(onClick = {
             val colorHex = String.format("%06X", (0xFFFFFF and selectedColor.toArgb()))
-            navController.navigate(Screen.ColorPicker.withArgs(fieldId, colorHex))
+            val colorType = if (fieldId.contains("background")) "rowBackground" else "rowBorder"
+            navController.navigate(Screen.ColorPicker.withArgs(colorType, fieldId, colorHex))
         }) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(

@@ -138,7 +138,7 @@ fun GroupHeaderStyleScreen(
             OutlinedButton(
                 onClick = {
                     val colorHex = String.format("%06X", (0xFFFFFF and localTextStyle.fontColor.toArgb()))
-                    navController.navigate(Screen.ColorPicker.withArgs(localTextStyle.id, colorHex))
+                    navController.navigate(Screen.ColorPicker.withArgs("groupHeader", localTextStyle.id, colorHex))
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
