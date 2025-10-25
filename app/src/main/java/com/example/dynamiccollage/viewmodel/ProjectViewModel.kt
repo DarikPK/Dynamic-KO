@@ -316,6 +316,19 @@ class ProjectViewModel : ViewModel() {
                 )
             )
         }
+        _currentPageGroups.update { groups ->
+            groups.map { group ->
+                group.copy(
+                    optionalTextStyle = group.optionalTextStyle.copy(
+                        fontColor = theme.textColor,
+                        rowStyle = group.optionalTextStyle.rowStyle.copy(
+                            backgroundColor = theme.rucBackgroundColor,
+                            border = group.optionalTextStyle.rowStyle.border.copy(color = theme.borderColor)
+                        )
+                    )
+                )
+            }
+        }
         saveProject(context)
     }
 
