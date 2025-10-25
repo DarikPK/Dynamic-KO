@@ -24,6 +24,7 @@ sealed class Screen(val route: String) {
     object RecycleBin : Screen("recycle_bin_screen")
     object ColorThemeSelection : Screen("color_theme_selection_screen")
     object HybridQuality : Screen("hybrid_quality_screen")
+    object GeneratedBackground : Screen("generated_background_screen")
     // object Settings : Screen("settings_screen") // Ejemplo si se necesitara
 
     fun withArgs(vararg args: String): String {

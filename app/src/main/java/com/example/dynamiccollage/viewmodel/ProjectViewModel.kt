@@ -12,6 +12,7 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dynamiccollage.data.model.ColorTheme
+import com.example.dynamiccollage.data.model.GeneratedBackgroundConfig
 import com.example.dynamiccollage.data.model.ImageBorderSettings
 import com.example.dynamiccollage.data.toDomain
 import com.example.dynamiccollage.data.toSerializable
@@ -359,6 +360,19 @@ class ProjectViewModel : ViewModel() {
 
     fun updateImageBorderSettings(context: Context, newSettingsMap: Map<String, ImageBorderSettings>) {
         _currentCoverConfig.update { it.copy(imageBorderSettingsMap = newSettingsMap) }
+        saveProject(context)
+    }
+
+    fun updateGeneratedBackgroundConfig(context: Context, config: GeneratedBackgroundConfig) {
+        _currentCoverConfig.update { it.copy(generatedBackgroundConfig = config) }
+        saveProject(context)
+    }
+
+    fun updateGeneratedBackgroundConfig(context: Context, config: GeneratedBackgroundConfig) {
+        val current = _currentCoverConfig.value
+        // Forzamos una nueva instancia incluso si no cambió nada visible
+        val updated = current.copy(generatedBackgroundConfig = config.copy())
+        _currentCoverConfig.value = updated
         saveProject(context)
     }
 

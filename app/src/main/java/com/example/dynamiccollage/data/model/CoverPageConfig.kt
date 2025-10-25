@@ -8,6 +8,7 @@ import androidx.compose.ui.text.style.TextAlign
 // import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import com.example.dynamiccollage.ui.theme.calibriFontFamily
+import com.example.dynamiccollage.data.model.GeneratedBackgroundConfig
 
 enum class DocumentType {
     RUC, DNI, NONE
@@ -127,5 +128,6 @@ data class CoverPageConfig(
     val hybridCoverImageQuality: Int = 100,
     val hybridInnerImagesQuality: Int = 100,
 
-    val templateName: String? = null
+    val templateName: String? = null,
+    val generatedBackgroundConfig: GeneratedBackgroundConfig? = null
 )

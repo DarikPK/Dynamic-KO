@@ -39,7 +39,16 @@ data class SerializableCoverPageConfig(
     val forceFullResCover: Boolean? = false,
     val useHybridPdfMode: Boolean? = false,
     val hybridCoverImageQuality: Int? = 100,
-    val hybridInnerImagesQuality: Int? = 100
+    val hybridInnerImagesQuality: Int? = 100,
+    val generatedBackgroundConfig: SerializableGeneratedBackgroundConfig? = null
+)
+
+data class SerializableGeneratedBackgroundConfig(
+    val patternType: Int, // ordinal of BackgroundPatternType enum
+    val opacity: Float,
+    val size: Float,
+    val density: Float,
+    val enabled: Boolean
 )
 
 data class SerializableImageBorderSettings(

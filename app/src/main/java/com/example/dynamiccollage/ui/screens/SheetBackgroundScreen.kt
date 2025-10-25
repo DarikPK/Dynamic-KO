@@ -86,6 +86,13 @@ fun SheetBackgroundScreen(
             ) {
                 Text("Elegir Color Sólido")
             }
+
+            Button(
+                onClick = { navController.navigate(Screen.GeneratedBackground.route) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Fondo Generado")
+            }
         }
     }
 }

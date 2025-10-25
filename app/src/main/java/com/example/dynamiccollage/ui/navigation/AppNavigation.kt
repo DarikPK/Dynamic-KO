@@ -178,5 +178,11 @@ fun AppNavigation(
                 projectViewModel = projectViewModel
             )
         }
+        composable(Screen.GeneratedBackground.route) {
+            GeneratedBackgroundScreen(
+                navController = navController,
+                projectViewModel = projectViewModel
+            )
+        }
     }
 }
