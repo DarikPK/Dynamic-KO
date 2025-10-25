@@ -4,6 +4,13 @@ plugins {
 }
 
 android {
+    sourceSets {
+        main {
+            assets.srcDirs = ['src/main/assets']
+            // 👇 Fuerza a Gradle a incluir los archivos sin extensión
+            assets.include '**/Identity-H', '**/Identity-V'
+        }
+    }
     namespace 'com.example.dynamiccollage'
     compileSdk 34
 
