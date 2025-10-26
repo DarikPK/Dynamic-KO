@@ -7,14 +7,16 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.navigation.navigation
 import com.example.dynamiccollage.ui.screens.*
+import com.example.dynamiccollage.ui.screens.auth.*
 import com.example.dynamiccollage.viewmodel.*
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
-
-import com.example.dynamiccollage.ui.screens.auth.*
 
 @Composable
 fun AppNavigation(
@@ -39,8 +41,7 @@ fun AppNavigation(
                 // A simple splash screen to decide where to go
                 when (userState) {
                     is UserState.Authenticated -> {
-                        val user = (userState as UserState.Authenticated).user
-                        navController.navigate(Screen.Main.route) {
+                        navController.navigate("main_app_flow") {
                             popUpTo("auth_flow") { inclusive = true }
                         }
                     }
@@ -71,30 +72,19 @@ fun AppNavigation(
                 BlockedScreen()
             }
         }
-        composable(Screen.Main.route) {
-            val user = (userState as? UserState.Authenticated)?.user
-            if (user != null) {
-                com.example.dynamiccollage.ui.screens.auth.MainScreen(
-                    user = user,
-                    onLogout = {
-                        // No need for this logout, as it's handled by the auth state
-                    },
-                    onGoToControlPanel = {
-                        navController.navigate(AuthScreen.ControlPanel.route)
-                    }
-                )
+
+        navigation(startDestination = Screen.Main.route, route = "main_app_flow") {
+            composable(Screen.Main.route) {
+                val user = (userState as? UserState.Authenticated)?.user
+                if (user != null) {
+                    MainScreen(
+                        navController = navController,
+                        projectViewModel = projectViewModel,
+                        onThemeChange = onThemeChange
+                    )
+                }
             }
-        }
-        composable(AuthScreen.ControlPanel.route) {
-            val user = (userState as? UserState.Authenticated)?.user
-            if (user != null) {
-                ControlPanelScreen(
-                    controlPanelViewModel = controlPanelViewModel,
-                    parentId = user.uid
-                )
-            }
-        }
-        composable(Screen.CoverSetup.route) {
+            composable(Screen.CoverSetup.route) {
             CoverSetupScreen(
                 navController = navController,
                 projectViewModel = projectViewModel,
