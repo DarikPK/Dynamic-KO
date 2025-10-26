@@ -56,6 +56,14 @@ fun MainScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
+    // Obtener el usuario actual del viewModel de autenticación.
+    // Esto asume que tienes acceso a un MainViewModel aquí.
+    // Para simplificar, lo obtendremos de un viewModel local.
+    // En una app real, esto debería venir inyectado.
+    val mainViewModel: com.example.dynamiccollage.viewmodel.MainViewModel = viewModel()
+    val userState by mainViewModel.userState.collectAsState()
+    val currentUser = (userState as? com.example.dynamiccollage.viewmodel.UserState.Authenticated)?.user
+
     // Cargar el proyecto una sola vez cuando el composable entra en la composición
     LaunchedEffect(Unit) {
         projectViewModel.loadProject(context)
@@ -275,7 +283,24 @@ fun MainScreen(
                 text = "Tema",
                 onClick = { showThemeDialog = true }
             )
+
+            if (currentUser?.role == "master") {
+                MainButton(
+                    text = "Panel de Control",
+                    onClick = { navController.navigate(com.example.dynamiccollage.ui.navigation.AuthScreen.ControlPanel.route) }
+                )
+            }
+
             Spacer(modifier = Modifier.weight(1f))
+
+            MainButton(
+                text = "Cerrar Sesión",
+                onClick = {
+                    mainViewModel.logout()
+                },
+                buttonColor = MaterialTheme.colorScheme.secondaryContainer,
+                textColor = MaterialTheme.colorScheme.onSecondaryContainer
+            )
             MainButton(
                 text = "Gestionar Imágenes",
                 onClick = {

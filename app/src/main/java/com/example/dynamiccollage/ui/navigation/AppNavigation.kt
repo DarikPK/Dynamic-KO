@@ -191,5 +191,15 @@ fun AppNavigation(
                 imageUri = decodedImageUri
             )
         }
+        composable(AuthScreen.ControlPanel.route) {
+            val user = (userState as? UserState.Authenticated)?.user
+            if (user != null) {
+                ControlPanelScreen(
+                    controlPanelViewModel = controlPanelViewModel,
+                    parentId = user.uid
+                )
+            }
+        }
     }
+}
 }

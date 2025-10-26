@@ -41,6 +41,11 @@ class MainViewModel(
             }
         }
     }
+
+    fun logout() {
+        authRepository.logout()
+        _userState.value = UserState.Unauthenticated
+    }
 }
 
 sealed class UserState {
