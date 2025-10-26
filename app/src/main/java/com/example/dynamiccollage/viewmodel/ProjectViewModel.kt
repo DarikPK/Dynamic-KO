@@ -149,7 +149,7 @@ class ProjectViewModel : ViewModel() {
                 PdfGenerator.generate(
                     context = context,
                     coverConfig = _currentCoverConfig.value,
-                    generatedPages = generatedPages,
+                    generatedPages = newGeneratedPages,
                     fileName = fileName.ifBlank { "DynamicCollage" }
                 )
             }
