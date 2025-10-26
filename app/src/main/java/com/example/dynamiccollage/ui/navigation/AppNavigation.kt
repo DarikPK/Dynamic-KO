@@ -9,7 +9,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.dynamiccollage.ui.screens.*
+import com.example.dynamiccollage.ui.screens.AdvancedDesignScreen
+import com.example.dynamiccollage.ui.screens.SheetBackgroundScreen
+import com.example.dynamiccollage.ui.screens.ImageBordersScreen
+import com.example.dynamiccollage.ui.screens.ColorThemeSelectionScreen
+import com.example.dynamiccollage.ui.screens.HybridQualityScreen
+import com.example.dynamiccollage.ui.screens.GeneratedBackgroundScreen
+import com.example.dynamiccollage.ui.screens.SheetDesignScreen
+import com.example.dynamiccollage.ui.screens.SheetBackgroundOptionsScreen
 import com.example.dynamiccollage.viewmodel.*
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
