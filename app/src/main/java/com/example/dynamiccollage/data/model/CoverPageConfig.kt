@@ -125,7 +125,7 @@ data class CoverPageConfig(
     // PDF Size Management
     val quality: Int = 90,
     val forceFullResCover: Boolean = false,
-    val useHybridPdfMode: Boolean = false,
+    val useHybridPdfMode: Boolean = true,
 
     // Advanced Design
     val pageBackgroundColor: Int? = null,

@@ -60,7 +60,7 @@ fun AdvancedDesignScreen(
                 onClick = { navController.navigate(Screen.HybridQuality.route) },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Calidad de Imagen (Híbrido)")
+                Text("Calidad de Imagen")
             }
         }
     }

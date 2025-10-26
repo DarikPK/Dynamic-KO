@@ -199,17 +199,6 @@ fun MainScreen(
                     projectViewModel.generatePdf(context, "collage_report")
                 }
             )
-            Row(
-                modifier = Modifier.fillMaxWidth(0.8f),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(text = stringResource(R.string.main_btn_use_image_compression))
-                Switch(
-                    checked = projectViewModel.currentCoverConfig.collectAsState().value.useHybridPdfMode,
-                    onCheckedChange = { projectViewModel.updateUseHybridPdfMode(context, it) }
-                )
-            }
             MainButton(
                 text = "Diseño Avanzado",
                 onClick = { navController.navigate(Screen.AdvancedDesign.route) }
