@@ -21,6 +21,7 @@ import com.example.dynamiccollage.data.model.ImageEffectSettings
 import com.example.dynamiccollage.data.model.PageGroup
 import com.example.dynamiccollage.data.model.PageOrientation
 import com.example.dynamiccollage.data.model.PhotoArrangementItem
+import com.example.dynamiccollage.data.model.SheetBackgroundType
 import com.example.dynamiccollage.data.model.SheetType
 import com.example.dynamiccollage.data.model.SerializableNormalizedRectF
 import com.example.dynamiccollage.data.model.SelectedSunatData
@@ -355,6 +356,11 @@ class ProjectViewModel : ViewModel() {
 
     fun updatePageBackgroundColor(context: Context, color: Color) {
         _currentCoverConfig.update { it.copy(pageBackgroundColor = color.toArgb()) }
+        saveProject(context)
+    }
+
+    fun updateSheetBackgroundType(context: Context, type: SheetBackgroundType) {
+        _currentCoverConfig.update { it.copy(sheetBackgroundType = type) }
         saveProject(context)
     }
 

@@ -3,6 +3,7 @@ package com.example.dynamiccollage.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
@@ -17,6 +18,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.dynamiccollage.data.model.SheetBackgroundType
 import com.example.dynamiccollage.ui.navigation.Screen
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 
@@ -29,6 +31,7 @@ fun SheetBackgroundOptionsScreen(
     val context = LocalContext.current
     val projectConfig by projectViewModel.currentCoverConfig.collectAsState()
     val currentColor = projectConfig.pageBackgroundColor?.let { Color(it) } ?: Color.White
+    val sheetBackgroundType = projectConfig.sheetBackgroundType
 
     // Listen for result from ColorPickerScreen
     val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
@@ -62,34 +65,104 @@ fun SheetBackgroundOptionsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // --- Solid Background Option ---
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Text("Color Actual:", style = MaterialTheme.typography.titleMedium)
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(currentColor)
-                        .border(1.dp, MaterialTheme.colorScheme.outline)
-                )
-            }
-            Button(
-                onClick = {
-                    val colorHex = String.format("%06X", (0xFFFFFF and currentColor.toArgb()))
-                    navController.navigate(
-                        Screen.ColorPicker.withArgs("background", "placeholder", colorHex)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .selectable(
+                        selected = sheetBackgroundType == SheetBackgroundType.SOLID,
+                        onClick = {
+                            projectViewModel.updateSheetBackgroundType(
+                                context,
+                                SheetBackgroundType.SOLID
+                            )
+                        }
                     )
-                 },
-                modifier = Modifier.fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Sólido")
+                RadioButton(
+                    selected = sheetBackgroundType == SheetBackgroundType.SOLID,
+                    onClick = {
+                        projectViewModel.updateSheetBackgroundType(
+                            context,
+                            SheetBackgroundType.SOLID
+                        )
+                    }
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Text("Sólido", style = MaterialTheme.typography.bodyLarge)
             }
-            Button(
-                onClick = { /* Acción para el botón Personalizado */ },
-                modifier = Modifier.fillMaxWidth()
+
+            if (sheetBackgroundType == SheetBackgroundType.SOLID) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 48.dp), // Indent to align with RadioButton text
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Text("Color Actual:", style = MaterialTheme.typography.titleMedium)
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(currentColor)
+                                .border(1.dp, MaterialTheme.colorScheme.outline)
+                        )
+                    }
+                    Button(
+                        onClick = {
+                            val colorHex =
+                                String.format("%06X", (0xFFFFFF and currentColor.toArgb()))
+                            navController.navigate(
+                                Screen.ColorPicker.withArgs("background", "placeholder", colorHex)
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Elegir Color")
+                    }
+                }
+            }
+
+            // --- Custom Background Option ---
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .selectable(
+                        selected = sheetBackgroundType == SheetBackgroundType.CUSTOM,
+                        onClick = {
+                            projectViewModel.updateSheetBackgroundType(
+                                context,
+                                SheetBackgroundType.CUSTOM
+                            )
+                        }
+                    )
+                    .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Personalizado")
+                RadioButton(
+                    selected = sheetBackgroundType == SheetBackgroundType.CUSTOM,
+                    onClick = {
+                        projectViewModel.updateSheetBackgroundType(
+                            context,
+                            SheetBackgroundType.CUSTOM
+                        )
+                    }
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Text("Personalizado", style = MaterialTheme.typography.bodyLarge)
+            }
+
+            if (sheetBackgroundType == SheetBackgroundType.CUSTOM) {
+                // Placeholder for custom background options
+                Text(
+                    text = "Opciones de fondo personalizado estarán disponibles aquí.",
+                    modifier = Modifier.padding(start = 48.dp)
+                )
             }
         }
     }
