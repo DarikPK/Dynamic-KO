@@ -130,8 +130,8 @@ data class CoverPageConfig(
     // Advanced Design
     val pageBackgroundColor: Int? = null,
     val imageBorderSettingsMap: Map<String, ImageBorderSettings> = emptyMap(),
-    val hybridCoverImageQuality: Int = 100,
-    val hybridInnerImagesQuality: Int = 100,
+    val hybridCoverImageQuality: Int = 70,
+    val hybridInnerImagesQuality: Int = 30,
 
     val templateName: String? = null,
     val generatedBackgroundConfig: GeneratedBackgroundConfig? = null,
