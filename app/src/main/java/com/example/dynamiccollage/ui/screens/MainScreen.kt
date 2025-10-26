@@ -10,14 +10,26 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoFixHigh
+import androidx.compose.material.icons.filled.Brush
+import androidx.compose.material.icons.filled.Collections
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import com.example.dynamiccollage.ui.components.ConfirmationDialog
@@ -166,7 +178,21 @@ fun MainScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(stringResource(id = R.string.app_name)) },
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Palette,
+                            contentDescription = "Logo Paleta",
+                            modifier = Modifier.padding(end = 4.dp)
+                        )
+                        Icon(
+                            imageVector = Icons.Default.Brush,
+                            contentDescription = "Logo Pincel",
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                        Text(stringResource(id = R.string.app_name))
+                    }
+                },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
@@ -183,60 +209,72 @@ fun MainScreen(
         ) {
             MainButton(
                 text = stringResource(R.string.main_btn_get_data),
-                onClick = { navController.navigate(Screen.SunatData.route) }
+                onClick = { navController.navigate(Screen.SunatData.route) },
+                icon = Icons.Default.Search
             )
             MainButton(
                 text = stringResource(R.string.main_btn_cover_setup),
-                onClick = { navController.navigate(Screen.CoverSetup.route) }
+                onClick = { navController.navigate(Screen.CoverSetup.route) },
+                icon = Icons.Default.Settings
             )
             MainButton(
                 text = "Gestionar Contenido",
-                onClick = { navController.navigate(Screen.InnerPages.route) }
+                onClick = { navController.navigate(Screen.InnerPages.route) },
+                icon = Icons.Default.Collections
             )
             MainButton(
                 text = stringResource(R.string.main_btn_preview_pdf),
                 onClick = {
                     projectViewModel.generatePdf(context, "collage_report")
-                }
+                },
+                icon = Icons.Default.PictureAsPdf
             )
             MainButton(
                 text = "Diseño Avanzado",
-                onClick = { navController.navigate(Screen.AdvancedDesign.route) }
+                onClick = { navController.navigate(Screen.AdvancedDesign.route) },
+                icon = Icons.Default.AutoFixHigh
             )
             MainButton(
                 text = "Temas",
-                onClick = { navController.navigate(Screen.ThemeSelection.route) }
+                onClick = { navController.navigate(Screen.ThemeSelection.route) },
+                icon = Icons.Default.Palette
             )
             Spacer(modifier = Modifier.weight(1f))
             MainButton(
                 text = "Gestionar Imágenes",
                 onClick = {
                     navController.navigate(Screen.ImageManager.route)
-                }
+                },
+                icon = Icons.Default.PhotoLibrary
             )
             MainButton(
                 text = "Papelera",
                 onClick = {
                     navController.navigate(Screen.RecycleBin.route)
-                }
+                },
+                icon = Icons.Default.Delete
             )
             Spacer(modifier = Modifier.height(16.dp))
             MainButton(
                 text = stringResource(R.string.main_btn_delete_project),
                 onClick = { showDeleteConfirmDialog = true },
                 buttonColor = MaterialTheme.colorScheme.errorContainer,
-                textColor = MaterialTheme.colorScheme.onErrorContainer
+                textColor = MaterialTheme.colorScheme.onErrorContainer,
+                icon = Icons.Default.DeleteForever
             )
         }
     }
 }
+
+import androidx.compose.ui.graphics.vector.ImageVector
 
 @Composable
 fun MainButton(
     text: String,
     onClick: () -> Unit,
     buttonColor: Color? = null,
-    textColor: Color? = null
+    textColor: Color? = null,
+    icon: ImageVector? = null
 ) {
     val colors = if (buttonColor != null) {
         ButtonDefaults.buttonColors(containerColor = buttonColor)
@@ -252,7 +290,20 @@ fun MainButton(
             .height(48.dp),
         colors = colors
     ) {
-        Text(text.uppercase(), color = textFinalColor)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            if (icon != null) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null, // Decorative icon
+                    modifier = Modifier.padding(end = 8.dp),
+                    tint = textFinalColor
+                )
+            }
+            Text(text.uppercase(), color = textFinalColor)
+        }
     }
 }
 
