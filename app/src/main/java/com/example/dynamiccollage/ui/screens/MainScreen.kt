@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Tonality
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -238,7 +239,7 @@ fun MainScreen(
             MainButton(
                 text = "Temas",
                 onClick = { navController.navigate(Screen.ThemeSelection.route) },
-                icon = Icons.Default.Palette
+                icon = Icons.Outlined.Tonality
             )
             Spacer(modifier = Modifier.weight(1f))
             MainButton(
