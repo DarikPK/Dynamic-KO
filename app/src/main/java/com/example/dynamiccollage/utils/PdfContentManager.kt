@@ -2,99 +2,44 @@ package com.example.dynamiccollage.utils
 
 import android.content.Context
 import com.example.dynamiccollage.data.model.GeneratedPage
-import com.example.dynamiccollage.data.model.PageGroup
 import com.example.dynamiccollage.data.model.PageOrientation
 
 object PdfContentManager {
 
     fun groupImagesForPdf(
         context: Context,
-        pageGroups: List<PageGroup>
+        allImageUris: List<String>,
+        photosPerPage: Int
     ): List<GeneratedPage> {
-        val generatedPages = mutableListOf<GeneratedPage>()
-
-        pageGroups.forEach { group ->
-            if (group.smartLayoutEnabled) {
-                generatedPages.addAll(processSmartGroup(context, group))
-            } else {
-                generatedPages.addAll(processManualGroup(group))
-            }
+        if (allImageUris.isEmpty()) {
+            return emptyList()
         }
 
-        return generatedPages
-    }
+        // 1. Clasificar imágenes por orientación
+        val verticalUris = mutableListOf<String>()
+        val horizontalUris = mutableListOf<String>()
 
-    private fun processSmartGroup(
-        context: Context,
-        group: PageGroup
-    ): List<GeneratedPage> {
-        val smartPages = mutableListOf<GeneratedPage>()
-        if (group.imageUris.isEmpty()) return smartPages
-
-        val verticalPhotos = mutableListOf<String>()
-        val horizontalPhotos = mutableListOf<String>()
-
-        group.imageUris.forEach { uri ->
+        allImageUris.forEach { uri ->
             when (ImageUtils.getImageOrientation(context, uri)) {
-                PageOrientation.Vertical -> verticalPhotos.add(uri)
-                PageOrientation.Horizontal -> horizontalPhotos.add(uri)
+                PageOrientation.Vertical -> verticalUris.add(uri)
+                PageOrientation.Horizontal -> horizontalUris.add(uri)
             }
         }
 
-        var isFirstPageOfGroup = true
+        val pages = mutableListOf<GeneratedPage>()
+        // Asegurarse de que el valor sea 1 o 2. Si no, por defecto es 1.
+        val effectivePhotosPerPage = if (photosPerPage == 2) 2 else 1
 
-        val verticalChunks = verticalPhotos.chunked(group.photosPerSheet)
-        verticalChunks.forEach { chunk ->
-            val orientation = if (chunk.size == 2) PageOrientation.Horizontal else PageOrientation.Vertical
-            smartPages.add(
-                GeneratedPage(
-                    imageUris = chunk,
-                    orientation = orientation,
-                    groupId = group.id,
-                    optionalTextStyle = if (isFirstPageOfGroup) group.optionalTextStyle else null,
-                    isFirstPageOfGroup = isFirstPageOfGroup
-                )
-            )
-            isFirstPageOfGroup = false // The flag is turned off after the first page is created
+        // 2. Agrupar fotos verticales
+        verticalUris.chunked(effectivePhotosPerPage).forEach { chunk ->
+            pages.add(GeneratedPage(imageUris = chunk, orientation = PageOrientation.Vertical))
         }
 
-        val horizontalChunks = horizontalPhotos.chunked(group.photosPerSheet)
-        horizontalChunks.forEach { chunk ->
-            val orientation = if (chunk.size == 2) PageOrientation.Vertical else PageOrientation.Horizontal
-            smartPages.add(
-                GeneratedPage(
-                    imageUris = chunk,
-                    orientation = orientation,
-                    groupId = group.id,
-                    optionalTextStyle = if (isFirstPageOfGroup) group.optionalTextStyle else null,
-                    isFirstPageOfGroup = isFirstPageOfGroup
-                )
-            )
-            isFirstPageOfGroup = false // The flag is turned off after the first page is created
+        // 3. Agrupar fotos horizontales
+        horizontalUris.chunked(effectivePhotosPerPage).forEach { chunk ->
+            pages.add(GeneratedPage(imageUris = chunk, orientation = PageOrientation.Horizontal))
         }
 
-        return smartPages
-    }
-
-    private fun processManualGroup(
-        group: PageGroup
-    ): List<GeneratedPage> {
-        val manualPages = mutableListOf<GeneratedPage>()
-        if (group.imageUris.isEmpty()) return manualPages
-
-        val imageChunks = group.imageUris.chunked(group.photosPerSheet)
-
-        imageChunks.forEachIndexed { index, chunk ->
-            manualPages.add(
-                GeneratedPage(
-                    imageUris = chunk,
-                    orientation = group.orientation,
-                    groupId = group.id,
-                    optionalTextStyle = if (index == 0) group.optionalTextStyle else null,
-                    isFirstPageOfGroup = index == 0
-                )
-            )
-        }
-        return manualPages
+        return pages
     }
 }

@@ -1,5 +1,6 @@
 package com.example.dynamiccollage.ui.screens
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.foundation.border
@@ -12,23 +13,26 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.RotateRight
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.example.dynamiccollage.data.model.ImageEffectSettings
-import androidx.compose.ui.geometry.Rect
-import com.example.dynamiccollage.data.model.SerializableNormalizedRectF
 import com.example.dynamiccollage.ui.components.CropView
-import com.example.dynamiccollage.ui.components.ProjectEffectsTransformation
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 import kotlinx.coroutines.launch
+import java.io.InputStream
+import kotlin.math.min
+import android.graphics.BitmapFactory
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,35 +40,13 @@ fun ImageManagerScreen(
     navController: NavController,
     projectViewModel: ProjectViewModel
 ) {
+    val imageUris by remember { mutableStateOf(projectViewModel.getAllImageUris()) }
+    var currentSelectedUri by remember { mutableStateOf(imageUris.firstOrNull()?.let { Uri.parse(it) }) }
+    var uriBeforeCrop by remember { mutableStateOf(currentSelectedUri) }
+    var originalUriOfSession by remember { mutableStateOf(currentSelectedUri) }
+
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-
-    // Collect state from the ViewModel
-    val coverConfig by projectViewModel.currentCoverConfig.collectAsState()
-    val pageGroups by projectViewModel.currentPageGroups.collectAsState()
-    val effectSettingsMap by projectViewModel.imageEffectSettings.collectAsState()
-    val currentSelectedUriString by projectViewModel.managerSelectedUri.collectAsState()
-    val currentSelectedUri = currentSelectedUriString?.let { Uri.parse(it) }
-
-    // Derive the list of all image URIs from the state
-    val imageUris = remember(coverConfig, pageGroups) {
-        projectViewModel.getAllImageUris()
-    }
-
-    // State to force recomposition of CropView
-    var cropViewResetKey by remember { mutableStateOf(0) }
-
-    // Get the settings for the currently selected image
-    val currentSettings = currentSelectedUriString?.let {
-        effectSettingsMap[it]
-    } ?: ImageEffectSettings()
-
-    // Initialize the selected URI in the ViewModel once
-    LaunchedEffect(imageUris) {
-        if (currentSelectedUriString == null && imageUris.isNotEmpty()) {
-            projectViewModel.setManagerSelectedUri(imageUris.first())
-        }
-    }
 
     Scaffold(
         topBar = {
@@ -78,37 +60,54 @@ fun ImageManagerScreen(
                 actions = {
                     IconButton(
                         onClick = {
-                            if (currentSelectedUriString != null) {
-                                val currentRotation = currentSettings.rotationDegrees
-                                val newRotation = (currentRotation + 90f) % 360f
-                                projectViewModel.updateImageRotation(context, currentSelectedUriString!!, newRotation)
+                            val uriToRevertTo = uriBeforeCrop
+                            if (uriToRevertTo != null && currentSelectedUri != null) {
+                                projectViewModel.replaceImageUri(context, currentSelectedUri.toString(), uriToRevertTo.toString())
+                                currentSelectedUri = uriToRevertTo
                             }
                         },
-                        enabled = currentSelectedUriString != null
+                        enabled = currentSelectedUri != uriBeforeCrop
+                    ) {
+                        Icon(Icons.Default.Undo, contentDescription = "Deshacer Recorte")
+                    }
+                    IconButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                val oldUri = currentSelectedUri
+                                if (oldUri != null) {
+                                    val newUriString = projectViewModel.rotateImage(context, oldUri.toString())
+                                    if (newUriString != null) {
+                                        uriBeforeCrop = oldUri
+                                        currentSelectedUri = Uri.parse(newUriString)
+                                    }
+                                }
+                            }
+                        },
+                        enabled = currentSelectedUri != null
                     ) {
                         Icon(Icons.Default.RotateRight, contentDescription = "Girar")
                     }
                     IconButton(
                         onClick = {
-                            currentSelectedUriString?.let {
-                                navController.navigate("image_effects_screen/${Uri.encode(it)}")
+                            currentSelectedUri?.let {
+                                navController.navigate("image_effects_screen/${Uri.encode(it.toString())}")
                             }
                         },
-                        enabled = currentSelectedUriString != null
+                        enabled = currentSelectedUri != null
                     ) {
                         Icon(Icons.Default.Tune, contentDescription = "Efectos")
                     }
                     IconButton(
                         onClick = {
-                            if (currentSelectedUriString != null) {
-                                projectViewModel.resetImageTransforms(context, currentSelectedUriString!!)
-                                // Force CropView to reset its internal state
-                                cropViewResetKey++
+                             if (originalUriOfSession != null && currentSelectedUri != null) {
+                                projectViewModel.replaceImageUri(context, currentSelectedUri.toString(), originalUriOfSession.toString())
+                                currentSelectedUri = originalUriOfSession
+                                uriBeforeCrop = originalUriOfSession
                             }
                         },
-                        enabled = currentSelectedUriString != null && currentSettings.hasTransforms()
+                        enabled = currentSelectedUri != originalUriOfSession
                     ) {
-                        Icon(Icons.Default.Restore, contentDescription = "Restablecer")
+                        Icon(Icons.Default.Restore, contentDescription = "Restablecer Original")
                     }
                 }
             )
@@ -125,59 +124,29 @@ fun ImageManagerScreen(
                     .weight(1f),
                 contentAlignment = Alignment.Center
             ) {
-                var bitmapForCropper by remember { mutableStateOf<Bitmap?>(null) }
-
-                LaunchedEffect(currentSelectedUri, effectSettingsMap) {
-                    if (currentSelectedUri != null) {
-                        coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-                            // Load the original, full-resolution bitmap
-                            val originalBitmap = context.contentResolver.openInputStream(currentSelectedUri)?.use {
-                                android.graphics.BitmapFactory.decodeStream(it)
-                            }
-
-                            if (originalBitmap != null) {
-                                val cropRect = effectSettingsMap[currentSelectedUriString]?.cropRect
-                                if (cropRect != null) {
-                                    // Apply the existing crop to the original bitmap
-                                    val left = (cropRect.left * originalBitmap.width).toInt()
-                                    val top = (cropRect.top * originalBitmap.height).toInt()
-                                    val width = (cropRect.width * originalBitmap.width).toInt()
-                                    val height = (cropRect.height * originalBitmap.height).toInt()
-
-                                    if(width > 0 && height > 0 && (left + width) <= originalBitmap.width && (top + height) <= originalBitmap.height) {
-                                        bitmapForCropper = Bitmap.createBitmap(originalBitmap, left, top, width, height)
-                                    } else {
-                                        bitmapForCropper = originalBitmap
-                                    }
-                                } else {
-                                    // If no crop, use the original
-                                    bitmapForCropper = originalBitmap
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (bitmapForCropper != null) {
-                    key(currentSelectedUriString, cropViewResetKey) {
+                if (currentSelectedUri != null) {
+                    key(currentSelectedUri) {
                         CropView(
-                            bitmap = bitmapForCropper!!,
+                            uri = currentSelectedUri!!,
                             onCrop = { cropRect, imageBounds ->
-                                if (imageBounds.width > 0 && imageBounds.height > 0) {
-                                    val normalizedRect = SerializableNormalizedRectF(
-                                        left = (cropRect.left - imageBounds.left) / imageBounds.width,
-                                        top = (cropRect.top - imageBounds.top) / imageBounds.height,
-                                        width = cropRect.width / imageBounds.width,
-                                        height = cropRect.height / imageBounds.height
-                                    )
-                                    projectViewModel.updateImageCrop(context, currentSelectedUriString!!, normalizedRect)
-                                    cropViewResetKey++
+                                coroutineScope.launch {
+                                val croppedBitmap = cropBitmap(
+                                    context = context,
+                                    uri = currentSelectedUri!!,
+                                    cropRect = cropRect,
+                                    imageBounds = imageBounds
+                                )
+                                if (croppedBitmap != null) {
+                                    val oldUri = currentSelectedUri
+                                    val newUriString = projectViewModel.saveCroppedImage(context, oldUri.toString(), croppedBitmap)
+                                    if (newUriString != null) {
+                                        uriBeforeCrop = oldUri
+                                        currentSelectedUri = Uri.parse(newUriString)
+                                    }
                                 }
                             }
-                        )
+                        })
                     }
-                } else if (currentSelectedUri != null) {
-                    CircularProgressIndicator()
                 } else {
                     Text("No hay imágenes para editar.")
                 }
@@ -192,32 +161,59 @@ fun ImageManagerScreen(
             ) {
                 items(imageUris) { uriString ->
                     val uri = Uri.parse(uriString)
-                    val settings = effectSettingsMap[uriString]
-                    val transformations = if (settings != null) {
-                        listOf(ProjectEffectsTransformation(settings))
-                    } else {
-                        emptyList()
-                    }
-
                     AsyncImage(
-                        model = coil.request.ImageRequest.Builder(context)
-                            .data(uri)
-                            .transformations(transformations)
-                            .build(),
+                        model = uri,
                         contentDescription = "Thumbnail",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .size(84.dp)
                             .border(
                                 width = 2.dp,
-                                color = if (uriString == currentSelectedUriString) MaterialTheme.colorScheme.primary else Color.Transparent
+                                color = if (uri == currentSelectedUri) MaterialTheme.colorScheme.primary else Color.Transparent
                             )
                             .clickable {
-                                projectViewModel.setManagerSelectedUri(uriString)
+                                currentSelectedUri = uri
+                                uriBeforeCrop = uri
+                                originalUriOfSession = uri
                             }
                     )
                 }
             }
         }
+    }
+}
+
+private fun cropBitmap(
+    context: Context,
+    uri: Uri,
+    cropRect: Rect,
+    imageBounds: Rect
+): Bitmap? {
+    try {
+        val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
+        if (inputStream == null) return null
+
+        val originalBitmap = BitmapFactory.decodeStream(inputStream)
+        inputStream.close()
+
+        val scale = originalBitmap.width.toFloat() / imageBounds.width
+
+        val finalLeft = (cropRect.left - imageBounds.left) * scale
+        val finalTop = (cropRect.top - imageBounds.top) * scale
+        val finalWidth = cropRect.width * scale
+        val finalHeight = cropRect.height * scale
+
+        if (finalWidth <= 0 || finalHeight <= 0) return null
+
+        return Bitmap.createBitmap(
+            originalBitmap,
+            finalLeft.toInt(),
+            finalTop.toInt(),
+            finalWidth.toInt(),
+            finalHeight.toInt()
+        )
+    } catch (e: Exception) {
+        e.printStackTrace()
+        return null
     }
 }

@@ -7,29 +7,62 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import com.example.dynamiccollage.data.repository.AuthRepository
+import com.example.dynamiccollage.data.repository.UserRepository
 import com.example.dynamiccollage.ui.navigation.AppNavigation
 import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
-import com.example.dynamiccollage.viewmodel.ProjectViewModel
-import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
+import com.example.dynamiccollage.viewmodel.*
 
 class MainActivity : ComponentActivity() {
-    internal val projectViewModel: ProjectViewModel by viewModels()
+    private val projectViewModel: ProjectViewModel by viewModels()
+
+    private val authRepository by lazy { AuthRepository() }
+    private val userRepository by lazy { UserRepository() }
+
+    private val mainViewModelFactory by lazy {
+        object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return MainViewModel(authRepository, userRepository) as T
+            }
+        }
+    }
+
+    private val loginViewModelFactory by lazy {
+        object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return LoginViewModel(authRepository, userRepository) as T
+            }
+        }
+    }
+
+    private val controlPanelViewModelFactory by lazy {
+        object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return ControlPanelViewModel(userRepository) as T
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        PDFBoxResourceLoader.init(applicationContext)
         setContent {
-            val themeName by projectViewModel.themeName.collectAsState()
-            DynamicCollageTheme(themeName = themeName) {
+            val currentTheme = remember { mutableStateOf("Oscuro") }
+            DynamicCollageTheme(themeName = currentTheme.value) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
                     AppNavigation(
-                        projectViewModel = projectViewModel
+                        projectViewModel = projectViewModel,
+                        onThemeChange = { themeName -> currentTheme.value = themeName },
+                        mainViewModel = viewModels<MainViewModel> { mainViewModelFactory }.value,
+                        loginViewModel = viewModels<LoginViewModel> { loginViewModelFactory }.value,
+                        controlPanelViewModel = viewModels<ControlPanelViewModel> { controlPanelViewModelFactory }.value
                     )
                 }
             }

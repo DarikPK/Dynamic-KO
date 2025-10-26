@@ -1,39 +1,23 @@
 package com.example.dynamiccollage.ui.screens
 
-
-import android.Manifest
-import android.app.Activity
-import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.net.Uri
-import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -41,11 +25,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -56,11 +39,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.dynamiccollage.R
-import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
+import com.example.dynamiccollage.data.model.PageGroup
 import com.example.dynamiccollage.ui.components.ConfirmationDialog
 import com.example.dynamiccollage.ui.components.CreateEditGroupDialog
 import com.example.dynamiccollage.ui.components.PageGroupItem
-import com.example.dynamiccollage.ui.components.SettingsDialog
+import com.example.dynamiccollage.ui.theme.DynamicCollageTheme
 import com.example.dynamiccollage.viewmodel.InnerPagesViewModel
 import com.example.dynamiccollage.viewmodel.InnerPagesViewModelFactory
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
@@ -69,6 +52,7 @@ import com.example.dynamiccollage.viewmodel.ProjectViewModel
 @Composable
 fun InnerPagesScreen(
     navController: NavController,
+    projectViewModel: ProjectViewModel,
     innerPagesViewModel: InnerPagesViewModel
 ) {
     val pageGroups by innerPagesViewModel.pageGroups.collectAsState()
@@ -77,16 +61,24 @@ fun InnerPagesScreen(
     val currentGroupAddingImages by innerPagesViewModel.currentGroupAddingImages.collectAsState()
     val context = LocalContext.current
     val groupToDelete by innerPagesViewModel.showDeleteGroupDialog.collectAsState()
-    var showSettingsDialog by remember { mutableStateOf(false) }
     val imagesToDelete by innerPagesViewModel.showDeleteImagesDialog.collectAsState()
 
-    var showPermissionRationaleDialog by remember { mutableStateOf(false) }
-    var showPermissionDeniedDialog by remember { mutableStateOf(false) }
+    if (groupToDelete != null) {
+        ConfirmationDialog(
+            title = "Eliminar Grupo",
+            message = "Estás seguro de que quieres eliminar este grupo?",
+            onConfirm = { innerPagesViewModel.onConfirmRemoveGroup() },
+            onDismiss = { innerPagesViewModel.onDismissRemoveGroupDialog() }
+        )
+    }
 
-    val permission = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-        Manifest.permission.READ_MEDIA_IMAGES
-    } else {
-        Manifest.permission.READ_EXTERNAL_STORAGE
+    if (imagesToDelete != null) {
+        ConfirmationDialog(
+            title = "Eliminar Imágenes",
+            message = "Estás seguro de que quieres eliminar todas las imágenes de este grupo?",
+            onConfirm = { innerPagesViewModel.onConfirmRemoveImages() },
+            onDismiss = { innerPagesViewModel.onDismissRemoveImagesDialog() }
+        )
     }
 
     val multipleImagePickerLauncher = rememberLauncherForActivityResult(
@@ -99,80 +91,11 @@ fun InnerPagesScreen(
         }
     }
 
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
+    LaunchedEffect(currentGroupAddingImages) {
+        if (currentGroupAddingImages != null) {
             multipleImagePickerLauncher.launch("image/*")
-        } else {
-            showPermissionDeniedDialog = true
         }
     }
-
-    fun requestPermissionOrLaunchPicker(groupId: String) {
-        innerPagesViewModel.setGroupAddingImages(groupId) // Set the group ID first
-        when (ContextCompat.checkSelfPermission(context, permission)) {
-            PackageManager.PERMISSION_GRANTED -> {
-                multipleImagePickerLauncher.launch("image/*")
-            }
-            else -> {
-                if (ActivityCompat.shouldShowRequestPermissionRationale(context as Activity, permission)) {
-                    showPermissionRationaleDialog = true
-                } else {
-                    permissionLauncher.launch(permission)
-                }
-            }
-        }
-    }
-
-    if (showSettingsDialog) {
-        SettingsDialog(
-            viewModel = innerPagesViewModel,
-            onDismiss = { showSettingsDialog = false }
-        )
-    }
-
-    ConfirmationDialog(
-        show = groupToDelete != null,
-        onDismiss = { innerPagesViewModel.onDismissRemoveGroupDialog() },
-        onConfirm = { innerPagesViewModel.onConfirmRemoveGroup(context) },
-        title = "Eliminar Grupo",
-        message = "Estás seguro de que quieres eliminar este grupo?"
-    )
-
-    ConfirmationDialog(
-        show = imagesToDelete != null,
-        onDismiss = { innerPagesViewModel.onDismissRemoveImagesDialog() },
-        onConfirm = { innerPagesViewModel.onConfirmRemoveImages(context) },
-        title = "Eliminar Imágenes",
-        message = "Estás seguro de que quieres eliminar todas las imágenes de este grupo?"
-    )
-
-    // Dialog for permission rationale
-    ConfirmationDialog(
-        show = showPermissionRationaleDialog,
-        onDismiss = { showPermissionRationaleDialog = false },
-        onConfirm = { permissionLauncher.launch(permission) },
-        title = "Permiso Necesario",
-        message = "Para seleccionar imágenes de tu galería, la aplicación necesita permiso para acceder a tus archivos multimedia. Por favor, concede el permiso cuando se te solicite."
-    )
-
-    // Dialog for permanently denied permission
-    ConfirmationDialog(
-        show = showPermissionDeniedDialog,
-        onDismiss = { showPermissionDeniedDialog = false },
-        onConfirm = {
-            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                data = Uri.fromParts("package", context.packageName, null)
-            }
-            context.startActivity(intent)
-        },
-        title = "Permiso Denegado",
-        message = "El permiso para acceder a la galería fue denegado permanentemente. Para usar esta función, debes habilitarlo manualmente desde los ajustes de la aplicación.",
-        confirmButtonText = "Ir a Ajustes",
-        dismissButtonText = "Entendido"
-    )
-
 
     if (showDialog) {
         CreateEditGroupDialog(
@@ -190,17 +113,11 @@ fun InnerPagesScreen(
                 title = { Text(stringResource(id = R.string.inner_pages_title)) },
                 navigationIcon = {
                     IconButton(onClick = {
-                        val allGroupsValid = pageGroups.all { group ->
-                            if (group.smartLayoutEnabled) {
-                                group.imageUris.isNotEmpty()
-                            } else {
-                                group.isPhotoQuotaMet
-                            }
-                        }
-                        if (allGroupsValid) {
+                        val allQuotasMet = pageGroups.all { it.isPhotoQuotaMet }
+                        if (allQuotasMet) {
                             navController.popBackStack()
                         } else {
-                            Toast.makeText(context, R.string.error_all_groups_must_be_valid, Toast.LENGTH_LONG).show()
+                            Toast.makeText(context, R.string.error_photo_quota_not_met, Toast.LENGTH_LONG).show()
                         }
                     }) {
                         Icon(
@@ -213,14 +130,8 @@ fun InnerPagesScreen(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 ),
                 actions = {
-                    IconButton(onClick = { showSettingsDialog = true }) {
-                        Icon(
-                            imageVector = Icons.Filled.Settings,
-                            contentDescription = "Ajustes"
-                        )
-                    }
                     IconButton(onClick = {
-                        innerPagesViewModel.saveProject(context)
+                        innerPagesViewModel.saveEditingGroup(context)
                         Toast.makeText(context, R.string.page_groups_saved_toast, Toast.LENGTH_SHORT).show()
                     }) {
                         Icon(
@@ -230,59 +141,39 @@ fun InnerPagesScreen(
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = { innerPagesViewModel.onAddNewGroupClicked() }) {
+                Icon(
+                    Icons.Filled.Add,
+                    contentDescription = stringResource(id = R.string.inner_pages_add_group_fab_description)
+                )
+            }
         }
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            Button(
-                onClick = { innerPagesViewModel.onAddNewGroupClicked() },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Filled.Add, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("Añadir Grupo")
-            }
-            Spacer(Modifier.height(16.dp))
-
             if (pageGroups.isEmpty()) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.AddPhotoAlternate,
-                        contentDescription = "No groups icon",
-                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        modifier = Modifier.padding(16.dp)
-                    )
-                    Text(
-                        text = "Crea tu primer grupo",
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Añade un grupo para empezar a organizar tus imágenes.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
-                    )
+                    Text(stringResource(id = R.string.inner_pages_no_groups))
                 }
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(pageGroups, key = { group -> group.id }) { pageGroup ->
                         PageGroupItem(
                             pageGroup = pageGroup,
                             onAddImagesClicked = { groupId ->
-                                requestPermissionOrLaunchPicker(groupId)
+                                innerPagesViewModel.onAddImagesClickedForGroup(groupId)
                             },
                             onEditGroupClicked = { groupToEdit ->
                                 innerPagesViewModel.onEditGroupClicked(groupToEdit)
@@ -308,6 +199,7 @@ fun InnerPagesScreenPreview() {
         val projectViewModel: ProjectViewModel = viewModel()
         InnerPagesScreen(
             navController = rememberNavController(),
+            projectViewModel = projectViewModel,
             innerPagesViewModel = viewModel(factory = InnerPagesViewModelFactory(projectViewModel))
         )
     }
@@ -320,6 +212,7 @@ fun InnerPagesScreenDarkPreview() {
         val projectViewModel: ProjectViewModel = viewModel()
         InnerPagesScreen(
             navController = rememberNavController(),
+            projectViewModel = projectViewModel,
             innerPagesViewModel = viewModel(factory = InnerPagesViewModelFactory(projectViewModel))
         )
     }

@@ -19,7 +19,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
@@ -99,7 +98,7 @@ fun CoverSetupScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { navController.navigate(com.example.dynamiccollage.ui.navigation.Screen.AdvancedCoverOptions.route) }) {
+                    IconButton(onClick = { navController.navigate("advanced_cover_options") }) {
                         Icon(
                             imageVector = Icons.Default.Settings,
                             contentDescription = "Opciones Avanzadas"
@@ -209,48 +208,19 @@ fun CoverSetupScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             if (coverConfig.mainImageUri != null) {
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    val request = if (coverConfig.forceFullResCover) {
-                        ImageRequest.Builder(context)
-                            .data(coverConfig.mainImageUri)
-                            .allowHardware(false)
-                            .size(coil.size.Size.ORIGINAL)
-                            .diskCachePolicy(coil.request.CachePolicy.ENABLED)
-                            .memoryCachePolicy(coil.request.CachePolicy.ENABLED)
-                            .build()
-                    } else {
-                        ImageRequest.Builder(context)
-                            .data(coverConfig.mainImageUri)
-                            .allowHardware(true)
-                            .size(coil.size.Size(1080, 1080))
-                            .diskCachePolicy(coil.request.CachePolicy.ENABLED)
-                            .memoryCachePolicy(coil.request.CachePolicy.ENABLED)
-                            .crossfade(true)
-                            .build()
-                    }
-
-                    AsyncImage(
-                        model = request,
-                        contentDescription = stringResource(R.string.cover_image_selected_description),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(16f / 9f)
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .border(1.dp, MaterialTheme.colorScheme.outline),
-                        contentScale = ContentScale.Fit
-                    )
-                    IconButton(
-                        onClick = { coverSetupViewModel.clearMainImage() },
-                        modifier = Modifier.align(Alignment.TopEnd)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Eliminar imagen",
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            modifier = Modifier.background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
-                        )
-                    }
-                }
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(coverConfig.mainImageUri)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = stringResource(R.string.cover_image_selected_description),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(16f / 9f)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .border(1.dp, MaterialTheme.colorScheme.outline),
+                    contentScale = ContentScale.Fit
+                )
             } else {
                 Box(
                     modifier = Modifier

@@ -8,15 +8,9 @@ import androidx.compose.ui.text.style.TextAlign
 // import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import com.example.dynamiccollage.ui.theme.calibriFontFamily
-import com.example.dynamiccollage.data.model.GeneratedBackgroundConfig
 
 enum class DocumentType {
     RUC, DNI, NONE
-}
-
-enum class SheetBackgroundType {
-    SOLID,
-    CUSTOM
 }
 
 // Valores por defecto para la configuración de la portada
@@ -123,17 +117,8 @@ data class CoverPageConfig(
     val photoStyle: RowStyle = RowStyle(),
 
     // PDF Size Management
-    val quality: Int = 90,
-    val forceFullResCover: Boolean = false,
-    val useHybridPdfMode: Boolean = true,
+    val imageQuality: Int = 100,
+    val autoAdjustSize: Boolean = true,
 
-    // Advanced Design
-    val pageBackgroundColor: Int? = null,
-    val imageBorderSettingsMap: Map<String, ImageBorderSettings> = emptyMap(),
-    val hybridCoverImageQuality: Int = 70,
-    val hybridInnerImagesQuality: Int = 30,
-
-    val templateName: String? = null,
-    val generatedBackgroundConfig: GeneratedBackgroundConfig? = null,
-    val sheetBackgroundType: SheetBackgroundType = SheetBackgroundType.SOLID
+    val templateName: String? = null
 )

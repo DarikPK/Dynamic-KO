@@ -15,14 +15,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 
 
 class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : ViewModel() {
-
-    var newGroupIsSmart by mutableStateOf(true)
 
     val pageGroups: StateFlow<List<PageGroup>> = projectViewModel.currentPageGroups
 
@@ -37,12 +32,7 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
 
     val isEditingGroupConfigValid: StateFlow<Boolean> = editingGroup
         .map { group ->
-            if (group == null) return@map true
-            if (group.smartLayoutEnabled) {
-                true // La cuota de fotos no aplica a grupos inteligentes en el diálogo de edición
-            } else {
-                group.totalPhotosRequired >= group.imageUris.size
-            }
+            group?.let { it.totalPhotosRequired >= it.imageUris.size } ?: true
         }
         .stateIn(
             scope = viewModelScope,
@@ -58,14 +48,11 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
 
     fun onAddNewGroupClicked() {
         val coverConfig = projectViewModel.currentCoverConfig.value
-        val currentGroupCount = pageGroups.value.size
         val newGroup = PageGroup(
-            groupName = "Grupo ${currentGroupCount + 1}",
             optionalTextStyle = coverConfig.subtitleStyle.copy(
                 id = "pageGroupOptionalText",
                 content = ""
-            ),
-            smartLayoutEnabled = newGroupIsSmart
+            )
         )
         _editingGroup.value = newGroup
         _showCreateGroupDialog.value = true
@@ -76,7 +63,7 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         _showCreateGroupDialog.value = true
     }
 
-    fun setGroupAddingImages(groupId: String) {
+    fun onAddImagesClickedForGroup(groupId: String) {
         _currentGroupAddingImages.value = groupId
     }
 
@@ -86,20 +73,20 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         _currentGroupAddingImages.value = null
     }
 
-    fun removeSingleImageFromGroup(context: android.content.Context, groupId: String, uri: String) {
-        projectViewModel.removeImageFromPageGroup(context, groupId, uri)
+    fun removeSingleImageFromGroup(groupId: String, uri: String) {
+        projectViewModel.removeImageFromPageGroup(groupId, uri)
     }
 
-    fun removeImagesFromGroup(context: android.content.Context, groupId: String) {
-        projectViewModel.removeAllImagesFromPageGroup(context, groupId)
+    fun removeImagesFromGroup(groupId: String) {
+        projectViewModel.removeAllImagesFromPageGroup(groupId)
     }
 
     fun onRemoveGroupClicked(groupId: String) {
         _showDeleteGroupDialog.value = groupId
     }
 
-    fun onConfirmRemoveGroup(context: android.content.Context) {
-        _showDeleteGroupDialog.value?.let { projectViewModel.deletePageGroup(context, it) }
+    fun onConfirmRemoveGroup() {
+        _showDeleteGroupDialog.value?.let { projectViewModel.deletePageGroup(it) }
         _showDeleteGroupDialog.value = null
     }
 
@@ -111,8 +98,8 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         _showDeleteImagesDialog.value = groupId
     }
 
-    fun onConfirmRemoveImages(context: android.content.Context) {
-        _showDeleteImagesDialog.value?.let { removeImagesFromGroup(context, it) }
+    fun onConfirmRemoveImages() {
+        _showDeleteImagesDialog.value?.let { removeImagesFromGroup(it) }
         _showDeleteImagesDialog.value = null
     }
 
@@ -144,7 +131,7 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
 
     fun onEditingGroupOptionalTextChange(text: String) {
         _editingGroup.value = _editingGroup.value?.copy(
-            optionalTextStyle = _editingGroup.value!!.optionalTextStyle.copy(content = text.replace("\n", ""))
+            optionalTextStyle = _editingGroup.value!!.optionalTextStyle.copy(content = text)
         )
     }
 
@@ -177,26 +164,19 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         )
     }
 
-    fun onEditingGroupHeaderStyleChange(newStyle: com.example.dynamiccollage.data.model.TextStyleConfig) {
-        _editingGroup.value = _editingGroup.value?.copy(optionalTextStyle = newStyle)
-    }
-
     fun saveEditingGroup(context: android.content.Context) {
         viewModelScope.launch {
             _editingGroup.value?.let { groupToSave ->
                 val currentGroups = pageGroups.value
                 if (currentGroups.any { it.id == groupToSave.id }) {
-                    projectViewModel.updatePageGroup(context, groupToSave.id) { groupToSave }
+                    projectViewModel.updatePageGroup(groupToSave.id) { groupToSave }
                 } else {
-                    projectViewModel.addPageGroup(context, groupToSave)
+                    projectViewModel.addPageGroup(groupToSave)
                 }
+                projectViewModel.saveProject(context)
                 onDismissCreateGroupDialog()
             }
         }
-    }
-
-    fun saveProject(context: android.content.Context) {
-        projectViewModel.saveProject(context)
     }
 }
 

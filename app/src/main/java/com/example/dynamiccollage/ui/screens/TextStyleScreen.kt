@@ -193,7 +193,7 @@ private fun TextCustomizationSection(
         OutlinedButton(
             onClick = {
                 val colorHex = String.format("%06X", (0xFFFFFF and textStyleConfig.fontColor.toArgb()))
-                navController.navigate(Screen.ColorPicker.withArgs("textStyle", fieldId, colorHex))
+                navController.navigate(Screen.ColorPicker.withArgs(fieldId, colorHex))
             },
             modifier = Modifier.fillMaxWidth()
         ) {

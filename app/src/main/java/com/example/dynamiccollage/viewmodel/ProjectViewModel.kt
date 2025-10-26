@@ -6,30 +6,18 @@ import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.net.Uri
 import android.util.Log
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.dynamiccollage.data.model.ColorTheme
-import com.example.dynamiccollage.data.model.GeneratedBackgroundConfig
-import com.example.dynamiccollage.data.model.ImageBorderSettings
 import com.example.dynamiccollage.data.toDomain
 import com.example.dynamiccollage.data.toSerializable
 import com.example.dynamiccollage.data.model.CoverPageConfig
-import com.example.dynamiccollage.data.model.ImageEffectSettings
 import com.example.dynamiccollage.data.model.PageGroup
-import com.example.dynamiccollage.data.model.PageOrientation
-import com.example.dynamiccollage.data.model.PhotoArrangementItem
-import com.example.dynamiccollage.data.model.SheetBackgroundType
-import com.example.dynamiccollage.data.model.SheetType
-import com.example.dynamiccollage.data.model.SerializableNormalizedRectF
 import com.example.dynamiccollage.data.model.SelectedSunatData
 import com.example.dynamiccollage.data.model.SerializableProjectState
 import com.example.dynamiccollage.utils.PdfGenerator
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -51,345 +39,25 @@ class ProjectViewModel : ViewModel() {
     private val _sunatData = MutableStateFlow<SelectedSunatData?>(null)
     val sunatData: StateFlow<SelectedSunatData?> = _sunatData.asStateFlow()
 
-    private val _themeName = MutableStateFlow("Oscuro")
-    val themeName: StateFlow<String> = _themeName.asStateFlow()
-
-    private val _imageEffectSettings = MutableStateFlow<Map<String, ImageEffectSettings>>(emptyMap())
-    val imageEffectSettings: StateFlow<Map<String, ImageEffectSettings>> = _imageEffectSettings.asStateFlow()
-
-    private val _managerSelectedUri = MutableStateFlow<String?>(null)
-    val managerSelectedUri: StateFlow<String?> = _managerSelectedUri.asStateFlow()
-
-    private val _recycledUris = MutableStateFlow<List<String>>(emptyList())
-    val recycledUris: StateFlow<List<String>> = _recycledUris.asStateFlow()
-
-    private val _photoArrangement = MutableStateFlow<List<PhotoArrangementItem>>(emptyList())
-    val photoArrangement: StateFlow<List<PhotoArrangementItem>> = _photoArrangement.asStateFlow()
-
-    fun initializePhotoArrangement() {
-        val arrangement = mutableListOf<PhotoArrangementItem>()
-        var order = 1
-        currentCoverConfig.value.mainImageUri?.let {
-            arrangement.add(PhotoArrangementItem(it, order++, SheetType.SINGLE))
-        }
-        currentPageGroups.value.forEach { group ->
-            val sheetType = if (group.photosPerSheet > 1) SheetType.DOUBLE else SheetType.SINGLE
-            group.imageUris.forEach { uri ->
-                arrangement.add(PhotoArrangementItem(uri, order++, sheetType))
-            }
-        }
-        _photoArrangement.value = arrangement
-    }
-
-    fun setManagerSelectedUri(uri: String?) {
-        _managerSelectedUri.value = uri
-    }
-
-    fun updateImageEffectSettings(context: Context, uri: String, settings: ImageEffectSettings) {
-        _imageEffectSettings.update { currentMap ->
-            currentMap.toMutableMap().apply {
-                this[uri] = settings
-            }
-        }
-        saveProject(context)
-    }
-
-    fun swapPhotoOrder(item1: PhotoArrangementItem, item2: PhotoArrangementItem) {
-        _photoArrangement.update { currentList ->
-            currentList.map {
-                when (it.uri) {
-                    item1.uri -> it.copy(order = item2.order)
-                    item2.uri -> it.copy(order = item1.order)
-                    else -> it
-                }
-            }
-        }
-    }
-
-    fun movePhotoOrder(fromItem: PhotoArrangementItem, toItem: PhotoArrangementItem) {
-        _photoArrangement.update { currentList ->
-            val fromOrder = fromItem.order
-            val toOrder = toItem.order
-            val newList = currentList.toMutableList()
-
-            val itemToMove = newList.find { it.order == fromOrder }
-            if (itemToMove != null) {
-                if (fromOrder < toOrder) {
-                    newList.filter { it.order > fromOrder && it.order <= toOrder }.forEach { it.order-- }
-                } else {
-                    newList.filter { it.order >= toOrder && it.order < fromOrder }.forEach { it.order++ }
-                }
-                itemToMove.order = toOrder
-            }
-            newList
-        }
-    }
-
-    fun saveArrangement(context: Context) {
-        val sortedArrangement = _photoArrangement.value.sortedBy { it.order }
-        val newCoverUri = sortedArrangement.firstOrNull()?.uri
-        _currentCoverConfig.update { it.copy(mainImageUri = newCoverUri) }
-
-        val innerPhotos = sortedArrangement.drop(if (newCoverUri != null) 1 else 0)
-        val newPageGroups = mutableListOf<PageGroup>()
-        var i = 0
-        while (i < innerPhotos.size) {
-            val currentPhoto = innerPhotos[i]
-            if (currentPhoto.sheetType == SheetType.SINGLE) {
-                newPageGroups.add(
-                    PageGroup(
-                        id = UUID.randomUUID().toString(),
-                        groupName = "Grupo ${newPageGroups.size + 1}",
-                        orientation = PageOrientation.Vertical, // O la que corresponda
-                        photosPerSheet = 1,
-                        sheetCount = 1,
-                        imageUris = listOf(currentPhoto.uri)
-                    )
-                )
-                i++
-            } else {
-                val groupUris = mutableListOf(currentPhoto.uri)
-                if (i + 1 < innerPhotos.size && innerPhotos[i + 1].sheetType == SheetType.DOUBLE) {
-                    groupUris.add(innerPhotos[i + 1].uri)
-                    i++
-                }
-                newPageGroups.add(
-                    PageGroup(
-                        id = UUID.randomUUID().toString(),
-                        groupName = "Grupo ${newPageGroups.size + 1}",
-                        orientation = PageOrientation.Vertical, // O la que corresponda
-                        photosPerSheet = 2,
-                        sheetCount = 1,
-                        imageUris = groupUris
-                    )
-                )
-                i++
-            }
-        }
-        _currentPageGroups.value = newPageGroups
-        saveProject(context)
-    }
-
-    fun deletePhoto(context: Context, uri: String) {
-        // Move the photo to the recycled bin
-        _recycledUris.update { it + uri }
-
-        // Check if it's the cover photo
-        if (_currentCoverConfig.value.mainImageUri == uri) {
-            _currentCoverConfig.update { it.copy(mainImageUri = null) }
-        } else {
-            // Find the group containing the photo and remove it
-            _currentPageGroups.update { currentList ->
-                currentList.map { group ->
-                    if (group.imageUris.contains(uri)) {
-                        group.copy(imageUris = group.imageUris.filterNot { it == uri })
-                    } else {
-                        group
-                    }
-                }
-            }
-        }
-        // Don't remove settings, they will be kept in case of restoration
-        setManagerSelectedUri(null)
-        saveProject(context)
-    }
-
-    fun restorePhoto(context: Context, uri: String) {
-        // Remove from recycled bin
-        _recycledUris.update { it.filterNot { it == uri } }
-
-        // Add back to the main collage - for simplicity, let's add it as the main image if it's empty
-        // or to the first page group. A more complex logic could be to restore it to its original position.
-        if (_currentCoverConfig.value.mainImageUri == null) {
-            _currentCoverConfig.update { it.copy(mainImageUri = uri) }
-        } else {
-            _currentPageGroups.update { currentList ->
-                val list = currentList.toMutableList()
-                if (list.isNotEmpty()) {
-                    val firstGroup = list[0]
-                    list[0] = firstGroup.copy(imageUris = firstGroup.imageUris + uri)
-                } else {
-                    // Or create a new group if none exist
-                    // This case might need more specific handling depending on desired UX
-                }
-                list.toList()
-            }
-        }
-        saveProject(context)
-    }
-
-    fun deletePhotoPermanently(context: Context, uri: String) {
-        // Remove from recycled bin
-        _recycledUris.update { it.filterNot { it == uri } }
-
-        // And delete the file
-        viewModelScope.launch(Dispatchers.IO) {
-            deleteLocalImage(uri)
-        }
-
-        // Also remove any associated settings
-        _imageEffectSettings.update { it - uri }
-        _currentCoverConfig.update { it.copy(imageBorderSettingsMap = it.imageBorderSettingsMap - uri) }
-
-        saveProject(context)
-    }
-
-    fun updateImageRotation(context: Context, uri: String, degrees: Float) {
-        _imageEffectSettings.update { currentMap ->
-            val currentSettings = currentMap[uri] ?: ImageEffectSettings()
-            currentMap.toMutableMap().apply {
-                this[uri] = currentSettings.copy(rotationDegrees = degrees)
-            }
-        }
-        saveProject(context)
-    }
-
-    fun updateImageCrop(context: Context, uri: String, newRelativeCrop: SerializableNormalizedRectF?) {
-        _imageEffectSettings.update { currentMap ->
-            val currentSettings = currentMap[uri] ?: ImageEffectSettings()
-            val existingCrop = currentSettings.cropRect
-
-            val finalCrop = if (existingCrop != null && newRelativeCrop != null) {
-                // Compose the new crop with the existing one
-                SerializableNormalizedRectF(
-                    left = existingCrop.left + newRelativeCrop.left * existingCrop.width,
-                    top = existingCrop.top + newRelativeCrop.top * existingCrop.height,
-                    width = existingCrop.width * newRelativeCrop.width,
-                    height = existingCrop.height * newRelativeCrop.height
-                )
-            } else {
-                newRelativeCrop
-            }
-
-            currentMap.toMutableMap().apply {
-                this[uri] = currentSettings.copy(cropRect = finalCrop)
-            }
-        }
-        saveProject(context)
-    }
-
-    fun resetImageTransforms(context: Context, uri: String) {
-        _imageEffectSettings.update { currentMap ->
-            val currentSettings = currentMap[uri] ?: ImageEffectSettings()
-            currentMap.toMutableMap().apply {
-                // Reset only transform properties, keep other effects
-                this[uri] = currentSettings.copy(rotationDegrees = 0f, cropRect = null)
-            }
-        }
-        saveProject(context)
-    }
-
-    fun updateTheme(context: Context, newThemeName: String) {
-        _themeName.value = newThemeName
-        saveProject(context)
-    }
-
-    fun updateSunatData(context: Context, data: SelectedSunatData) {
+    fun updateSunatData(data: SelectedSunatData) {
         _sunatData.value = data
-        saveProject(context)
     }
 
     fun updateCoverConfig(newConfig: CoverPageConfig) {
         _currentCoverConfig.value = newConfig
     }
 
-    fun applyColorTheme(context: Context, theme: ColorTheme) {
-        _currentCoverConfig.update { config ->
-            config.copy(
-                templateName = theme.name,
-                clientNameStyle = config.clientNameStyle.copy(
-                    fontColor = theme.textColor,
-                    rowStyle = config.clientNameStyle.rowStyle.copy(
-                        border = config.clientNameStyle.rowStyle.border.copy(color = theme.borderColor)
-                    )
-                ),
-                rucStyle = config.rucStyle.copy(
-                    fontColor = theme.textColor,
-                    rowStyle = config.rucStyle.rowStyle.copy(
-                        backgroundColor = theme.rucBackgroundColor,
-                        border = config.rucStyle.rowStyle.border.copy(color = theme.borderColor)
-                    )
-                ),
-                subtitleStyle = config.subtitleStyle.copy(
-                    fontColor = theme.textColor,
-                    rowStyle = config.subtitleStyle.rowStyle.copy(
-                        border = config.subtitleStyle.rowStyle.border.copy(color = theme.borderColor)
-                    )
-                )
-            )
-        }
-        _currentPageGroups.update { groups ->
-            groups.map { group ->
-                group.copy(
-                    optionalTextStyle = group.optionalTextStyle.copy(
-                        fontColor = theme.textColor,
-                        rowStyle = group.optionalTextStyle.rowStyle.copy(
-                            backgroundColor = theme.rucBackgroundColor,
-                            border = group.optionalTextStyle.rowStyle.border.copy(color = theme.borderColor)
-                        )
-                    )
-                )
-            }
-        }
-        saveProject(context)
-    }
-
-    fun updateForceFullResCover(context: Context, forceFullRes: Boolean) {
-        _currentCoverConfig.update { it.copy(forceFullResCover = forceFullRes) }
-        saveProject(context)
-    }
-
-    fun updateUseHybridPdfMode(context: Context, useHybrid: Boolean) {
-        _currentCoverConfig.update { it.copy(useHybridPdfMode = useHybrid) }
-        saveProject(context)
-    }
-
-    fun updateHybridCoverImageQuality(context: Context, quality: Int) {
-        _currentCoverConfig.update { it.copy(hybridCoverImageQuality = quality) }
-        saveProject(context)
-    }
-
-    fun updateHybridInnerImagesQuality(context: Context, quality: Int) {
-        _currentCoverConfig.update { it.copy(hybridInnerImagesQuality = quality) }
-        saveProject(context)
-    }
-
-    fun updatePageBackgroundColor(context: Context, color: Color) {
-        _currentCoverConfig.update { it.copy(pageBackgroundColor = color.toArgb()) }
-        saveProject(context)
-    }
-
-    fun updateSheetBackgroundType(context: Context, type: SheetBackgroundType) {
-        _currentCoverConfig.update { it.copy(sheetBackgroundType = type) }
-        saveProject(context)
-    }
-
-    fun updateImageBorderSettings(context: Context, newSettingsMap: Map<String, ImageBorderSettings>) {
-        _currentCoverConfig.update { it.copy(imageBorderSettingsMap = newSettingsMap) }
-        saveProject(context)
-    }
-
-    fun updateGeneratedBackgroundConfig(context: Context, config: GeneratedBackgroundConfig) {
-        val current = _currentCoverConfig.value
-        // Forzamos una nueva instancia incluso si no cambió nada visible
-        val updated = current.copy(generatedBackgroundConfig = config.copy())
-        _currentCoverConfig.value = updated
-        saveProject(context)
-    }
-
-    fun addPageGroup(context: Context, group: PageGroup) {
+    fun addPageGroup(group: PageGroup) {
         _currentPageGroups.update { currentList -> currentList + group }
-        saveProject(context)
     }
 
-    fun updatePageGroup(context: Context, groupId: String, transform: (PageGroup) -> PageGroup) {
+    fun updatePageGroup(groupId: String, transform: (PageGroup) -> PageGroup) {
         _currentPageGroups.update { currentList ->
             currentList.map { if (it.id == groupId) transform(it) else it }
         }
-        saveProject(context)
     }
 
-    fun deletePageGroup(context: Context, groupId: String) {
+    fun deletePageGroup(groupId: String) {
         val groupToDelete = _currentPageGroups.value.find { it.id == groupId }
         viewModelScope.launch(Dispatchers.IO) {
             groupToDelete?.imageUris?.forEach { uri ->
@@ -399,12 +67,10 @@ class ProjectViewModel : ViewModel() {
         _currentPageGroups.update { currentList ->
             currentList.filterNot { it.id == groupId }
         }
-        saveProject(context)
     }
 
-    fun resetPageGroups(context: Context) {
+    fun resetPageGroups() {
         _currentPageGroups.value = emptyList()
-        saveProject(context)
     }
 
     fun resetProject(context: Context) {
@@ -424,7 +90,6 @@ class ProjectViewModel : ViewModel() {
         _currentCoverConfig.value = CoverPageConfig()
         _currentPageGroups.value = emptyList()
         _sunatData.value = null
-        _recycledUris.value = emptyList()
     }
 
     // --- Generación de PDF ---
@@ -452,12 +117,13 @@ class ProjectViewModel : ViewModel() {
 
     fun generatePdf(context: Context, fileName: String) {
         val coverConfig = _currentCoverConfig.value
-        val areInnerPagesEmpty = _currentPageGroups.value.all { it.imageUris.isEmpty() }
+        val innerUris = _currentPageGroups.value.flatMap { it.imageUris }
 
         val isCoverEmpty = coverConfig.clientNameStyle.content.isBlank() &&
                 coverConfig.rucStyle.content.isBlank() &&
                 coverConfig.subtitleStyle.content.isBlank() &&
                 coverConfig.mainImageUri == null
+        val areInnerPagesEmpty = innerUris.isEmpty()
 
         if (isCoverEmpty && areInnerPagesEmpty) {
             _pdfGenerationState.value = PdfGenerationState.Error("No hay contenido para generar un PDF.")
@@ -465,13 +131,14 @@ class ProjectViewModel : ViewModel() {
         }
 
         viewModelScope.launch {
-            saveJob?.join() // Espera a que el guardado actual termine.
             Log.d("ProjectViewModel", "generatePdf: Iniciando...")
             _pdfGenerationState.value = PdfGenerationState.Loading
             val generatedFile = withContext(Dispatchers.IO) {
+                val photosPerPage = _pdfSizeMode.value
                 val generatedPages = com.example.dynamiccollage.utils.PdfContentManager.groupImagesForPdf(
                     context,
-                    _currentPageGroups.value
+                    innerUris,
+                    photosPerPage
                 )
 
                 Log.d("ProjectViewModel", "generatePdf: En el hilo de IO, llamando a PdfGenerator.")
@@ -479,8 +146,7 @@ class ProjectViewModel : ViewModel() {
                     context = context,
                     coverConfig = _currentCoverConfig.value,
                     generatedPages = generatedPages,
-                    fileName = fileName.ifBlank { "DynamicCollage" },
-                    imageEffectSettings = _imageEffectSettings.value
+                    fileName = fileName.ifBlank { "DynamicCollage" }
                 )
             }
             if (generatedFile != null) {
@@ -539,30 +205,30 @@ class ProjectViewModel : ViewModel() {
         }
     }
 
-    fun removeImageFromPageGroup(context: Context, groupId: String, uri: String) {
+    fun removeImageFromPageGroup(groupId: String, uri: String) {
         viewModelScope.launch(Dispatchers.IO) {
             deleteLocalImage(uri)
         }
-        updatePageGroup(context, groupId) { group ->
+        updatePageGroup(groupId) { group ->
             group.copy(imageUris = group.imageUris.filterNot { it == uri })
         }
     }
 
-    fun removeAllImagesFromPageGroup(context: Context, groupId: String) {
+    fun removeAllImagesFromPageGroup(groupId: String) {
         viewModelScope.launch(Dispatchers.IO) {
             val group = _currentPageGroups.value.find { it.id == groupId }
             group?.imageUris?.forEach { uri ->
                 deleteLocalImage(uri)
             }
         }
-        updatePageGroup(context, groupId) { it.copy(imageUris = emptyList()) }
+        updatePageGroup(groupId) { it.copy(imageUris = emptyList()) }
     }
 
     fun copyAndAddImagesToPageGroup(context: Context, uriStrings: List<String>, groupId: String) {
         viewModelScope.launch {
             val permanentPaths = uriStrings.mapNotNull { copyUriToInternalStorage(context, it) }
             if (permanentPaths.isNotEmpty()) {
-            updatePageGroup(context, groupId) { group ->
+                updatePageGroup(groupId) { group ->
                     group.copy(imageUris = group.imageUris + permanentPaths)
                 }
                 saveProject(context)
@@ -610,6 +276,95 @@ class ProjectViewModel : ViewModel() {
         }
     }
 
+    suspend fun saveCroppedImage(context: Context, oldUri: String, croppedBitmap: Bitmap): String? {
+        val newUri = withContext(Dispatchers.IO) {
+            try {
+                val newFile = File(context.applicationContext.filesDir, "images/${UUID.randomUUID()}.jpg")
+                newFile.parentFile?.mkdirs()
+                FileOutputStream(newFile).use { out ->
+                    croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
+                }
+                Uri.fromFile(newFile).toString()
+            } catch (e: Exception) {
+                null
+            }
+        }
+
+        if (newUri != null) {
+            val coverImage = _currentCoverConfig.value.mainImageUri
+            if (coverImage == oldUri) {
+                _currentCoverConfig.update { it.copy(mainImageUri = newUri) }
+            } else {
+                _currentPageGroups.update { groups ->
+                    groups.map { group ->
+                        if (group.imageUris.contains(oldUri)) {
+                            val newImageUris = group.imageUris.map { if (it == oldUri) newUri else it }
+                            group.copy(imageUris = newImageUris)
+                        } else {
+                            group
+                        }
+                    }
+                }
+            }
+            saveProject(context)
+        }
+        return newUri
+    }
+
+    suspend fun rotateImage(context: Context, uri: String): String? {
+        try {
+            val inputStream = context.contentResolver.openInputStream(Uri.parse(uri)) ?: return null
+            val originalBitmap = BitmapFactory.decodeStream(inputStream)
+            inputStream.close()
+
+            val matrix = Matrix().apply { postRotate(90f) }
+            val rotatedBitmap = Bitmap.createBitmap(originalBitmap, 0, 0, originalBitmap.width, originalBitmap.height, matrix, true)
+            originalBitmap.recycle()
+
+            val newUri = withContext(Dispatchers.IO) {
+                try {
+                    val newFile = File(context.applicationContext.filesDir, "images/${UUID.randomUUID()}.jpg")
+                    newFile.parentFile?.mkdirs()
+                    FileOutputStream(newFile).use { out ->
+                        rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+                    }
+                    rotatedBitmap.recycle()
+                    Uri.fromFile(newFile).toString()
+                } catch (e: Exception) {
+                    rotatedBitmap.recycle()
+                    null
+                }
+            }
+
+            if (newUri != null) {
+                replaceImageUri(context, uri, newUri)
+            }
+            return newUri
+        } catch (e: Exception) {
+            return null
+        }
+    }
+
+    suspend fun saveImageWithEffects(context: Context, oldUri: String, bitmapWithEffects: Bitmap): String? {
+        val newUri = withContext(Dispatchers.IO) {
+            try {
+                val newFile = File(context.applicationContext.filesDir, "images/${UUID.randomUUID()}.jpg")
+                newFile.parentFile?.mkdirs()
+                FileOutputStream(newFile).use { out ->
+                    bitmapWithEffects.compress(Bitmap.CompressFormat.JPEG, 95, out)
+                }
+                Uri.fromFile(newFile).toString()
+            } catch (e: Exception) {
+                Log.e("ProjectViewModel", "Error saving image with effects", e)
+                null
+            }
+        }
+
+        if (newUri != null) {
+            replaceImageUri(context, oldUri, newUri)
+        }
+        return newUri
+    }
 
     // --- Lógica de Guardado y Carga de Proyecto ---
     private val _saveState = MutableStateFlow<SaveState>(SaveState.Idle)
@@ -617,34 +372,32 @@ class ProjectViewModel : ViewModel() {
 
     private val gson = Gson()
     private val projectFileName = "last_project.json"
-    private var saveJob: Job? = null
 
     fun saveProject(context: Context) {
-        saveJob?.cancel()
-        saveJob = viewModelScope.launch {
+        viewModelScope.launch {
             val serializableState = SerializableProjectState(
                 coverConfig = _currentCoverConfig.value.toSerializable(),
                 pageGroups = _currentPageGroups.value.map { it.toSerializable() },
-                sunatData = _sunatData.value,
-                themeName = _themeName.value,
-                imageEffectSettings = _imageEffectSettings.value,
-                recycledUris = _recycledUris.value
+                sunatData = _sunatData.value
             )
             val jsonString = gson.toJson(serializableState)
-            writeJsonToFile(context, jsonString)
+            val sizeInBytes = jsonString.toByteArray().size.toLong()
+            val sizeLimitBytes = 50 * 1024 * 1024 // 50MB
+
+            if (sizeInBytes > sizeLimitBytes) {
+                _saveState.value = SaveState.RequiresConfirmation(sizeInBytes)
+            } else {
+                writeJsonToFile(context, jsonString)
+            }
         }
     }
 
     fun forceSaveProject(context: Context) {
-        saveJob?.cancel()
-        saveJob = viewModelScope.launch {
+        viewModelScope.launch {
             val serializableState = SerializableProjectState(
                 coverConfig = _currentCoverConfig.value.toSerializable(),
                 pageGroups = _currentPageGroups.value.map { it.toSerializable() },
-                sunatData = _sunatData.value,
-                themeName = _themeName.value,
-                imageEffectSettings = _imageEffectSettings.value,
-                recycledUris = _recycledUris.value
+                sunatData = _sunatData.value
             )
             val jsonString = gson.toJson(serializableState)
             writeJsonToFile(context, jsonString)
@@ -694,9 +447,6 @@ class ProjectViewModel : ViewModel() {
                     _currentCoverConfig.value = projectState.coverConfig
                     _currentPageGroups.value = projectState.pageGroups
                     _sunatData.value = projectState.sunatData
-                    _themeName.value = projectState.themeName
-                    _imageEffectSettings.value = projectState.imageEffectSettings
-                    _recycledUris.value = projectState.recycledUris
                     Log.d("ProjectViewModel", "loadProject: Project loaded and state restored successfully.")
                 }
             } catch (t: Throwable) {
@@ -708,6 +458,24 @@ class ProjectViewModel : ViewModel() {
 
     fun resetSaveState() {
         _saveState.value = SaveState.Idle
+    }
+
+    fun replaceImageUri(context: Context, oldUri: String, newUri: String) {
+        if (_currentCoverConfig.value.mainImageUri == oldUri) {
+            _currentCoverConfig.update { it.copy(mainImageUri = newUri) }
+        }
+
+        _currentPageGroups.update { groups ->
+            groups.map { group ->
+                if (group.imageUris.contains(oldUri)) {
+                    val newImageUris = group.imageUris.map { if (it == oldUri) newUri else it }
+                    group.copy(imageUris = newImageUris)
+                } else {
+                    group
+                }
+            }
+        }
+        saveProject(context)
     }
 }
 

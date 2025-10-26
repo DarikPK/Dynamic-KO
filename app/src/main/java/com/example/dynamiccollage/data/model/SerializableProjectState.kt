@@ -6,18 +6,15 @@ package com.example.dynamiccollage.data.model
 data class SerializableProjectState(
     val coverConfig: SerializableCoverPageConfig,
     val pageGroups: List<SerializablePageGroup>,
-    val sunatData: SelectedSunatData?, // This one is already serializable
-    val themeName: String? = null,
-    val imageEffectSettings: Map<String, ImageEffectSettings>? = null,
-    val recycledUris: List<String>? = null
+    val sunatData: SelectedSunatData? // This one is already serializable
 )
 
 data class SerializableCoverPageConfig(
-    val clientNameStyle: SerializableTextStyleConfig?,
+    val clientNameStyle: SerializableTextStyleConfig,
     val showClientPrefix: Boolean,
     val documentType: Int, // ordinal of DocumentType enum
-    val rucStyle: SerializableTextStyleConfig?,
-    val subtitleStyle: SerializableTextStyleConfig?,
+    val rucStyle: SerializableTextStyleConfig,
+    val subtitleStyle: SerializableTextStyleConfig,
     val showAddressPrefix: Boolean,
     val allCaps: Boolean,
     val mainImageUri: String?,
@@ -32,28 +29,9 @@ data class SerializableCoverPageConfig(
     val separationWeight: Float,
     val photoWeight: Float,
     val photoStyle: SerializableRowStyle,
-    val quality: Int?,
-    val pageBackgroundColor: Int?,
-    val imageBorderSettingsMap: Map<String, SerializableImageBorderSettings>?,
-    val templateName: String?,
-    val forceFullResCover: Boolean? = false,
-    val useHybridPdfMode: Boolean? = false,
-    val hybridCoverImageQuality: Int? = 100,
-    val hybridInnerImagesQuality: Int? = 100,
-    val generatedBackgroundConfig: SerializableGeneratedBackgroundConfig? = null
-)
-
-data class SerializableGeneratedBackgroundConfig(
-    val patternType: Int, // ordinal of BackgroundPatternType enum
-    val opacity: Float,
-    val size: Float,
-    val density: Float,
-    val enabled: Boolean
-)
-
-data class SerializableImageBorderSettings(
-    val style: Int, // ordinal of ImageBorderStyle
-    val size: Float
+    val imageQuality: Int?,
+    val autoAdjustSize: Boolean?,
+    val templateName: String?
 )
 
 data class SerializablePageGroup(
@@ -62,10 +40,9 @@ data class SerializablePageGroup(
     val orientation: Int, // ordinal of PageOrientation enum
     val photosPerSheet: Int,
     val sheetCount: Int,
-    val optionalTextStyle: SerializableTextStyleConfig?,
+    val optionalTextStyle: SerializableTextStyleConfig,
     val imageUris: List<String>,
-    val imageSpacing: Float,
-    val smartLayoutEnabled: Boolean?
+    val imageSpacing: Float
 )
 
 data class SerializableTextStyleConfig(

@@ -128,8 +128,7 @@ fun PageGroup.toSerializable() = SerializablePageGroup(
     sheetCount = this.sheetCount,
     optionalTextStyle = this.optionalTextStyle.toSerializable(),
     imageUris = this.imageUris,
-    imageSpacing = this.imageSpacing,
-    smartLayoutEnabled = this.smartLayoutEnabled
+    imageSpacing = this.imageSpacing
 )
 
 fun SerializablePageGroup.toDomain() = PageGroup(
@@ -138,10 +137,9 @@ fun SerializablePageGroup.toDomain() = PageGroup(
     orientation = PageOrientation.values()[this.orientation],
     photosPerSheet = this.photosPerSheet,
     sheetCount = this.sheetCount,
-    optionalTextStyle = this.optionalTextStyle?.toDomain() ?: TextStyleConfig(id = "pageGroupOptionalText"),
+    optionalTextStyle = this.optionalTextStyle.toDomain(),
     imageUris = this.imageUris,
-    imageSpacing = this.imageSpacing,
-    smartLayoutEnabled = this.smartLayoutEnabled ?: false
+    imageSpacing = this.imageSpacing
 )
 
 // Mappers for CoverPageConfig
@@ -165,23 +163,17 @@ fun CoverPageConfig.toSerializable() = SerializableCoverPageConfig(
     separationWeight = this.separationWeight,
     photoWeight = this.photoWeight,
     photoStyle = this.photoStyle.toSerializable(),
-    quality = this.quality,
-    pageBackgroundColor = this.pageBackgroundColor,
-    imageBorderSettingsMap = this.imageBorderSettingsMap.mapValues { it.value.toSerializable() },
-    templateName = this.templateName,
-    forceFullResCover = this.forceFullResCover,
-    useHybridPdfMode = this.useHybridPdfMode,
-    hybridCoverImageQuality = this.hybridCoverImageQuality,
-    hybridInnerImagesQuality = this.hybridInnerImagesQuality,
-    generatedBackgroundConfig = this.generatedBackgroundConfig?.toSerializable()
+    imageQuality = this.imageQuality,
+    autoAdjustSize = this.autoAdjustSize,
+    templateName = this.templateName
 )
 
 fun SerializableCoverPageConfig.toDomain() = CoverPageConfig(
-    clientNameStyle = this.clientNameStyle?.toDomain() ?: TextStyleConfig(id = DefaultCoverConfig.CLIENT_NAME_ID),
+    clientNameStyle = this.clientNameStyle.toDomain(),
     showClientPrefix = this.showClientPrefix,
     documentType = DocumentType.values()[this.documentType],
-    rucStyle = this.rucStyle?.toDomain() ?: TextStyleConfig(id = DefaultCoverConfig.RUC_ID),
-    subtitleStyle = this.subtitleStyle?.toDomain() ?: TextStyleConfig(id = DefaultCoverConfig.SUBTITLE_ID),
+    rucStyle = this.rucStyle.toDomain(),
+    subtitleStyle = this.subtitleStyle.toDomain(),
     showAddressPrefix = this.showAddressPrefix,
     allCaps = this.allCaps,
     mainImageUri = this.mainImageUri,
@@ -196,51 +188,14 @@ fun SerializableCoverPageConfig.toDomain() = CoverPageConfig(
     separationWeight = this.separationWeight,
     photoWeight = this.photoWeight,
     photoStyle = this.photoStyle.toDomain(),
-    quality = this.quality ?: 90,
-    pageBackgroundColor = this.pageBackgroundColor,
-    imageBorderSettingsMap = this.imageBorderSettingsMap?.mapValues { it.value.toDomain() } ?: emptyMap(),
-    templateName = this.templateName,
-    forceFullResCover = this.forceFullResCover ?: false,
-    useHybridPdfMode = this.useHybridPdfMode ?: false,
-    hybridCoverImageQuality = this.hybridCoverImageQuality ?: 100,
-    hybridInnerImagesQuality = this.hybridInnerImagesQuality ?: 100,
-    generatedBackgroundConfig = this.generatedBackgroundConfig?.toDomain()
-)
-
-// Mappers for GeneratedBackgroundConfig
-fun GeneratedBackgroundConfig.toSerializable() = SerializableGeneratedBackgroundConfig(
-    patternType = this.patternType.ordinal,
-    opacity = this.opacity,
-    size = this.size,
-    density = this.density,
-    enabled = this.enabled
-)
-
-fun SerializableGeneratedBackgroundConfig.toDomain() = GeneratedBackgroundConfig(
-    patternType = BackgroundPatternType.values()[this.patternType],
-    opacity = this.opacity,
-    size = this.size,
-    density = this.density,
-    enabled = this.enabled
-)
-
-// Mappers for ImageBorderSettings
-fun ImageBorderSettings.toSerializable() = SerializableImageBorderSettings(
-    style = this.style.ordinal,
-    size = this.size
-)
-
-fun SerializableImageBorderSettings.toDomain() = ImageBorderSettings(
-    style = ImageBorderStyle.values()[this.style],
-    size = this.size
+    imageQuality = this.imageQuality ?: 90,
+    autoAdjustSize = this.autoAdjustSize ?: true,
+    templateName = this.templateName
 )
 
 // Mapper for the top-level project state
 fun SerializableProjectState.toDomain() = ProjectState(
     coverConfig = this.coverConfig.toDomain(),
     pageGroups = this.pageGroups.map { it.toDomain() },
-    sunatData = this.sunatData,
-    themeName = this.themeName ?: "Oscuro",
-    imageEffectSettings = this.imageEffectSettings ?: emptyMap(),
-    recycledUris = this.recycledUris ?: emptyList()
+    sunatData = this.sunatData
 )

@@ -84,38 +84,18 @@ fun CreateEditGroupDialog(
                     singleLine = true
                 )
 
-                if (!editingGroup.smartLayoutEnabled) {
-                    Text(stringResource(R.string.group_orientation_label), style = MaterialTheme.typography.labelMedium)
-                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                        SegmentedButton(
-                            selected = editingGroup.orientation == PageOrientation.Vertical,
-                            onClick = { viewModel.onEditingGroupOrientationChange(PageOrientation.Vertical) },
-                            shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
-                        ) { Text(stringResource(R.string.orientation_vertical)) }
-                        SegmentedButton(
-                            selected = editingGroup.orientation == PageOrientation.Horizontal,
-                            onClick = { viewModel.onEditingGroupOrientationChange(PageOrientation.Horizontal) },
-                            shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
-                        ) { Text(stringResource(R.string.orientation_horizontal)) }
-                    }
-
-                    OutlinedTextField(
-                        value = sheetCountString,
-                        onValueChange = {
-                            sheetCountString = it
-                            viewModel.onEditingGroupSheetCountChange(it)
-                        },
-                        label = { Text(stringResource(R.string.sheet_count_label)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true,
-                        isError = editingGroup.sheetCount <= 0,
-                        supportingText = {
-                            if (editingGroup.sheetCount <= 0) {
-                                Text(stringResource(id = R.string.error_sheet_count_invalid))
-                            }
-                        }
-                    )
+                Text(stringResource(R.string.group_orientation_label), style = MaterialTheme.typography.labelMedium)
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    SegmentedButton(
+                        selected = editingGroup.orientation == PageOrientation.Vertical,
+                        onClick = { viewModel.onEditingGroupOrientationChange(PageOrientation.Vertical) },
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                    ) { Text(stringResource(R.string.orientation_vertical)) }
+                    SegmentedButton(
+                        selected = editingGroup.orientation == PageOrientation.Horizontal,
+                        onClick = { viewModel.onEditingGroupOrientationChange(PageOrientation.Horizontal) },
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                    ) { Text(stringResource(R.string.orientation_horizontal)) }
                 }
 
                 Text(stringResource(R.string.photos_per_sheet_label), style = MaterialTheme.typography.labelMedium)
@@ -131,6 +111,24 @@ fun CreateEditGroupDialog(
                         shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
                     ) { Text(stringResource(R.string.two_photos)) }
                 }
+
+                OutlinedTextField(
+                    value = sheetCountString,
+                    onValueChange = {
+                        sheetCountString = it
+                        viewModel.onEditingGroupSheetCountChange(it)
+                    },
+                    label = { Text(stringResource(R.string.sheet_count_label)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    isError = editingGroup.sheetCount <= 0,
+                    supportingText = {
+                        if (editingGroup.sheetCount <= 0) {
+                            Text(stringResource(id = R.string.error_sheet_count_invalid))
+                        }
+                    }
+                )
 
                 OutlinedTextField(
                     value = imageSpacingString,
@@ -150,12 +148,7 @@ fun CreateEditGroupDialog(
                     onClick = { navController.navigate(Screen.GroupHeaderStyle.route) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    val buttonText = if (editingGroup.optionalTextStyle.content.isNotBlank()) {
-                        stringResource(id = R.string.dialog_edit_header_button)
-                    } else {
-                        stringResource(id = R.string.dialog_add_header_button)
-                    }
-                    Text(buttonText)
+                    Text("Agregar Encabezado a Grupo")
                 }
 
                 if (originalGroup != null && originalGroup.imageUris.isNotEmpty() && !isConfigValid && editingGroup.sheetCount > 0) {

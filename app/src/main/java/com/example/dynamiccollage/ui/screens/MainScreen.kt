@@ -4,37 +4,20 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoFixHigh
-import androidx.compose.material.icons.filled.Brush
-import androidx.compose.material.icons.filled.Collections
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.DeleteForever
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.PhotoLibrary
-import androidx.compose.material.icons.filled.PictureAsPdf
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.outlined.Tonality
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import com.example.dynamiccollage.ui.components.ConfirmationDialog
-import com.example.dynamiccollage.ui.components.LoadingDialog
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -47,7 +30,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
@@ -68,7 +50,8 @@ import com.example.dynamiccollage.viewmodel.SaveState
 @Composable
 fun MainScreen(
     navController: NavController,
-    projectViewModel: ProjectViewModel
+    projectViewModel: ProjectViewModel,
+    onThemeChange: (String) -> Unit
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -92,6 +75,8 @@ fun MainScreen(
     }
 
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var showThemeDialog by remember { mutableStateOf(false) }
+    var showContentEntryDialog by remember { mutableStateOf(false) }
     val pdfGenerationState by projectViewModel.pdfGenerationState.collectAsState()
     val shareablePdfUri by projectViewModel.shareablePdfUri.collectAsState()
     val saveState by projectViewModel.saveState.collectAsState()
@@ -161,40 +146,89 @@ fun MainScreen(
         }
     }
 
-    ConfirmationDialog(
-        show = showDeleteConfirmDialog,
-        onDismiss = { showDeleteConfirmDialog = false },
-        onConfirm = {
-            projectViewModel.resetProject(context)
-            Toast.makeText(context, context.getString(R.string.project_deleted_toast), Toast.LENGTH_SHORT).show()
-        },
-        title = stringResource(id = R.string.delete_project_dialog_title),
-        message = stringResource(id = R.string.delete_project_dialog_message)
-    )
-
-    if (pdfGenerationState is com.example.dynamiccollage.viewmodel.PdfGenerationState.Loading) {
-        LoadingDialog(message = "Generando PDF...")
+    if (showDeleteConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            title = { Text(stringResource(id = R.string.delete_project_dialog_title)) },
+            text = { Text(stringResource(id = R.string.delete_project_dialog_message)) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        projectViewModel.resetProject(context)
+                        showDeleteConfirmDialog = false
+                        Toast.makeText(context, context.getString(R.string.project_deleted_toast), Toast.LENGTH_SHORT).show()
+                    }
+                ) { Text(stringResource(id = R.string.delete_button)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                    Text(stringResource(id = R.string.cancel_button))
+                }
+            }
+        )
     }
 
+    if (showThemeDialog) {
+        AlertDialog(
+            onDismissRequest = { showThemeDialog = false },
+            title = { Text("Seleccionar Tema") },
+            text = {
+                Column {
+                    val themes = listOf("Claro", "Oscuro", "Descanso")
+                    themes.forEach { themeName ->
+                        TextButton(onClick = {
+                            onThemeChange(themeName)
+                            showThemeDialog = false
+                        }) {
+                            Text(themeName, color = MaterialTheme.colorScheme.onSurface)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showThemeDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    if (showContentEntryDialog) {
+        AlertDialog(
+            onDismissRequest = { showContentEntryDialog = false },
+            title = { Text("Gestionar Contenido") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(
+                        onClick = {
+                            showContentEntryDialog = false
+                            navController.navigate(Screen.InnerPages.route)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Ingreso Manual")
+                    }
+                    TextButton(
+                        onClick = {},
+                        enabled = false,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Ingreso Inteligente (Próximamente)")
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showContentEntryDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Palette,
-                            contentDescription = "Logo Paleta",
-                            modifier = Modifier.padding(end = 4.dp)
-                        )
-                        Icon(
-                            imageVector = Icons.Default.Brush,
-                            contentDescription = "Logo Pincel",
-                            modifier = Modifier.padding(end = 8.dp)
-                        )
-                        Text(stringResource(id = R.string.app_name))
-                    }
-                },
+                title = { Text(stringResource(id = R.string.app_name)) },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
@@ -210,59 +244,50 @@ fun MainScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             MainButton(
-                text = stringResource(R.string.main_btn_get_data),
-                onClick = { navController.navigate(Screen.SunatData.route) },
-                icon = Icons.Default.Search
+                text = "Obtener Datos Sunat",
+                onClick = { navController.navigate(Screen.SunatData.route) }
             )
             MainButton(
                 text = stringResource(R.string.main_btn_cover_setup),
-                onClick = { navController.navigate(Screen.CoverSetup.route) },
-                icon = Icons.Default.Settings
+                onClick = { navController.navigate(Screen.CoverSetup.route) }
             )
             MainButton(
                 text = "Gestionar Contenido",
-                onClick = { navController.navigate(Screen.InnerPages.route) },
-                icon = Icons.Default.Collections
+                onClick = { showContentEntryDialog = true }
+            )
+            MainButton(
+                text = "Gestionar Tamaño",
+                onClick = { navController.navigate(Screen.SizeManager.route) }
             )
             MainButton(
                 text = stringResource(R.string.main_btn_preview_pdf),
                 onClick = {
                     projectViewModel.generatePdf(context, "collage_report")
-                },
-                icon = Icons.Default.PictureAsPdf
+                }
             )
             MainButton(
-                text = "Diseño Avanzado",
-                onClick = { navController.navigate(Screen.AdvancedDesign.route) },
-                icon = Icons.Default.AutoFixHigh
+                text = stringResource(R.string.main_btn_templates),
+                onClick = {
+                    Toast.makeText(context, "Plantillas: Próximamente", Toast.LENGTH_SHORT).show()
+                }
             )
             MainButton(
-                text = "Temas",
-                onClick = { navController.navigate(Screen.ThemeSelection.route) },
-                icon = Icons.Outlined.Tonality
+                text = "Tema",
+                onClick = { showThemeDialog = true }
             )
             Spacer(modifier = Modifier.weight(1f))
             MainButton(
                 text = "Gestionar Imágenes",
                 onClick = {
                     navController.navigate(Screen.ImageManager.route)
-                },
-                icon = Icons.Default.PhotoLibrary
-            )
-            MainButton(
-                text = "Papelera",
-                onClick = {
-                    navController.navigate(Screen.RecycleBin.route)
-                },
-                icon = Icons.Default.Delete
+                }
             )
             Spacer(modifier = Modifier.height(16.dp))
             MainButton(
                 text = stringResource(R.string.main_btn_delete_project),
                 onClick = { showDeleteConfirmDialog = true },
                 buttonColor = MaterialTheme.colorScheme.errorContainer,
-                textColor = MaterialTheme.colorScheme.onErrorContainer,
-                icon = Icons.Default.DeleteForever
+                textColor = MaterialTheme.colorScheme.onErrorContainer
             )
         }
     }
@@ -273,8 +298,7 @@ fun MainButton(
     text: String,
     onClick: () -> Unit,
     buttonColor: Color? = null,
-    textColor: Color? = null,
-    icon: ImageVector? = null
+    textColor: Color? = null
 ) {
     val colors = if (buttonColor != null) {
         ButtonDefaults.buttonColors(containerColor = buttonColor)
@@ -290,20 +314,7 @@ fun MainButton(
             .height(48.dp),
         colors = colors
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            if (icon != null) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null, // Decorative icon
-                    modifier = Modifier.padding(end = 8.dp),
-                    tint = textFinalColor
-                )
-            }
-            Text(text.uppercase(), color = textFinalColor)
-        }
+        Text(text.uppercase(), color = textFinalColor)
     }
 }
 
@@ -314,7 +325,8 @@ fun MainScreenPreview() {
         val context = LocalContext.current
         MainScreen(
             navController = rememberNavController(),
-            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity)
+            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity),
+            onThemeChange = {}
         )
     }
 }
@@ -326,7 +338,8 @@ fun MainScreenDarkPreview() {
         val context = LocalContext.current
         MainScreen(
             navController = rememberNavController(),
-            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity)
+            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity),
+            onThemeChange = {}
         )
     }
 }

@@ -1,39 +1,33 @@
 package com.example.dynamiccollage.ui.screens
 
+
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.ParcelFileDescriptor
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.dynamiccollage.R
-import com.example.dynamiccollage.ui.components.ZoomableImage
 import com.example.dynamiccollage.viewmodel.ProjectViewModel
 import java.io.File
-
-// Data class to hold the state for the PDF renderer.
-data class RendererState(
-    val renderer: PdfRenderer?,
-    val pageCount: Int,
-    val pfd: ParcelFileDescriptor?
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,14 +65,6 @@ fun PdfPreviewScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        navController.navigate(com.example.dynamiccollage.ui.navigation.Screen.PhotoSwap.route)
-                    }) {
-                        Icon(
-                            imageVector = Icons.Filled.Edit,
-                            contentDescription = "Ordenar Fotos"
-                        )
-                    }
                     if (file != null) {
                         IconButton(onClick = {
                             projectViewModel.createShareableUriForFile(context, file)
@@ -119,99 +105,66 @@ fun PdfPreviewScreen(
     }
 }
 
-
 @Composable
 fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
     val context = LocalContext.current
-
-    val rendererState by remember(uri) {
-        mutableStateOf(
-            try {
-                val pfd = context.contentResolver.openFileDescriptor(uri, "r")
-                val renderer = pfd?.let { PdfRenderer(it) }
-                RendererState(
-                    renderer = renderer,
-                    pageCount = renderer?.pageCount ?: 0,
-                    pfd = pfd
-                )
-            } catch (e: Exception) {
-                RendererState(null, 0, null)
-            }
-        )
+    val renderer = remember {
+        val pfd = context.contentResolver.openFileDescriptor(uri, "r")
+        pfd?.let { PdfRenderer(it) }
     }
 
-    DisposableEffect(rendererState) {
-        onDispose {
-            rendererState.renderer?.close()
-            rendererState.pfd?.close()
-        }
-    }
-
-    if (rendererState.renderer == null) {
+    if (renderer == null) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text("Error opening PDF")
         }
         return
     }
 
+    val pageCount = renderer.pageCount
+    val bitmaps = remember { mutableStateListOf<Bitmap>() }
+    val density = LocalDensity.current.density
+
+    LaunchedEffect(Unit) {
+        for (i in 0 until pageCount) {
+            val page = renderer.openPage(i)
+            val bitmap = Bitmap.createBitmap(
+                (page.width * density).toInt(),
+                (page.height * density).toInt(),
+                Bitmap.Config.ARGB_8888
+            )
+            page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+            bitmaps.add(bitmap)
+            page.close()
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            renderer.close()
+        }
+    }
+
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        items(count = rendererState.pageCount) { index ->
-            PdfPage(
-                renderer = rendererState.renderer!!,
-                pageIndex = index
+        itemsIndexed(bitmaps) { index, bitmap ->
+            Image(
+                bitmap = bitmap.asImageBitmap(),
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White)
+                    .padding(8.dp),
+                contentScale = ContentScale.Fit
             )
-            if (index < rendererState.pageCount - 1) {
+            if (index < bitmaps.size - 1) {
                 Divider(
                     color = Color.Gray,
                     thickness = 1.dp,
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun PdfPage(
-    renderer: PdfRenderer,
-    pageIndex: Int
-) {
-    val density = LocalDensity.current.density
-    var bitmap by remember(renderer, pageIndex) { mutableStateOf<Bitmap?>(null) }
-    var isLoading by remember { mutableStateOf(true) }
-
-    LaunchedEffect(key1 = renderer, key2 = pageIndex) {
-        isLoading = true
-        val page = renderer.openPage(pageIndex)
-        val newBitmap = Bitmap.createBitmap(
-            (page.width * density).toInt(),
-            (page.height * density).toInt(),
-            Bitmap.Config.ARGB_8888
-        )
-        page.render(newBitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-        page.close()
-        bitmap = newBitmap
-        isLoading = false
-    }
-
-    if (isLoading) {
-        Box(modifier = Modifier
-            .fillMaxWidth()
-            .height(500.dp)
-            .background(Color.LightGray)) {
-            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-        }
-    } else {
-        bitmap?.let {
-            ZoomableImage(
-                bitmap = it.asImageBitmap(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White)
-            )
         }
     }
 }

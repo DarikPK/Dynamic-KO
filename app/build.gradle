@@ -1,16 +1,10 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id 'com.google.gms.google-services'
 }
 
 android {
-    sourceSets {
-        main {
-            assets.srcDirs = ['src/main/assets']
-            // 👇 Fuerza a Gradle a incluir los archivos sin extensión
-            assets.include '**/Identity-H', '**/Identity-V'
-        }
-    }
     namespace 'com.example.dynamiccollage'
     compileSdk 34
 
@@ -77,6 +71,11 @@ dependencies {
 
     // PDFBox para Android
     implementation 'com.tom-roush:pdfbox-android:2.0.27.0'
+
+    // Firebase
+    implementation platform('com.google.firebase:firebase-bom:33.0.0')
+    implementation 'com.google.firebase:firebase-auth-ktx'
+    implementation 'com.google.firebase:firebase-firestore-ktx'
 
     // Retrofit for networking
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'

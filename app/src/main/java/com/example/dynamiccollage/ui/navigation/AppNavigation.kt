@@ -14,22 +14,85 @@ import com.example.dynamiccollage.viewmodel.*
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
+import com.example.dynamiccollage.ui.screens.auth.*
+
 @Composable
 fun AppNavigation(
-    projectViewModel: ProjectViewModel
+    projectViewModel: ProjectViewModel,
+    onThemeChange: (String) -> Unit,
+    mainViewModel: MainViewModel,
+    loginViewModel: LoginViewModel,
+    controlPanelViewModel: ControlPanelViewModel
 ) {
+    val context = LocalContext.current
     val coverSetupViewModel: CoverSetupViewModel = viewModel()
     val rowStyleViewModel: RowStyleViewModel = viewModel()
     val sunatDataViewModel: SunatDataViewModel = viewModel()
     val innerPagesViewModel: InnerPagesViewModel = viewModel(factory = InnerPagesViewModelFactory(projectViewModel))
+    val sizeManagerViewModel: SizeManagerViewModel = viewModel()
     val navController = rememberNavController()
+    val userState by mainViewModel.userState.collectAsState()
 
-    NavHost(navController = navController, startDestination = Screen.Main.route) {
+    NavHost(navController = navController, startDestination = "auth_flow") {
+        navigation(startDestination = "splash", route = "auth_flow") {
+            composable("splash") {
+                // A simple splash screen to decide where to go
+                when (userState) {
+                    is UserState.Authenticated -> {
+                        val user = (userState as UserState.Authenticated).user
+                        navController.navigate(Screen.Main.route) {
+                            popUpTo("auth_flow") { inclusive = true }
+                        }
+                    }
+                    is UserState.Unauthenticated -> {
+                        navController.navigate(AuthScreen.Login.route) {
+                            popUpTo("auth_flow") { inclusive = true }
+                        }
+                    }
+                    is UserState.Blocked -> {
+                        navController.navigate(AuthScreen.Blocked.route) {
+                            popUpTo("auth_flow") { inclusive = true }
+                        }
+                    }
+                    is UserState.Loading -> {
+                        // Show a loading indicator
+                    }
+                }
+            }
+            composable(AuthScreen.Login.route) {
+                LoginScreen(
+                    loginViewModel = loginViewModel,
+                    onLoginSuccess = {
+                        mainViewModel.checkUser()
+                    }
+                )
+            }
+            composable(AuthScreen.Blocked.route) {
+                BlockedScreen()
+            }
+        }
         composable(Screen.Main.route) {
-            MainScreen(
-                navController = navController,
-                projectViewModel = projectViewModel
-            )
+            val user = (userState as? UserState.Authenticated)?.user
+            if (user != null) {
+                com.example.dynamiccollage.ui.screens.auth.MainScreen(
+                    user = user,
+                    onLogout = {
+                        // No need for this logout, as it's handled by the auth state
+                    },
+                    onGoToControlPanel = {
+                        navController.navigate(AuthScreen.ControlPanel.route)
+                    }
+                )
+            }
+        }
+        composable(AuthScreen.ControlPanel.route) {
+            val user = (userState as? UserState.Authenticated)?.user
+            if (user != null) {
+                ControlPanelScreen(
+                    controlPanelViewModel = controlPanelViewModel,
+                    parentId = user.uid
+                )
+            }
         }
         composable(Screen.CoverSetup.route) {
             CoverSetupScreen(
@@ -41,6 +104,7 @@ fun AppNavigation(
         composable(Screen.InnerPages.route) {
             InnerPagesScreen(
                 navController = navController,
+                projectViewModel = projectViewModel,
                 innerPagesViewModel = innerPagesViewModel
             )
         }
@@ -76,19 +140,11 @@ fun AppNavigation(
         composable(Screen.ImageManager.route) {
             ImageManagerScreen(navController = navController, projectViewModel = projectViewModel)
         }
-        composable(Screen.AdvancedDesign.route) {
-            AdvancedDesignScreen(navController = navController)
-        }
-        composable(Screen.SheetBackground.route) {
-            SheetBackgroundScreen(navController = navController, projectViewModel = projectViewModel)
-        }
-        composable(Screen.ImageBorders.route) {
-            ImageBordersScreen(navController = navController, projectViewModel = projectViewModel)
-        }
         composable(Screen.SizeManager.route) {
             SizeManagerScreen(
                 navController = navController,
-                projectViewModel = projectViewModel
+                projectViewModel = projectViewModel,
+                sizeManagerViewModel = sizeManagerViewModel
             )
         }
         composable(Screen.AdvancedCoverOptions.route) {
@@ -119,19 +175,16 @@ fun AppNavigation(
             )
         }
         composable(
-            route = Screen.ColorPicker.route + "/{colorType}/{fieldId}/{initialColor}",
+            route = Screen.ColorPicker.route + "/{fieldId}/{initialColor}",
             arguments = listOf(
-                navArgument("colorType") { type = NavType.StringType },
-                navArgument("fieldId") { type = NavType.StringType; nullable = true },
+                navArgument("fieldId") { type = NavType.StringType },
                 navArgument("initialColor") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val colorType = backStackEntry.arguments?.getString("colorType") ?: ""
-            val fieldId = backStackEntry.arguments?.getString("fieldId")
+            val fieldId = backStackEntry.arguments?.getString("fieldId") ?: ""
             val initialColorHex = backStackEntry.arguments?.getString("initialColor") ?: "FFFFFF"
             ColorPickerScreen(
                 navController = navController,
-                colorType = colorType,
                 fieldId = fieldId,
                 initialColorHex = initialColorHex
             )
@@ -146,53 +199,6 @@ fun AppNavigation(
                 navController = navController,
                 projectViewModel = projectViewModel,
                 imageUri = decodedImageUri
-            )
-        }
-        composable(Screen.ThemeSelection.route) {
-            ThemeSelectionScreen(
-                navController = navController,
-                projectViewModel = projectViewModel
-            )
-        }
-        composable(Screen.PhotoSwap.route) {
-            PhotoSwapScreen(
-                navController = navController,
-                projectViewModel = projectViewModel
-            )
-        }
-        composable(Screen.RecycleBin.route) {
-            RecycleBinScreen(
-                navController = navController,
-                projectViewModel = projectViewModel
-            )
-        }
-        composable(Screen.HybridQuality.route) {
-            HybridQualityScreen(
-                navController = navController,
-                projectViewModel = projectViewModel
-            )
-        }
-        composable(Screen.ColorThemeSelection.route) {
-            ColorThemeSelectionScreen(
-                navController = navController,
-                projectViewModel = projectViewModel
-            )
-        }
-        composable(Screen.GeneratedBackground.route) {
-            GeneratedBackgroundScreen(
-                navController = navController,
-                projectViewModel = projectViewModel
-            )
-        }
-        composable(Screen.SheetDesign.route) {
-            SheetDesignScreen(
-                navController = navController
-            )
-        }
-        composable(Screen.SheetBackgroundOptions.route) {
-            SheetBackgroundOptionsScreen(
-                navController = navController,
-                projectViewModel = projectViewModel
             )
         }
     }
