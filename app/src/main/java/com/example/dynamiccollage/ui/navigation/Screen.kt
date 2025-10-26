@@ -25,6 +25,8 @@ sealed class Screen(val route: String) {
     object ColorThemeSelection : Screen("color_theme_selection_screen")
     object HybridQuality : Screen("hybrid_quality_screen")
     object GeneratedBackground : Screen("generated_background_screen")
+    object SheetDesign : Screen("sheet_design_screen")
+    object SheetBackgroundOptions : Screen("sheet_background_options_screen")
     // object Settings : Screen("settings_screen") // Ejemplo si se necesitara
 
     fun withArgs(vararg args: String): String {

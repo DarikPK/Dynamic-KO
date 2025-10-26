@@ -16,13 +16,13 @@ import com.example.dynamiccollage.ui.navigation.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AdvancedDesignScreen(
+fun SheetDesignScreen(
     navController: NavController
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Diseño Avanzado") },
+                title = { Text("Diseño de Hoja") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
@@ -39,28 +39,16 @@ fun AdvancedDesignScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Button(
-                onClick = { navController.navigate(Screen.SheetDesign.route) },
+                onClick = { navController.navigate(Screen.SheetBackgroundOptions.route) },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Diseño de Hoja")
+                Text("Fondo de Hoja(s)")
             }
             Button(
-                onClick = { navController.navigate(Screen.ImageBorders.route) },
+                onClick = { navController.navigate(Screen.GeneratedBackground.route) },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Bordes de Imágenes")
-            }
-            Button(
-                onClick = { navController.navigate(Screen.ColorThemeSelection.route) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Color Texto/Tablas")
-            }
-            Button(
-                onClick = { navController.navigate(Screen.HybridQuality.route) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Calidad de Imagen (Híbrido)")
+                Text("Mosaico")
             }
         }
     }

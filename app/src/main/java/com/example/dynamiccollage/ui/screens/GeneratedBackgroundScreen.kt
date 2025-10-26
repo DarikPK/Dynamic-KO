@@ -34,7 +34,7 @@ fun GeneratedBackgroundScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Fondo Generado") },
+                title = { Text("Mosaico") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
@@ -55,7 +55,7 @@ fun GeneratedBackgroundScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Habilitar Fondo Generado", style = MaterialTheme.typography.titleMedium)
+                Text("Habilitar Mosaico", style = MaterialTheme.typography.titleMedium)
                 Switch(
                     checked = config.enabled,
                     onCheckedChange = { isChecked ->
