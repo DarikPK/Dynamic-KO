@@ -29,8 +29,7 @@ class PdfPreviewViewModel(private val projectViewModel: ProjectViewModel) : View
                 // Cuando se implemente una librería de renderizado, generará los bitmaps reales.
                 PdfGenerator.generatePreviewBitmaps(
                     context = context,
-                    coverConfig = projectViewModel.currentCoverConfig.value,
-                    pageGroups = projectViewModel.currentPageGroups.value
+                    generatedPages = projectViewModel.generatedPages.value
                 )
             }
             _previewBitmaps.value = bitmaps

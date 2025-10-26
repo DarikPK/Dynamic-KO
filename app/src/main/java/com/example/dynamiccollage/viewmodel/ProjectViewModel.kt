@@ -36,6 +36,9 @@ class ProjectViewModel : ViewModel() {
     private val _currentPageGroups = MutableStateFlow<List<PageGroup>>(emptyList())
     val currentPageGroups: StateFlow<List<PageGroup>> = _currentPageGroups.asStateFlow()
 
+    private val _generatedPages = MutableStateFlow<List<com.example.dynamiccollage.data.model.GeneratedPage>>(emptyList())
+    val generatedPages: StateFlow<List<com.example.dynamiccollage.data.model.GeneratedPage>> = _generatedPages.asStateFlow()
+
     private val _sunatData = MutableStateFlow<SelectedSunatData?>(null)
     val sunatData: StateFlow<SelectedSunatData?> = _sunatData.asStateFlow()
 
@@ -135,11 +138,12 @@ class ProjectViewModel : ViewModel() {
             _pdfGenerationState.value = PdfGenerationState.Loading
             val generatedFile = withContext(Dispatchers.IO) {
                 val photosPerPage = _pdfSizeMode.value
-                val generatedPages = com.example.dynamiccollage.utils.PdfContentManager.groupImagesForPdf(
+                val newGeneratedPages = com.example.dynamiccollage.utils.PdfContentManager.groupImagesForPdf(
                     context,
                     innerUris,
                     photosPerPage
                 )
+                _generatedPages.value = newGeneratedPages
 
                 Log.d("ProjectViewModel", "generatePdf: En el hilo de IO, llamando a PdfGenerator.")
                 PdfGenerator.generate(
