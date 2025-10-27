@@ -79,7 +79,8 @@ fun AppNavigation(
             composable(Screen.Main.route) {
                 MainScreen(
                     navController = navController,
-                    projectViewModel = projectViewModel
+                    projectViewModel = projectViewModel,
+                    mainViewModel = mainViewModel
                 )
             }
         composable(Screen.CoverSetup.route) {

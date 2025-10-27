@@ -70,12 +70,12 @@ import com.example.dynamiccollage.viewmodel.UserState
 @Composable
 fun MainScreen(
     navController: NavController,
-    projectViewModel: ProjectViewModel
+    projectViewModel: ProjectViewModel,
+    mainViewModel: MainViewModel
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    val mainViewModel: MainViewModel = viewModel()
     val userState by mainViewModel.userState.collectAsState()
     val currentUser = (userState as? UserState.Authenticated)?.user
 
