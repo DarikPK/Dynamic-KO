@@ -64,6 +64,9 @@ fun AppNavigation(
                     loginViewModel = loginViewModel,
                     onLoginSuccess = {
                         mainViewModel.checkUser()
+                        navController.navigate("main_app_flow") {
+                            popUpTo("auth_flow") { inclusive = true }
+                        }
                     }
                 )
             }
