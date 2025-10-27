@@ -5,7 +5,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import android.widget.Toast
@@ -66,7 +66,7 @@ fun SunatDataScreen(
                 title = { Text("Obtener Datos de SUNAT") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
                     }
                 }
             )
@@ -261,9 +261,10 @@ fun SunatDataScreen(
                             if (addAnotherAddress) {
                                 OutlinedTextField(
                                     value = manualAddress,
-                                    onValueChange = { manualAddress = it.uppercase() },
+                                    onValueChange = { manualAddress = it.replace("\n", "").uppercase() },
                                     label = { Text("Dirección") },
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true
                                 )
                                 val districts = listOf(
                                     "Ancón", "Ate", "Barranco", "Breña", "Callao", "Carabayllo", "Cercado de Lima",
@@ -285,9 +286,10 @@ fun SunatDataScreen(
                                 ) {
                                     OutlinedTextField(
                                         value = manualDistrict,
-                                        onValueChange = { manualDistrict = it.uppercase() },
+                                        onValueChange = { manualDistrict = it.replace("\n", "").uppercase() },
                                         label = { Text("Distrito (Opcional)") },
-                                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                                        modifier = Modifier.menuAnchor().fillMaxWidth(),
+                                        singleLine = true
                                     )
                                     ExposedDropdownMenu(
                                         expanded = expanded,
@@ -314,9 +316,10 @@ fun SunatDataScreen(
                         if (useAddress) {
                             OutlinedTextField(
                                 value = manualAddress,
-                                onValueChange = { manualAddress = it.uppercase() },
+                                onValueChange = { manualAddress = it.replace("\n", "").uppercase() },
                                 label = { Text("Dirección") },
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
                             )
                             val districts = listOf(
                                 "Ancón", "Ate", "Barranco", "Breña", "Callao", "Carabayllo", "Cercado de Lima",
@@ -338,9 +341,10 @@ fun SunatDataScreen(
                             ) {
                                 OutlinedTextField(
                                     value = manualDistrict,
-                                    onValueChange = { manualDistrict = it.uppercase() },
+                                    onValueChange = { manualDistrict = it.replace("\n", "").uppercase() },
                                     label = { Text("Distrito (Opcional)") },
-                                    modifier = Modifier.menuAnchor().fillMaxWidth()
+                                    modifier = Modifier.menuAnchor().fillMaxWidth(),
+                                    singleLine = true
                                 )
                                 ExposedDropdownMenu(
                                     expanded = expanded,
@@ -385,7 +389,7 @@ fun SunatDataScreen(
                                 numeroDocumento = data.numeroDocumento,
                                 direccion = finalAddress
                             )
-                            projectViewModel.updateSunatData(selectedData)
+                            projectViewModel.updateSunatData(context, selectedData)
                             sunatDataViewModel.resetState()
                             navController.navigate(Screen.CoverSetup.route) {
                                 popUpTo(Screen.Main.route)

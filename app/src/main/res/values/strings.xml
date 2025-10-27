@@ -1,10 +1,13 @@
 <resources>
-    <string name="app_name">Dynamic Collage</string>
+    <string name="app_name">Pixel Collage</string>
 
     <!-- MainScreen Buttons -->
+    <string name="main_btn_use_image_compression">High Quality Mode (Hybrid)</string>
+    <string name="main_btn_get_data">Get Data</string>
     <string name="main_btn_cover_setup">Cover Setup</string>
     <string name="main_btn_inner_pages">Manage Inner Pages</string>
     <string name="main_btn_preview_pdf">PDF Preview</string>
+    <string name="main_btn_share_pdf">Share PDF</string>
     <string name="main_btn_templates">Save/Load Template</string>
     <string name="main_btn_generate_pdf">Generate PDF</string>
 
@@ -75,6 +78,8 @@
     <!-- Create/Edit Page Group Dialog -->
     <string name="dialog_create_group_title">Create New Group</string>
     <string name="dialog_edit_group_title">Edit Group</string>
+    <string name="dialog_add_header_button">Add Header to Group</string>
+    <string name="dialog_edit_header_button">Edit Group Header</string>
     <string name="group_name_label">Group Name (Optional)</string>
     <string name="group_orientation_label">Orientation</string>
     <string name="orientation_vertical">Vertical</string>
@@ -84,7 +89,7 @@
     <string name="two_photos">2 Photos</string>
     <string name="sheet_count_label">Number of Sheets</string>
     <string name="optional_text_label">Optional Text (1st page of group)</string>
-    <string name="all_caps_label">Mayúscula</string>
+    <string name="all_caps_label">All Caps</string>
     <string name="save_button">Save</string>
     <string name="cancel_button">Cancel</string>
     <string name="error_sheet_count_invalid">Number of sheets must be at least 1.</string>
@@ -92,9 +97,11 @@
 
     <!-- PageGroupItem -->
     <string name="group_item_unnamed_group">Unnamed Group (ID: %1$s…)</string>
+    <string name="group_item_layout_type">Layout Type</string>
     <string name="group_item_total_photos_required">Total Photos Required</string>
     <string name="group_item_photos_loaded">Photos Loaded</string>
-    <string name="error_photo_quota_not_met">Debe completar la cuota de fotos en todos los grupos antes de salir.</string>
+    <string name="error_photo_quota_not_met">You must complete the photo quota in all groups before exiting.</string>
+    <string name="error_all_groups_must_be_valid">All manual groups must meet their photo quota and all smart groups must have at least one photo.</string>
     <string name="group_item_add_images_button">Images</string>
     <string name="group_item_edit_button_description">Edit Group</string>
     <string name="group_item_delete_button_description">Delete Group</string>
@@ -104,4 +111,14 @@
     <string name="image_upload_quota_message">Required: %1$d / Loaded: %2$d</string>
     <string name="image_upload_add_photos_button">Add Photos</string>
     <string name="image_upload_done_button">Done</string>
+
+    <!-- Smart Layout -->
+    <string name="smart_layout_title">Smart Layout</string>
+    <string name="manual_layout_title">Manual Layout</string>
+    <string name="smart_layout_description">When enabled, new groups will automatically arrange photos by orientation.</string>
+
+    <!-- Image Border Styles -->
+    <string name="image_border_style_none">None</string>
+    <string name="image_border_style_curved">Curved</string>
+    <string name="image_border_style_chamfered">Chamfered</string>
 </resources>

@@ -1,41 +1,73 @@
 package com.example.dynamiccollage.utils
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Canvas
-import android.graphics.Matrix
-import android.graphics.Paint
-import android.graphics.RectF
+import android.graphics.*
 import android.graphics.pdf.PdfDocument
 import android.net.Uri
 import android.os.Environment
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
-import android.graphics.Typeface
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.core.content.res.ResourcesCompat
 import android.util.Log
-import com.example.dynamiccollage.R
-import com.example.dynamiccollage.data.model.CoverPageConfig
-import com.example.dynamiccollage.data.model.PageGroup
-import com.example.dynamiccollage.data.model.PageOrientation
-import com.example.dynamiccollage.data.model.RowStyle
-import com.example.dynamiccollage.data.model.TextStyleConfig
+import com.example.dynamiccollage.data.model.*
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.pdmodel.PDPage
 import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
+import com.tom_roush.pdfbox.pdmodel.common.PDRectangle
+import com.tom_roush.pdfbox.pdmodel.font.PDFont
 import com.tom_roush.pdfbox.pdmodel.font.PDType0Font
+import com.tom_roush.pdfbox.pdmodel.graphics.image.PDImageXObject
+import android.graphics.Color
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 
 object PdfGenerator {
+
+    private fun applyAllEffects(input: Bitmap, settings: ImageEffectSettings): Bitmap {
+        var processedBitmap = input
+
+        // 1. Apply Crop
+        settings.cropRect?.let { normalizedRect ->
+            if (normalizedRect.width > 0 && normalizedRect.height > 0) {
+                val left = (normalizedRect.left * processedBitmap.width).toInt()
+                val top = (normalizedRect.top * processedBitmap.height).toInt()
+                val width = (normalizedRect.width * processedBitmap.width).toInt()
+                val height = (normalizedRect.height * processedBitmap.height).toInt()
+
+                if (width > 0 && height > 0 && (left + width) <= processedBitmap.width && (top + height) <= processedBitmap.height) {
+                    processedBitmap = Bitmap.createBitmap(processedBitmap, left, top, width, height)
+                }
+            }
+        }
+
+        // 2. Apply Rotation
+        if (settings.rotationDegrees != 0f) {
+            val matrix = Matrix().apply { postRotate(settings.rotationDegrees) }
+            processedBitmap = Bitmap.createBitmap(processedBitmap, 0, 0, processedBitmap.width, processedBitmap.height, matrix, true)
+        }
+
+        // 3. Apply Color & Sharpness Effects
+        val contrast = 1.0f + settings.contrast / 100.0f
+        val saturation = 1.0f + settings.saturation / 100.0f
+        processedBitmap = ImageEffects.applyEffects(processedBitmap, settings.brightness, contrast, saturation)
+
+        val sharpness = settings.sharpness / 100.0f
+        if (sharpness > 0) {
+            processedBitmap = ImageEffects.applySharpen(processedBitmap, sharpness)
+        } else if (sharpness < 0) {
+            processedBitmap = ImageEffects.applyBlur(processedBitmap, -sharpness)
+        }
+
+        return processedBitmap
+    }
+
+    private enum class ImageAlignment { TOP, BOTTOM, LEFT, RIGHT, CENTER }
 
     private const val A4_WIDTH = 595
     private const val A4_HEIGHT = 842
@@ -44,383 +76,307 @@ object PdfGenerator {
     fun generate(
         context: Context,
         coverConfig: CoverPageConfig,
-        generatedPages: List<com.example.dynamiccollage.data.model.GeneratedPage>,
-        fileName: String
+        generatedPages: List<GeneratedPage>,
+        fileName: String,
+        imageEffectSettings: Map<String, ImageEffectSettings>
     ): File? {
+        if (coverConfig.useHybridPdfMode) {
+            return generateHybridPdf(context, coverConfig, generatedPages, fileName, imageEffectSettings)
+        }
+
+        if (coverConfig.forceFullResCover) {
+            // TODO: Implementar la ruta de generación con PDFBox
+            Log.d("PdfGenerator", "Usando la ruta de alta calidad con PDFBox.")
+            return generateWithPdfBox(context, coverConfig, generatedPages, fileName, imageEffectSettings)
+        }
+
+        // Ruta estándar con PdfDocument para previsualización rápida
+        Log.d("PdfGenerator", "Usando la ruta estándar con PdfDocument.")
         val pdfDocument = PdfDocument()
-        val uncompressedPdfStream = ByteArrayOutputStream()
+        val tempFile = File.createTempFile("uncompressed_pdf", ".pdf", context.cacheDir)
 
         try {
-            val quality = 90 // Calidad de imagen fija.
+            val quality = coverConfig.quality
 
             val shouldDrawCover = coverConfig.clientNameStyle.content.isNotBlank() ||
                     coverConfig.rucStyle.content.isNotBlank() ||
                     coverConfig.subtitleStyle.content.isNotBlank() ||
                     coverConfig.mainImageUri != null
 
+            val colorTheme = coverConfig.templateName?.let { name ->
+                ColorThemes.themes.find { it.name == name }
+            } ?: ColorThemes.themes.first()
             if (shouldDrawCover) {
-                drawCoverPage(pdfDocument, context, coverConfig, quality)
+                drawCoverPage(pdfDocument, context, coverConfig, quality, imageEffectSettings, renderImages = true, colorTheme)
             }
-            drawInnerPages(pdfDocument, context, generatedPages, if (shouldDrawCover) 2 else 1, quality)
+            drawInnerPages(pdfDocument, context, generatedPages, coverConfig, if (shouldDrawCover) 2 else 1, quality, imageEffectSettings, renderImages = true, colorTheme)
 
-            pdfDocument.writeTo(uncompressedPdfStream)
+            val fileOutputStream = FileOutputStream(tempFile)
+            pdfDocument.writeTo(fileOutputStream)
+            fileOutputStream.close()
             pdfDocument.close()
 
             val storageDir: File? = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
             storageDir?.mkdirs()
             val pdfFile = File(storageDir, "$fileName.pdf")
 
-            val pdDocument = PDDocument.load(uncompressedPdfStream.toByteArray())
+            val pdDocument = PDDocument.load(tempFile)
             pdDocument.version = 1.5f
             pdDocument.save(pdfFile)
             pdDocument.close()
 
             return pdfFile
         } catch (e: Exception) {
-            Log.e("PdfGenerator", "Error al generar PDF", e)
+            Log.e("PdfGenerator", "Error al generar PDF con PdfDocument", e)
             pdfDocument.close()
             return null
+        } finally {
+            if (tempFile.exists()) {
+                tempFile.delete()
+            }
         }
     }
 
-    private fun drawCoverPage(pdfDocument: PdfDocument, context: Context, config: CoverPageConfig, quality: Int) {
-        val pageWidth = if (config.pageOrientation == PageOrientation.Vertical) A4_WIDTH else A4_HEIGHT
-        val pageHeight = if (config.pageOrientation == PageOrientation.Vertical) A4_HEIGHT else A4_WIDTH
-        val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
-        val page = pdfDocument.startPage(pageInfo)
-        val canvas = page.canvas
-        drawCoverPageContent(canvas, context, config, quality, pageWidth, pageHeight)
-        pdfDocument.finishPage(page)
-    }
+// === FUNCIONES CORREGIDAS PARA PDFBOX EN ANDROID ===
 
-    private fun drawCoverPageContent(canvas: Canvas, context: Context, config: CoverPageConfig, quality: Int, pageWidth: Int, pageHeight: Int) {
+private fun generateWithPdfBox(
+    context: Context,
+    coverConfig: CoverPageConfig,
+    generatedPages: List<GeneratedPage>,
+    fileName: String,
+    imageEffectSettings: Map<String, ImageEffectSettings>
+): File? {
+    val pdDocument = PDDocument()
+    return try {
+        Log.d("PdfGenerator", "Iniciando ruta PDFBox (alta calidad)...")
+
+        val shouldDrawCover = coverConfig.clientNameStyle.content.isNotBlank() ||
+                coverConfig.rucStyle.content.isNotBlank() ||
+                coverConfig.subtitleStyle.content.isNotBlank() ||
+                coverConfig.mainImageUri != null
+
+        val colorTheme = coverConfig.templateName?.let { name ->
+            ColorThemes.themes.find { it.name == name }
+        } ?: ColorThemes.themes.first()
+        if (shouldDrawCover) {
+            drawCoverPageWithPdfBox(context, pdDocument, coverConfig, imageEffectSettings, colorTheme)
+        }
+        drawInnerPagesWithPdfBox(context, pdDocument, generatedPages, coverConfig, imageEffectSettings, colorTheme)
+
+        val storageDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+        storageDir?.mkdirs()
+        val pdfFile = File(storageDir, "$fileName.pdf")
+
+        pdDocument.save(pdfFile)
+        Log.d("PdfGenerator", "PDFBox: PDF guardado correctamente en ${pdfFile.absolutePath}")
+        pdfFile
+    } catch (e: Exception) {
+        Log.e("PdfBoxCrash", "Error al generar PDF con PDFBox: ${Log.getStackTraceString(e)}")
+        null
+    } finally {
+        try { pdDocument.close() } catch (_: Exception) {}
+    }
+}
+
+private fun drawCoverPageWithPdfBox(
+    context: Context,
+    pdDocument: PDDocument,
+    config: CoverPageConfig,
+    imageEffectSettings: Map<String, ImageEffectSettings>,
+    colorTheme: ColorTheme
+) {
+    val isVertical = config.pageOrientation == PageOrientation.Vertical
+    val mediaBox = if (isVertical) PDRectangle.A4 else PDRectangle(PDRectangle.A4.height, PDRectangle.A4.width)
+    val page = PDPage(mediaBox)
+    pdDocument.addPage(page)
+    val contentStream = PDPageContentStream(pdDocument, page)
+
+    try {
+        val pageWidth = page.mediaBox.width
+        val pageHeight = page.mediaBox.height
+
+        config.pageBackgroundColor?.let {
+            val r = Color.red(it)
+            val g = Color.green(it)
+            val b = Color.blue(it)
+            contentStream.setNonStrokingColor(r, g, b)
+            contentStream.addRect(0f, 0f, pageWidth, pageHeight)
+            contentStream.fill()
+        }
+
+        config.generatedBackgroundConfig?.let {
+            if (it.enabled) {
+                val backgroundBitmap = Bitmap.createBitmap(pageWidth.toInt(), pageHeight.toInt(), Bitmap.Config.ARGB_8888)
+                val canvas = Canvas(backgroundBitmap)
+                BackgroundGenerator.drawGeneratedBackground(canvas, it, pageWidth, pageHeight, colorTheme)
+
+                val tempFile = File.createTempFile("background", ".png", context.cacheDir)
+                FileOutputStream(tempFile).use { out ->
+                    backgroundBitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                }
+                val pdImage = PDImageXObject.createFromFile(tempFile.absolutePath, pdDocument)
+                contentStream.drawImage(pdImage, 0f, 0f, pageWidth, pageHeight)
+                tempFile.delete()
+                backgroundBitmap.recycle()
+            }
+        }
+
         val marginTop = config.marginTop * CM_TO_POINTS
         val marginBottom = config.marginBottom * CM_TO_POINTS
         val marginLeft = config.marginLeft * CM_TO_POINTS
         val marginRight = config.marginRight * CM_TO_POINTS
         val contentArea = RectF(marginLeft, marginTop, (pageWidth - marginRight), (pageHeight - marginBottom))
 
-        val allRows = mutableListOf<Map<String, Any>>()
+        val rows = mutableListOf<Map<String, Any>>()
         if (config.clientNameStyle.content.isNotBlank()) {
-            allRows.add(mapOf(
-                "id" to "client",
-                "weight" to config.clientWeight,
-                "draw" to { rect: RectF ->
-                    var content = if (config.allCaps) config.clientNameStyle.content.uppercase() else config.clientNameStyle.content
-                    if (config.showClientPrefix) {
-                        content = "Cliente: $content"
-                    }
-                    drawRow(canvas, context, content, config.clientNameStyle, rect)
-                }
-            ))
+            rows.add(mapOf("id" to "client", "weight" to config.clientWeight, "style" to config.clientNameStyle, "content" to config.clientNameStyle.content))
         }
         if (config.rucStyle.content.isNotBlank()) {
-            allRows.add(mapOf(
-                "id" to "ruc",
-                "weight" to config.rucWeight,
-                "draw" to { rect: RectF ->
-                    val documentLabel = when (config.documentType) {
-                        com.example.dynamiccollage.data.model.DocumentType.DNI -> "DNI: "
-                        com.example.dynamiccollage.data.model.DocumentType.RUC -> "RUC: "
-                        com.example.dynamiccollage.data.model.DocumentType.NONE -> ""
-                    }
-                    val content = documentLabel + if (config.allCaps) config.rucStyle.content.uppercase() else config.rucStyle.content
-                    drawRow(canvas, context, content, config.rucStyle, rect)
-                }
-            ))
+            rows.add(mapOf("id" to "ruc", "weight" to config.rucWeight, "style" to config.rucStyle, "content" to config.rucStyle.content))
         }
         if (config.subtitleStyle.content.isNotBlank()) {
-            allRows.add(mapOf(
-                "id" to "address",
-                "weight" to 0f,
-                "style" to config.subtitleStyle,
-                "content" to (if (config.showAddressPrefix) "Dirección: " else "") + if (config.allCaps) config.subtitleStyle.content.uppercase() else config.subtitleStyle.content,
-                "draw" to { rect: RectF ->
-                    var content = if (config.allCaps) config.subtitleStyle.content.uppercase() else config.subtitleStyle.content
-                    if (config.showAddressPrefix) content = "Dirección: $content"
-                    drawRow(canvas, context, content, config.subtitleStyle, rect)
-                }
-            ))
+            rows.add(mapOf("id" to "address", "weight" to 0f, "style" to config.subtitleStyle, "content" to config.subtitleStyle.content))
         }
         if (config.mainImageUri != null) {
-            allRows.add(mapOf(
-                "id" to "photo",
-                "weight" to config.photoWeight,
-                "draw" to { rect: RectF ->
-                    drawRowBackgroundAndBorders(canvas, config.photoStyle, rect)
-                    config.mainImageUri?.let { uriString ->
-                        try {
-                            val padding = config.photoStyle.padding
-                            val paddedRect = RectF(rect.left + padding.left, rect.top + padding.top, rect.right - padding.right, rect.bottom - padding.bottom)
-                            val bitmap = decodeAndCompressBitmapFromUri(context, Uri.parse(uriString), paddedRect.width().toInt(), paddedRect.height().toInt(), quality)
-                            bitmap?.let {
-                                drawBitmapToCanvas(canvas, it, paddedRect)
-                                it.recycle()
-                            }
-                        } catch (e: Exception) { e.printStackTrace() }
-                    }
-                }
-            ))
+            rows.add(mapOf("id" to "photo", "weight" to config.photoWeight, "uri" to config.mainImageUri!!))
         }
 
-        if (allRows.isEmpty()) {
-            return
-        }
-
-        var addressRowHeight = 0f
-        val addressRowData = allRows.find { it["id"] == "address" }
-        if (addressRowData != null) {
-            val style = addressRowData["style"] as TextStyleConfig
-            val content = addressRowData["content"] as String
-            val textPaint = createTextPaint(context, style)
-            val staticLayout = StaticLayout.Builder.obtain(content, 0, content.length, textPaint, contentArea.width().toInt())
-                .setAlignment(getAndroidAlignment(style.textAlign))
-                .build()
-            addressRowHeight = staticLayout.height.toFloat() + style.rowStyle.padding.top + style.rowStyle.padding.bottom
-        }
-
-        val weightedRows = allRows.filter { it["id"] != "address" }
-        val totalWeight = weightedRows.sumOf { (it["weight"] as Float).toDouble() }.toFloat()
-        var separations = 0
-        for (i in 0 until allRows.size - 1) {
-            val currentId = allRows[i]["id"] as String
-            val nextId = allRows[i+1]["id"] as String
-            if (currentId == "client" && nextId == "ruc") continue
-            if (currentId == "address") continue
-            separations++
-        }
-        val totalSeparationWeight = config.separationWeight * separations
-        val finalTotalWeight = totalWeight + totalSeparationWeight
-        val fixedSpace = if (addressRowData != null) addressRowHeight + 5f else 0f
-        val availableHeight = contentArea.height() - fixedSpace
-        if (finalTotalWeight <= 0f && availableHeight <= 0f) {
-            return
-        }
-        val separationHeight = if (finalTotalWeight > 0) availableHeight * (config.separationWeight / finalTotalWeight) else 0f
+        val totalWeight = rows.sumOf { (it["weight"] as Float).toDouble() }.toFloat()
         var currentY = contentArea.top
-        allRows.forEachIndexed { index, rowData ->
-            val id = rowData["id"] as String
-            val drawFunc = rowData["draw"] as (RectF) -> Unit
-            val itemHeight = if (id == "address") addressRowHeight else {
-                if (finalTotalWeight > 0) availableHeight * ((rowData["weight"] as Float) / finalTotalWeight) else 0f
-            }
-            val rect = RectF(contentArea.left, currentY, contentArea.right, currentY + itemHeight)
-            drawFunc(rect)
-            currentY += itemHeight
-            if (index < allRows.size - 1) {
-                val nextId = allRows[index + 1]["id"] as String
-                if (id == "address") {
-                    currentY += 5f
-                } else if (!(id == "client" && nextId == "ruc")) {
-                    currentY += separationHeight
-                }
-            }
-        }
-    }
 
-    fun generatePreviewBitmaps(
-        context: Context,
-        generatedPages: List<com.example.dynamiccollage.data.model.GeneratedPage>
-    ): List<Bitmap> {
-        val bitmaps = mutableListOf<Bitmap>()
-        val quality = 85 // Calidad de imagen razonable para previsualizaciones
-        try {
-            generatedPages.forEach { pageData ->
-                val pageWidth = if (pageData.orientation == PageOrientation.Vertical) A4_WIDTH else A4_HEIGHT
-                val pageHeight = if (pageData.orientation == PageOrientation.Vertical) A4_HEIGHT else A4_WIDTH
-                val bitmap = Bitmap.createBitmap(pageWidth, pageHeight, Bitmap.Config.ARGB_8888)
-                val canvas = Canvas(bitmap)
-                drawPageOnCanvas(canvas, context, pageData, quality)
-                bitmaps.add(bitmap)
-            }
-        } catch (e: Exception) {
-            Log.e("PdfGenerator", "Error al generar previsualizaciones de bitmap", e)
-        }
-        return bitmaps
-    }
+        rows.forEach { row ->
+            val id = row["id"] as String
+            val height = if (totalWeight > 0) contentArea.height() * ((row["weight"] as Float) / totalWeight) else 0f
+            val rect = RectF(contentArea.left, currentY, contentArea.right, currentY + height)
 
-    private fun drawPageOnCanvas(
-        canvas: Canvas,
-        context: Context,
-        pageData: com.example.dynamiccollage.data.model.GeneratedPage,
-        quality: Int
-    ) {
-        val (cols, rows) = when (pageData.orientation) {
-            PageOrientation.Vertical -> if (pageData.imageUris.size > 1) Pair(1, 2) else Pair(1, 1)
-            PageOrientation.Horizontal -> if (pageData.imageUris.size > 1) Pair(2, 1) else Pair(1, 1)
-        }
-
-        val rects = getRectsForPage(canvas.width, canvas.height, 20f, cols, rows, 15f)
-
-        pageData.imageUris.forEachIndexed { index, uriString ->
-            if (index < rects.size) {
-                val rect = rects[index]
+            if (id == "photo") {
+                val uri = Uri.parse(row["uri"] as String)
                 try {
-                    val bitmap = decodeAndCompressBitmapFromUri(context, Uri.parse(uriString), rect.width().toInt(), rect.height().toInt(), quality)
-                    bitmap?.let {
-                        drawBitmapToCanvas(canvas, it, rect)
-                        it.recycle()
+                    val tmpFile = File.createTempFile("pdf_img", ".jpg", context.cacheDir)
+                    context.contentResolver.openInputStream(uri)?.use { input ->
+                        tmpFile.outputStream().use { out -> input.copyTo(out) }
                     }
+                    val image = PDImageXObject.createFromFileByContent(tmpFile, pdDocument)
+                    tmpFile.delete()
+                    contentStream.drawImage(image, rect.left, pageHeight - rect.bottom, rect.width(), rect.height())
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    Log.e("PdfBoxCrash", "Error cargando imagen: ${e.message}")
+                }
+            } else if (row.containsKey("content")) {
+                val text = row["content"] as String
+                val style = row["style"] as TextStyleConfig
+                val font = getPdfBoxFont(context, pdDocument, style.fontWeight ?: FontWeight.Normal, style.fontStyle ?: FontStyle.Normal)
+                val fontSize = style.fontSize.toFloat()
+                val textWidth = font.getStringWidth(text) / 1000 * fontSize
+                val textX = rect.left + (rect.width() - textWidth) / 2f
+                val textY = pageHeight - rect.top - (rect.height() / 2f) - (fontSize / 4f)
+                contentStream.beginText()
+                contentStream.setFont(font, fontSize)
+                val fontColorInt = style.fontColor.toArgb()
+                val r = Color.red(fontColorInt)
+                val g = Color.green(fontColorInt)
+                val b = Color.blue(fontColorInt)
+                contentStream.setNonStrokingColor(r, g, b)
+                contentStream.newLineAtOffset(textX, textY)
+                contentStream.showText(text)
+                contentStream.endText()
+            }
+            currentY += height + 5f
+        }
+    } finally {
+        try { contentStream.close() } catch (_: Exception) {}
+    }
+}
+
+private fun drawInnerPagesWithPdfBox(
+    context: Context,
+    pdDocument: PDDocument,
+    generatedPages: List<GeneratedPage>,
+    coverConfig: CoverPageConfig,
+    imageEffectSettings: Map<String, ImageEffectSettings>,
+    colorTheme: ColorTheme
+) {
+    generatedPages.forEach { pageData ->
+        val isVertical = pageData.orientation == PageOrientation.Vertical
+        val mediaBox = if (isVertical) PDRectangle.A4 else PDRectangle(PDRectangle.A4.height, PDRectangle.A4.width)
+        val page = PDPage(mediaBox)
+        pdDocument.addPage(page)
+        val contentStream = PDPageContentStream(pdDocument, page)
+
+        try {
+            val pageWidth = page.mediaBox.width
+            val pageHeight = page.mediaBox.height
+
+            coverConfig.pageBackgroundColor?.let {
+                val r = Color.red(it)
+                val g = Color.green(it)
+                val b = Color.blue(it)
+                contentStream.setNonStrokingColor(r, g, b)
+                contentStream.addRect(0f, 0f, pageWidth, pageHeight)
+                contentStream.fill()
+            }
+
+            coverConfig.generatedBackgroundConfig?.let {
+                if (it.enabled) {
+                    val backgroundBitmap = Bitmap.createBitmap(pageWidth.toInt(), pageHeight.toInt(), Bitmap.Config.ARGB_8888)
+                    val canvas = Canvas(backgroundBitmap)
+                    BackgroundGenerator.drawGeneratedBackground(canvas, it, pageWidth, pageHeight, colorTheme)
+
+                    val tempFile = File.createTempFile("background_inner", ".png", context.cacheDir)
+                    FileOutputStream(tempFile).use { out ->
+                        backgroundBitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                    }
+                    val pdImage = PDImageXObject.createFromFile(tempFile.absolutePath, pdDocument)
+                    contentStream.drawImage(pdImage, 0f, 0f, pageWidth, pageHeight)
+                    tempFile.delete()
+                    backgroundBitmap.recycle()
                 }
             }
-        }
-    }
 
-    private fun drawInnerPages(
-        pdfDocument: PdfDocument,
-        context: Context,
-        generatedPages: List<com.example.dynamiccollage.data.model.GeneratedPage>,
-        startPageNumber: Int,
-        quality: Int
-    ) {
-        var pageNumber = startPageNumber
-        generatedPages.forEach { pageData ->
-            val pageWidth = if (pageData.orientation == PageOrientation.Vertical) A4_WIDTH else A4_HEIGHT
-            val pageHeight = if (pageData.orientation == PageOrientation.Vertical) A4_HEIGHT else A4_WIDTH
-            val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber++).create()
-            val page = pdfDocument.startPage(pageInfo)
-
-            drawPageOnCanvas(page.canvas, context, pageData, quality)
-
-            pdfDocument.finishPage(page)
-        }
-    }
-
-    private fun getAndroidAlignment(textAlign: TextAlign): Layout.Alignment {
-        return when (textAlign) {
-            TextAlign.Center -> Layout.Alignment.ALIGN_CENTER
-            TextAlign.End -> Layout.Alignment.ALIGN_OPPOSITE
-            else -> Layout.Alignment.ALIGN_NORMAL
-        }
-    }
-
-    private fun drawRow(canvas: Canvas, context: Context, text: String, style: TextStyleConfig, rect: RectF) {
-        drawRowBackgroundAndBorders(canvas, style.rowStyle, rect)
-        drawTextInRect(canvas, context, text, style, rect)
-    }
-
-    private fun drawRowBackgroundAndBorders(canvas: Canvas, rowStyle: RowStyle, rect: RectF) {
-        val backgroundPaint = Paint().apply {
-            color = rowStyle.backgroundColor.toArgb()
-            style = Paint.Style.FILL
-        }
-        canvas.drawRect(rect, backgroundPaint)
-        val borderPaint = Paint().apply {
-            color = rowStyle.border.color.toArgb()
-            style = Paint.Style.STROKE
-            strokeWidth = rowStyle.border.thickness
-        }
-        val border = rowStyle.border
-        if (border.top) canvas.drawLine(rect.left, rect.top, rect.right, rect.top, borderPaint)
-        if (border.bottom) canvas.drawLine(rect.left, rect.bottom, rect.right, rect.bottom, borderPaint)
-        if (border.left) canvas.drawLine(rect.left, rect.top, rect.left, rect.bottom, borderPaint)
-        if (border.right) canvas.drawLine(rect.right, rect.top, rect.right, rect.bottom, borderPaint)
-    }
-
-    private fun createTextPaint(context: Context, style: TextStyleConfig): TextPaint {
-        return TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = style.fontColor.toArgb()
-            textSize = style.fontSize.toFloat()
-            val isBold = style.fontWeight == FontWeight.Bold
-            val isItalic = style.fontStyle == FontStyle.Italic
-            val typefaceStyle = when {
-                isBold && isItalic -> Typeface.BOLD_ITALIC
-                isBold -> Typeface.BOLD
-                isItalic -> Typeface.ITALIC
-                else -> Typeface.NORMAL
+            pageData.imageUris.forEach { uriString ->
+                val uri = Uri.parse(uriString)
+                try {
+                    val tmpFile = File.createTempFile("pdf_img", ".jpg", context.cacheDir)
+                    context.contentResolver.openInputStream(uri)?.use { input ->
+                        tmpFile.outputStream().use { out -> input.copyTo(out) }
+                    }
+                    val image = PDImageXObject.createFromFileByContent(tmpFile, pdDocument)
+                    tmpFile.delete()
+                    val imgWidth = pageWidth / 2f
+                    val imgHeight = pageHeight / 2f
+                    val posX = (pageWidth - imgWidth) / 2f
+                    val posY = (pageHeight.toFloat() - imgHeight) / 2f
+                    contentStream.drawImage(image, posX, posY, imgWidth, imgHeight)
+                } catch (e: Exception) {
+                    Log.e("PdfBoxCrash", "Error cargando imagen página interna: ${e.message}")
+                }
             }
-            val fontFamilyRes = R.font.calibri
-            typeface = try {
-                val baseTypeface = ResourcesCompat.getFont(context, fontFamilyRes)
-                Typeface.create(baseTypeface, typefaceStyle)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Typeface.create(Typeface.DEFAULT, typefaceStyle)
-            }
+        } finally {
+            try { contentStream.close() } catch (_: Exception) {}
         }
     }
+}
 
-    private fun drawTextInRect(canvas: Canvas, context: Context, text: String, style: TextStyleConfig, rect: RectF) {
-        if (text.isBlank()) return
-        val padding = style.rowStyle.padding
-        val paddedRect = RectF(rect.left + padding.left, rect.top + padding.top, rect.right - padding.right, rect.bottom - padding.bottom)
-        if (paddedRect.width() <= 0 || paddedRect.height() <= 0) return
-        val textPaint = createTextPaint(context, style)
-        val staticLayout = StaticLayout.Builder.obtain(
-            text, 0, text.length, textPaint, paddedRect.width().toInt()
-        ).setAlignment(getAndroidAlignment(style.textAlign)).build()
-        val textY = paddedRect.top + (paddedRect.height() - staticLayout.height) / 2
-        canvas.save()
-        canvas.translate(paddedRect.left, textY)
-        staticLayout.draw(canvas)
-        canvas.restore()
+private fun getPdfBoxFont(
+    context: Context,
+    pdDocument: PDDocument,
+    fontWeight: FontWeight,
+    fontStyle: FontStyle
+): PDFont {
+    val fallbackFont = "Roboto-Regular.ttf"
+    val fontName = when {
+        fontWeight == FontWeight.Bold && fontStyle == FontStyle.Italic -> "Roboto-BoldItalic.ttf"
+        fontWeight == FontWeight.Bold -> "Roboto-Bold.ttf"
+        fontStyle == FontStyle.Italic -> "Roboto-Italic.ttf"
+        else -> fallbackFont
     }
 
-    private fun getRectsForPage(pageWidth: Int, pageHeight: Int, startY: Float, cols: Int, rows: Int, spacing: Float): List<RectF> {
-        val rects = mutableListOf<RectF>()
-        val totalSpacingX = spacing * (cols + 1)
-        val totalSpacingY = spacing * (rows + 1)
-        val cellWidth = (pageWidth - totalSpacingX) / cols
-        val availableHeight = pageHeight - startY
-        val cellHeight = (availableHeight - totalSpacingY) / rows
-        for (row in 0 until rows) {
-            for (col in 0 until cols) {
-                val left = totalSpacingX / (cols + 1) + col * (cellWidth + spacing)
-                val top = startY + totalSpacingY / (rows + 1) + row * (cellHeight + spacing)
-                val right = left + cellWidth
-                val bottom = top + cellHeight
-                rects.add(RectF(left, top, right, bottom))
-            }
-        }
-        return rects
+    return try {
+        PDType0Font.load(pdDocument, context.assets.open("fonts/$fontName"))
+    } catch (e: Exception) {
+        Log.e("PdfGenerator", "⚠️ No se pudo cargar la fuente $fontName, usando respaldo.", e)
+        PDType0Font.load(pdDocument, context.assets.open("fonts/$fallbackFont"))
     }
+}
 
-    private fun drawBitmapToCanvas(canvas: Canvas, bitmap: Bitmap, destRect: RectF) {
-        val srcRect = RectF(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat())
-        val matrix = Matrix()
-        matrix.setRectToRect(srcRect, destRect, Matrix.ScaleToFit.CENTER)
-        canvas.drawBitmap(bitmap, matrix, null)
-    }
-
-    private fun decodeAndCompressBitmapFromUri(context: Context, uri: Uri, reqWidth: Int, reqHeight: Int, quality: Int): Bitmap? {
-        return try {
-            val inputStream = context.contentResolver.openInputStream(uri) ?: return null
-            val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-            BitmapFactory.decodeStream(inputStream, null, options)
-            inputStream.close()
-            options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight)
-            options.inJustDecodeBounds = false
-            val sampledBitmap = context.contentResolver.openInputStream(uri)?.use {
-                BitmapFactory.decodeStream(it, null, options)
-            } ?: return null
-            val outputStream = ByteArrayOutputStream()
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                sampledBitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, quality, outputStream)
-            } else {
-                @Suppress("DEPRECATION")
-                sampledBitmap.compress(Bitmap.CompressFormat.WEBP, quality, outputStream)
-            }
-            sampledBitmap.recycle()
-            val finalInputStream = ByteArrayInputStream(outputStream.toByteArray())
-            BitmapFactory.decodeStream(finalInputStream)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
-
-    private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
-        val (height: Int, width: Int) = options.run { outHeight to outWidth }
-        var inSampleSize = 1
-        if (height > reqHeight || width > reqWidth) {
-            val halfHeight: Int = height / 2
-            val halfWidth: Int = width / 2
-            while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
-                inSampleSize *= 2
-            }
-        }
-        return inSampleSize
-    }
 }

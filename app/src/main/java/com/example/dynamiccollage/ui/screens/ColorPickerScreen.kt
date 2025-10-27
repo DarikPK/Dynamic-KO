@@ -36,7 +36,8 @@ private val rainbowColors = listOf(
 @Composable
 fun ColorPickerScreen(
     navController: NavController,
-    fieldId: String,
+    colorType: String,
+    fieldId: String?,
     initialColorHex: String
 ) {
     val initialColor = Color(android.graphics.Color.parseColor("#$initialColorHex"))
@@ -75,9 +76,11 @@ fun ColorPickerScreen(
                 actions = {
                     IconButton(onClick = {
                         val colorHex = String.format("%06X", (0xFFFFFF and finalColor.toArgb()))
+                        val resultKey = if (colorType == "field") "selected_color_field" else "selected_color_background"
+                        val resultValue = if (colorType == "field") "$fieldId:$colorHex" else colorHex
                         navController.previousBackStackEntry
                             ?.savedStateHandle
-                            ?.set("selected_color", "$fieldId:$colorHex")
+                            ?.set(resultKey, resultValue)
                         navController.popBackStack()
                     }) {
                         Icon(Icons.Default.Check, contentDescription = "Confirmar")

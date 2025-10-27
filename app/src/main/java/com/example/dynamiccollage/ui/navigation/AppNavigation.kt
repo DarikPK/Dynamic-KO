@@ -7,13 +7,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import androidx.navigation.navigation
 import com.example.dynamiccollage.ui.screens.*
-import com.example.dynamiccollage.ui.screens.auth.*
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.navigation.navigation
+import com.example.dynamiccollage.ui.screens.auth.BlockedScreen
+import com.example.dynamiccollage.ui.screens.auth.ControlPanelScreen
+import com.example.dynamiccollage.ui.screens.auth.LoginScreen
 import com.example.dynamiccollage.viewmodel.*
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
@@ -21,17 +23,14 @@ import java.nio.charset.StandardCharsets
 @Composable
 fun AppNavigation(
     projectViewModel: ProjectViewModel,
-    onThemeChange: (String) -> Unit,
     mainViewModel: MainViewModel,
     loginViewModel: LoginViewModel,
     controlPanelViewModel: ControlPanelViewModel
 ) {
-    val context = LocalContext.current
     val coverSetupViewModel: CoverSetupViewModel = viewModel()
     val rowStyleViewModel: RowStyleViewModel = viewModel()
     val sunatDataViewModel: SunatDataViewModel = viewModel()
     val innerPagesViewModel: InnerPagesViewModel = viewModel(factory = InnerPagesViewModelFactory(projectViewModel))
-    val sizeManagerViewModel: SizeManagerViewModel = viewModel()
     val navController = rememberNavController()
     val userState by mainViewModel.userState.collectAsState()
 
@@ -75,16 +74,12 @@ fun AppNavigation(
 
         navigation(startDestination = Screen.Main.route, route = "main_app_flow") {
             composable(Screen.Main.route) {
-                val user = (userState as? UserState.Authenticated)?.user
-                if (user != null) {
-                    MainScreen(
-                        navController = navController,
-                        projectViewModel = projectViewModel,
-                        onThemeChange = onThemeChange
-                    )
-                }
+                MainScreen(
+                    navController = navController,
+                    projectViewModel = projectViewModel
+                )
             }
-            composable(Screen.CoverSetup.route) {
+        composable(Screen.CoverSetup.route) {
             CoverSetupScreen(
                 navController = navController,
                 projectViewModel = projectViewModel,
@@ -94,7 +89,6 @@ fun AppNavigation(
         composable(Screen.InnerPages.route) {
             InnerPagesScreen(
                 navController = navController,
-                projectViewModel = projectViewModel,
                 innerPagesViewModel = innerPagesViewModel
             )
         }
@@ -130,11 +124,19 @@ fun AppNavigation(
         composable(Screen.ImageManager.route) {
             ImageManagerScreen(navController = navController, projectViewModel = projectViewModel)
         }
+        composable(Screen.AdvancedDesign.route) {
+            AdvancedDesignScreen(navController = navController)
+        }
+        composable(Screen.SheetBackground.route) {
+            SheetBackgroundScreen(navController = navController, projectViewModel = projectViewModel)
+        }
+        composable(Screen.ImageBorders.route) {
+            ImageBordersScreen(navController = navController, projectViewModel = projectViewModel)
+        }
         composable(Screen.SizeManager.route) {
             SizeManagerScreen(
                 navController = navController,
-                projectViewModel = projectViewModel,
-                sizeManagerViewModel = sizeManagerViewModel
+                projectViewModel = projectViewModel
             )
         }
         composable(Screen.AdvancedCoverOptions.route) {
@@ -165,16 +167,19 @@ fun AppNavigation(
             )
         }
         composable(
-            route = Screen.ColorPicker.route + "/{fieldId}/{initialColor}",
+            route = Screen.ColorPicker.route + "/{colorType}/{fieldId}/{initialColor}",
             arguments = listOf(
-                navArgument("fieldId") { type = NavType.StringType },
+                navArgument("colorType") { type = NavType.StringType },
+                navArgument("fieldId") { type = NavType.StringType; nullable = true },
                 navArgument("initialColor") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val fieldId = backStackEntry.arguments?.getString("fieldId") ?: ""
+            val colorType = backStackEntry.arguments?.getString("colorType") ?: ""
+            val fieldId = backStackEntry.arguments?.getString("fieldId")
             val initialColorHex = backStackEntry.arguments?.getString("initialColor") ?: "FFFFFF"
             ColorPickerScreen(
                 navController = navController,
+                colorType = colorType,
                 fieldId = fieldId,
                 initialColorHex = initialColorHex
             )
@@ -189,6 +194,53 @@ fun AppNavigation(
                 navController = navController,
                 projectViewModel = projectViewModel,
                 imageUri = decodedImageUri
+            )
+        }
+        composable(Screen.ThemeSelection.route) {
+            ThemeSelectionScreen(
+                navController = navController,
+                projectViewModel = projectViewModel
+            )
+        }
+        composable(Screen.PhotoSwap.route) {
+            PhotoSwapScreen(
+                navController = navController,
+                projectViewModel = projectViewModel
+            )
+        }
+        composable(Screen.RecycleBin.route) {
+            RecycleBinScreen(
+                navController = navController,
+                projectViewModel = projectViewModel
+            )
+        }
+        composable(Screen.HybridQuality.route) {
+            HybridQualityScreen(
+                navController = navController,
+                projectViewModel = projectViewModel
+            )
+        }
+        composable(Screen.ColorThemeSelection.route) {
+            ColorThemeSelectionScreen(
+                navController = navController,
+                projectViewModel = projectViewModel
+            )
+        }
+        composable(Screen.GeneratedBackground.route) {
+            GeneratedBackgroundScreen(
+                navController = navController,
+                projectViewModel = projectViewModel
+            )
+        }
+        composable(Screen.SheetDesign.route) {
+            SheetDesignScreen(
+                navController = navController
+            )
+        }
+        composable(Screen.SheetBackgroundOptions.route) {
+            SheetBackgroundOptionsScreen(
+                navController = navController,
+                projectViewModel = projectViewModel
             )
         }
         composable(AuthScreen.ControlPanel.route) {

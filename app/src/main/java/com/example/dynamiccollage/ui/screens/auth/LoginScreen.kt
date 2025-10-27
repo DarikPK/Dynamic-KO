@@ -15,7 +15,7 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var password by remember { mutableStateof("") }
     val loginState by loginViewModel.loginState.collectAsState()
 
     Column(

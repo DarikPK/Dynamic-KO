@@ -1,7 +1,9 @@
 package com.example.dynamiccollage.ui.components
 
+import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,6 +28,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathOperation
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -52,8 +55,142 @@ private sealed class TouchRegion {
 @Composable
 fun CropView(
     modifier: Modifier = Modifier,
-    uri: Uri,
+    bitmap: Bitmap,
     onCrop: (cropRect: Rect, imageBounds: Rect) -> Unit
+) {
+    val imageBitmap = remember(bitmap) { bitmap.asImageBitmap() }
+    var cropRect by remember { mutableStateOf(Rect.Zero) }
+    var dragOffset by remember { mutableStateOf(Offset.Zero) }
+    var isInitialized by remember { mutableStateOf(false) }
+    var touchRegion by remember { mutableStateOf<TouchRegion>(TouchRegion.None) }
+    var imageBounds by remember { mutableStateOf(Rect.Zero) }
+    val imageAspectRatio = bitmap.width.toFloat() / bitmap.height.toFloat()
+    val density = LocalDensity.current
+
+    Column(
+        modifier = modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+        ) {
+            Image(
+                bitmap = imageBitmap,
+                contentDescription = "Image to crop",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize(),
+            )
+
+            Canvas(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(bitmap) {
+                        detectDragGestures(
+                            onDragStart = { startOffset ->
+                                val touchSlop = with(density) { 24.dp.toPx() }
+                                touchRegion = getTouchRegion(startOffset, cropRect, touchSlop)
+                            },
+                            onDragEnd = {
+                                cropRect = getUpdatedRect(cropRect, dragOffset, touchRegion, imageBounds)
+                                dragOffset = Offset.Zero
+                                touchRegion = TouchRegion.None
+                            }
+                        ) { change, dragAmount ->
+                            change.consume()
+                            dragOffset += dragAmount
+                        }
+                    }
+            ) {
+                if (imageAspectRatio <= 0f || size.width == 0f || size.height == 0f) return@Canvas
+
+                imageBounds = getImageBounds(imageAspectRatio, size)
+                if (imageBounds.isEmpty) return@Canvas
+
+                if (!isInitialized) {
+                    cropRect = imageBounds
+                    isInitialized = true
+                }
+
+                val displayedRect = getUpdatedRect(cropRect, dragOffset, touchRegion, imageBounds)
+
+                val outerPath = Path().apply { addRect(Rect(0f, 0f, size.width, size.height)) }
+                val innerPath = Path().apply { addRect(displayedRect) }
+                val path = Path.combine(
+                    operation = PathOperation.Difference,
+                    path1 = outerPath,
+                    path2 = innerPath
+                )
+
+                val handleStroke = Stroke(width = 2.dp.toPx())
+
+                drawPath(path = path, color = Color.Black.copy(alpha = 0.5f))
+                drawRect(
+                    color = Color.White,
+                    topLeft = displayedRect.topLeft,
+                    size = displayedRect.size,
+                    style = handleStroke
+                )
+                drawCircle(color = Color.White, radius = 8.dp.toPx(), center = displayedRect.topLeft)
+                drawCircle(color = Color.White, radius = 8.dp.toPx(), center = displayedRect.topRight)
+                drawCircle(color = Color.White, radius = 8.dp.toPx(), center = displayedRect.bottomLeft)
+                drawCircle(color = Color.White, radius = 8.dp.toPx(), center = displayedRect.bottomRight)
+
+                val handleRectWidth = 20.dp.toPx()
+                val handleRectHeight = 8.dp.toPx()
+                val triangleSize = 6.dp.toPx()
+                drawRect(color = Color.White, topLeft = Offset(displayedRect.center.x - handleRectWidth / 2, displayedRect.top - handleRectHeight / 2), size = Size(handleRectWidth, handleRectHeight))
+                drawPath(Path().apply {
+                    moveTo(displayedRect.center.x, displayedRect.top + handleRectHeight / 2 + triangleSize)
+                    lineTo(displayedRect.center.x - triangleSize, displayedRect.top + handleRectHeight / 2)
+                    lineTo(displayedRect.center.x + triangleSize, displayedRect.top + handleRectHeight / 2)
+                    close()
+                }, color = Color.White, style = handleStroke)
+                drawRect(color = Color.White, topLeft = Offset(displayedRect.center.x - handleRectWidth / 2, displayedRect.bottom - handleRectHeight / 2), size = Size(handleRectWidth, handleRectHeight))
+                drawPath(Path().apply {
+                    moveTo(displayedRect.center.x, displayedRect.bottom - handleRectHeight/2 - triangleSize)
+                    lineTo(displayedRect.center.x - triangleSize, displayedRect.bottom - handleRectHeight/2)
+                    lineTo(displayedRect.center.x + triangleSize, displayedRect.bottom - handleRectHeight/2)
+                    close()
+                }, color = Color.White, style = handleStroke)
+                drawRect(color = Color.White, topLeft = Offset(displayedRect.left - handleRectHeight / 2, displayedRect.center.y - handleRectWidth / 2), size = Size(handleRectHeight, handleRectWidth))
+                drawPath(Path().apply {
+                    moveTo(displayedRect.left + handleRectHeight / 2 + triangleSize, displayedRect.center.y)
+                    lineTo(displayedRect.left + handleRectHeight / 2, displayedRect.center.y - triangleSize)
+                    lineTo(displayedRect.left + handleRectHeight / 2, displayedRect.center.y + triangleSize)
+                    close()
+                }, color = Color.White, style = handleStroke)
+                drawRect(color = Color.White, topLeft = Offset(displayedRect.right - handleRectHeight / 2, displayedRect.center.y - handleRectWidth / 2), size = Size(handleRectHeight, handleRectWidth))
+                drawPath(Path().apply {
+                    moveTo(displayedRect.right - handleRectHeight / 2 - triangleSize, displayedRect.center.y)
+                    lineTo(displayedRect.right - handleRectHeight / 2, displayedRect.center.y - triangleSize)
+                    lineTo(displayedRect.right - handleRectHeight / 2, displayedRect.center.y + triangleSize)
+                    close()
+                }, color = Color.White, style = handleStroke)
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        Button(
+            onClick = { onCrop(getUpdatedRect(cropRect, dragOffset, touchRegion, imageBounds), imageBounds) },
+            enabled = isInitialized && getUpdatedRect(cropRect, dragOffset, touchRegion, imageBounds) != imageBounds,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 16.dp)
+        ) {
+            Text("Recortar")
+        }
+    }
+}
+
+@Composable
+fun CropView(
+    modifier: Modifier = Modifier,
+    uri: Uri,
+    onCrop: (cropRect: Rect, imageBounds: Rect) -> Unit,
+    transformations: List<coil.transform.Transformation> = emptyList()
 ) {
     var cropRect by remember { mutableStateOf(Rect.Zero) }
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
@@ -74,7 +211,7 @@ fun CropView(
                 .weight(1f)
         ) {
             AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current).data(uri).build(),
+                model = ImageRequest.Builder(LocalContext.current).data(uri).transformations(transformations).build(),
                 contentDescription = "Image to crop",
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.fillMaxSize(),

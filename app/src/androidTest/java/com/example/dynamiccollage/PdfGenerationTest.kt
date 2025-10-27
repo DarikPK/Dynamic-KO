@@ -7,7 +7,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.example.dynamiccollage.ui.screens.MainActivity
+import com.example.dynamiccollage.MainActivity
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -31,7 +31,7 @@ class PdfGenerationTest {
         val imageUri = Uri.fromFile(imageFile)
         composeTestRule.activity.projectViewModel.updateCoverConfig(
             composeTestRule.activity.projectViewModel.currentCoverConfig.value.copy(
-                mainImageUri = imageUri
+                mainImageUri = imageUri.toString()
             )
         )
 
@@ -46,10 +46,12 @@ class PdfGenerationTest {
         composeTestRule.onNodeWithText("Save").performClick()
 
         // 6. Add images to the page group
-        composeTestRule.activity.projectViewModel.addPageGroupToProject(
-            composeTestRule.activity.projectViewModel.currentPageGroups.value[0].copy(
-                imageUris = listOf(imageUri.toString())
-            )
+        val samplePageGroup = composeTestRule.activity.projectViewModel.currentPageGroups.value[0].copy(
+            imageUris = listOf(imageUri.toString())
+        )
+        composeTestRule.activity.projectViewModel.addPageGroup(
+            context = composeTestRule.activity.applicationContext,
+            group = samplePageGroup
         )
 
         // 7. Save the page groups

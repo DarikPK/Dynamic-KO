@@ -109,6 +109,126 @@ private val DescansoColorScheme = lightColorScheme(
     surface = descanso_surface,
 )
 
+private val BosqueColorScheme = lightColorScheme(
+    primary = bosque_primary,
+    onPrimary = bosque_onPrimary,
+    primaryContainer = bosque_primaryContainer,
+    onPrimaryContainer = bosque_onPrimaryContainer,
+    secondary = bosque_secondary,
+    background = bosque_background,
+    surface = bosque_surface,
+)
+
+private val OceanoColorScheme = darkColorScheme(
+    primary = oceano_primary,
+    onPrimary = oceano_onPrimary,
+    primaryContainer = oceano_primaryContainer,
+    onPrimaryContainer = oceano_onPrimaryContainer,
+    secondary = oceano_secondary,
+    background = oceano_background,
+    surface = oceano_surface,
+)
+
+private val NeonColorScheme = darkColorScheme(
+    primary = neon_primary,
+    onPrimary = neon_onPrimary,
+    primaryContainer = neon_primaryContainer,
+    onPrimaryContainer = neon_onPrimaryContainer,
+    secondary = neon_secondary,
+    background = neon_background,
+    surface = neon_surface,
+)
+
+private val CerezaColorScheme = darkColorScheme(
+    primary = cereza_primary,
+    onPrimary = cereza_onPrimary,
+    primaryContainer = cereza_primaryContainer,
+    onPrimaryContainer = cereza_onPrimaryContainer,
+    secondary = cereza_secondary,
+    background = cereza_background,
+    surface = cereza_surface,
+)
+
+private val LavandaColorScheme = lightColorScheme(
+    primary = lavanda_primary,
+    onPrimary = lavanda_onPrimary,
+    primaryContainer = lavanda_primaryContainer,
+    onPrimaryContainer = lavanda_onPrimaryContainer,
+    secondary = lavanda_secondary,
+    background = lavanda_background,
+    surface = lavanda_surface,
+)
+
+private val CafeColorScheme = lightColorScheme(
+    primary = cafe_primary,
+    onPrimary = cafe_onPrimary,
+    primaryContainer = cafe_primaryContainer,
+    onPrimaryContainer = cafe_onPrimaryContainer,
+    secondary = cafe_secondary,
+    background = cafe_background,
+    surface = cafe_surface,
+)
+
+private val NocheEstrelladaColorScheme = darkColorScheme(
+    primary = noche_primary,
+    onPrimary = noche_onPrimary,
+    primaryContainer = noche_primaryContainer,
+    onPrimaryContainer = noche_onPrimaryContainer,
+    secondary = noche_secondary,
+    background = noche_background,
+    surface = noche_surface,
+)
+
+private val CorporativoColorScheme = lightColorScheme(
+    primary = corporativo_primary,
+    onPrimary = corporativo_onPrimary,
+    primaryContainer = corporativo_primaryContainer,
+    onPrimaryContainer = corporativo_onPrimaryContainer,
+    secondary = corporativo_secondary,
+    background = corporativo_background,
+    surface = corporativo_surface,
+)
+
+private val ClasicoColorScheme = lightColorScheme(
+    primary = clasico_primary,
+    onPrimary = clasico_onPrimary,
+    primaryContainer = clasico_primaryContainer,
+    onPrimaryContainer = clasico_onPrimaryContainer,
+    secondary = clasico_secondary,
+    background = clasico_background,
+    surface = clasico_surface,
+)
+
+private val VerdeJadeColorScheme = lightColorScheme(
+    primary = jade_primary,
+    onPrimary = jade_onPrimary,
+    primaryContainer = jade_primaryContainer,
+    onPrimaryContainer = jade_onPrimaryContainer,
+    secondary = jade_secondary,
+    background = jade_background,
+    surface = jade_surface,
+)
+
+private val RojoRubiColorScheme = darkColorScheme(
+    primary = rubi_primary,
+    onPrimary = rubi_onPrimary,
+    primaryContainer = rubi_primaryContainer,
+    onPrimaryContainer = rubi_onPrimaryContainer,
+    secondary = rubi_secondary,
+    background = rubi_background,
+    surface = rubi_surface,
+)
+
+private val AmbarColorScheme = lightColorScheme(
+    primary = ambar_primary,
+    onPrimary = ambar_onPrimary,
+    primaryContainer = ambar_primaryContainer,
+    onPrimaryContainer = ambar_onPrimaryContainer,
+    secondary = ambar_secondary,
+    background = ambar_background,
+    surface = ambar_surface,
+)
+
 @Composable
 fun DynamicCollageTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -120,6 +240,18 @@ fun DynamicCollageTheme(
         "Claro" -> ClaroColorScheme
         "Oscuro" -> OscuroColorScheme
         "Descanso" -> DescansoColorScheme
+        "Bosque" -> BosqueColorScheme
+        "Océano" -> OceanoColorScheme
+        "Neón" -> NeonColorScheme
+        "Cereza" -> CerezaColorScheme
+        "Lavanda" -> LavandaColorScheme
+        "Café" -> CafeColorScheme
+        "Noche Estrellada" -> NocheEstrelladaColorScheme
+        "Corporativo" -> CorporativoColorScheme
+        "Clásico" -> ClasicoColorScheme
+        "Verde Jade" -> VerdeJadeColorScheme
+        "Rojo Rubí" -> RojoRubiColorScheme
+        "Ámbar" -> AmbarColorScheme
         else -> DarkColorScheme
     }
     val view = LocalView.current

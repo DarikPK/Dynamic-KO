@@ -76,20 +76,27 @@ fun PageGroupItem(
                 }
             }
 
-            InfoRow(label = stringResource(R.string.group_orientation_label), value = pageGroup.orientation.name)
-            InfoRow(label = stringResource(R.string.photos_per_sheet_label), value = "${pageGroup.photosPerSheet}")
-            InfoRow(label = stringResource(R.string.sheet_count_label), value = "${pageGroup.sheetCount}")
             InfoRow(
-                label = stringResource(R.string.group_item_total_photos_required),
-                value = "${pageGroup.totalPhotosRequired}"
+                label = stringResource(R.string.group_item_layout_type),
+                value = if (pageGroup.smartLayoutEnabled) stringResource(R.string.smart_layout_title) else stringResource(R.string.manual_layout_title)
             )
-            InfoRow(
-                label = stringResource(R.string.group_item_photos_loaded),
-                value = "${pageGroup.imageUris.size}",
-                isMet = pageGroup.isPhotoQuotaMet,
-                metColor = MaterialTheme.colorScheme.primary, // O un verde específico
-                notMetColor = MaterialTheme.colorScheme.error
-            )
+
+            if (pageGroup.smartLayoutEnabled) {
+                InfoRow(
+                    label = stringResource(R.string.group_item_photos_loaded),
+                    value = "${pageGroup.imageUris.size}"
+                )
+            } else {
+                InfoRow(label = stringResource(R.string.group_orientation_label), value = pageGroup.orientation.name)
+                InfoRow(label = stringResource(R.string.photos_per_sheet_label), value = "${pageGroup.photosPerSheet}")
+                InfoRow(
+                    label = stringResource(R.string.group_item_total_photos_required),
+                    value = "${pageGroup.imageUris.size}/${pageGroup.totalPhotosRequired}",
+                    isMet = pageGroup.isPhotoQuotaMet,
+                    metColor = MaterialTheme.colorScheme.primary,
+                    notMetColor = MaterialTheme.colorScheme.error
+                )
+            }
 
             if (pageGroup.optionalTextStyle.isVisible) {
                 Text(
@@ -110,7 +117,7 @@ fun PageGroupItem(
             ) {
                 OutlinedButton(
                     onClick = { onAddImagesClicked(pageGroup.id) },
-                    enabled = !pageGroup.isPhotoQuotaMet
+                    enabled = pageGroup.smartLayoutEnabled || !pageGroup.isPhotoQuotaMet
                 ) {
                     Icon(Icons.Filled.PhotoLibrary, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
                     Text(stringResource(R.string.group_item_add_images_button))
