@@ -7,12 +7,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
-class UserRepository {
+open class UserRepository {
 
     private val firestore = FirebaseFirestore.getInstance()
     private val usersCollection = firestore.collection("users")
 
-    suspend fun getUser(uid: String): User? {
+    open suspend fun getUser(uid: String): User? {
         val document = usersCollection.document(uid).get().await()
         return document.toObject(User::class.java)
     }

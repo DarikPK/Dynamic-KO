@@ -333,11 +333,17 @@ fun MainButton(
 @Preview(showBackground = true)
 @Composable
 fun MainScreenPreview() {
+    // Mock dependencies for preview
+    val mockAuthRepository = object : com.example.dynamiccollage.data.repository.AuthRepository() {}
+    val mockUserRepository = object : com.example.dynamiccollage.data.repository.UserRepository() {}
+    val mockMainViewModel = com.example.dynamiccollage.viewmodel.MainViewModel(mockAuthRepository, mockUserRepository)
+
     DynamicCollageTheme {
         val context = LocalContext.current
         MainScreen(
             navController = rememberNavController(),
-            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity)
+            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity),
+            mainViewModel = mockMainViewModel
         )
     }
 }
@@ -345,11 +351,17 @@ fun MainScreenPreview() {
 @Preview(showBackground = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun MainScreenDarkPreview() {
+    // Mock dependencies for preview
+    val mockAuthRepository = object : com.example.dynamiccollage.data.repository.AuthRepository() {}
+    val mockUserRepository = object : com.example.dynamiccollage.data.repository.UserRepository() {}
+    val mockMainViewModel = com.example.dynamiccollage.viewmodel.MainViewModel(mockAuthRepository, mockUserRepository)
+
     DynamicCollageTheme(darkTheme = true) {
         val context = LocalContext.current
         MainScreen(
             navController = rememberNavController(),
-            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity)
+            projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity),
+            mainViewModel = mockMainViewModel
         )
     }
 }

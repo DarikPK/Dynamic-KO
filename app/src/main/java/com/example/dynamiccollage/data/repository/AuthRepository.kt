@@ -4,11 +4,11 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.tasks.await
 
-class AuthRepository {
+open class AuthRepository {
 
     private val firebaseAuth = FirebaseAuth.getInstance()
 
-    suspend fun login(email: String, password: String): FirebaseUser? {
+    open suspend fun login(email: String, password: String): FirebaseUser? {
         val result = firebaseAuth.signInWithEmailAndPassword(email, password).await()
         return result.user
     }
