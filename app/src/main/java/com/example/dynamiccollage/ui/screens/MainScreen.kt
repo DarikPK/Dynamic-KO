@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Collections
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.PictureAsPdf
@@ -281,15 +282,17 @@ fun MainScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            MainButton(
-                text = "Cerrar Sesión",
-                onClick = {
-                    mainViewModel.logout()
-                },
-                buttonColor = MaterialTheme.colorScheme.secondaryContainer,
-                textColor = MaterialTheme.colorScheme.onSecondaryContainer
-            )
+            if (currentUser?.role == "admin") {
+                MainButton(
+                    text = "Cerrar Sesión",
+                    onClick = {
+                        mainViewModel.logout()
+                    },
+                    buttonColor = MaterialTheme.colorScheme.secondaryContainer,
+                    textColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    icon = Icons.Default.Logout
+                )
+            }
             MainButton(
                 text = stringResource(R.string.main_btn_delete_project),
                 onClick = { showDeleteConfirmDialog = true },
