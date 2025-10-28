@@ -21,27 +21,8 @@ class AccountManagementViewModel(
         viewModelScope.launch {
             _creationState.value = CreationState.Loading
             try {
-                val adminUser = authRepository.getCurrentUser()
-                if (adminUser == null) {
-                    _creationState.value = CreationState.Error("No se ha podido identificar al administrador.")
-                    return@launch
-                }
-
-                val newFirebaseUser = authRepository.createUser(email, password)
-                if (newFirebaseUser != null) {
-                    val newUser = User(
-                        uid = newFirebaseUser.uid,
-                        email = email,
-                        nick = nick,
-                        role = "child",
-                        parentId = adminUser.uid,
-                        allow_auto_login = allowAutoLogin
-                    )
-                    userRepository.updateUser(newUser)
-                    _creationState.value = CreationState.Success
-                } else {
-                    _creationState.value = CreationState.Error("No se pudo crear el usuario en Firebase.")
-                }
+                authRepository.createChildUser(nick, email, password, allowAutoLogin)
+                _creationState.value = CreationState.Success
             } catch (e: Exception) {
                 _creationState.value = CreationState.Error(e.message ?: "Ocurrió un error desconocido.")
             }

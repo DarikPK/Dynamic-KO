@@ -17,9 +17,14 @@ open class AuthRepository {
         return result.user
     }
 
-    suspend fun createUser(email: String, password: String): FirebaseUser? {
-        val result = firebaseAuth.createUserWithEmailAndPassword(email, password).await()
-        return result.user
+    suspend fun createChildUser(nick: String, email: String, password: String, allowAutoLogin: Boolean) {
+        val data = hashMapOf(
+            "nick" to nick,
+            "email" to email,
+            "password" to password,
+            "allow_auto_login" to allowAutoLogin
+        )
+        functions.getHttpsCallable("createChildUser").call(data).await()
     }
 
     suspend fun deleteUser(uid: String) {
