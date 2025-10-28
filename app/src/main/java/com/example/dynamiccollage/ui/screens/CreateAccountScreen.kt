@@ -18,6 +18,13 @@ import com.example.dynamiccollage.data.repository.UserRepository
 import com.example.dynamiccollage.viewmodel.AccountManagementViewModel
 import com.example.dynamiccollage.viewmodel.AccountManagementViewModelFactory
 import com.example.dynamiccollage.viewmodel.CreationState
+import java.text.Normalizer
+
+// Función de ayuda para normalizar el texto
+private fun String.normalizeForInput(): String {
+    val normalized = Normalizer.normalize(this, Normalizer.Form.NFD)
+    return normalized.replace("\\p{InCombiningDiacriticalMarks}+".toRegex(), "").lowercase()
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,13 +87,13 @@ fun CreateAccountScreen(
             )
             OutlinedTextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = { email = it.normalizeForInput() },
                 label = { Text("Correo Electrónico") },
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = { password = it.normalizeForInput() },
                 label = { Text("Contraseña") },
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth()
