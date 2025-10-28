@@ -169,6 +169,14 @@ fun MainScreen(
         }
     }
 
+    LaunchedEffect(userState) {
+        if (userState is UserState.Unauthenticated) {
+            navController.navigate("auth_flow") {
+                popUpTo("main_app_flow") { inclusive = true }
+            }
+        }
+    }
+
     ConfirmationDialog(
         show = showDeleteConfirmDialog,
         onDismiss = { showDeleteConfirmDialog = false },
@@ -286,7 +294,7 @@ fun MainScreen(
                 MainButton(
                     text = "Cerrar Sesión",
                     onClick = {
-                        mainViewModel.logout(navController)
+                        mainViewModel.logout()
                     },
                     buttonColor = MaterialTheme.colorScheme.secondaryContainer,
                     textColor = MaterialTheme.colorScheme.onSecondaryContainer,

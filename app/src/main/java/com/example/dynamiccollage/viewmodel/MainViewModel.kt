@@ -2,7 +2,6 @@ package com.example.dynamiccollage.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavController
 import com.example.dynamiccollage.data.model.User
 import com.example.dynamiccollage.data.repository.AuthRepository
 import com.example.dynamiccollage.data.repository.UserRepository
@@ -43,16 +42,10 @@ class MainViewModel(
         }
     }
 
-    fun logout(navController: NavController) {
+    fun logout() {
         viewModelScope.launch {
             authRepository.logout()
             _userState.value = UserState.Unauthenticated
-            navController.navigate("auth_flow") {
-                popUpTo(navController.graph.startDestinationId) {
-                    inclusive = true
-                }
-                launchSingleTop = true
-            }
         }
     }
 }
