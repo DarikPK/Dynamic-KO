@@ -284,6 +284,11 @@ fun MainScreen(
             Spacer(modifier = Modifier.height(16.dp))
             if (currentUser?.role == "admin") {
                 MainButton(
+                    text = "Gestionar Cuentas",
+                    onClick = { navController.navigate(com.example.dynamiccollage.ui.navigation.AuthScreen.AccountManagement.route) },
+                    icon = Icons.Default.Description
+                )
+                MainButton(
                     text = "Cerrar Sesión",
                     onClick = {
                         mainViewModel.logout()
