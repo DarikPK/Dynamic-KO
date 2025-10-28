@@ -13,6 +13,11 @@ open class AuthRepository {
         return result.user
     }
 
+    suspend fun createUser(email: String, password: String): FirebaseUser? {
+        val result = firebaseAuth.createUserWithEmailAndPassword(email, password).await()
+        return result.user
+    }
+
     fun getCurrentUser(): FirebaseUser? {
         return firebaseAuth.currentUser
     }
