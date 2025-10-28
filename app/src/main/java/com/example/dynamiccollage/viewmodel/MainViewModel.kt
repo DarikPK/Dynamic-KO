@@ -43,10 +43,8 @@ class MainViewModel(
     }
 
     fun logout() {
-        viewModelScope.launch {
-            authRepository.logout()
-            _userState.value = UserState.Unauthenticated
-        }
+        authRepository.logout()
+        _userState.value = UserState.Unauthenticated
     }
 }
 

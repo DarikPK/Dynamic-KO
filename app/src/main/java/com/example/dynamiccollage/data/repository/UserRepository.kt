@@ -33,8 +33,4 @@ open class UserRepository {
     suspend fun updateUser(user: User) {
         usersCollection.document(user.uid).set(user).await()
     }
-
-    suspend fun deleteUser(uid: String) {
-        usersCollection.document(uid).delete().await()
-    }
 }

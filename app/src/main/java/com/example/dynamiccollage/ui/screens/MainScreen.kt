@@ -18,7 +18,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.PictureAsPdf
@@ -170,14 +169,6 @@ fun MainScreen(
         }
     }
 
-    LaunchedEffect(userState) {
-        if (userState is UserState.Unauthenticated) {
-            navController.navigate("auth_flow") {
-                popUpTo("main_app_flow") { inclusive = true }
-            }
-        }
-    }
-
     ConfirmationDialog(
         show = showDeleteConfirmDialog,
         onDismiss = { showDeleteConfirmDialog = false },
@@ -267,6 +258,7 @@ fun MainScreen(
                 onClick = { navController.navigate(Screen.ThemeSelection.route) },
                 icon = Icons.Outlined.Tonality
             )
+            Spacer(modifier = Modifier.weight(1f))
             MainButton(
                 text = "Gestionar Imágenes",
                 onClick = {
@@ -281,7 +273,6 @@ fun MainScreen(
                 },
                 icon = Icons.Default.Delete
             )
-            Spacer(modifier = Modifier.weight(1f))
 
             if (currentUser?.role == "master") {
                 MainButton(
@@ -292,15 +283,6 @@ fun MainScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
             if (currentUser?.role == "admin") {
-                MainButton(
-                    text = "Gestión de Cuentas",
-                    onClick = {
-                        navController.navigate(Screen.AccountManagement.route)
-                    },
-                    buttonColor = MaterialTheme.colorScheme.secondaryContainer,
-                    textColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                    icon = Icons.Default.ManageAccounts
-                )
                 MainButton(
                     text = "Cerrar Sesión",
                     onClick = {

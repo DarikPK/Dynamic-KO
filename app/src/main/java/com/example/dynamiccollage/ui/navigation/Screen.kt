@@ -28,9 +28,6 @@ sealed class Screen(val route: String) {
     object SheetDesign : Screen("sheet_design_screen")
     object SheetBackgroundOptions : Screen("sheet_background_options_screen")
     // object Settings : Screen("settings_screen") // Ejemplo si se necesitara
-    object AccountManagement : Screen("account_management")
-    object CreateAccount : Screen("create_account")
-    object ManageAccounts : Screen("manage_accounts")
 
     fun withArgs(vararg args: String): String {
         return buildString {
