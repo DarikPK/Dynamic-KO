@@ -14,6 +14,8 @@ open class AuthRepository {
 
     open suspend fun login(email: String, password: String): FirebaseUser? {
         val result = firebaseAuth.signInWithEmailAndPassword(email, password).await()
+        // Forzar la actualización del token para obtener las custom claims (roles)
+        result.user?.getIdToken(true)
         return result.user
     }
 
