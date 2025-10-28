@@ -285,7 +285,7 @@ fun MainScreen(
             if (currentUser?.role == "admin") {
                 MainButton(
                     text = "Gestionar Cuentas",
-                    onClick = { navController.navigate(com.example.dynamiccollage.ui.navigation.AuthScreen.AccountManagement.route) },
+                    onClick = { navController.navigate("account_management") },
                     icon = Icons.Default.Description
                 )
                 MainButton(

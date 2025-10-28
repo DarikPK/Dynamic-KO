@@ -14,6 +14,9 @@ import com.example.dynamiccollage.ui.screens.*
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.navigation.navigation
+import com.example.dynamiccollage.ui.screens.AccountManagementScreen
+import com.example.dynamiccollage.ui.screens.CreateAccountScreen
+import com.example.dynamiccollage.ui.screens.ManageAccountsScreen
 import com.example.dynamiccollage.ui.screens.auth.BlockedScreen
 import com.example.dynamiccollage.ui.screens.auth.ControlPanelScreen
 import com.example.dynamiccollage.ui.screens.auth.LoginScreen
@@ -264,6 +267,15 @@ fun AppNavigation(
                 navController = navController,
                 projectViewModel = projectViewModel
             )
+        }
+        composable("account_management") {
+            AccountManagementScreen(navController = navController)
+        }
+        composable("create_account") {
+            CreateAccountScreen(navController = navController)
+        }
+        composable("manage_accounts") {
+            ManageAccountsScreen(navController = navController)
         }
         composable(AuthScreen.ControlPanel.route) {
             val user = (userState as? UserState.Authenticated)?.user
