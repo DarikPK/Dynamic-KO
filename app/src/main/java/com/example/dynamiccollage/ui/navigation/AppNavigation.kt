@@ -35,22 +35,6 @@ fun AppNavigation(
     val navController = rememberNavController()
     val userState by mainViewModel.userState.collectAsState()
 
-    // This effect will react to changes in userState and navigate accordingly.
-    LaunchedEffect(userState) {
-        if (userState is UserState.Unauthenticated) {
-            // Ensure we are not already in the auth flow to prevent navigation loops
-            if (navController.currentDestination?.route?.startsWith("auth_flow") == false) {
-                navController.navigate("auth_flow") {
-                    // Pop everything up to the start destination of the graph to clear the back stack
-                    popUpTo(navController.graph.startDestinationId) {
-                        inclusive = true
-                    }
-                    // Avoid multiple copies of the same destination when re-logging in
-                    launchSingleTop = true
-                }
-            }
-        }
-    }
 
     NavHost(navController = navController, startDestination = "auth_flow") {
         navigation(startDestination = "splash", route = "auth_flow") {

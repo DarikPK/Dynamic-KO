@@ -286,7 +286,7 @@ fun MainScreen(
                 MainButton(
                     text = "Cerrar Sesión",
                     onClick = {
-                        mainViewModel.logout()
+                        mainViewModel.logout(navController)
                     },
                     buttonColor = MaterialTheme.colorScheme.secondaryContainer,
                     textColor = MaterialTheme.colorScheme.onSecondaryContainer,
