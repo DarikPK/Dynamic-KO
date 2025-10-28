@@ -301,8 +301,6 @@ fun MainScreen(
                     textColor = MaterialTheme.colorScheme.onSecondaryContainer,
                     icon = Icons.Default.ManageAccounts
                 )
-            }
-            if (currentUser?.role == "admin") {
                 MainButton(
                     text = "Cerrar Sesión",
                     onClick = {
