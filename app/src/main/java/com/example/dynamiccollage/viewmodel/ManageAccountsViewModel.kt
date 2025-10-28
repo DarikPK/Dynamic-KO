@@ -42,11 +42,14 @@ class ManageAccountsViewModel(
 
     fun deleteUser(user: User) {
         viewModelScope.launch {
-            // Primero, deshabilita al usuario para que no pueda iniciar sesión
-            val updatedUser = user.copy(allow_auto_login = false)
-            userRepository.updateUser(updatedUser)
-            // Luego, elimina su registro de la base de datos
-            userRepository.deleteUser(user.uid)
+            try {
+                authRepository.deleteUser(user.uid)
+            } catch (e: Exception) {
+                // Manejar el error, por ejemplo, mostrando un Toast
+                // En este caso, la lista se actualizará automáticamente si la eliminación es exitosa
+                // y el usuario simplemente desaparecerá de la lista. Si falla, el usuario
+                // permanecerá en la lista, lo que indica que algo salió mal.
+            }
         }
     }
 }
