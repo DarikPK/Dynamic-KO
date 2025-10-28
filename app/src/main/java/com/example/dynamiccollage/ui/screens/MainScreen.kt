@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Tonality
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -199,6 +200,15 @@ fun MainScreen(
                             modifier = Modifier.padding(end = 8.dp)
                         )
                         Text(stringResource(id = R.string.app_name))
+                    }
+                },
+                actions = {
+                    if (currentUser?.role == "admin") {
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = "Admin User",
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
