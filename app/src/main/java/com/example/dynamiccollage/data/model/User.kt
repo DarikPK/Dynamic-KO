@@ -7,6 +7,7 @@ import com.google.firebase.Timestamp
 data class User(
     val uid: String = "",
     val email: String = "",
+    val nick: String = "",
     val role: String = "",
     val parentId: String = "",
     val allow_auto_login: Boolean = true,

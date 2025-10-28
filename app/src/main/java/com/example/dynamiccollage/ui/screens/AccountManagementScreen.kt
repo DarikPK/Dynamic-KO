@@ -1,57 +1,21 @@
 package com.example.dynamiccollage.ui.screens
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import android.widget.Toast
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.dynamiccollage.data.repository.AuthRepository
-import com.example.dynamiccollage.data.repository.UserRepository
-import com.example.dynamiccollage.viewmodel.AccountManagementViewModel
-import com.example.dynamiccollage.viewmodel.AccountManagementViewModelFactory
-import com.example.dynamiccollage.viewmodel.CreationState
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import com.example.dynamiccollage.ui.navigation.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccountManagementScreen(
-    navController: NavController,
-    viewModel: AccountManagementViewModel = viewModel(
-        factory = AccountManagementViewModelFactory(
-            AuthRepository(),
-            UserRepository()
-        )
-    )
+    navController: NavController
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var allowAutoLogin by remember { mutableStateOf(true) }
-    val creationState by viewModel.creationState.collectAsState()
-    val context = LocalContext.current
-
-    LaunchedEffect(creationState) {
-        when (val state = creationState) {
-            is CreationState.Success -> {
-                Toast.makeText(context, "Cuenta creada con éxito", Toast.LENGTH_SHORT).show()
-                viewModel.resetCreationState()
-                navController.popBackStack()
-            }
-            is CreationState.Error -> {
-                Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
-                viewModel.resetCreationState()
-            }
-            else -> { /* No-op */
-            }
-        }
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -70,44 +34,24 @@ fun AccountManagementScreen(
                 .padding(paddingValues)
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.Center
         ) {
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = { Text("Correo Electrónico") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("Contraseña") },
-                visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth()
-            )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Permitir inicio de sesión automático")
-                Spacer(Modifier.weight(1f))
-                Switch(
-                    checked = allowAutoLogin,
-                    onCheckedChange = { allowAutoLogin = it }
-                )
-            }
             Button(
-                onClick = {
-                    viewModel.createChildAccount(email, password, allowAutoLogin)
-                },
-                enabled = creationState !is CreationState.Loading,
-                modifier = Modifier.fillMaxWidth()
+                onClick = { navController.navigate(Screen.CreateAccount.route) },
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .height(48.dp)
             ) {
-                if (creationState is CreationState.Loading) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                } else {
-                    Text("Crear Cuenta Hijo")
-                }
+                Text("Crear Cuenta")
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = { navController.navigate(Screen.ManageAccounts.route) },
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .height(48.dp)
+            ) {
+                Text("Administrar Cuentas")
             }
         }
     }

@@ -252,6 +252,12 @@ fun AppNavigation(
         composable(Screen.AccountManagement.route) {
             AccountManagementScreen(navController = navController)
         }
+        composable(Screen.CreateAccount.route) {
+            CreateAccountScreen(navController = navController)
+        }
+        composable(Screen.ManageAccounts.route) {
+            ManageAccountsScreen(navController = navController)
+        }
         composable(AuthScreen.ControlPanel.route) {
             val user = (userState as? UserState.Authenticated)?.user
             if (user != null) {

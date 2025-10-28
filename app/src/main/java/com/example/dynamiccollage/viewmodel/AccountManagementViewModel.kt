@@ -17,7 +17,7 @@ class AccountManagementViewModel(
     private val _creationState = MutableStateFlow<CreationState>(CreationState.Idle)
     val creationState: StateFlow<CreationState> = _creationState
 
-    fun createChildAccount(email: String, password: String, allowAutoLogin: Boolean) {
+    fun createChildAccount(nick: String, email: String, password: String, allowAutoLogin: Boolean) {
         viewModelScope.launch {
             _creationState.value = CreationState.Loading
             try {
@@ -32,6 +32,7 @@ class AccountManagementViewModel(
                     val newUser = User(
                         uid = newFirebaseUser.uid,
                         email = email,
+                        nick = nick,
                         role = "child",
                         parentId = adminUser.uid,
                         allow_auto_login = allowAutoLogin
