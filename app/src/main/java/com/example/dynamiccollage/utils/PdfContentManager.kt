@@ -50,6 +50,7 @@ object PdfContentManager {
                 GeneratedPage(
                     imageUris = chunk,
                     orientation = orientation,
+                    imagesPerPage = group.photosPerSheet,
                     groupId = group.id,
                     optionalTextStyle = if (isFirstPageOfGroup) group.optionalTextStyle else null,
                     isFirstPageOfGroup = isFirstPageOfGroup
@@ -65,6 +66,7 @@ object PdfContentManager {
                 GeneratedPage(
                     imageUris = chunk,
                     orientation = orientation,
+                    imagesPerPage = group.photosPerSheet,
                     groupId = group.id,
                     optionalTextStyle = if (isFirstPageOfGroup) group.optionalTextStyle else null,
                     isFirstPageOfGroup = isFirstPageOfGroup
@@ -89,6 +91,7 @@ object PdfContentManager {
                 GeneratedPage(
                     imageUris = chunk,
                     orientation = group.orientation,
+                    imagesPerPage = group.photosPerSheet,
                     groupId = group.id,
                     optionalTextStyle = if (index == 0) group.optionalTextStyle else null,
                     isFirstPageOfGroup = index == 0
