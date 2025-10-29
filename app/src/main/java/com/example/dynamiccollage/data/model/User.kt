@@ -11,5 +11,6 @@ data class User(
     val role: String = "",
     val parentId: String = "",
     val allow_auto_login: Boolean = true,
-    val createdAt: Timestamp = Timestamp.now()
+    val createdAt: Timestamp = Timestamp.now(),
+    val locked: Boolean = false
 )

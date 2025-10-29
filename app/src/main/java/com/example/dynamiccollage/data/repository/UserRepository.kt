@@ -38,4 +38,24 @@ open class UserRepository {
         val user = User(uid = uid, nick = nick, email = email, role = "user")
         usersCollection.document(uid).set(user).await()
     }
+
+    suspend fun getAllUsers(): Flow<List<User>> = callbackFlow {
+        val listener = usersCollection.addSnapshotListener { snapshot, e ->
+            if (e != null) {
+                close(e)
+                return@addSnapshotListener
+            }
+            val users = snapshot?.documents?.mapNotNull { it.toObject(User::class.java) } ?: emptyList()
+            trySend(users)
+        }
+        awaitClose { listener.remove() }
+    }
+
+    suspend fun deleteUser(user: User) {
+        usersCollection.document(user.uid).delete().await()
+    }
+
+    suspend fun updateUserLockState(user: User, isLocked: Boolean) {
+        usersCollection.document(user.uid).update("locked", isLocked).await()
+    }
 }

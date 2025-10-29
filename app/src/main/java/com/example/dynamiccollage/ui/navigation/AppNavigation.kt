@@ -283,7 +283,12 @@ fun AppNavigation(
             )
         }
         composable("manage_accounts") {
-            ManageAccountsScreen(navController = navController)
+            val userRepository = UserRepository()
+            val factory = ManageAccountsViewModelFactory(userRepository)
+            ManageAccountsScreen(
+                navController = navController,
+                manageAccountsViewModel = viewModel(factory = factory)
+            )
         }
         composable(AuthScreen.ControlPanel.route) {
             val user = (userState as? UserState.Authenticated)?.user
