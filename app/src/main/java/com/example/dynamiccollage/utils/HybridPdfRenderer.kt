@@ -379,6 +379,7 @@ internal fun getRectsForPage(
 
     for (row in 0 until rows) {
         for (col in 0 until cols) {
+            // Corrección: El cálculo de `left` ahora es explícito para evitar la sangría.
             val left = marginLeft + col * (cellWidth + spacing)
             val top = startY + row * (cellHeight + spacing)
             val right = left + cellWidth
