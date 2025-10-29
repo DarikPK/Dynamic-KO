@@ -333,27 +333,68 @@ private fun drawInnerPagesWithPdfBox(
                 }
             }
 
-            pageData.imageUris.forEach { uriString ->
-                val uri = Uri.parse(uriString)
-                try {
-                    val tmpFile = File.createTempFile("pdf_img", ".jpg", context.cacheDir)
-                    context.contentResolver.openInputStream(uri)?.use { input ->
-                        tmpFile.outputStream().use { out -> input.copyTo(out) }
+            val marginTop = coverConfig.marginTop * CM_TO_POINTS
+            val marginBottom = coverConfig.marginBottom * CM_TO_POINTS
+            val marginLeft = coverConfig.marginLeft * CM_TO_POINTS
+            val marginRight = coverConfig.marginRight * CM_TO_POINTS
+            val contentWidth = pageWidth - marginLeft - marginRight
+            val contentHeight = pageHeight - marginTop - marginBottom
+
+            val imagesPerPage = pageData.imagesPerPage
+            val uris = pageData.imageUris.take(imagesPerPage)
+
+            when (imagesPerPage) {
+                1 -> {
+                    if (uris.isNotEmpty()) {
+                        drawImage(context, pdDocument, contentStream, uris[0], marginLeft, pageHeight - marginTop - contentHeight, contentWidth, contentHeight)
                     }
-                    val image = PDImageXObject.createFromFileByContent(tmpFile, pdDocument)
-                    tmpFile.delete()
-                    val imgWidth = pageWidth / 2f
-                    val imgHeight = pageHeight / 2f
-                    val posX = (pageWidth - imgWidth) / 2f
-                    val posY = (pageHeight.toFloat() - imgHeight) / 2f
-                    contentStream.drawImage(image, posX, posY, imgWidth, imgHeight)
-                } catch (e: Exception) {
-                    Log.e("PdfBoxCrash", "Error cargando imagen página interna: ${e.message}")
+                }
+                2 -> {
+                    if (uris.size >= 1) {
+                        val imgHeight = contentHeight / 2f
+                        drawImage(context, pdDocument, contentStream, uris[0], marginLeft, pageHeight - marginTop - imgHeight, contentWidth, imgHeight)
+                    }
+                    if (uris.size >= 2) {
+                        val imgHeight = contentHeight / 2f
+                        drawImage(context, pdDocument, contentStream, uris[1], marginLeft, pageHeight - marginTop - (imgHeight * 2), contentWidth, imgHeight)
+                    }
+                }
+                4 -> {
+                    val imgWidth = contentWidth / 2f
+                    val imgHeight = contentHeight / 2f
+                    if (uris.size >= 1) drawImage(context, pdDocument, contentStream, uris[0], marginLeft, pageHeight - marginTop - imgHeight, imgWidth, imgHeight)
+                    if (uris.size >= 2) drawImage(context, pdDocument, contentStream, uris[1], marginLeft + imgWidth, pageHeight - marginTop - imgHeight, imgWidth, imgHeight)
+                    if (uris.size >= 3) drawImage(context, pdDocument, contentStream, uris[2], marginLeft, pageHeight - marginTop - (imgHeight * 2), imgWidth, imgHeight)
+                    if (uris.size >= 4) drawImage(context, pdDocument, contentStream, uris[3], marginLeft + imgWidth, pageHeight - marginTop - (imgHeight * 2), imgWidth, imgHeight)
                 }
             }
         } finally {
             try { contentStream.close() } catch (_: Exception) {}
         }
+    }
+}
+
+private fun drawImage(
+    context: Context,
+    pdDocument: PDDocument,
+    contentStream: PDPageContentStream,
+    uriString: String,
+    x: Float,
+    y: Float,
+    width: Float,
+    height: Float
+) {
+    try {
+        val uri = Uri.parse(uriString)
+        val tmpFile = File.createTempFile("pdf_img_inner", ".jpg", context.cacheDir)
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            tmpFile.outputStream().use { out -> input.copyTo(out) }
+        }
+        val image = PDImageXObject.createFromFileByContent(tmpFile, pdDocument)
+        tmpFile.delete()
+        contentStream.drawImage(image, x, y, width, height)
+    } catch (e: Exception) {
+        Log.e("PdfBoxCrash", "Error en drawImage para URI: $uriString", e)
     }
 }
 
