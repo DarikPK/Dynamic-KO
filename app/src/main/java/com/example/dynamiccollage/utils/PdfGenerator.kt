@@ -342,7 +342,7 @@ private fun drawInnerPagesWithPdfBox(
 
             val imagesPerPage = pageData.imagesPerPage
             val uris = pageData.imageUris.take(imagesPerPage)
-            val spacing = pageData.imageSpacing
+            val spacingInPoints = pageData.imageSpacing * 0.75f // Convert dp to points
 
             when (imagesPerPage) {
                 1 -> {
@@ -351,21 +351,34 @@ private fun drawInnerPagesWithPdfBox(
                     }
                 }
                 2 -> {
-                    val imgHeight = (contentHeight - spacing) / 2f
-                    if (uris.size >= 1) {
-                        drawImage(context, pdDocument, contentStream, uris[0], marginLeft, pageHeight - marginTop - imgHeight, contentWidth, imgHeight)
-                    }
-                    if (uris.size >= 2) {
-                        drawImage(context, pdDocument, contentStream, uris[1], marginLeft, pageHeight - marginTop - imgHeight * 2 - spacing, contentWidth, imgHeight)
+                    if (pageData.orientation == PageOrientation.Vertical) {
+                        // Separación vertical
+                        val imgHeight = (contentHeight - spacingInPoints) / 2f
+                        if (uris.size >= 1) {
+                            drawImage(context, pdDocument, contentStream, uris[0], marginLeft, pageHeight - marginTop - imgHeight, contentWidth, imgHeight)
+                        }
+                        if (uris.size >= 2) {
+                            drawImage(context, pdDocument, contentStream, uris[1], marginLeft, pageHeight - marginTop - (imgHeight * 2) - spacingInPoints, contentWidth, imgHeight)
+                        }
+                    } else { // Orientación Horizontal
+                        // Separación horizontal
+                        val imgWidth = (contentWidth - spacingInPoints) / 2f
+                        if (uris.size >= 1) {
+                            drawImage(context, pdDocument, contentStream, uris[0], marginLeft, pageHeight - marginTop - contentHeight, imgWidth, contentHeight)
+                        }
+                        if (uris.size >= 2) {
+                            drawImage(context, pdDocument, contentStream, uris[1], marginLeft + imgWidth + spacingInPoints, pageHeight - marginTop - contentHeight, imgWidth, contentHeight)
+                        }
                     }
                 }
+                // El caso 4 se mantiene como estaba, ya que la lógica original ya era correcta para una cuadrícula.
                 4 -> {
-                    val imgWidth = (contentWidth - spacing) / 2f
-                    val imgHeight = (contentHeight - spacing) / 2f
+                    val imgWidth = (contentWidth - spacingInPoints) / 2f
+                    val imgHeight = (contentHeight - spacingInPoints) / 2f
                     if (uris.size >= 1) drawImage(context, pdDocument, contentStream, uris[0], marginLeft, pageHeight - marginTop - imgHeight, imgWidth, imgHeight)
-                    if (uris.size >= 2) drawImage(context, pdDocument, contentStream, uris[1], marginLeft + imgWidth + spacing, pageHeight - marginTop - imgHeight, imgWidth, imgHeight)
-                    if (uris.size >= 3) drawImage(context, pdDocument, contentStream, uris[2], marginLeft, pageHeight - marginTop - imgHeight * 2 - spacing, imgWidth, imgHeight)
-                    if (uris.size >= 4) drawImage(context, pdDocument, contentStream, uris[3], marginLeft + imgWidth + spacing, pageHeight - marginTop - imgHeight * 2 - spacing, imgWidth, imgHeight)
+                    if (uris.size >= 2) drawImage(context, pdDocument, contentStream, uris[1], marginLeft + imgWidth + spacingInPoints, pageHeight - marginTop - imgHeight, imgWidth, imgHeight)
+                    if (uris.size >= 3) drawImage(context, pdDocument, contentStream, uris[2], marginLeft, pageHeight - marginTop - (imgHeight * 2) - spacingInPoints, imgWidth, imgHeight)
+                    if (uris.size >= 4) drawImage(context, pdDocument, contentStream, uris[3], marginLeft + imgWidth + spacingInPoints, pageHeight - marginTop - (imgHeight * 2) - spacingInPoints, imgWidth, imgHeight)
                 }
             }
         } finally {
