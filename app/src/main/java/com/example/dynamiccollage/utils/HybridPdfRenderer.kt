@@ -271,11 +271,28 @@ internal fun drawPageOnCanvas(canvas: Canvas, context: Context, pageData: Genera
         drawRow(canvas, context, text, textStyle, rowRect)
         startY += rowHeight + 15f
     }
+    val marginTop = coverConfig.marginTop * CM_TO_POINTS
+    val marginBottom = coverConfig.marginBottom * CM_TO_POINTS
+    val marginLeft = coverConfig.marginLeft * CM_TO_POINTS
+    val marginRight = coverConfig.marginRight * CM_TO_POINTS
+
     val (cols, rows) = when (pageData.orientation) {
         PageOrientation.Vertical -> if (pageData.imageUris.size > 1) Pair(1, 2) else Pair(1, 1)
         PageOrientation.Horizontal -> if (pageData.imageUris.size > 1) Pair(2, 1) else Pair(1, 1)
     }
-    val rects = getRectsForPage(canvas.width, canvas.height, startY, cols, rows, 15f)
+    val spacingInPoints = pageData.imageSpacing * 0.75f
+    val rects = getRectsForPage(
+        canvas.width,
+        canvas.height,
+        startY,
+        cols,
+        rows,
+        spacingInPoints,
+        marginLeft,
+        marginTop,
+        marginRight,
+        marginBottom
+    )
     val borderSettings = coverConfig.imageBorderSettingsMap[pageData.groupId]
 
     pageData.imageUris.forEachIndexed { index, uriString ->
