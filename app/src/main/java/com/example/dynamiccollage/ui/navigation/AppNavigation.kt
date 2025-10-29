@@ -14,6 +14,8 @@ import com.example.dynamiccollage.ui.screens.*
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.navigation.navigation
+import com.example.dynamiccollage.data.repository.AuthRepository
+import com.example.dynamiccollage.data.repository.UserRepository
 import com.example.dynamiccollage.ui.screens.AccountManagementScreen
 import com.example.dynamiccollage.ui.screens.CreateAccountScreen
 import com.example.dynamiccollage.ui.screens.ManageAccountsScreen
@@ -272,7 +274,13 @@ fun AppNavigation(
             AccountManagementScreen(navController = navController)
         }
         composable("create_account") {
-            CreateAccountScreen(navController = navController)
+            val authRepository = AuthRepository()
+            val userRepository = UserRepository()
+            val factory = CreateAccountViewModelFactory(authRepository, userRepository)
+            CreateAccountScreen(
+                navController = navController,
+                createAccountViewModel = viewModel(factory = factory)
+            )
         }
         composable("manage_accounts") {
             ManageAccountsScreen(navController = navController)

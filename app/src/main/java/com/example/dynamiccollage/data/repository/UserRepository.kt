@@ -33,4 +33,9 @@ open class UserRepository {
     suspend fun updateUser(user: User) {
         usersCollection.document(user.uid).set(user).await()
     }
+
+    suspend fun createUser(uid: String, nick: String, email: String) {
+        val user = User(uid = uid, nick = nick, email = email, role = "user")
+        usersCollection.document(uid).set(user).await()
+    }
 }
