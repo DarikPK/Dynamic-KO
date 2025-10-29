@@ -342,6 +342,7 @@ private fun drawInnerPagesWithPdfBox(
 
             val imagesPerPage = pageData.imagesPerPage
             val uris = pageData.imageUris.take(imagesPerPage)
+            val spacing = pageData.imageSpacing
 
             when (imagesPerPage) {
                 1 -> {
@@ -350,22 +351,21 @@ private fun drawInnerPagesWithPdfBox(
                     }
                 }
                 2 -> {
+                    val imgHeight = (contentHeight - spacing) / 2f
                     if (uris.size >= 1) {
-                        val imgHeight = contentHeight / 2f
                         drawImage(context, pdDocument, contentStream, uris[0], marginLeft, pageHeight - marginTop - imgHeight, contentWidth, imgHeight)
                     }
                     if (uris.size >= 2) {
-                        val imgHeight = contentHeight / 2f
-                        drawImage(context, pdDocument, contentStream, uris[1], marginLeft, pageHeight - marginTop - (imgHeight * 2), contentWidth, imgHeight)
+                        drawImage(context, pdDocument, contentStream, uris[1], marginLeft, pageHeight - marginTop - imgHeight * 2 - spacing, contentWidth, imgHeight)
                     }
                 }
                 4 -> {
-                    val imgWidth = contentWidth / 2f
-                    val imgHeight = contentHeight / 2f
+                    val imgWidth = (contentWidth - spacing) / 2f
+                    val imgHeight = (contentHeight - spacing) / 2f
                     if (uris.size >= 1) drawImage(context, pdDocument, contentStream, uris[0], marginLeft, pageHeight - marginTop - imgHeight, imgWidth, imgHeight)
-                    if (uris.size >= 2) drawImage(context, pdDocument, contentStream, uris[1], marginLeft + imgWidth, pageHeight - marginTop - imgHeight, imgWidth, imgHeight)
-                    if (uris.size >= 3) drawImage(context, pdDocument, contentStream, uris[2], marginLeft, pageHeight - marginTop - (imgHeight * 2), imgWidth, imgHeight)
-                    if (uris.size >= 4) drawImage(context, pdDocument, contentStream, uris[3], marginLeft + imgWidth, pageHeight - marginTop - (imgHeight * 2), imgWidth, imgHeight)
+                    if (uris.size >= 2) drawImage(context, pdDocument, contentStream, uris[1], marginLeft + imgWidth + spacing, pageHeight - marginTop - imgHeight, imgWidth, imgHeight)
+                    if (uris.size >= 3) drawImage(context, pdDocument, contentStream, uris[2], marginLeft, pageHeight - marginTop - imgHeight * 2 - spacing, imgWidth, imgHeight)
+                    if (uris.size >= 4) drawImage(context, pdDocument, contentStream, uris[3], marginLeft + imgWidth + spacing, pageHeight - marginTop - imgHeight * 2 - spacing, imgWidth, imgHeight)
                 }
             }
         } finally {

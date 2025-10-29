@@ -51,6 +51,7 @@ object PdfContentManager {
                     imageUris = chunk,
                     orientation = orientation,
                     imagesPerPage = group.photosPerSheet,
+                    imageSpacing = group.imageSpacing,
                     groupId = group.id,
                     optionalTextStyle = if (isFirstPageOfGroup) group.optionalTextStyle else null,
                     isFirstPageOfGroup = isFirstPageOfGroup
@@ -67,6 +68,7 @@ object PdfContentManager {
                     imageUris = chunk,
                     orientation = orientation,
                     imagesPerPage = group.photosPerSheet,
+                    imageSpacing = group.imageSpacing,
                     groupId = group.id,
                     optionalTextStyle = if (isFirstPageOfGroup) group.optionalTextStyle else null,
                     isFirstPageOfGroup = isFirstPageOfGroup
@@ -92,6 +94,7 @@ object PdfContentManager {
                     imageUris = chunk,
                     orientation = group.orientation,
                     imagesPerPage = group.photosPerSheet,
+                    imageSpacing = group.imageSpacing,
                     groupId = group.id,
                     optionalTextStyle = if (index == 0) group.optionalTextStyle else null,
                     isFirstPageOfGroup = index == 0
