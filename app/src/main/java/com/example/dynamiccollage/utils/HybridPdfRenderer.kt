@@ -371,11 +371,11 @@ internal fun getRectsForPage(
     val contentWidth = pageWidth - marginLeft - marginRight
     val contentHeight = pageHeight - startY - marginBottom
 
-    val totalSpacingX = spacing * (cols - 1)
-    val totalSpacingY = spacing * (rows - 1)
+    val totalSpacingX = spacing * (cols - 1).coerceAtLeast(0)
+    val totalSpacingY = spacing * (rows - 1).coerceAtLeast(0)
 
-    val cellWidth = (contentWidth - totalSpacingX) / cols
-    val cellHeight = (contentHeight - totalSpacingY) / rows
+    val cellWidth = if (cols > 0) (contentWidth - totalSpacingX) / cols else 0f
+    val cellHeight = if (rows > 0) (contentHeight - totalSpacingY) / rows else 0f
 
     for (row in 0 until rows) {
         for (col in 0 until cols) {
