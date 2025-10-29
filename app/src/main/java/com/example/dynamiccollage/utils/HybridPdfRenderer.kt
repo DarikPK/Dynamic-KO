@@ -443,7 +443,7 @@ internal fun getFinalBitmapRect(bitmap: Bitmap, cellRect: RectF, alignment: Imag
         ImageAlignment.LEFT -> { x = cellRect.left; y += (cellHeight - newHeight) / 2 }
         ImageAlignment.RIGHT -> { x = cellRect.right - newWidth; y += (cellHeight - newHeight) / 2 }
         ImageAlignment.TOP -> { x += (cellWidth - newWidth) / 2; y = cellRect.top }
-        ImageAlignment.BOTTOM -> { x += (cellWidth - newHeight) / 2; y = cellRect.bottom - newHeight }
+        ImageAlignment.BOTTOM -> { x += (cellWidth - newWidth) / 2; y = cellRect.bottom - newHeight }
     }
     return RectF(x, y, x + newWidth, y + newHeight)
 }
