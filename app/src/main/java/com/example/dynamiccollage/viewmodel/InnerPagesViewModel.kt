@@ -156,7 +156,7 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
 
     fun onEditingGroupImageSpacingChange(spacingStr: String) {
         val spacing = spacingStr.toFloatOrNull() ?: 0f
-        _editingGroup.value = _editingG-roup.value?.copy(imageSpacing = spacing)
+        _editingGroup.value = _editingGroup.value?.copy(imageSpacing = spacing)
     }
 
     fun onEditingGroupFontSizeChange(size: String) {
