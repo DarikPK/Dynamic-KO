@@ -258,7 +258,6 @@ fun MainScreen(
                 onClick = { navController.navigate(Screen.ThemeSelection.route) },
                 icon = Icons.Outlined.Tonality
             )
-            Spacer(modifier = Modifier.weight(1f))
             MainButton(
                 text = "Gestionar Imágenes",
                 onClick = {
@@ -273,6 +272,7 @@ fun MainScreen(
                 },
                 icon = Icons.Default.Delete
             )
+            Spacer(modifier = Modifier.weight(1f))
 
             if (currentUser?.role == "master") {
                 MainButton(

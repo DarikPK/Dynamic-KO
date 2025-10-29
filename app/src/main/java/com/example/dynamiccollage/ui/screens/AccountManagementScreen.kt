@@ -24,6 +24,7 @@ fun AccountManagementScreen(navController: NavController) {
         Button(onClick = { navController.navigate("create_account") }) {
             Text("Crear Cuenta")
         }
+        Spacer(modifier = Modifier.height(16.dp))
         Button(onClick = { navController.navigate("manage_accounts") }) {
             Text("Administrar Cuentas")
         }
