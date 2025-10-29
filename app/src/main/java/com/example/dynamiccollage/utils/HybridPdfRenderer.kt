@@ -338,7 +338,39 @@ internal fun drawRow(canvas: Canvas, context: Context, text: String, style: Text
 internal fun drawRowBackgroundAndBorders(canvas: Canvas, rowStyle: RowStyle, rect: RectF) { val backgroundPaint = Paint().apply { color = rowStyle.backgroundColor.toArgb(); style = Paint.Style.FILL }; canvas.drawRect(rect, backgroundPaint); val borderPaint = Paint().apply { color = rowStyle.border.color.toArgb(); style = Paint.Style.STROKE; strokeWidth = rowStyle.border.thickness }; val border = rowStyle.border; if (border.top) canvas.drawLine(rect.left, rect.top, rect.right, rect.top, borderPaint); if (border.bottom) canvas.drawLine(rect.left, rect.bottom, rect.right, rect.bottom, borderPaint); if (border.left) canvas.drawLine(rect.left, rect.top, rect.left, rect.bottom, borderPaint); if (border.right) canvas.drawLine(rect.right, rect.top, rect.right, rect.bottom, borderPaint) }
 internal fun createTextPaint(context: Context, style: TextStyleConfig): TextPaint { return TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = style.fontColor.toArgb(); textSize = style.fontSize.toFloat(); val isBold = style.fontWeight == FontWeight.Bold; val isItalic = style.fontStyle == FontStyle.Italic; val typefaceStyle = when { isBold && isItalic -> Typeface.BOLD_ITALIC; isBold -> Typeface.BOLD; isItalic -> Typeface.ITALIC; else -> Typeface.NORMAL }; typeface = Typeface.create(Typeface.SANS_SERIF, typefaceStyle) } }
 internal fun drawTextInRect(canvas: Canvas, context: Context, text: String, style: TextStyleConfig, rect: RectF) { if (text.isBlank()) return; val padding = style.rowStyle.padding; val paddedRect = RectF(rect.left + padding.left, rect.top + padding.top, rect.right - padding.right, rect.bottom - padding.bottom); if (paddedRect.width() <= 0 || paddedRect.height() <= 0) return; val textPaint = createTextPaint(context, style); val staticLayout = StaticLayout.Builder.obtain(text, 0, text.length, textPaint, paddedRect.width().toInt()).setAlignment(getAndroidAlignment(style.textAlign)).build(); val textY = paddedRect.top + (paddedRect.height() - staticLayout.height) / 2; canvas.save(); canvas.translate(paddedRect.left, textY); staticLayout.draw(canvas); canvas.restore() }
-internal fun getRectsForPage(pageWidth: Int, pageHeight: Int, startY: Float, cols: Int, rows: Int, spacing: Float): List<RectF> { val rects = mutableListOf<RectF>(); val totalSpacingX = spacing * (cols + 1); val totalSpacingY = spacing * (rows + 1); val cellWidth = (pageWidth - totalSpacingX) / cols; val availableHeight = pageHeight - startY; val cellHeight = (availableHeight - totalSpacingY) / rows; for (row in 0 until rows) { for (col in 0 until cols) { val left = totalSpacingX / (cols + 1) + col * (cellWidth + spacing); val top = startY + totalSpacingY / (rows + 1) + row * (cellHeight + spacing); val right = left + cellWidth; val bottom = top + cellHeight; rects.add(RectF(left, top, right, bottom)) } }; return rects }
+internal fun getRectsForPage(
+    pageWidth: Int,
+    pageHeight: Int,
+    startY: Float,
+    cols: Int,
+    rows: Int,
+    spacing: Float,
+    marginLeft: Float,
+    marginTop: Float,
+    marginRight: Float,
+    marginBottom: Float
+): List<RectF> {
+    val rects = mutableListOf<RectF>()
+    val contentWidth = pageWidth - marginLeft - marginRight
+    val contentHeight = pageHeight - startY - marginBottom
+
+    val totalSpacingX = spacing * (cols - 1)
+    val totalSpacingY = spacing * (rows - 1)
+
+    val cellWidth = (contentWidth - totalSpacingX) / cols
+    val cellHeight = (contentHeight - totalSpacingY) / rows
+
+    for (row in 0 until rows) {
+        for (col in 0 until cols) {
+            val left = marginLeft + col * (cellWidth + spacing)
+            val top = startY + row * (cellHeight + spacing)
+            val right = left + cellWidth
+            val bottom = top + cellHeight
+            rects.add(RectF(left, top, right, bottom))
+        }
+    }
+    return rects
+}
 
 internal fun drawBitmapToCanvas(canvas: Canvas, bitmap: Bitmap, cellRect: RectF, alignment: ImageAlignment, borderSettings: ImageBorderSettings?) {
     val finalRect = getFinalBitmapRect(bitmap, cellRect, alignment)
@@ -612,11 +644,28 @@ private fun drawImagesWithPdfBox(
             startY += staticLayout.height + textStyle.rowStyle.padding.top + textStyle.rowStyle.padding.bottom + 15f
         }
 
+        val marginTop = coverConfig.marginTop * CM_TO_POINTS
+        val marginBottom = coverConfig.marginBottom * CM_TO_POINTS
+        val marginLeft = coverConfig.marginLeft * CM_TO_POINTS
+        val marginRight = coverConfig.marginRight * CM_TO_POINTS
+
         val (cols, rows) = when (pageData.orientation) {
             PageOrientation.Vertical -> if (pageData.imageUris.size > 1) Pair(1, 2) else Pair(1, 1)
             PageOrientation.Horizontal -> if (pageData.imageUris.size > 1) Pair(2, 1) else Pair(1, 1)
         }
-        val rects = getRectsForPage(pageWidth.toInt(), pageHeight.toInt(), startY, cols, rows, 15f)
+        val spacingInPoints = pageData.imageSpacing * 0.75f // Convert dp to points
+        val rects = getRectsForPage(
+            pageWidth.toInt(),
+            pageHeight.toInt(),
+            startY,
+            cols,
+            rows,
+            spacingInPoints,
+            marginLeft,
+            marginTop,
+            marginRight,
+            marginBottom
+        )
         val borderSettings = coverConfig.imageBorderSettingsMap[pageData.groupId]
 
         pageData.imageUris.forEachIndexed { index, uriString ->
