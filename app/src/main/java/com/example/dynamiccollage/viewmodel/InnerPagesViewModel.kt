@@ -154,13 +154,9 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         )
     }
 
-    fun onEditingGroupImageSpacingChange(context: android.content.Context, spacingStr: String) {
+    fun onEditingGroupImageSpacingChange(spacingStr: String) {
         val spacing = spacingStr.toFloatOrNull() ?: 0f
-        val currentGroup = _editingGroup.value
-        if (currentGroup != null) {
-            _editingGroup.value = currentGroup.copy(imageSpacing = spacing)
-            projectViewModel.updatePageGroupImageSpacing(context, currentGroup.id, spacing)
-        }
+        _editingGroup.value = _editingG-roup.value?.copy(imageSpacing = spacing)
     }
 
     fun onEditingGroupFontSizeChange(size: String) {
@@ -190,7 +186,17 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
             _editingGroup.value?.let { groupToSave ->
                 val currentGroups = pageGroups.value
                 if (currentGroups.any { it.id == groupToSave.id }) {
-                    projectViewModel.updatePageGroup(context, groupToSave.id) { groupToSave }
+                    projectViewModel.updatePageGroup(context, groupToSave.id) { oldGroup ->
+                        oldGroup.copy(
+                            groupName = groupToSave.groupName,
+                            orientation = groupToSave.orientation,
+                            photosPerSheet = groupToSave.photosPerSheet,
+                            sheetCount = groupToSave.sheetCount,
+                            optionalTextStyle = groupToSave.optionalTextStyle,
+                            imageSpacing = groupToSave.imageSpacing,
+                            smartLayoutEnabled = groupToSave.smartLayoutEnabled
+                        )
+                    }
                 } else {
                     projectViewModel.addPageGroup(context, groupToSave)
                 }

@@ -136,7 +136,7 @@ fun CreateEditGroupDialog(
                     value = imageSpacingString,
                     onValueChange = {
                         imageSpacingString = it
-                        viewModel.onEditingGroupImageSpacingChange(context, it)
+                        viewModel.onEditingGroupImageSpacingChange(it)
                     },
                     label = { Text("Separación entre fotos (dp)") },
                     modifier = Modifier.fillMaxWidth(),

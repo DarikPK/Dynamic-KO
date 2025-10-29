@@ -94,10 +94,6 @@ class ProjectViewModel : ViewModel() {
         saveProject(context)
     }
 
-    fun updatePageGroupImageSpacing(context: Context, groupId: String, spacing: Float) {
-        updatePageGroup(context, groupId) { it.copy(imageSpacing = spacing) }
-    }
-
     fun swapPhotoOrder(item1: PhotoArrangementItem, item2: PhotoArrangementItem) {
         _photoArrangement.update { currentList ->
             currentList.map {
