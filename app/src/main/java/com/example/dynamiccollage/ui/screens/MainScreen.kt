@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Collections
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PhotoLibrary
@@ -249,18 +250,11 @@ fun MainScreen(
                 icon = Icons.Default.PictureAsPdf
             )
             MainButton(
-                text = "Papelera",
-                onClick = {
-                    navController.navigate(Screen.RecycleBin.route)
-                },
-                icon = Icons.Default.Delete
-            )
-            MainButton(
-                text = "Gestionar Imágenes",
+                text = "Editar Imágenes",
                 onClick = {
                     navController.navigate(Screen.ImageManager.route)
                 },
-                icon = Icons.Default.Brush
+                icon = Icons.Default.Edit
             )
             MainButton(
                 text = "Diseño Avanzado",
@@ -271,6 +265,13 @@ fun MainScreen(
                 text = "Temas",
                 onClick = { navController.navigate(Screen.ThemeSelection.route) },
                 icon = Icons.Outlined.Tonality
+            )
+            MainButton(
+                text = "Papelera",
+                onClick = {
+                    navController.navigate(Screen.RecycleBin.route)
+                },
+                icon = Icons.Default.Delete
             )
             Spacer(modifier = Modifier.weight(1f))
 
