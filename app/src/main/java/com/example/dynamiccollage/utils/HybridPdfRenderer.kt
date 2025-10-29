@@ -379,7 +379,7 @@ internal fun getRectsForPage(
 
     for (row in 0 until rows) {
         for (col in 0 until cols) {
-            val left = if (col == 0) marginLeft else marginLeft + col * (cellWidth + spacing)
+            val left = marginLeft + col * (cellWidth + spacing)
             val top = startY + row * (cellHeight + spacing)
             val right = left + cellWidth
             val bottom = top + cellHeight

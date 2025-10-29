@@ -242,6 +242,20 @@ fun MainScreen(
                 icon = Icons.Default.Collections
             )
             MainButton(
+                text = "Gestionar Imágenes",
+                onClick = {
+                    navController.navigate(Screen.ImageManager.route)
+                },
+                icon = Icons.Default.PhotoLibrary
+            )
+            MainButton(
+                text = "Papelera",
+                onClick = {
+                    navController.navigate(Screen.RecycleBin.route)
+                },
+                icon = Icons.Default.Delete
+            )
+            MainButton(
                 text = stringResource(R.string.main_btn_preview_pdf),
                 onClick = {
                     projectViewModel.generatePdf(context, "collage_report")
@@ -257,20 +271,6 @@ fun MainScreen(
                 text = "Temas",
                 onClick = { navController.navigate(Screen.ThemeSelection.route) },
                 icon = Icons.Outlined.Tonality
-            )
-            MainButton(
-                text = "Gestionar Imágenes",
-                onClick = {
-                    navController.navigate(Screen.ImageManager.route)
-                },
-                icon = Icons.Default.PhotoLibrary
-            )
-            MainButton(
-                text = "Papelera",
-                onClick = {
-                    navController.navigate(Screen.RecycleBin.route)
-                },
-                icon = Icons.Default.Delete
             )
             Spacer(modifier = Modifier.weight(1f))
 
