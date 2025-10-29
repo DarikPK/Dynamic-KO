@@ -51,7 +51,7 @@ class ProjectViewModel : ViewModel() {
     private val _sunatData = MutableStateFlow<SelectedSunatData?>(null)
     val sunatData: StateFlow<SelectedSunatData?> = _sunatData.asStateFlow()
 
-    private val _themeName = MutableStateFlow("Oscuro")
+    private val _themeName = MutableStateFlow("Emerald Green")
     val themeName: StateFlow<String> = _themeName.asStateFlow()
 
     private val _imageEffectSettings = MutableStateFlow<Map<String, ImageEffectSettings>>(emptyMap())

@@ -242,11 +242,11 @@ fun MainScreen(
                 icon = Icons.Default.Collections
             )
             MainButton(
-                text = "Gestionar Imágenes",
+                text = stringResource(R.string.main_btn_preview_pdf),
                 onClick = {
-                    navController.navigate(Screen.ImageManager.route)
+                    projectViewModel.generatePdf(context, "collage_report")
                 },
-                icon = Icons.Default.PhotoLibrary
+                icon = Icons.Default.PictureAsPdf
             )
             MainButton(
                 text = "Papelera",
@@ -256,11 +256,11 @@ fun MainScreen(
                 icon = Icons.Default.Delete
             )
             MainButton(
-                text = stringResource(R.string.main_btn_preview_pdf),
+                text = "Gestionar Imágenes",
                 onClick = {
-                    projectViewModel.generatePdf(context, "collage_report")
+                    navController.navigate(Screen.ImageManager.route)
                 },
-                icon = Icons.Default.PictureAsPdf
+                icon = Icons.Default.Brush
             )
             MainButton(
                 text = "Diseño Avanzado",
