@@ -27,7 +27,9 @@ class MainViewModel(
             if (firebaseUser != null) {
                 val appUser = userRepository.getUser(firebaseUser.uid)
                 if (appUser != null) {
-                    if (appUser.role == "child" && !appUser.allow_auto_login) {
+                    if (appUser.locked) {
+                        _userState.value = UserState.Blocked
+                    } else if (appUser.role == "child" && !appUser.allow_auto_login) {
                         authRepository.logout()
                         _userState.value = UserState.Blocked
                     } else {

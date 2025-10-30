@@ -61,17 +61,10 @@ fun AppNavigation(
         navigation(startDestination = "splash", route = "auth_flow") {
             composable("splash") {
                 // A simple splash screen to decide where to go
-                when (val state = userState) {
+                when (userState) {
                     is UserState.Authenticated -> {
-                        if (state.user.locked) {
-                            mainViewModel.logout()
-                            navController.navigate(AuthScreen.Login.route) {
-                                popUpTo("auth_flow") { inclusive = true }
-                            }
-                        } else {
-                            navController.navigate("main_app_flow") {
-                                popUpTo("auth_flow") { inclusive = true }
-                            }
+                        navController.navigate("main_app_flow") {
+                            popUpTo("auth_flow") { inclusive = true }
                         }
                     }
                     is UserState.Unauthenticated -> {

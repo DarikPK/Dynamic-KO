@@ -14,7 +14,7 @@ fun BlockedScreen() {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Your access has been blocked by the master user.")
+        Text("Su acceso ha sido bloqueado. Por favor, póngase en contacto con el administrador.")
         Spacer(modifier = Modifier.height(16.dp))
     }
 }
