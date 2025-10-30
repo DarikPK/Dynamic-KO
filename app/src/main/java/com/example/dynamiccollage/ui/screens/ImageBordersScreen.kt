@@ -82,37 +82,43 @@ fun ImageBordersScreen(
                     .weight(1f)
                     .padding(horizontal = 16.dp)
             ) {
-                item {
-                    Text(
-                        "Configuración de Bordes por Grupo:",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(vertical = 12.dp)
-                    )
-                }
-                item {
-                    if (!projectConfig.mainImageUri.isNullOrBlank()) {
-                        val settings = tempBorderSettingsMap["cover"] ?: ImageBorderSettings()
-                        EditableItemRow(
-                            text = "Portada",
-                            settings = settings,
-                            onEditClicked = { editingItemId = "cover" }
-                        )
-                    } else {
+                val hasCoverImage = !projectConfig.mainImageUri.isNullOrBlank()
+                val hasGroupImages = pageGroups.isNotEmpty()
+
+                if (!hasCoverImage && !hasGroupImages) {
+                    item {
                         Text(
-                            text = "Portada: No hay imágenes para editar sus bordes",
+                            text = "No hay imágenes para editar sus bordes",
                             modifier = Modifier.padding(vertical = 16.dp)
                         )
-                        HorizontalDivider()
                     }
-                }
-                items(pageGroups, key = { it.id }) { group ->
-                    val settings = tempBorderSettingsMap[group.id] ?: ImageBorderSettings()
-                    val groupName = group.groupName.ifBlank { "Grupo sin nombre (${group.id.take(6)}...)" }
-                    EditableItemRow(
-                        text = groupName,
-                        settings = settings,
-                        onEditClicked = { editingItemId = group.id }
-                    )
+                } else {
+                    item {
+                        Text(
+                            "Configuración de Bordes por Grupo:",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(vertical = 12.dp)
+                        )
+                    }
+                    if (hasCoverImage) {
+                        item {
+                            val settings = tempBorderSettingsMap["cover"] ?: ImageBorderSettings()
+                            EditableItemRow(
+                                text = "Portada",
+                                settings = settings,
+                                onEditClicked = { editingItemId = "cover" }
+                            )
+                        }
+                    }
+                    items(pageGroups, key = { it.id }) { group ->
+                        val settings = tempBorderSettingsMap[group.id] ?: ImageBorderSettings()
+                        val groupName = group.groupName.ifBlank { "Grupo sin nombre (${group.id.take(6)}...)" }
+                        EditableItemRow(
+                            text = groupName,
+                            settings = settings,
+                            onEditClicked = { editingItemId = group.id }
+                        )
+                    }
                 }
             }
 
