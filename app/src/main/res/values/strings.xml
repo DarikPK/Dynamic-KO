@@ -69,7 +69,7 @@
     <string name="page_groups_saved_toast">Page groups saved.</string>
 
     <!-- MainScreen - Delete Project -->
-    <string name="main_btn_delete_project">Delete Current Project</string>
+    <string name="main_btn_delete_project">Eliminar proyecto</string>
     <string name="delete_project_dialog_title">Confirm Deletion</string>
     <string name="delete_project_dialog_message">Are you sure you want to delete all data for the current project? This action cannot be undone.</string>
     <string name="delete_button">Delete</string>
