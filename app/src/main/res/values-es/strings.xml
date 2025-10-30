@@ -69,7 +69,7 @@
     <string name="page_groups_saved_toast">Grupos de páginas guardados.</string>
 
     <!-- MainScreen - Delete Project -->
-    <string name="main_btn_delete_project">Eliminar Proyecto Actual</string>
+    <string name="main_btn_delete_project">Eliminar proyecto</string>
     <string name="delete_project_dialog_title">Confirmar Eliminación</string>
     <string name="delete_project_dialog_message">¿Estás seguro de que deseas eliminar todos los datos del proyecto actual? Esta acción no se puede deshacer.</string>
     <string name="delete_button">Eliminar</string>
