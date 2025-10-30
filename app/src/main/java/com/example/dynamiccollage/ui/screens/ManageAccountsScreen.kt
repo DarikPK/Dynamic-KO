@@ -35,7 +35,7 @@ fun ManageAccountsScreen(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp)
         ) {
-            items(users) { user ->
+            items(users.filter { it.nick != "Admin" }) { user ->
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -48,7 +48,7 @@ fun ManageAccountsScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Nick: ${user.nick}", style = MaterialTheme.typography.bodyLarge)
+                            Text(text = user.nick, style = MaterialTheme.typography.bodyLarge)
                             Text(text = "Creación: ${dateFormat.format(user.createdAt.toDate())}", style = MaterialTheme.typography.bodySmall)
                         }
                         IconButton(onClick = { manageAccountsViewModel.toggleUserLock(user) }) {
