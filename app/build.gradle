@@ -12,11 +12,11 @@ android {
             assets.include '**/Identity-H', '**/Identity-V'
         }
     }
-    namespace 'com.example.dynamiccollage'
+    namespace 'pe.pixelcollage.app'
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.example.dynamiccollage"
+        applicationId "pe.pixelcollage.app"
         minSdk 26
         targetSdk 34
         versionCode 1

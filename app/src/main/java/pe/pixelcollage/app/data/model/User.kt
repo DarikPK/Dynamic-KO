@@ -1,0 +1,16 @@
+package pe.pixelcollage.app.data.model
+
+package pe.pixelcollage.app.data.model
+
+import com.google.firebase.Timestamp
+
+data class User(
+    val uid: String = "",
+    val email: String = "",
+    val nick: String = "",
+    val role: String = "",
+    val parentId: String = "",
+    val allow_auto_login: Boolean = true,
+    val createdAt: Timestamp = Timestamp.now(),
+    val locked: Boolean = false
+)
