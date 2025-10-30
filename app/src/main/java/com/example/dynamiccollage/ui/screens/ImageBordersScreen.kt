@@ -90,12 +90,20 @@ fun ImageBordersScreen(
                     )
                 }
                 item {
-                    val settings = tempBorderSettingsMap["cover"] ?: ImageBorderSettings()
-                    EditableItemRow(
-                        text = "Portada",
-                        settings = settings,
-                        onEditClicked = { editingItemId = "cover" }
-                    )
+                    if (!projectConfig.mainImageUri.isNullOrBlank()) {
+                        val settings = tempBorderSettingsMap["cover"] ?: ImageBorderSettings()
+                        EditableItemRow(
+                            text = "Portada",
+                            settings = settings,
+                            onEditClicked = { editingItemId = "cover" }
+                        )
+                    } else {
+                        Text(
+                            text = "Portada: No hay imágenes para editar sus bordes",
+                            modifier = Modifier.padding(vertical = 16.dp)
+                        )
+                        HorizontalDivider()
+                    }
                 }
                 items(pageGroups, key = { it.id }) { group ->
                     val settings = tempBorderSettingsMap[group.id] ?: ImageBorderSettings()
