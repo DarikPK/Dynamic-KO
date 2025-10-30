@@ -20,6 +20,7 @@ import com.example.dynamiccollage.viewmodel.ManageAccountsViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManageAccountsScreen(
     navController: NavController,
