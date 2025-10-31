@@ -233,7 +233,8 @@ fun AppNavigation(
         composable(Screen.PhotoSwap.route) {
             PhotoSwapScreen(
                 navController = navController,
-                projectViewModel = projectViewModel
+                projectViewModel = projectViewModel,
+                mainViewModel = mainViewModel
             )
         }
         composable(Screen.RecycleBin.route) {

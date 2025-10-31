@@ -38,14 +38,18 @@ import pe.pixelcollage.app.data.model.PhotoArrangementItem
 import pe.pixelcollage.app.data.model.SheetType
 import kotlinx.coroutines.launch
 
+import pe.pixelcollage.app.viewmodel.MainViewModel
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PhotoSwapScreen(
     navController: NavController,
-    projectViewModel: ProjectViewModel
+    projectViewModel: ProjectViewModel,
+    mainViewModel: MainViewModel
 ) {
     val context = LocalContext.current
     val pdfGenerationState by projectViewModel.pdfGenerationState.collectAsState()
+    val userState by mainViewModel.userState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -213,7 +217,7 @@ fun PhotoSwapScreen(
                     IconButton(
                         onClick = {
                             projectViewModel.saveArrangement(context)
-                            projectViewModel.generatePdf(context, "updated_project")
+                            projectViewModel.generatePdf(context, "updated_project", userState)
                         },
                         enabled = hasUnsavedChanges && pdfGenerationState != PdfGenerationState.Loading
                     ) {
