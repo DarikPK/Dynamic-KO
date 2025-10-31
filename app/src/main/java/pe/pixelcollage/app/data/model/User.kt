@@ -1,7 +1,5 @@
 package pe.pixelcollage.app.data.model
 
-package pe.pixelcollage.app.data.model
-
 import com.google.firebase.Timestamp
 
 data class User(
