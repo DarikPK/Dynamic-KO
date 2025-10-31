@@ -44,7 +44,7 @@ fun AccountManagementScreen(
                 ) {
                     Column(Modifier.weight(1f)) {
                         Text(
-                            "Modo Play Store",
+                            "Modo:",
                             style = MaterialTheme.typography.bodyLarge
                         )
                         Text(
