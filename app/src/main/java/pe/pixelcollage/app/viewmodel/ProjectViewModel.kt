@@ -450,7 +450,7 @@ class ProjectViewModel : ViewModel() {
         }
     }
 
-    fun generatePdf(context: Context, fileName: String) {
+    fun generatePdf(context: Context, fileName: String, userState: UserState) {
         val coverConfig = _currentCoverConfig.value
         val areInnerPagesEmpty = _currentPageGroups.value.all { it.imageUris.isEmpty() }
 
@@ -480,7 +480,8 @@ class ProjectViewModel : ViewModel() {
                     coverConfig = _currentCoverConfig.value,
                     generatedPages = generatedPages,
                     fileName = fileName.ifBlank { "DynamicCollage" },
-                    imageEffectSettings = _imageEffectSettings.value
+                    imageEffectSettings = _imageEffectSettings.value,
+                    userState = userState
                 )
             }
             if (generatedFile != null) {
@@ -489,7 +490,11 @@ class ProjectViewModel : ViewModel() {
                 _pdfGenerationState.value = PdfGenerationState.Success(generatedFile)
             } else {
                 Log.e("ProjectViewModel", "generatePdf: Fallo. `generatedFile` es nulo.")
-                _pdfGenerationState.value = PdfGenerationState.Error("No se pudo generar el PDF.")
+                if (userState is UserState.Authenticated && userState.user.role == "guest") {
+                    _pdfGenerationState.value = PdfGenerationState.Error("Límite de 10 PDFs alcanzado.")
+                } else {
+                    _pdfGenerationState.value = PdfGenerationState.Error("No se pudo generar el PDF.")
+                }
             }
         }
     }

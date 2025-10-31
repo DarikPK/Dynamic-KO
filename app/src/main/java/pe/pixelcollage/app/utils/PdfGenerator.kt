@@ -27,6 +27,11 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 
+import pe.pixelcollage.app.data.repository.AuthRepository
+import kotlinx.coroutines.runBlocking
+import pe.pixelcollage.app.data.model.User
+import pe.pixelcollage.app.viewmodel.UserState
+
 object PdfGenerator {
 
     private fun applyAllEffects(input: Bitmap, settings: ImageEffectSettings): Bitmap {
@@ -78,8 +83,21 @@ object PdfGenerator {
         coverConfig: CoverPageConfig,
         generatedPages: List<GeneratedPage>,
         fileName: String,
-        imageEffectSettings: Map<String, ImageEffectSettings>
+        imageEffectSettings: Map<String, ImageEffectSettings>,
+        userState: UserState
     ): File? {
+        if (userState is UserState.Authenticated && userState.user.role == "guest") {
+            runBlocking {
+                val authRepository = AuthRepository()
+                val installationId = authRepository.getInstallationId()
+                val pdfCount = authRepository.getPdfCount(installationId)
+                if (pdfCount >= 10) {
+                    return@runBlocking null
+                }
+                authRepository.incrementPdfCount(installationId)
+            }
+        }
+
         if (coverConfig.useHybridPdfMode) {
             return generateHybridPdf(context, coverConfig, generatedPages, fileName, imageEffectSettings)
         }

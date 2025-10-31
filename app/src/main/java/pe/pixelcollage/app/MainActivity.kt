@@ -12,15 +12,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import pe.pixelcollage.app.data.repository.AuthRepository
 import pe.pixelcollage.app.data.repository.UserRepository
 import pe.pixelcollage.app.ui.navigation.AppNavigation
 import pe.pixelcollage.app.ui.theme.DynamicCollageTheme
 import pe.pixelcollage.app.viewmodel.*
-import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 
 class MainActivity : ComponentActivity() {
     internal val projectViewModel: ProjectViewModel by viewModels()
+    private val authViewModel: AuthViewModel by viewModels()
 
     private val authRepository by lazy { AuthRepository() }
     private val userRepository by lazy { UserRepository() }
@@ -54,17 +55,24 @@ class MainActivity : ComponentActivity() {
         PDFBoxResourceLoader.init(applicationContext)
         setContent {
             val themeName by projectViewModel.themeName.collectAsState()
+            val isPlayStoreMode by authViewModel.isPlayStoreMode.collectAsState()
+
             DynamicCollageTheme(themeName = themeName) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AppNavigation(
-                        projectViewModel = projectViewModel,
-                        mainViewModel = viewModels<MainViewModel> { mainViewModelFactory }.value,
-                        loginViewModel = viewModels<LoginViewModel> { loginViewModelFactory }.value,
-                        controlPanelViewModel = viewModels<ControlPanelViewModel> { controlPanelViewModelFactory }.value
-                    )
+                    if (isPlayStoreMode != null) {
+                        AppNavigation(
+                            projectViewModel = projectViewModel,
+                            mainViewModel = viewModels<MainViewModel> { mainViewModelFactory }.value,
+                            loginViewModel = viewModels<LoginViewModel> { loginViewModelFactory }.value,
+                            controlPanelViewModel = viewModels<ControlPanelViewModel> { controlPanelViewModelFactory }.value,
+                            startDestination = if (isPlayStoreMode == true) "main_app_flow" else "auth_flow"
+                        )
+                    } else {
+                        // Puedes mostrar una pantalla de carga aquí mientras se determina el modo de autenticación
+                    }
                 }
             }
         }

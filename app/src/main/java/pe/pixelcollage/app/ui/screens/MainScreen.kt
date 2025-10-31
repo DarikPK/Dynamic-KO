@@ -245,7 +245,7 @@ fun MainScreen(
             MainButton(
                 text = stringResource(R.string.main_btn_preview_pdf),
                 onClick = {
-                    projectViewModel.generatePdf(context, "collage_report")
+                    projectViewModel.generatePdf(context, "collage_report", userState)
                 },
                 icon = Icons.Default.PictureAsPdf
             )

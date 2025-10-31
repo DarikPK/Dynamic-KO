@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
+import com.google.firebase.firestore.FirebaseFirestore
+
 class MainViewModel(
     private val authRepository: AuthRepository,
     private val userRepository: UserRepository
@@ -17,29 +19,64 @@ class MainViewModel(
     private val _userState = MutableStateFlow<UserState>(UserState.Loading)
     val userState: StateFlow<UserState> = _userState
 
+    private var isPlayStoreMode: Boolean? = null
+
     init {
-        checkUser()
+        fetchAuthMode {
+            checkUser()
+        }
+    }
+
+    private fun fetchAuthMode(onComplete: () -> Unit) {
+        val firestore = FirebaseFirestore.getInstance()
+        val appSettingsDoc = firestore.collection("app_settings").document("auth_mode")
+        appSettingsDoc.get()
+            .addOnSuccessListener { document ->
+                isPlayStoreMode = if (document != null && document.exists()) {
+                    document.getBoolean("isPlayStoreMode") ?: false
+                } else {
+                    false
+                }
+                onComplete()
+            }
+            .addOnFailureListener {
+                isPlayStoreMode = false
+                onComplete()
+            }
     }
 
     fun checkUser() {
         viewModelScope.launch {
-            val firebaseUser = authRepository.getCurrentUser()
-            if (firebaseUser != null) {
-                val appUser = userRepository.getUser(firebaseUser.uid)
-                if (appUser != null) {
-                    if (appUser.locked) {
-                        _userState.value = UserState.Blocked
-                    } else if (appUser.role == "child" && !appUser.allow_auto_login) {
-                        authRepository.logout()
-                        _userState.value = UserState.Blocked
-                    } else {
+            if (isPlayStoreMode == true) {
+                val firebaseUser = authRepository.getCurrentUser()
+                if (firebaseUser == null || firebaseUser.isAnonymous) {
+                    val anonymousUser = authRepository.signInAnonymously()
+                    if (anonymousUser != null) {
+                        val appUser = User(uid = anonymousUser.uid, role = "guest")
                         _userState.value = UserState.Authenticated(appUser)
+                    } else {
+                        _userState.value = UserState.Unauthenticated
+                    }
+                }
+            } else {
+                val firebaseUser = authRepository.getCurrentUser()
+                if (firebaseUser != null) {
+                    val appUser = userRepository.getUser(firebaseUser.uid)
+                    if (appUser != null) {
+                        if (appUser.locked) {
+                            _userState.value = UserState.Blocked
+                        } else if (appUser.role == "child" && !appUser.allow_auto_login) {
+                            authRepository.logout()
+                            _userState.value = UserState.Blocked
+                        } else {
+                            _userState.value = UserState.Authenticated(appUser)
+                        }
+                    } else {
+                        _userState.value = UserState.Unauthenticated
                     }
                 } else {
                     _userState.value = UserState.Unauthenticated
                 }
-            } else {
-                _userState.value = UserState.Unauthenticated
             }
         }
     }

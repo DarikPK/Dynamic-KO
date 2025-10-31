@@ -31,7 +31,8 @@ fun AppNavigation(
     projectViewModel: ProjectViewModel,
     mainViewModel: MainViewModel,
     loginViewModel: LoginViewModel,
-    controlPanelViewModel: ControlPanelViewModel
+    controlPanelViewModel: ControlPanelViewModel,
+    startDestination: String
 ) {
     val coverSetupViewModel: CoverSetupViewModel = viewModel()
     val rowStyleViewModel: RowStyleViewModel = viewModel()
@@ -57,7 +58,7 @@ fun AppNavigation(
         }
     }
 
-    NavHost(navController = navController, startDestination = "auth_flow") {
+    NavHost(navController = navController, startDestination = startDestination) {
         navigation(startDestination = "splash", route = "auth_flow") {
             composable("splash") {
                 // A simple splash screen to decide where to go
