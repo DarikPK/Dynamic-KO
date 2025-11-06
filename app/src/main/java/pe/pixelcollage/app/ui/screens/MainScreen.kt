@@ -219,6 +219,9 @@ fun MainScreen(
             )
         }
     ) { paddingValues ->
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -227,6 +230,33 @@ fun MainScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            val remainingPdfs by mainViewModel.remainingPdfs.collectAsState()
+
+            if (currentUser?.role == "guest" && remainingPdfs != null) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth(0.8f)
+                        .padding(bottom = 16.dp),
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            "Modo de Prueba",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "PDFs restantes: $remainingPdfs",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
+            }
+
             MainButton(
                 text = stringResource(R.string.main_btn_get_data),
                 onClick = { navController.navigate(Screen.SunatData.route) },

@@ -19,6 +19,9 @@ class MainViewModel(
     private val _userState = MutableStateFlow<UserState>(UserState.Loading)
     val userState: StateFlow<UserState> = _userState
 
+    private val _remainingPdfs = MutableStateFlow<Int?>(null)
+    val remainingPdfs: StateFlow<Int?> = _remainingPdfs
+
     private var isPlayStoreMode: Boolean? = null
 
     init {
@@ -54,11 +57,16 @@ class MainViewModel(
                     if (anonymousUser != null) {
                         val appUser = User(uid = anonymousUser.uid, role = "guest")
                         _userState.value = UserState.Authenticated(appUser)
+                        updateRemainingPdfs() // Actualizar contador para usuario anónimo
                     } else {
                         _userState.value = UserState.Unauthenticated
                     }
+                } else {
+                    // Si ya hay un usuario anónimo, solo actualizamos el contador
+                    updateRemainingPdfs()
                 }
             } else {
+                _remainingPdfs.value = null // Limpiar contador si no es modo Play Store
                 val firebaseUser = authRepository.getCurrentUser()
                 if (firebaseUser != null) {
                     val appUser = userRepository.getUser(firebaseUser.uid)
@@ -84,6 +92,19 @@ class MainViewModel(
     fun logout() {
         authRepository.logout()
         _userState.value = UserState.Unauthenticated
+    }
+
+    private fun updateRemainingPdfs() {
+        viewModelScope.launch {
+            try {
+                val installationId = authRepository.getInstallationId()
+                val pdfCount = authRepository.getPdfCount(installationId)
+                _remainingPdfs.value = (10 - pdfCount).coerceAtLeast(0)
+            } catch (e: Exception) {
+                // Manejar error si no se puede obtener el contador
+                _remainingPdfs.value = null
+            }
+        }
     }
 }
 
