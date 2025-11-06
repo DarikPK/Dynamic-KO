@@ -56,6 +56,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
+import android.app.Application
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -402,12 +403,12 @@ fun MainButton(
 @Composable
 fun MainScreenPreview() {
     // Mock dependencies for preview
+    val context = LocalContext.current
     val mockAuthRepository = object : pe.pixelcollage.app.data.repository.AuthRepository() {}
     val mockUserRepository = object : pe.pixelcollage.app.data.repository.UserRepository() {}
-    val mockMainViewModel = pe.pixelcollage.app.viewmodel.MainViewModel(mockAuthRepository, mockUserRepository)
+    val mockMainViewModel = pe.pixelcollage.app.viewmodel.MainViewModel(context.applicationContext as Application, mockAuthRepository, mockUserRepository)
 
     DynamicCollageTheme {
-        val context = LocalContext.current
         MainScreen(
             navController = rememberNavController(),
             projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity),
@@ -420,12 +421,12 @@ fun MainScreenPreview() {
 @Composable
 fun MainScreenDarkPreview() {
     // Mock dependencies for preview
+    val context = LocalContext.current
     val mockAuthRepository = object : pe.pixelcollage.app.data.repository.AuthRepository() {}
     val mockUserRepository = object : pe.pixelcollage.app.data.repository.UserRepository() {}
-    val mockMainViewModel = pe.pixelcollage.app.viewmodel.MainViewModel(mockAuthRepository, mockUserRepository)
+    val mockMainViewModel = pe.pixelcollage.app.viewmodel.MainViewModel(context.applicationContext as Application, mockAuthRepository, mockUserRepository)
 
     DynamicCollageTheme(darkTheme = true) {
-        val context = LocalContext.current
         MainScreen(
             navController = rememberNavController(),
             projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity),
