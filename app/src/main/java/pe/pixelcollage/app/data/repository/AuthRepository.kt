@@ -1,10 +1,13 @@
 package pe.pixelcollage.app.data.repository
 
+import android.annotation.SuppressLint
+import android.content.Context
+import android.provider.Settings
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.installations.FirebaseInstallations
 import kotlinx.coroutines.tasks.await
+
 
 open class AuthRepository {
 
@@ -27,17 +30,20 @@ open class AuthRepository {
         return result.user
     }
 
-    suspend fun getInstallationId(): String {
-        return FirebaseInstallations.getInstance().id.await()
+    @SuppressLint("HardwareIds")
+    fun getDeviceId(context: Context): String {
+        return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
     }
 
-    suspend fun getPdfCount(installationId: String): Int {
-        val document = pdfUsageCollection.document(installationId).get().await()
+    suspend fun getPdfCount(deviceId: String): Int {
+        if (deviceId.isBlank()) return 0
+        val document = pdfUsageCollection.document(deviceId).get().await()
         return document.getLong("count")?.toInt() ?: 0
     }
 
-    suspend fun incrementPdfCount(installationId: String) {
-        val docRef = pdfUsageCollection.document(installationId)
+    suspend fun incrementPdfCount(deviceId: String) {
+        if (deviceId.isBlank()) return
+        val docRef = pdfUsageCollection.document(deviceId)
         firestore.runTransaction { transaction ->
             val snapshot = transaction.get(docRef)
             val newCount = (snapshot.getLong("count") ?: 0) + 1

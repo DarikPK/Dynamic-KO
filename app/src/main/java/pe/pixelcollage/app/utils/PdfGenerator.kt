@@ -89,12 +89,12 @@ object PdfGenerator {
         if (userState is UserState.Authenticated && userState.user.role == "guest") {
             runBlocking {
                 val authRepository = AuthRepository()
-                val installationId = authRepository.getInstallationId()
-                val pdfCount = authRepository.getPdfCount(installationId)
+                val deviceId = authRepository.getDeviceId(context)
+                val pdfCount = authRepository.getPdfCount(deviceId)
                 if (pdfCount >= 10) {
                     return@runBlocking null
                 }
-                authRepository.incrementPdfCount(installationId)
+                authRepository.incrementPdfCount(deviceId)
             }
         }
 

@@ -1,6 +1,7 @@
 package pe.pixelcollage.app.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import pe.pixelcollage.app.data.model.User
 import pe.pixelcollage.app.data.repository.AuthRepository
@@ -12,9 +13,10 @@ import kotlinx.coroutines.launch
 import com.google.firebase.firestore.FirebaseFirestore
 
 class MainViewModel(
+    application: Application,
     private val authRepository: AuthRepository,
     private val userRepository: UserRepository
-) : ViewModel() {
+) : AndroidViewModel(application) {
 
     private val _userState = MutableStateFlow<UserState>(UserState.Loading)
     val userState: StateFlow<UserState> = _userState
@@ -95,8 +97,8 @@ class MainViewModel(
     fun updateRemainingPdfs() {
         viewModelScope.launch {
             try {
-                val installationId = authRepository.getInstallationId()
-                val pdfCount = authRepository.getPdfCount(installationId)
+                val deviceId = authRepository.getDeviceId(getApplication())
+                val pdfCount = authRepository.getPdfCount(deviceId)
                 _remainingPdfs.value = (10 - pdfCount).coerceAtLeast(0)
             } catch (e: Exception) {
                 // Si falla, se usa -1 para indicar "No disponible"

@@ -29,7 +29,11 @@ class MainActivity : ComponentActivity() {
     private val mainViewModelFactory by lazy {
         object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return MainViewModel(authRepository, userRepository) as T
+                if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
+                    @Suppress("UNCHECKED_CAST")
+                    return MainViewModel(application, authRepository, userRepository) as T
+                }
+                throw IllegalArgumentException("Unknown ViewModel class")
             }
         }
     }
