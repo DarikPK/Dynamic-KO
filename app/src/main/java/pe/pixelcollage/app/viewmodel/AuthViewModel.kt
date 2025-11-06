@@ -24,14 +24,12 @@ class AuthViewModel : ViewModel() {
         viewModelScope.launch {
             appSettingsDoc.get()
                 .addOnSuccessListener { document ->
-                    _isPlayStoreMode.value = if (document != null && document.exists()) {
-                        document.getBoolean("isPlayStoreMode") ?: false
-                    } else {
-                        false
-                    }
+                    // Si el documento existe, usa su valor; si no, asume true.
+                    _isPlayStoreMode.value = document?.getBoolean("isPlayStoreMode") ?: true
                 }
                 .addOnFailureListener {
-                    _isPlayStoreMode.value = false
+                    // Si hay un error de lectura (ej. permisos), asume true.
+                    _isPlayStoreMode.value = true
                 }
         }
     }

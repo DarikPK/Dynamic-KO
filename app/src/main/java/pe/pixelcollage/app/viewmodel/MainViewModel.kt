@@ -35,15 +35,13 @@ class MainViewModel(
         val appSettingsDoc = firestore.collection("app_settings").document("auth_mode")
         appSettingsDoc.get()
             .addOnSuccessListener { document ->
-                isPlayStoreMode = if (document != null && document.exists()) {
-                    document.getBoolean("isPlayStoreMode") ?: false
-                } else {
-                    false
-                }
+                // Si el documento existe, usa su valor; si no, asume true por defecto.
+                isPlayStoreMode = document?.getBoolean("isPlayStoreMode") ?: true
                 onComplete()
             }
             .addOnFailureListener {
-                isPlayStoreMode = false
+                // Si hay un error de lectura, asume true para asegurar el modo Play Store.
+                isPlayStoreMode = true
                 onComplete()
             }
     }
