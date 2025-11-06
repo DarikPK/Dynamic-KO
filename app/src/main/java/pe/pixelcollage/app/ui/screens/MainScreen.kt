@@ -103,6 +103,7 @@ fun MainScreen(
     }
 
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var showLimitReachedDialog by remember { mutableStateOf(false) }
     val pdfGenerationState by projectViewModel.pdfGenerationState.collectAsState()
     val shareablePdfUri by projectViewModel.shareablePdfUri.collectAsState()
     val saveState by projectViewModel.saveState.collectAsState()
@@ -188,6 +189,18 @@ fun MainScreen(
         LoadingDialog(message = "Generando PDF...")
     }
 
+    if (showLimitReachedDialog) {
+        AlertDialog(
+            onDismissRequest = { showLimitReachedDialog = false },
+            title = { Text("Límite Alcanzado") },
+            text = { Text("La aplicación aún está en versión de pruebas. Para obtener acceso completo, por favor contacta con el administrador al teléfono 930653718.") },
+            confirmButton = {
+                Button(onClick = { showLimitReachedDialog = false }) {
+                    Text("Entendido")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -273,10 +286,15 @@ fun MainScreen(
                 onClick = { navController.navigate(Screen.InnerPages.route) },
                 icon = Icons.Default.Collections
             )
+
             MainButton(
                 text = stringResource(R.string.main_btn_preview_pdf),
                 onClick = {
-                    projectViewModel.generatePdf(context, "collage_report", userState)
+                    if (currentUser?.role == "guest" && remainingPdfs != null && remainingPdfs!! <= 0) {
+                        showLimitReachedDialog = true
+                    } else {
+                        projectViewModel.generatePdf(context, "collage_report", userState)
+                    }
                 },
                 icon = Icons.Default.PictureAsPdf
             )
