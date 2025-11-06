@@ -29,6 +29,8 @@ import androidx.compose.material.icons.outlined.Tonality
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -219,9 +221,6 @@ fun MainScreen(
             )
         }
     ) { paddingValues ->
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
