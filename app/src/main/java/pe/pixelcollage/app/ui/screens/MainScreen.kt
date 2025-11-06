@@ -148,6 +148,7 @@ fun MainScreen(
     // Efecto para navegar cuando el PDF está listo para previsualizar
     LaunchedEffect(pdfGenerationState) {
         if (pdfGenerationState is pe.pixelcollage.app.viewmodel.PdfGenerationState.Success) {
+            mainViewModel.updateRemainingPdfs() // Actualiza el contador
             val file = (pdfGenerationState as pe.pixelcollage.app.viewmodel.PdfGenerationState.Success).file
             val encodedPath = java.net.URLEncoder.encode(file.absolutePath, "UTF-8")
             navController.navigate(Screen.PdfPreview.withArgs(encodedPath))

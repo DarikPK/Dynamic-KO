@@ -92,7 +92,7 @@ class MainViewModel(
         _userState.value = UserState.Unauthenticated
     }
 
-    private fun updateRemainingPdfs() {
+    fun updateRemainingPdfs() {
         viewModelScope.launch {
             try {
                 val installationId = authRepository.getInstallationId()
