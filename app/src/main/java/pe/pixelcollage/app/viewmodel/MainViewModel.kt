@@ -101,8 +101,8 @@ class MainViewModel(
                 val pdfCount = authRepository.getPdfCount(installationId)
                 _remainingPdfs.value = (10 - pdfCount).coerceAtLeast(0)
             } catch (e: Exception) {
-                // Manejar error si no se puede obtener el contador
-                _remainingPdfs.value = null
+                // Si falla, se usa -1 para indicar "No disponible"
+                _remainingPdfs.value = -1
             }
         }
     }

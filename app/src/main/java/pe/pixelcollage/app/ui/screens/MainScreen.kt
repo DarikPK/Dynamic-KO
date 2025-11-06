@@ -248,8 +248,9 @@ fun MainScreen(
                             color = MaterialTheme.colorScheme.primary
                         )
                         Spacer(modifier = Modifier.height(8.dp))
+                        val remainingText = if (remainingPdfs == -1) "(No disponible)" else remainingPdfs.toString()
                         Text(
-                            "PDFs restantes: $remainingPdfs",
+                            "PDFs restantes: $remainingText",
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }

@@ -71,7 +71,7 @@ class MainActivity : ComponentActivity() {
                             startDestination = if (isPlayStoreMode == true) "main_app_flow" else "auth_flow"
                         )
                     } else {
-                        // Puedes mostrar una pantalla de carga aquí mientras se determina el modo de autenticación
+                        pe.pixelcollage.app.ui.screens.SplashScreen()
                     }
                 }
             }
