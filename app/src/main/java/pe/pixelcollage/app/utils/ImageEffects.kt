@@ -22,7 +22,7 @@ object ImageEffects {
         contrast: Float,
         saturation: Float
     ): Bitmap {
-        val newBitmap = Bitmap.createBitmap(bitmap.width, bitmap.height, bitmap.config)
+        val newBitmap = Bitmap.createBitmap(bitmap.width, bitmap.height, bitmap.config ?: Bitmap.Config.ARGB_8888)
         val canvas = Canvas(newBitmap)
         val paint = Paint()
 
@@ -142,7 +142,7 @@ object ImageEffects {
         }
 
 
-        val newBitmap = Bitmap.createBitmap(width, height, bitmap.config)
+        val newBitmap = Bitmap.createBitmap(width, height, bitmap.config ?: Bitmap.Config.ARGB_8888)
         newBitmap.setPixels(newPixels, 0, width, 0, 0, width, height)
         return newBitmap
     }
@@ -218,7 +218,7 @@ object ImageEffects {
         }
 
 
-        val newBitmap = Bitmap.createBitmap(width, height, bitmap.config)
+        val newBitmap = Bitmap.createBitmap(width, height, bitmap.config ?: Bitmap.Config.ARGB_8888)
         newBitmap.setPixels(newPixels, 0, width, 0, 0, width, height)
         return newBitmap
     }
