@@ -119,19 +119,4 @@
     <string name="image_border_style_none">Ninguno</string>
     <string name="image_border_style_curved">Curvo</string>
     <string name="image_border_style_chamfered">Triangular</string>
-
-    <!-- Image Upload Screen -->
-    <string name="image_upload_title">Gestionar Imágenes</string>
-    <string name="error_photo_quota_not_met">Debes completar la cuota de fotos en todos los grupos antes de salir.</string>
-    <string name="warning_photo_quota_mismatch">Advertencia: La configuración requiere %1$d fotos, pero el grupo tiene %2$d cargadas. Ajuste la configuración o las imágenes.</string>
-
-    <!-- Hardcoded strings -->
-    <string name="new_group_name">Grupo %1$d</string>
-    <string name="create_account_error">No se pudo crear el usuario.</string>
-    <string name="unknown_error">Error desconocido</string>
-    <string name="account_created_successfully">Cuenta creada con éxito</string>
-    <string name="create_account_title">Crear Cuenta</string>
-    <string name="nickname_label">Apodo</string>
-    <string name="email_label">Correo Electrónico</string>
-    <string name="password_label">Contraseña</string>
 </resources>
