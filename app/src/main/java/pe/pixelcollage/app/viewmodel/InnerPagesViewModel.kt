@@ -56,11 +56,11 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
     private val _showDeleteImagesDialog = MutableStateFlow<String?>(null)
     val showDeleteImagesDialog: StateFlow<String?> = _showDeleteImagesDialog.asStateFlow()
 
-    fun onAddNewGroupClicked() {
+    fun onAddNewGroupClicked(context: android.content.Context) {
         val coverConfig = projectViewModel.currentCoverConfig.value
         val currentGroupCount = pageGroups.value.size
         val newGroup = PageGroup(
-            groupName = "Grupo ${currentGroupCount + 1}",
+            groupName = context.getString(pe.pixelcollage.app.R.string.new_group_name, currentGroupCount + 1),
             optionalTextStyle = coverConfig.subtitleStyle.copy(
                 id = "pageGroupOptionalText",
                 content = ""

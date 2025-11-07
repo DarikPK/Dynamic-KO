@@ -40,10 +40,13 @@ fun CreateAccountScreen(
     val createAccountState by createAccountViewModel.createAccountState.collectAsState()
     val context = LocalContext.current
 
+import androidx.compose.ui.res.stringResource
+import pe.pixelcollage.app.R
+
     LaunchedEffect(createAccountState) {
         when (createAccountState) {
             is CreateAccountState.Success -> {
-                Toast.makeText(context, "Cuenta creada con éxito", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, R.string.account_created_successfully, Toast.LENGTH_SHORT).show()
                 navController.popBackStack()
             }
             is CreateAccountState.Error -> {
@@ -63,26 +66,26 @@ fun CreateAccountScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Crear Cuenta", style = androidx.compose.material3.MaterialTheme.typography.headlineMedium)
+        Text(stringResource(id = R.string.create_account_title), style = androidx.compose.material3.MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(32.dp))
         OutlinedTextField(
             value = nick,
             onValueChange = { nick = it },
-            label = { Text("Apodo") },
+            label = { Text(stringResource(id = R.string.nickname_label)) },
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(16.dp))
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("Correo Electrónico") },
+            label = { Text(stringResource(id = R.string.email_label)) },
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(16.dp))
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Contraseña") },
+            label = { Text(stringResource(id = R.string.password_label)) },
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth()
         )
@@ -91,11 +94,11 @@ fun CreateAccountScreen(
             CircularProgressIndicator()
         } else {
             Button(
-                onClick = { createAccountViewModel.createAccount(nick, email, password) },
+                onClick = { createAccountViewModel.createAccount(context, nick, email, password) },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = nick.isNotBlank() && email.isNotBlank() && password.isNotBlank()
             ) {
-                Text("Crear Cuenta")
+                Text(stringResource(id = R.string.create_account_title))
             }
         }
     }

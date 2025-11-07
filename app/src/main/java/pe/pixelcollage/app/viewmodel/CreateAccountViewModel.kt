@@ -23,7 +23,10 @@ class CreateAccountViewModel(
     private val _createAccountState = MutableStateFlow<CreateAccountState>(CreateAccountState.Idle)
     val createAccountState: StateFlow<CreateAccountState> = _createAccountState
 
-    fun createAccount(nick: String, email: String, password: String) {
+import android.content.Context
+import pe.pixelcollage.app.R
+
+    fun createAccount(context: Context, nick: String, email: String, password: String) {
         viewModelScope.launch {
             _createAccountState.value = CreateAccountState.Loading
             try {
@@ -32,10 +35,10 @@ class CreateAccountViewModel(
                     userRepository.createUser(firebaseUser.uid, nick, email)
                     _createAccountState.value = CreateAccountState.Success
                 } else {
-                    _createAccountState.value = CreateAccountState.Error("No se pudo crear el usuario.")
+                    _createAccountState.value = CreateAccountState.Error(context.getString(R.string.create_account_error))
                 }
             } catch (e: Exception) {
-                _createAccountState.value = CreateAccountState.Error(e.message ?: "Error desconocido")
+                _createAccountState.value = CreateAccountState.Error(e.message ?: context.getString(R.string.unknown_error))
             }
         }
     }

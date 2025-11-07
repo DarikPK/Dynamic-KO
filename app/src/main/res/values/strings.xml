@@ -121,4 +121,14 @@
     <string name="image_border_style_none">None</string>
     <string name="image_border_style_curved">Curved</string>
     <string name="image_border_style_chamfered">Chamfered</string>
+
+    <!-- Hardcoded strings -->
+    <string name="new_group_name">Group %1$d</string>
+    <string name="create_account_error">Could not create user.</string>
+    <string name="unknown_error">Unknown error</string>
+    <string name="account_created_successfully">Account created successfully</string>
+    <string name="create_account_title">Create Account</string>
+    <string name="nickname_label">Nickname</string>
+    <string name="email_label">Email</string>
+    <string name="password_label">Password</string>
 </resources>

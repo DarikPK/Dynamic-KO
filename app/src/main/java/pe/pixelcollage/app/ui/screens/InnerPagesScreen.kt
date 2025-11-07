@@ -239,7 +239,7 @@ fun InnerPagesScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
             Button(
-                onClick = { innerPagesViewModel.onAddNewGroupClicked() },
+                onClick = { innerPagesViewModel.onAddNewGroupClicked(context) },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(Icons.Filled.Add, contentDescription = null)
