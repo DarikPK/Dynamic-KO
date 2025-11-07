@@ -16,17 +16,32 @@
 -keep class androidx.versionedparcelable.VersionedParcelable
 -keep class androidx.versionedparcelable.VersionedParcelize
 
-# Reglas para Retrofit y Gson
+#######################################################
+# 🔐 CORRECCIÓN DE RETROFIT + GSON (SUNAT API)
+#######################################################
+
+# Mantener información de tipos genéricos
+-keepattributes Signature
+-keepattributes *Annotation*
+
+# Mantener clases e interfaces de Retrofit
 -keep class retrofit2.** { *; }
 -keep interface retrofit2.** { *; }
 -dontwarn retrofit2.Platform$Java8
+-dontwarn retrofit2.adapter.rxjava2.**
 
-# Reglas para los modelos de datos de SUNAT
--keep class pe.pixelcollage.app.remote.SunatData { *; }
--keep class pe.pixelcollage.app.remote.RucData { *; }
--keep class pe.pixelcollage.app.remote.DniData { *; }
+# Mantener el convertidor Gson
+-keep class com.google.gson.** { *; }
+-dontwarn com.google.gson.**
+-keep class com.google.gson.reflect.TypeToken
+-keep class com.google.gson.TypeAdapter
+-keep class com.google.gson.TypeAdapterFactory
+-keep class com.google.gson.internal.bind.** { *; }
 
-# Mantener los nombres de los campos en clases de datos para Gson
+# Mantener todos los modelos y servicios SUNAT
+-keep class pe.pixelcollage.app.remote.** { *; }
+
+# Mantener campos con @SerializedName
 -keepclassmembers class * {
     @com.google.gson.annotations.SerializedName <fields>;
 }
