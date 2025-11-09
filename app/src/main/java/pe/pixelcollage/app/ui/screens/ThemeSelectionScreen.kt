@@ -180,6 +180,11 @@ fun ThemeSelectionScreen(
                             }
                             .clip(CircleShape)
                             .background(if (hasChanges) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                            .border(
+                                width = if (hasChanges) 1.5.dp else 0.dp,
+                                color = if (hasChanges) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                shape = CircleShape
+                            )
                     ) {
                         IconButton(
                             onClick = {
