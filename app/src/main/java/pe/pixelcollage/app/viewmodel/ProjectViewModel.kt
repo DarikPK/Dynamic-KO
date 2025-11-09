@@ -382,6 +382,16 @@ class ProjectViewModel : ViewModel() {
         saveProject(context)
     }
 
+    fun updatePageGroups(context: Context, newGroups: List<PageGroup>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val oldUris = _currentPageGroups.value.flatMap { it.imageUris }.toSet()
+            val newUris = newGroups.flatMap { it.imageUris }.toSet()
+            val urisToDelete = oldUris - newUris
+            urisToDelete.forEach { deleteLocalImage(it) }
+        }
+        _currentPageGroups.value = newGroups
+    }
+
     fun updatePageGroup(context: Context, groupId: String, transform: (PageGroup) -> PageGroup) {
         _currentPageGroups.update { currentList ->
             currentList.map { if (it.id == groupId) transform(it) else it }

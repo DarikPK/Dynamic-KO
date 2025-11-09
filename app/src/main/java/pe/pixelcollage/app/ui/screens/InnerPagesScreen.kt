@@ -129,6 +129,7 @@ fun InnerPagesScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showExitConfirmDialog = false
+                    innerPagesViewModel.discardChanges()
                     navController.popBackStack()
                 }) {
                     Text("Sí, salir")
@@ -300,7 +301,7 @@ fun InnerPagesScreen(
                     ) {
                         IconButton(
                             onClick = {
-                                innerPagesViewModel.saveProject(context)
+                                innerPagesViewModel.onSaveChanges(context)
                                 Toast.makeText(context, R.string.page_groups_saved_toast, Toast.LENGTH_SHORT).show()
                             },
                             enabled = hasChanges,

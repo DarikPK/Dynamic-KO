@@ -24,14 +24,16 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
 
     var newGroupIsSmart by mutableStateOf(true)
 
-    val pageGroups: StateFlow<List<PageGroup>> = projectViewModel.currentPageGroups
+    private val _pageGroups = MutableStateFlow<List<PageGroup>>(emptyList())
+    val pageGroups: StateFlow<List<PageGroup>> = _pageGroups.asStateFlow()
 
     private val _originalPageGroups = MutableStateFlow<List<PageGroup>>(emptyList())
     val originalPageGroups: StateFlow<List<PageGroup>> = _originalPageGroups.asStateFlow()
 
     init {
         viewModelScope.launch {
-            pageGroups.first().let {
+            projectViewModel.currentPageGroups.first().let {
+                _pageGroups.value = it
                 _originalPageGroups.value = it
             }
         }
@@ -93,16 +95,34 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
 
     fun onImagesSelectedForGroup(context: android.content.Context, uris: List<Uri>, groupId: String) {
         val uriStrings = uris.map { it.toString() }
-        projectViewModel.copyAndAddImagesToPageGroup(context, uriStrings, groupId)
+        _pageGroups.value = _pageGroups.value.map {
+            if (it.id == groupId) {
+                it.copy(imageUris = it.imageUris + uriStrings)
+            } else {
+                it
+            }
+        }
         _currentGroupAddingImages.value = null
     }
 
     fun removeSingleImageFromGroup(context: android.content.Context, groupId: String, uri: String) {
-        projectViewModel.removeImageFromPageGroup(context, groupId, uri)
+        _pageGroups.value = _pageGroups.value.map {
+            if (it.id == groupId) {
+                it.copy(imageUris = it.imageUris - uri)
+            } else {
+                it
+            }
+        }
     }
 
     fun removeImagesFromGroup(context: android.content.Context, groupId: String) {
-        projectViewModel.removeAllImagesFromPageGroup(context, groupId)
+        _pageGroups.value = _pageGroups.value.map {
+            if (it.id == groupId) {
+                it.copy(imageUris = emptyList())
+            } else {
+                it
+            }
+        }
     }
 
     fun onRemoveGroupClicked(groupId: String) {
@@ -110,7 +130,9 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
     }
 
     fun onConfirmRemoveGroup(context: android.content.Context) {
-        _showDeleteGroupDialog.value?.let { projectViewModel.deletePageGroup(context, it) }
+        _showDeleteGroupDialog.value?.let { groupId ->
+            _pageGroups.value = _pageGroups.value.filterNot { it.id == groupId }
+        }
         _showDeleteGroupDialog.value = null
     }
 
@@ -123,7 +145,15 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
     }
 
     fun onConfirmRemoveImages(context: android.content.Context) {
-        _showDeleteImagesDialog.value?.let { removeImagesFromGroup(context, it) }
+        _showDeleteImagesDialog.value?.let { groupId ->
+            _pageGroups.value = _pageGroups.value.map {
+                if (it.id == groupId) {
+                    it.copy(imageUris = emptyList())
+                } else {
+                    it
+                }
+            }
+        }
         _showDeleteImagesDialog.value = null
     }
 
@@ -195,21 +225,13 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
     fun saveEditingGroup(context: android.content.Context) {
         viewModelScope.launch {
             _editingGroup.value?.let { groupToSave ->
-                val currentGroups = pageGroups.value
+                val currentGroups = _pageGroups.value
                 if (currentGroups.any { it.id == groupToSave.id }) {
-                    projectViewModel.updatePageGroup(context, groupToSave.id) { oldGroup ->
-                        oldGroup.copy(
-                            groupName = groupToSave.groupName,
-                            orientation = groupToSave.orientation,
-                            photosPerSheet = groupToSave.photosPerSheet,
-                            sheetCount = groupToSave.sheetCount,
-                            optionalTextStyle = groupToSave.optionalTextStyle,
-                            imageSpacing = groupToSave.imageSpacing,
-                            smartLayoutEnabled = groupToSave.smartLayoutEnabled
-                        )
+                    _pageGroups.value = currentGroups.map {
+                        if (it.id == groupToSave.id) groupToSave else it
                     }
                 } else {
-                    projectViewModel.addPageGroup(context, groupToSave)
+                    _pageGroups.value = currentGroups + groupToSave
                 }
                 onDismissCreateGroupDialog()
             }
@@ -217,7 +239,19 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
     }
 
     fun saveProject(context: android.content.Context) {
+        onSaveChanges(context)
         projectViewModel.saveProject(context)
+    }
+
+    fun onSaveChanges(context: android.content.Context) {
+        viewModelScope.launch {
+            projectViewModel.updatePageGroups(context, _pageGroups.value)
+            _originalPageGroups.value = _pageGroups.value
+        }
+    }
+
+    fun discardChanges() {
+        _pageGroups.value = _originalPageGroups.value
     }
 }
 
