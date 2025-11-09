@@ -1,14 +1,21 @@
 package pe.pixelcollage.app.ui.screens
 
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,6 +29,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Divider
@@ -35,13 +43,20 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -67,6 +82,8 @@ fun CoverSetupScreen(
     val projectCoverConfig by projectViewModel.currentCoverConfig.collectAsState()
     val sunatData by projectViewModel.sunatData.collectAsState()
     val context = LocalContext.current
+    var hasChanges by remember { mutableStateOf(false) }
+    var showDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(projectCoverConfig) {
         coverSetupViewModel.loadInitialConfig(projectCoverConfig)
@@ -76,6 +93,45 @@ fun CoverSetupScreen(
         sunatData?.let {
             coverSetupViewModel.onSunatDataReceived(it)
         }
+    }
+
+    LaunchedEffect(coverConfig, projectCoverConfig) {
+        hasChanges = coverConfig != projectCoverConfig
+    }
+
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = if (hasChanges) 1.05f else 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(500),
+            repeatMode = RepeatMode.Reverse
+        ), label = "pulse"
+    )
+
+    BackHandler(enabled = hasChanges) {
+        showDialog = true
+    }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Salir sin guardar") },
+            text = { Text("Has realizado cambios en la portada pero no los has guardado. ¿Estás seguro de que quieres salir?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDialog = false
+                    navController.popBackStack()
+                }) {
+                    Text("Sí, salir")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("No, quedarse")
+                }
+            }
+        )
     }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
@@ -91,7 +147,13 @@ fun CoverSetupScreen(
             CenterAlignedTopAppBar(
                 title = { Text(stringResource(id = R.string.cover_setup_title)) },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = {
+                        if (hasChanges) {
+                            showDialog = true
+                        } else {
+                            navController.popBackStack()
+                        }
+                    }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(id = R.string.cover_setup_navigate_back_description)
@@ -105,14 +167,36 @@ fun CoverSetupScreen(
                             contentDescription = "Opciones Avanzadas"
                         )
                     }
-                    IconButton(onClick = {
-                        projectViewModel.saveCoverConfigAndProcessImage(context, coverConfig)
-                        Toast.makeText(context, context.getString(R.string.cover_config_saved_toast), Toast.LENGTH_SHORT).show()
-                    }) {
-                        Icon(
-                            imageVector = Icons.Filled.Save,
-                            contentDescription = stringResource(id = R.string.save_cover_config_button_description)
-                        )
+                    Box(
+                        modifier = Modifier
+                            .padding(end = 8.dp)
+                            .size(40.dp)
+                            .graphicsLayer {
+                                scaleX = scale
+                                scaleY = scale
+                            }
+                            .clip(CircleShape)
+                            .background(if (hasChanges) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                            .border(
+                                width = if (hasChanges) 1.5.dp else 0.dp,
+                                color = if (hasChanges) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                shape = CircleShape
+                            )
+                    ) {
+                        IconButton(
+                            onClick = {
+                                projectViewModel.saveCoverConfigAndProcessImage(context, coverConfig)
+                                Toast.makeText(context, context.getString(R.string.cover_config_saved_toast), Toast.LENGTH_SHORT).show()
+                            },
+                            enabled = hasChanges,
+                            modifier = Modifier.align(Alignment.Center)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Save,
+                                contentDescription = stringResource(id = R.string.save_cover_config_button_description),
+                                tint = if (hasChanges) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
