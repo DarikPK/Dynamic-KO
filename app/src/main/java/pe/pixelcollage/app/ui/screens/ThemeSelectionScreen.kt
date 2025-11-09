@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -34,13 +34,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -97,6 +100,14 @@ fun ThemeSelectionScreen(
     val context = LocalContext.current
     val currentThemeName by projectViewModel.themeName.collectAsState()
     var selectedThemeName by remember { mutableStateOf(currentThemeName) }
+    var hasChanges by remember { mutableStateOf(false) }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(selectedThemeName) {
+        hasChanges = selectedThemeName != currentThemeName
+    }
 
     Scaffold(
         topBar = {
@@ -106,23 +117,24 @@ fun ThemeSelectionScreen(
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
+                },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            projectViewModel.updateTheme(context, selectedThemeName)
+                            hasChanges = false
+                            Toast.makeText(context, "Tema guardado", Toast.LENGTH_SHORT).show()
+                        },
+                        enabled = hasChanges
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Save,
+                            contentDescription = "Guardar",
+                            tint = if (hasChanges) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                        )
+                    }
                 }
             )
-        },
-        bottomBar = {
-            Button(
-                onClick = {
-                    projectViewModel.updateTheme(context, selectedThemeName)
-                    Toast.makeText(context, "Tema guardado", Toast.LENGTH_SHORT).show()
-                    navController.popBackStack()
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .navigationBarsPadding()
-            ) {
-                Text("Guardar")
-            }
         }
     ) { paddingValues ->
         LazyColumn(
@@ -131,7 +143,7 @@ fun ThemeSelectionScreen(
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(top = 16.dp, bottom = 16.dp)
+            contentPadding = PaddingValues(vertical = 16.dp)
         ) {
             items(themePreviews) { themePreview ->
                 ThemePreviewItem(
