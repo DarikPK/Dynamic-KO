@@ -98,7 +98,7 @@ fun InnerPagesScreen(
     val originalPageGroups by innerPagesViewModel.originalPageGroups.collectAsState()
 
     var hasChanges by remember { mutableStateOf(false) }
-    var showDialog by remember { mutableStateOf(false) }
+    var showExitConfirmDialog by remember { mutableStateOf(false) }
 
     var showPermissionRationaleDialog by remember { mutableStateOf(false) }
     var showPermissionDeniedDialog by remember { mutableStateOf(false) }
@@ -118,24 +118,24 @@ fun InnerPagesScreen(
     )
 
     BackHandler(enabled = hasChanges) {
-        showDialog = true
+        showExitConfirmDialog = true
     }
 
-    if (showDialog) {
+    if (showExitConfirmDialog) {
         AlertDialog(
-            onDismissRequest = { showDialog = false },
+            onDismissRequest = { showExitConfirmDialog = false },
             title = { Text("Salir sin guardar") },
             text = { Text("Has realizado cambios en las páginas interiores pero no los has guardado. ¿Estás seguro de que quieres salir?") },
             confirmButton = {
                 TextButton(onClick = {
-                    showDialog = false
+                    showExitConfirmDialog = false
                     navController.popBackStack()
                 }) {
                     Text("Sí, salir")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDialog = false }) {
+                TextButton(onClick = { showExitConfirmDialog = false }) {
                     Text("No, quedarse")
                 }
             }
@@ -250,7 +250,7 @@ fun InnerPagesScreen(
                 navigationIcon = {
                     IconButton(onClick = {
                         if (hasChanges) {
-                            showDialog = true
+                            showExitConfirmDialog = true
                         } else {
                             val allGroupsValid = pageGroups.all { group ->
                                 if (group.smartLayoutEnabled) {
