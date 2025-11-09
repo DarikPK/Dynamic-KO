@@ -390,6 +390,7 @@ class ProjectViewModel : ViewModel() {
             urisToDelete.forEach { deleteLocalImage(it) }
         }
         _currentPageGroups.value = newGroups
+        saveProject(context)
     }
 
     fun updatePageGroup(context: Context, groupId: String, transform: (PageGroup) -> PageGroup) {
