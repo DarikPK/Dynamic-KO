@@ -11,14 +11,24 @@ import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -31,6 +41,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,8 +50,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,6 +61,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -79,9 +95,52 @@ fun InnerPagesScreen(
     val groupToDelete by innerPagesViewModel.showDeleteGroupDialog.collectAsState()
     var showSettingsDialog by remember { mutableStateOf(false) }
     val imagesToDelete by innerPagesViewModel.showDeleteImagesDialog.collectAsState()
+    val originalPageGroups by innerPagesViewModel.originalPageGroups.collectAsState()
+
+    var hasChanges by remember { mutableStateOf(false) }
+    var showDialog by remember { mutableStateOf(false) }
 
     var showPermissionRationaleDialog by remember { mutableStateOf(false) }
     var showPermissionDeniedDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(pageGroups, originalPageGroups) {
+        hasChanges = pageGroups != originalPageGroups
+    }
+
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = if (hasChanges) 1.05f else 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(500),
+            repeatMode = RepeatMode.Reverse
+        ), label = "pulse"
+    )
+
+    BackHandler(enabled = hasChanges) {
+        showDialog = true
+    }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Salir sin guardar") },
+            text = { Text("Has realizado cambios en las páginas interiores pero no los has guardado. ¿Estás seguro de que quieres salir?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDialog = false
+                    navController.popBackStack()
+                }) {
+                    Text("Sí, salir")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("No, quedarse")
+                }
+            }
+        )
+    }
 
     val permission = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
         Manifest.permission.READ_MEDIA_IMAGES
@@ -190,17 +249,21 @@ fun InnerPagesScreen(
                 title = { Text(stringResource(id = R.string.inner_pages_title)) },
                 navigationIcon = {
                     IconButton(onClick = {
-                        val allGroupsValid = pageGroups.all { group ->
-                            if (group.smartLayoutEnabled) {
-                                group.imageUris.isNotEmpty()
-                            } else {
-                                group.isPhotoQuotaMet
-                            }
-                        }
-                        if (allGroupsValid) {
-                            navController.popBackStack()
+                        if (hasChanges) {
+                            showDialog = true
                         } else {
-                            Toast.makeText(context, R.string.error_all_groups_must_be_valid, Toast.LENGTH_LONG).show()
+                            val allGroupsValid = pageGroups.all { group ->
+                                if (group.smartLayoutEnabled) {
+                                    group.imageUris.isNotEmpty()
+                                } else {
+                                    group.isPhotoQuotaMet
+                                }
+                            }
+                            if (allGroupsValid) {
+                                navController.popBackStack()
+                            } else {
+                                Toast.makeText(context, R.string.error_all_groups_must_be_valid, Toast.LENGTH_LONG).show()
+                            }
                         }
                     }) {
                         Icon(
@@ -219,14 +282,36 @@ fun InnerPagesScreen(
                             contentDescription = "Ajustes"
                         )
                     }
-                    IconButton(onClick = {
-                        innerPagesViewModel.saveProject(context)
-                        Toast.makeText(context, R.string.page_groups_saved_toast, Toast.LENGTH_SHORT).show()
-                    }) {
-                        Icon(
-                            imageVector = Icons.Filled.Save,
-                            contentDescription = stringResource(id = R.string.save_page_groups_button_description)
-                        )
+                    Box(
+                        modifier = Modifier
+                            .padding(end = 8.dp)
+                            .size(40.dp)
+                            .graphicsLayer {
+                                scaleX = scale
+                                scaleY = scale
+                            }
+                            .clip(CircleShape)
+                            .background(if (hasChanges) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                            .border(
+                                width = if (hasChanges) 1.5.dp else 0.dp,
+                                color = if (hasChanges) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                shape = CircleShape
+                            )
+                    ) {
+                        IconButton(
+                            onClick = {
+                                innerPagesViewModel.saveProject(context)
+                                Toast.makeText(context, R.string.page_groups_saved_toast, Toast.LENGTH_SHORT).show()
+                            },
+                            enabled = hasChanges,
+                            modifier = Modifier.align(Alignment.Center)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Save,
+                                contentDescription = stringResource(id = R.string.save_page_groups_button_description),
+                                tint = if (hasChanges) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            )
+                        }
                     }
                 }
             )

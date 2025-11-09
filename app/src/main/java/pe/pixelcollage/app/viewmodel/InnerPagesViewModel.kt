@@ -26,6 +26,17 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
 
     val pageGroups: StateFlow<List<PageGroup>> = projectViewModel.currentPageGroups
 
+    private val _originalPageGroups = MutableStateFlow<List<PageGroup>>(emptyList())
+    val originalPageGroups: StateFlow<List<PageGroup>> = _originalPageGroups.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            pageGroups.first().let {
+                _originalPageGroups.value = it
+            }
+        }
+    }
+
     private val _showCreateGroupDialog = MutableStateFlow(false)
     val showCreateGroupDialog: StateFlow<Boolean> = _showCreateGroupDialog.asStateFlow()
 
