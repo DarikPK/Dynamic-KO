@@ -356,6 +356,18 @@ fun MainScreen(
                 textColor = MaterialTheme.colorScheme.onErrorContainer,
                 icon = Icons.Default.DeleteForever
             )
+
+            // Version Text
+            val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+            val versionName = packageInfo.versionName
+            Text(
+                text = "v$versionName",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp, end = 16.dp)
+            )
         }
     }
 }
