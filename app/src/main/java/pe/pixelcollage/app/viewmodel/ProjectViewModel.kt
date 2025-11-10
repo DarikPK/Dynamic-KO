@@ -61,6 +61,7 @@ class ProjectViewModel : ViewModel() {
     val draftImageEffectSettings: StateFlow<Map<String, ImageEffectSettings>> = _draftImageEffectSettings.asStateFlow()
 
     fun initDraftImageEffects() {
+        Log.d("ImageEffectsDebug", "Inicializando draft. Copiando desde original: ${_imageEffectSettings.value}")
         _draftImageEffectSettings.value = _imageEffectSettings.value
     }
 
@@ -105,10 +106,13 @@ class ProjectViewModel : ViewModel() {
     }
 
     fun updateImageEffectSettings(uri: String, settings: ImageEffectSettings) {
+        Log.d("ImageEffectsDebug", "VM: Recibido para actualizar draft para $uri: $settings")
         _draftImageEffectSettings.update { currentMap ->
-            currentMap.toMutableMap().apply {
+            val newMap = currentMap.toMutableMap().apply {
                 this[uri] = settings
             }
+            Log.d("ImageEffectsDebug", "VM: Nuevo estado del draft: $newMap")
+            newMap
         }
     }
 

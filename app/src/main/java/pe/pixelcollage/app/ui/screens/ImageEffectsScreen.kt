@@ -2,6 +2,7 @@ package pe.pixelcollage.app.ui.screens
 
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -145,6 +146,7 @@ fun ImageEffectsScreen(
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
                     Button(onClick = {
+                        Log.d("ImageEffectsDebug", "Aplicando cambios para $imageUri: $localSettings")
                         projectViewModel.updateImageEffectSettings(imageUri, localSettings)
                         navController.popBackStack()
                     }) {
