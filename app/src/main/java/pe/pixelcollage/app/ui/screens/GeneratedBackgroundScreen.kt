@@ -155,54 +155,44 @@ fun GeneratedBackgroundScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+            var expanded by remember { mutableStateOf(false) }
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = !expanded }
             ) {
-                Text("Habilitar Mosaico", style = MaterialTheme.typography.titleMedium)
-                Switch(
-                    checked = draftConfig.enabled,
-                    onCheckedChange = { isChecked ->
-                        draftConfig = draftConfig.copy(enabled = isChecked)
-                    }
+                TextField(
+                    value = draftConfig.patternType.displayName,
+                    onValue-Change = {},
+                    readOnly = true,
+                    label = { Text("Tipo de Patrón") },
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor()
                 )
-            }
-
-            if (draftConfig.enabled) {
-                var expanded by remember { mutableStateOf(false) }
-                ExposedDropdownMenuBox(
+                ExposedDropdownMenu(
                     expanded = expanded,
-                    onExpandedChange = { expanded = !expanded }
+                    onDismissRequest = { expanded = false }
                 ) {
-                    TextField(
-                        value = draftConfig.patternType.displayName,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Tipo de Patrón") },
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor()
-                    )
-                    ExposedDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }
-                    ) {
-                        BackgroundPatternType.values().forEach { type ->
-                            DropdownMenuItem(
-                                text = { Text(type.displayName) },
-                                onClick = {
-                                    draftConfig = draftConfig.copy(patternType = type)
-                                    expanded = false
-                                }
-                            )
-                        }
+                    BackgroundPatternType.values().forEach { type ->
+                        DropdownMenuItem(
+                            text = { Text(type.displayName) },
+                            onClick = {
+                                val newConfig = draftConfig.copy(
+                                    patternType = type,
+                                    enabled = type != BackgroundPatternType.NONE
+                                )
+                                draftConfig = newConfig
+                                expanded = false
+                            }
+                        )
                     }
                 }
+            }
 
+            if (draftConfig.patternType != BackgroundPatternType.NONE) {
                 Text("Opacidad: ${draftConfig.opacity.format(2)}", style = MaterialTheme.typography.titleMedium)
                 Slider(
                     value = draftConfig.opacity,

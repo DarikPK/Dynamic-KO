@@ -1,6 +1,7 @@
 package pe.pixelcollage.app.data.model
 
 enum class BackgroundPatternType(val displayName: String) {
+    NONE("Ninguno"),
     CURVAS("Curvas"),
     FIGURAS_GEOMETRICAS("Figuras Geométricas"),
     LINEAS("Líneas"),
@@ -14,7 +15,7 @@ enum class BackgroundPatternType(val displayName: String) {
 }
 
 data class GeneratedBackgroundConfig(
-    val patternType: BackgroundPatternType = BackgroundPatternType.CURVAS,
+    val patternType: BackgroundPatternType = BackgroundPatternType.NONE,
     val opacity: Float = 0.5f,
     val size: Float = 10f,
     val density: Float = 0.5f,
