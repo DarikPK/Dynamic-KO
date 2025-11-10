@@ -422,26 +422,30 @@ class ProjectViewModel : ViewModel() {
     }
 
     fun resetProject(context: Context) {
-        viewModelScope.launch(Dispatchers.IO) {
-            // Delete images directory
-            val imagesDir = File(context.applicationContext.filesDir, "images")
-            if (imagesDir.exists()) {
-                imagesDir.deleteRecursively()
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                // Delete images directory
+                val imagesDir = File(context.applicationContext.filesDir, "images")
+                if (imagesDir.exists()) {
+                    imagesDir.deleteRecursively()
+                }
+                // Delete saved project file
+                val projectFile = File(context.applicationContext.filesDir, projectFileName)
+                if (projectFile.exists()) {
+                    projectFile.delete()
+                }
             }
-            // Delete saved project file
-            val projectFile = File(context.applicationContext.filesDir, projectFileName)
-            if (projectFile.exists()) {
-                projectFile.delete()
-            }
-        }
-        // Reset in-memory state
-        _currentCoverConfig.value = CoverPageConfig()
-        _currentPageGroups.value = emptyList()
-        _sunatData.value = null
-        _recycledUris.value = emptyList()
 
-        // After resetting in-memory state, save this empty state to disk
-        saveProject(context)
+            // Reset in-memory state on the main thread after file deletion
+            _currentCoverConfig.value = CoverPageConfig()
+            _currentPageGroups.value = emptyList()
+            _sunatData.value = null
+            _recycledUris.value = emptyList()
+
+            // After resetting in-memory state, save this empty state to disk.
+            // This call is now correctly sequenced.
+            saveProject(context)
+        }
     }
 
     // --- Generación de PDF ---
