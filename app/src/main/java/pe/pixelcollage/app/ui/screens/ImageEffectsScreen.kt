@@ -34,22 +34,16 @@ fun ImageEffectsScreen(
     val draftEffectSettings by projectViewModel.draftImageEffectSettings.collectAsState()
     val currentSettings = draftEffectSettings[imageUri] ?: ImageEffectSettings()
 
-    var brightnessSlider by remember { mutableStateOf(0f) }
-    var contrastSlider by remember { mutableStateOf(0f) }
-    var saturationSlider by remember { mutableStateOf(0f) }
-    var sharpnessSlider by remember { mutableStateOf(0f) }
+    var localSettings by remember { mutableStateOf(currentSettings) }
 
     LaunchedEffect(currentSettings) {
-        brightnessSlider = currentSettings.brightness
-        contrastSlider = currentSettings.contrast
-        saturationSlider = currentSettings.saturation
-        sharpnessSlider = currentSettings.sharpness
+        localSettings = currentSettings
     }
 
     var previewBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     var originalBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
 
-    fun updatePreview() {
+    fun updatePreview(settings: ImageEffectSettings) {
         coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             originalBitmap?.let { ob ->
                 val scaleFactor = 400.0 / ob.width.coerceAtLeast(ob.height)
@@ -58,13 +52,13 @@ fun ImageEffectsScreen(
                 } else ob
                 val processedBitmap = ImageEffects.applyEffects(
                     thumbnail,
-                    brightnessSlider,
-                    1.0f + contrastSlider / 100.0f,
-                    1.0f + saturationSlider / 100.0f
+                    settings.brightness,
+                    1.0f + settings.contrast / 100.0f,
+                    1.0f + settings.saturation / 100.0f
                 ).run {
                     when {
-                        sharpnessSlider > 0 -> ImageEffects.applySharpen(this, sharpnessSlider / 100.0f)
-                        sharpnessSlider < 0 -> ImageEffects.applyBlur(this, -sharpnessSlider / 100.0f)
+                        settings.sharpness > 0 -> ImageEffects.applySharpen(this, settings.sharpness / 100.0f)
+                        settings.sharpness < 0 -> ImageEffects.applyBlur(this, -settings.sharpness / 100.0f)
                         else -> this
                     }
                 }
@@ -73,10 +67,14 @@ fun ImageEffectsScreen(
         }
     }
 
-    LaunchedEffect(uri) {
-        coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            originalBitmap = context.contentResolver.openInputStream(uri)?.use(BitmapFactory::decodeStream)
-            updatePreview()
+    LaunchedEffect(uri, localSettings) {
+        if (originalBitmap == null) {
+            coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                originalBitmap = context.contentResolver.openInputStream(uri)?.use(BitmapFactory::decodeStream)
+                updatePreview(localSettings)
+            }
+        } else {
+            updatePreview(localSettings)
         }
     }
 
@@ -117,33 +115,29 @@ fun ImageEffectsScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                Text("Brillo: ${"%.0f".format(brightnessSlider)}")
+                Text("Brillo: ${"%.0f".format(localSettings.brightness)}")
                 Slider(
-                    value = brightnessSlider,
-                    onValueChange = { brightnessSlider = it },
-                    valueRange = -100f..100f,
-                    onValueChangeFinished = { updatePreview() }
+                    value = localSettings.brightness,
+                    onValueChange = { localSettings = localSettings.copy(brightness = it) },
+                    valueRange = -100f..100f
                 )
-                Text("Contraste: ${"%.0f".format(contrastSlider)}")
+                Text("Contraste: ${"%.0f".format(localSettings.contrast)}")
                 Slider(
-                    value = contrastSlider,
-                    onValueChange = { contrastSlider = it },
-                    valueRange = -100f..100f,
-                    onValueChangeFinished = { updatePreview() }
+                    value = localSettings.contrast,
+                    onValueChange = { localSettings = localSettings.copy(contrast = it) },
+                    valueRange = -100f..100f
                 )
-                Text("Saturación: ${"%.0f".format(saturationSlider)}")
+                Text("Saturación: ${"%.0f".format(localSettings.saturation)}")
                 Slider(
-                    value = saturationSlider,
-                    onValueChange = { saturationSlider = it },
-                    valueRange = -100f..100f,
-                    onValueChangeFinished = { updatePreview() }
+                    value = localSettings.saturation,
+                    onValueChange = { localSettings = localSettings.copy(saturation = it) },
+                    valueRange = -100f..100f
                 )
-                Text("Nitidez: ${"%.0f".format(sharpnessSlider)}")
+                Text("Nitidez: ${"%.0f".format(localSettings.sharpness)}")
                 Slider(
-                    value = sharpnessSlider,
-                    onValueChange = { sharpnessSlider = it },
-                    valueRange = -100f..100f,
-                    onValueChangeFinished = { updatePreview() }
+                    value = localSettings.sharpness,
+                    onValueChange = { localSettings = localSettings.copy(sharpness = it) },
+                    valueRange = -100f..100f
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(
@@ -151,23 +145,18 @@ fun ImageEffectsScreen(
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
                     Button(onClick = {
-                        val updatedSettings = currentSettings.copy(
-                            brightness = brightnessSlider,
-                            contrast = contrastSlider,
-                            saturation = saturationSlider,
-                            sharpness = sharpnessSlider
-                        )
-                        projectViewModel.updateImageEffectSettings(imageUri, updatedSettings)
+                        projectViewModel.updateImageEffectSettings(imageUri, localSettings)
                         navController.popBackStack()
                     }) {
                         Text("Aplicar")
                     }
                     Button(onClick = {
-                        brightnessSlider = 0f
-                        contrastSlider = 0f
-                        saturationSlider = 0f
-                        sharpnessSlider = 0f
-                        updatePreview()
+                        localSettings = localSettings.copy(
+                            brightness = 0f,
+                            contrast = 0f,
+                            saturation = 0f,
+                            sharpness = 0f
+                        )
                     }) {
                         Text("Restablecer")
                     }
