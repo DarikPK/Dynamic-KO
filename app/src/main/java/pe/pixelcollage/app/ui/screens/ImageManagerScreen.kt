@@ -61,6 +61,13 @@ fun ImageManagerScreen(
         projectViewModel.initDraftImageEffects()
     }
 
+    // Limpiar el estado borrador al salir permanentemente de la pantalla
+    DisposableEffect(Unit) {
+        onDispose {
+            projectViewModel.finalizeDraftImageEffects()
+        }
+    }
+
     val hasChanges by remember {
         derivedStateOf { draftEffectSettings != originalEffectSettings }
     }

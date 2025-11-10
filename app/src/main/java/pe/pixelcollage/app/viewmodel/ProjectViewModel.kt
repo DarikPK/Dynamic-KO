@@ -59,10 +59,21 @@ class ProjectViewModel : ViewModel() {
 
     private val _draftImageEffectSettings = MutableStateFlow<Map<String, ImageEffectSettings>>(emptyMap())
     val draftImageEffectSettings: StateFlow<Map<String, ImageEffectSettings>> = _draftImageEffectSettings.asStateFlow()
+    private var isDraftInitialized = false
 
     fun initDraftImageEffects() {
-        Log.d("ImageEffectsDebug", "Inicializando draft. Copiando desde original: ${_imageEffectSettings.value}")
+        if (isDraftInitialized) {
+            Log.d("ImageEffectsDebug", "VM: Draft ya inicializado, saltando.")
+            return
+        }
+        Log.d("ImageEffectsDebug", "VM: Inicializando draft por primera vez. Copiando desde original: ${_imageEffectSettings.value}")
         _draftImageEffectSettings.value = _imageEffectSettings.value
+        isDraftInitialized = true
+    }
+
+    fun finalizeDraftImageEffects() {
+        Log.d("ImageEffectsDebug", "VM: Finalizando sesión de borrador. Reseteando flag.")
+        isDraftInitialized = false
     }
 
     fun saveImageEffects(context: Context) {
