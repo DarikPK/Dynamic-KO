@@ -14,10 +14,6 @@ enum class DocumentType {
     RUC, DNI, NONE
 }
 
-enum class SheetBackgroundType {
-    SOLID,
-    CUSTOM
-}
 
 // Valores por defecto para la configuración de la portada
 object DefaultCoverConfig {
@@ -128,12 +124,10 @@ data class CoverPageConfig(
     val useHybridPdfMode: Boolean = true,
 
     // Advanced Design
-    val pageBackgroundColor: Int? = null,
     val imageBorderSettingsMap: Map<String, ImageBorderSettings> = emptyMap(),
     val hybridCoverImageQuality: Int = 70,
     val hybridInnerImagesQuality: Int = 30,
 
     val templateName: String? = null,
-    val generatedBackgroundConfig: GeneratedBackgroundConfig? = null,
-    val sheetBackgroundType: SheetBackgroundType = SheetBackgroundType.SOLID
+    val generatedBackgroundConfig: GeneratedBackgroundConfig? = null
 )
