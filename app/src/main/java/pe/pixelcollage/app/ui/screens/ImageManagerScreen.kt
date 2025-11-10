@@ -56,16 +56,9 @@ fun ImageManagerScreen(
     var cropViewResetKey by remember { mutableStateOf(0) }
     var showExitConfirmDialog by remember { mutableStateOf(false) }
 
-    // Inicializar el estado borrador al entrar
+    // Iniciar la sesión de edición al entrar en la pantalla
     LaunchedEffect(Unit) {
-        projectViewModel.initDraftImageEffects()
-    }
-
-    // Limpiar el estado borrador al salir permanentemente de la pantalla
-    DisposableEffect(Unit) {
-        onDispose {
-            projectViewModel.finalizeDraftImageEffects()
-        }
+        projectViewModel.startImageEditingSession()
     }
 
     val hasChanges by remember {
