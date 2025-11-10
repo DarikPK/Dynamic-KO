@@ -61,12 +61,8 @@ class ProjectViewModel : ViewModel() {
     val draftImageEffectSettings: StateFlow<Map<String, ImageEffectSettings>> = _draftImageEffectSettings.asStateFlow()
 
     fun startImageEditingSession() {
-        if (_draftImageEffectSettings.value == _imageEffectSettings.value) {
-            Log.d("ImageEffectsDebug", "VM: Iniciando nueva sesión de edición. Copiando desde original: ${_imageEffectSettings.value}")
-            _draftImageEffectSettings.value = _imageEffectSettings.value
-        } else {
-            Log.d("ImageEffectsDebug", "VM: Sesión de edición ya en curso. No se copia nada.")
-        }
+        Log.d("ImageEffectsDebug", "VM: Iniciando sesión de edición. Se sobreescribe el borrador con el estado original.")
+        _draftImageEffectSettings.value = _imageEffectSettings.value
     }
 
     fun saveImageEffects(context: Context) {
@@ -426,11 +422,19 @@ class ProjectViewModel : ViewModel() {
 
     fun deletePageGroup(context: Context, groupId: String) {
         val groupToDelete = _currentPageGroups.value.find { it.id == groupId }
-        viewModelScope.launch(Dispatchers.IO) {
-            groupToDelete?.imageUris?.forEach { uri ->
-                deleteLocalImage(uri)
+        groupToDelete?.let { group ->
+            // Si la imagen seleccionada estaba en este grupo, deselecciónala.
+            if (group.imageUris.contains(_managerSelectedUri.value)) {
+                _managerSelectedUri.value = null
+            }
+
+            viewModelScope.launch(Dispatchers.IO) {
+                group.imageUris.forEach { uri ->
+                    deleteLocalImage(uri)
+                }
             }
         }
+
         _currentPageGroups.update { currentList ->
             currentList.filterNot { it.id == groupId }
         }
@@ -462,6 +466,7 @@ class ProjectViewModel : ViewModel() {
             _currentPageGroups.value = emptyList()
             _sunatData.value = null
             _recycledUris.value = emptyList()
+            _managerSelectedUri.value = null
 
             // After resetting in-memory state, save this empty state to disk.
             // This call is now correctly sequenced.
