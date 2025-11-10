@@ -308,7 +308,7 @@ fun MainScreen(
             )
             MainButton(
                 text = "Diseño Avanzado",
-                onClick = { navController.navigate(Screen.AdvancedDesign.route) },
+                onClick = { navController.navigate("advanced_design_flow") },
                 icon = Icons.Default.AutoFixHigh
             )
             MainButton(
