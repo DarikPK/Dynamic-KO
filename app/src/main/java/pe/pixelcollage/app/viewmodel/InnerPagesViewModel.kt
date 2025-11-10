@@ -32,13 +32,24 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
 
     init {
         viewModelScope.launch {
-            // Espera a que el proyecto se haya cargado completamente
+            // Wait for the project to be fully loaded
             projectViewModel.isProjectLoaded.first { it }
 
-            // Una vez cargado, obtiene el valor actual de los grupos de páginas
+            // Once loaded, get the current value of the page groups
             val initialGroups = projectViewModel.currentPageGroups.value
             _pageGroups.value = initialGroups
             _originalPageGroups.value = initialGroups
+
+            // After initialization, start collecting changes from the source of truth.
+            // This is to react to events like a full project reset.
+            projectViewModel.currentPageGroups.collect { projectGroups ->
+                // If the source of truth becomes empty and our original state was not,
+                // it implies an external reset. We must sync our state.
+                if (projectGroups.isEmpty() && _originalPageGroups.value.isNotEmpty()) {
+                    _pageGroups.value = projectGroups
+                    _originalPageGroups.value = projectGroups
+                }
+            }
         }
     }
 
