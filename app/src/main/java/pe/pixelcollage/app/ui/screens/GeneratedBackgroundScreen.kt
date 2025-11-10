@@ -162,7 +162,7 @@ fun GeneratedBackgroundScreen(
             ) {
                 TextField(
                     value = draftConfig.patternType.displayName,
-                    onValue-Change = {},
+                    onValueChange = {},
                     readOnly = true,
                     label = { Text("Tipo de Patrón") },
                     trailingIcon = {
