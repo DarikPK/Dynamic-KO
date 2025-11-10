@@ -398,31 +398,12 @@ class ProjectViewModel : ViewModel() {
         saveProject(context)
     }
 
-    // --- Background Editing ---
-    private val _draftGeneratedBackgroundConfig = MutableStateFlow<GeneratedBackgroundConfig?>(null)
-    val draftGeneratedBackgroundConfig: StateFlow<GeneratedBackgroundConfig?> = _draftGeneratedBackgroundConfig.asStateFlow()
-    private var isBackgroundEditingSessionActive = false
-
-    fun startBackgroundEditingSession() {
-        if (!isBackgroundEditingSessionActive) {
-            _draftGeneratedBackgroundConfig.value = _currentCoverConfig.value.generatedBackgroundConfig ?: GeneratedBackgroundConfig()
-            isBackgroundEditingSessionActive = true
-        }
-    }
-
-    fun saveBackgroundConfig(context: Context) {
-        _currentCoverConfig.update { it.copy(generatedBackgroundConfig = _draftGeneratedBackgroundConfig.value) }
-        isBackgroundEditingSessionActive = false
+    fun updateGeneratedBackgroundConfig(context: Context, config: GeneratedBackgroundConfig) {
+        val current = _currentCoverConfig.value
+        // Forzamos una nueva instancia incluso si no cambió nada visible
+        val updated = current.copy(generatedBackgroundConfig = config.copy())
+        _currentCoverConfig.value = updated
         saveProject(context)
-    }
-
-    fun discardBackgroundConfig() {
-        _draftGeneratedBackgroundConfig.value = _currentCoverConfig.value.generatedBackgroundConfig
-        isBackgroundEditingSessionActive = false
-    }
-
-    fun updateGeneratedBackgroundConfig(config: GeneratedBackgroundConfig) {
-        _draftGeneratedBackgroundConfig.value = config
     }
 
     fun addPageGroup(context: Context, group: PageGroup) {
