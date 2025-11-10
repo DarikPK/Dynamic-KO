@@ -34,10 +34,10 @@ fun ImageEffectsScreen(
     val draftEffectSettings by projectViewModel.draftImageEffectSettings.collectAsState()
     val currentSettings = draftEffectSettings[imageUri] ?: ImageEffectSettings()
 
-    var brightnessSlider by remember { mutableStateOf(currentSettings.brightness) }
-    var contrastSlider by remember { mutableStateOf(currentSettings.contrast) }
-    var saturationSlider by remember { mutableStateOf(currentSettings.saturation) }
-    var sharpnessSlider by remember { mutableStateOf(currentSettings.sharpness) }
+    var brightnessSlider by remember(currentSettings) { mutableStateOf(currentSettings.brightness) }
+    var contrastSlider by remember(currentSettings) { mutableStateOf(currentSettings.contrast) }
+    var saturationSlider by remember(currentSettings) { mutableStateOf(currentSettings.saturation) }
+    var sharpnessSlider by remember(currentSettings) { mutableStateOf(currentSettings.sharpness) }
 
     var previewBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     var originalBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
