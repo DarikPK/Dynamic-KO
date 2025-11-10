@@ -569,6 +569,22 @@ class ProjectViewModel : ViewModel() {
         }
     }
 
+    fun forceSaveProject(context: Context) {
+        saveJob?.cancel()
+        saveJob = viewModelScope.launch {
+            val serializableState = SerializableProjectState(
+                coverConfig = _currentCoverConfig.value.toSerializable(),
+                pageGroups = _currentPageGroups.value.map { it.toSerializable() },
+                sunatData = _sunatData.value,
+                themeName = _themeName.value,
+                imageEffectSettings = _imageEffectSettings.value,
+                recycledUris = _recycledUris.value
+            )
+            val jsonString = gson.toJson(serializableState)
+            writeJsonToFile(context, jsonString)
+        }
+    }
+
     private suspend fun writeJsonToFile(context: Context, jsonString: String) {
         withContext(Dispatchers.IO) {
             try {
@@ -615,6 +631,7 @@ class ProjectViewModel : ViewModel() {
 
 sealed class SaveState {
     object Idle : SaveState()
+    data class RequiresConfirmation(val sizeInBytes: Long) : SaveState()
     object Success : SaveState()
     data class Error(val message: String) : SaveState()
 }

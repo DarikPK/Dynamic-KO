@@ -33,7 +33,6 @@ data class SerializableCoverPageConfig(
     val photoWeight: Float,
     val photoStyle: SerializableRowStyle,
     val quality: Int?,
-    val pageBackgroundColor: Int?,
     val imageBorderSettingsMap: Map<String, SerializableImageBorderSettings>?,
     val templateName: String?,
     val forceFullResCover: Boolean? = false,
@@ -45,10 +44,9 @@ data class SerializableCoverPageConfig(
 
 data class SerializableGeneratedBackgroundConfig(
     val patternType: Int, // ordinal of BackgroundPatternType enum
-    val opacity: Float,
-    val size: Float,
-    val density: Float,
-    val enabled: Boolean
+    val opacity: Float?,
+    val size: Float?,
+    val density: Float?
 )
 
 data class SerializableImageBorderSettings(

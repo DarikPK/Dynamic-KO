@@ -12,9 +12,6 @@ enum class BackgroundPatternType(val displayName: String) {
 
 data class GeneratedBackgroundConfig(
     val patternType: BackgroundPatternType = BackgroundPatternType.SÓLIDO_BLANCO,
-    // Las propiedades opacity, size y density ya no son necesarias aquí,
-    // se pueden manejar directamente en el generador si se desea.
-    // Por ahora, las mantenemos simples para la selección.
     val opacity: Float = 0.5f,
     val size: Float = 10f,
     val density: Float = 0.5f
