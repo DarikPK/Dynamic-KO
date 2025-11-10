@@ -25,8 +25,8 @@ object BackgroundGenerator {
             alpha = (config.opacity * 255).toInt()
         }
 
-        // Convert compose colors to Android graphics color integers
-        val colors = listOf(
+        // Use the specified color if available, otherwise use a list from the theme
+        val colors = config.color?.let { listOf(it) } ?: listOf(
             colorTheme.textColor.hashCode(),
             colorTheme.rucBackgroundColor.hashCode(),
             colorTheme.borderColor.hashCode()
