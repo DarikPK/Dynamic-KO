@@ -39,7 +39,7 @@ fun AdvancedDesignScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Button(
-                onClick = { navController.navigate(Screen.SheetDesign.route) },
+                onClick = { navController.navigate(Screen.Margins.route) },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Diseño de Hoja")
