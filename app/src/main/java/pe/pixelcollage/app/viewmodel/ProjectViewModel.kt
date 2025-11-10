@@ -21,7 +21,6 @@ import pe.pixelcollage.app.data.model.ImageEffectSettings
 import pe.pixelcollage.app.data.model.PageGroup
 import pe.pixelcollage.app.data.model.PageOrientation
 import pe.pixelcollage.app.data.model.PhotoArrangementItem
-import pe.pixelcollage.app.data.model.SheetBackgroundType
 import pe.pixelcollage.app.data.model.SheetType
 import pe.pixelcollage.app.data.model.SerializableNormalizedRectF
 import pe.pixelcollage.app.data.model.SelectedSunatData
