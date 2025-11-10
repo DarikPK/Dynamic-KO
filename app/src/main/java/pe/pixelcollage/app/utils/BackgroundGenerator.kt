@@ -293,8 +293,8 @@ object BackgroundGenerator {
                     val p3 = points[k]
 
                     // Draw triangle if points are reasonably close
-                    val dist1 = ((p1.first - p2.first).pow(2) + (p1.second - p2.second).pow(2)).pow(0.5)
-                    val dist2 = ((p2.first - p3.first).pow(2) + (p2.second - p3.second).pow(2)).pow(0.5)
+                    val dist1 = sqrt((p1.first - p2.first).pow(2) + (p1.second - p2.second).pow(2))
+                    val dist2 = sqrt((p2.first - p3.first).pow(2) + (p2.second - p3.second).pow(2))
                     if (dist1 < width * 0.3 && dist2 < width * 0.3) {
                          paint.color = colors.random(random)
                          paint.style = Paint.Style.FILL
@@ -461,8 +461,4 @@ object BackgroundGenerator {
         }
     }
 
-}
-
-private fun Float.pow(i: Int): Float {
-    return this * this
 }
