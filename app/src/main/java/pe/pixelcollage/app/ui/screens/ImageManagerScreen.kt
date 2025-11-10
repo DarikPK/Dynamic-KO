@@ -2,28 +2,35 @@ package pe.pixelcollage.app.ui.screens
 
 import android.graphics.Bitmap
 import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.RotateRight
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import pe.pixelcollage.app.data.model.ImageEffectSettings
-import androidx.compose.ui.geometry.Rect
 import pe.pixelcollage.app.data.model.SerializableNormalizedRectF
 import pe.pixelcollage.app.ui.components.CropView
 import pe.pixelcollage.app.ui.components.ProjectEffectsTransformation
@@ -39,31 +46,65 @@ fun ImageManagerScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    // Collect state from the ViewModel
-    val coverConfig by projectViewModel.currentCoverConfig.collectAsState()
-    val pageGroups by projectViewModel.currentPageGroups.collectAsState()
-    val effectSettingsMap by projectViewModel.imageEffectSettings.collectAsState()
+    val originalEffectSettings by projectViewModel.imageEffectSettings.collectAsState()
+    val draftEffectSettings by projectViewModel.draftImageEffectSettings.collectAsState()
     val currentSelectedUriString by projectViewModel.managerSelectedUri.collectAsState()
     val currentSelectedUri = currentSelectedUriString?.let { Uri.parse(it) }
 
-    // Derive the list of all image URIs from the state
-    val imageUris = remember(coverConfig, pageGroups) {
-        projectViewModel.getAllImageUris()
+    val imageUris = projectViewModel.getAllImageUris()
+
+    var cropViewResetKey by remember { mutableStateOf(0) }
+    var showExitConfirmDialog by remember { mutableStateOf(false) }
+
+    // Inicializar el estado borrador al entrar
+    LaunchedEffect(Unit) {
+        projectViewModel.initDraftImageEffects()
     }
 
-    // State to force recomposition of CropView
-    var cropViewResetKey by remember { mutableStateOf(0) }
+    val hasChanges by remember {
+        derivedState of { draftEffectSettings != originalEffectSettings }
+    }
 
-    // Get the settings for the currently selected image
     val currentSettings = currentSelectedUriString?.let {
-        effectSettingsMap[it]
+        draftEffectSettings[it]
     } ?: ImageEffectSettings()
 
-    // Initialize the selected URI in the ViewModel once
     LaunchedEffect(imageUris) {
         if (currentSelectedUriString == null && imageUris.isNotEmpty()) {
             projectViewModel.setManagerSelectedUri(imageUris.first())
         }
+    }
+
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = if (hasChanges) 1.05f else 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(500),
+            repeatMode = RepeatMode.Reverse
+        ), label = "pulse"
+    )
+
+    BackHandler(enabled = hasChanges) {
+        showExitConfirmDialog = true
+    }
+
+    if (showExitConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitConfirmDialog = false },
+            title = { Text("Salir sin guardar") },
+            text = { Text("Has realizado cambios pero no los has guardado. ¿Estás seguro de que quieres salir?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showExitConfirmDialog = false
+                    projectViewModel.discardImageEffects()
+                    navController.popBackStack()
+                }) { Text("Sí, salir") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showExitConfirmDialog = false }) { Text("No, quedarse") }
+            }
+        )
     }
 
     Scaffold(
@@ -71,7 +112,13 @@ fun ImageManagerScreen(
             TopAppBar(
                 title = { Text("Editar Imagen") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = {
+                        if (hasChanges) {
+                            showExitConfirmDialog = true
+                        } else {
+                            navController.popBackStack()
+                        }
+                    }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
                     }
                 },
@@ -81,13 +128,12 @@ fun ImageManagerScreen(
                             if (currentSelectedUriString != null) {
                                 val currentRotation = currentSettings.rotationDegrees
                                 val newRotation = (currentRotation + 90f) % 360f
-                                projectViewModel.updateImageRotation(context, currentSelectedUriString!!, newRotation)
+                                projectViewModel.updateImageRotation(currentSelectedUriString!!, newRotation)
                             }
                         },
                         enabled = currentSelectedUriString != null
-                    ) {
-                        Icon(Icons.Default.RotateRight, contentDescription = "Girar")
-                    }
+                    ) { Icon(Icons.Default.RotateRight, contentDescription = "Girar") }
+
                     IconButton(
                         onClick = {
                             currentSelectedUriString?.let {
@@ -95,20 +141,43 @@ fun ImageManagerScreen(
                             }
                         },
                         enabled = currentSelectedUriString != null
-                    ) {
-                        Icon(Icons.Default.Tune, contentDescription = "Efectos")
-                    }
+                    ) { Icon(Icons.Default.Tune, contentDescription = "Efectos") }
+
                     IconButton(
                         onClick = {
                             if (currentSelectedUriString != null) {
-                                projectViewModel.resetImageTransforms(context, currentSelectedUriString!!)
-                                // Force CropView to reset its internal state
+                                projectViewModel.resetImageTransforms(currentSelectedUriString!!)
                                 cropViewResetKey++
                             }
                         },
                         enabled = currentSelectedUriString != null && currentSettings.hasTransforms()
+                    ) { Icon(Icons.Default.Restore, contentDescription = "Restablecer") }
+
+                    Box(
+                        modifier = Modifier
+                            .padding(end = 8.dp)
+                            .size(40.dp)
+                            .graphicsLayer {
+                                scaleX = scale
+                                scaleY = scale
+                            }
+                            .clip(CircleShape)
+                            .background(if (hasChanges) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                            .border(
+                                width = if (hasChanges) 1.5.dp else 0.dp,
+                                color = if (hasChanges) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                shape = CircleShape
+                            )
                     ) {
-                        Icon(Icons.Default.Restore, contentDescription = "Restablecer")
+                        IconButton(
+                            onClick = {
+                                projectViewModel.saveImageEffects(context)
+                                Toast.makeText(context, "Cambios guardados", Toast.LENGTH_SHORT).show()
+                            },
+                            enabled = hasChanges
+                        ) {
+                            Icon(Icons.Filled.Save, contentDescription = "Guardar Cambios")
+                        }
                     }
                 }
             )
@@ -127,30 +196,26 @@ fun ImageManagerScreen(
             ) {
                 var bitmapForCropper by remember { mutableStateOf<Bitmap?>(null) }
 
-                LaunchedEffect(currentSelectedUri, effectSettingsMap) {
+                LaunchedEffect(currentSelectedUri, draftEffectSettings) {
                     if (currentSelectedUri != null) {
                         coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-                            // Load the original, full-resolution bitmap
                             val originalBitmap = context.contentResolver.openInputStream(currentSelectedUri)?.use {
                                 android.graphics.BitmapFactory.decodeStream(it)
                             }
-
                             if (originalBitmap != null) {
-                                val cropRect = effectSettingsMap[currentSelectedUriString]?.cropRect
+                                val cropRect = draftEffectSettings[currentSelectedUriString]?.cropRect
                                 if (cropRect != null) {
-                                    // Apply the existing crop to the original bitmap
                                     val left = (cropRect.left * originalBitmap.width).toInt()
                                     val top = (cropRect.top * originalBitmap.height).toInt()
                                     val width = (cropRect.width * originalBitmap.width).toInt()
                                     val height = (cropRect.height * originalBitmap.height).toInt()
 
-                                    if(width > 0 && height > 0 && (left + width) <= originalBitmap.width && (top + height) <= originalBitmap.height) {
+                                    if (width > 0 && height > 0 && (left + width) <= originalBitmap.width && (top + height) <= originalBitmap.height) {
                                         bitmapForCropper = Bitmap.createBitmap(originalBitmap, left, top, width, height)
                                     } else {
                                         bitmapForCropper = originalBitmap
                                     }
                                 } else {
-                                    // If no crop, use the original
                                     bitmapForCropper = originalBitmap
                                 }
                             }
@@ -170,7 +235,7 @@ fun ImageManagerScreen(
                                         width = cropRect.width / imageBounds.width,
                                         height = cropRect.height / imageBounds.height
                                     )
-                                    projectViewModel.updateImageCrop(context, currentSelectedUriString!!, normalizedRect)
+                                    projectViewModel.updateImageCrop(currentSelectedUriString!!, normalizedRect)
                                     cropViewResetKey++
                                 }
                             }
@@ -192,7 +257,7 @@ fun ImageManagerScreen(
             ) {
                 items(imageUris) { uriString ->
                     val uri = Uri.parse(uriString)
-                    val settings = effectSettingsMap[uriString]
+                    val settings = draftEffectSettings[uriString]
                     val transformations = if (settings != null) {
                         listOf(ProjectEffectsTransformation(settings))
                     } else {
@@ -212,9 +277,7 @@ fun ImageManagerScreen(
                                 width = 2.dp,
                                 color = if (uriString == currentSelectedUriString) MaterialTheme.colorScheme.primary else Color.Transparent
                             )
-                            .clickable {
-                                projectViewModel.setManagerSelectedUri(uriString)
-                            }
+                            .clickable { projectViewModel.setManagerSelectedUri(uriString) }
                     )
                 }
             }

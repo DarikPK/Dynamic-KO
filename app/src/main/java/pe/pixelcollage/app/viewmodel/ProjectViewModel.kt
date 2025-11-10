@@ -57,6 +57,22 @@ class ProjectViewModel : ViewModel() {
     private val _imageEffectSettings = MutableStateFlow<Map<String, ImageEffectSettings>>(emptyMap())
     val imageEffectSettings: StateFlow<Map<String, ImageEffectSettings>> = _imageEffectSettings.asStateFlow()
 
+    private val _draftImageEffectSettings = MutableStateFlow<Map<String, ImageEffectSettings>>(emptyMap())
+    val draftImageEffectSettings: StateFlow<Map<String, ImageEffectSettings>> = _draftImageEffectSettings.asStateFlow()
+
+    fun initDraftImageEffects() {
+        _draftImageEffectSettings.value = _imageEffectSettings.value
+    }
+
+    fun saveImageEffects(context: Context) {
+        _imageEffectSettings.value = _draftImageEffectSettings.value
+        saveProject(context)
+    }
+
+    fun discardImageEffects() {
+        _draftImageEffectSettings.value = _imageEffectSettings.value
+    }
+
     private val _managerSelectedUri = MutableStateFlow<String?>(null)
     val managerSelectedUri: StateFlow<String?> = _managerSelectedUri.asStateFlow()
 
@@ -88,13 +104,12 @@ class ProjectViewModel : ViewModel() {
         _managerSelectedUri.value = uri
     }
 
-    fun updateImageEffectSettings(context: Context, uri: String, settings: ImageEffectSettings) {
-        _imageEffectSettings.update { currentMap ->
+    fun updateImageEffectSettings(uri: String, settings: ImageEffectSettings) {
+        _draftImageEffectSettings.update { currentMap ->
             currentMap.toMutableMap().apply {
                 this[uri] = settings
             }
         }
-        saveProject(context)
     }
 
     fun swapPhotoOrder(item1: PhotoArrangementItem, item2: PhotoArrangementItem) {
@@ -237,18 +252,17 @@ class ProjectViewModel : ViewModel() {
         saveProject(context)
     }
 
-    fun updateImageRotation(context: Context, uri: String, degrees: Float) {
-        _imageEffectSettings.update { currentMap ->
+    fun updateImageRotation(uri: String, degrees: Float) {
+        _draftImageEffectSettings.update { currentMap ->
             val currentSettings = currentMap[uri] ?: ImageEffectSettings()
             currentMap.toMutableMap().apply {
                 this[uri] = currentSettings.copy(rotationDegrees = degrees)
             }
         }
-        saveProject(context)
     }
 
-    fun updateImageCrop(context: Context, uri: String, newRelativeCrop: SerializableNormalizedRectF?) {
-        _imageEffectSettings.update { currentMap ->
+    fun updateImageCrop(uri: String, newRelativeCrop: SerializableNormalizedRectF?) {
+        _draftImageEffectSettings.update { currentMap ->
             val currentSettings = currentMap[uri] ?: ImageEffectSettings()
             val existingCrop = currentSettings.cropRect
 
@@ -268,18 +282,16 @@ class ProjectViewModel : ViewModel() {
                 this[uri] = currentSettings.copy(cropRect = finalCrop)
             }
         }
-        saveProject(context)
     }
 
-    fun resetImageTransforms(context: Context, uri: String) {
-        _imageEffectSettings.update { currentMap ->
+    fun resetImageTransforms(uri: String) {
+        _draftImageEffectSettings.update { currentMap ->
             val currentSettings = currentMap[uri] ?: ImageEffectSettings()
             currentMap.toMutableMap().apply {
                 // Reset only transform properties, keep other effects
                 this[uri] = currentSettings.copy(rotationDegrees = 0f, cropRect = null)
             }
         }
-        saveProject(context)
     }
 
     fun updateTheme(context: Context, newThemeName: String) {

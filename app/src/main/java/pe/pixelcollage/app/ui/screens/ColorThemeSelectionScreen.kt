@@ -1,5 +1,8 @@
 package pe.pixelcollage.app.ui.screens
 
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -11,13 +14,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -34,15 +38,106 @@ fun ColorThemeSelectionScreen(
 ) {
     val context = LocalContext.current
     val coverConfig by projectViewModel.currentCoverConfig.collectAsState()
-    val selectedThemeName = coverConfig.templateName ?: "SkyBlue"
+    val initialThemeName = coverConfig.templateName ?: "SkyBlue"
+
+    var draftThemeName by remember { mutableStateOf(initialThemeName) }
+    var originalThemeName by remember { mutableStateOf(initialThemeName) }
+    var showExitConfirmDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(initialThemeName) {
+        draftThemeName = initialThemeName
+        originalThemeName = initialThemeName
+    }
+
+    val hasChanges by remember {
+        derivedStateOf { draftThemeName != originalThemeName }
+    }
+
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = if (hasChanges) 1.05f else 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(500),
+            repeatMode = RepeatMode.Reverse
+        ), label = "pulse"
+    )
+
+    BackHandler(enabled = hasChanges) {
+        showExitConfirmDialog = true
+    }
+
+    if (showExitConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitConfirmDialog = false },
+            title = { Text("Salir sin guardar") },
+            text = { Text("Has realizado cambios pero no los has guardado. ¿Estás seguro de que quieres salir?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showExitConfirmDialog = false
+                    navController.popBackStack()
+                }) {
+                    Text("Sí, salir")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showExitConfirmDialog = false }) {
+                    Text("No, quedarse")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Seleccionar Tema de Color") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = {
+                        if (hasChanges) {
+                            showExitConfirmDialog = true
+                        } else {
+                            navController.popBackStack()
+                        }
+                    }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
+                    }
+                },
+                actions = {
+                    Box(
+                        modifier = Modifier
+                            .padding(end = 8.dp)
+                            .size(40.dp)
+                            .graphicsLayer {
+                                scaleX = scale
+                                scaleY = scale
+                            }
+                            .clip(CircleShape)
+                            .background(if (hasChanges) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                            .border(
+                                width = if (hasChanges) 1.5.dp else 0.dp,
+                                color = if (hasChanges) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                shape = CircleShape
+                            )
+                    ) {
+                        IconButton(
+                            onClick = {
+                                val selectedTheme = ColorThemes.themes.find { it.name == draftThemeName }
+                                if (selectedTheme != null) {
+                                    projectViewModel.applyColorTheme(context, selectedTheme)
+                                    originalThemeName = draftThemeName
+                                    Toast.makeText(context, "Tema guardado", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            enabled = hasChanges,
+                            modifier = Modifier.align(Alignment.Center)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Save,
+                                contentDescription = "Guardar Tema",
+                                tint = if (hasChanges) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            )
+                        }
                     }
                 }
             )
@@ -58,9 +153,9 @@ fun ColorThemeSelectionScreen(
             items(ColorThemes.themes) { theme ->
                 ThemeCard(
                     theme = theme,
-                    isSelected = theme.name == selectedThemeName,
+                    isSelected = theme.name == draftThemeName,
                     onClick = {
-                        projectViewModel.applyColorTheme(context, theme)
+                        draftThemeName = theme.name
                     }
                 )
             }
