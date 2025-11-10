@@ -2,12 +2,16 @@ package pe.pixelcollage.app.data.model
 
 enum class BackgroundPatternType(val displayName: String) {
     NONE("Ninguno"),
-    LOW_POLY("Poligonal (Low Poly)"),
-    CRYSTALS("Cristales Abstractos"),
-    SOFT_WAVES("Ondas Suaves"),
-    BOKEH("Luces Bokeh"),
-    HEXAGONS("Hexágonos Translúcidos"),
-    PAPER_LAYERS("Capas de Papel")
+    CURVAS("Curvas"),
+    FIGURAS_GEOMETRICAS("Figuras Geométricas"),
+    LINEAS("Líneas"),
+    PUNTOS("Puntos"),
+    ESPIRALES("Espirales"),
+    ONDAS("Ondas"),
+    ONDAS_ALEATORIAS("Ondas Aleatorias"),
+    BURBUJAS("Burbujas"),
+    ESTRELLAS("Estrellas"),
+    MOSAICO("Mosaico")
 }
 
 data class GeneratedBackgroundConfig(

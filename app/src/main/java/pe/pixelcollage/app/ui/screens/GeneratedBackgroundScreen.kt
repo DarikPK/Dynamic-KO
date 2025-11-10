@@ -136,7 +136,7 @@ fun GeneratedBackgroundScreen(
                     ) {
                         IconButton(
                             onClick = {
-                                projectViewModel.updateGeneratedBackgroundConfig(context, draftConfig)
+                                projectViewModel.updateGeneratedBackgroundConfig(draftConfig)
                                 originalConfig = draftConfig // Actualiza el estado original al guardar
                                 Toast.makeText(context, "Mosaico guardado", Toast.LENGTH_SHORT).show()
                             },

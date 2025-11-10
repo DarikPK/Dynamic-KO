@@ -21,6 +21,7 @@ import pe.pixelcollage.app.data.model.ImageEffectSettings
 import pe.pixelcollage.app.data.model.PageGroup
 import pe.pixelcollage.app.data.model.PageOrientation
 import pe.pixelcollage.app.data.model.PhotoArrangementItem
+import pe.pixelcollage.app.data.model.SheetBackgroundType
 import pe.pixelcollage.app.data.model.SheetType
 import pe.pixelcollage.app.data.model.SerializableNormalizedRectF
 import pe.pixelcollage.app.data.model.SelectedSunatData
@@ -379,6 +380,16 @@ class ProjectViewModel : ViewModel() {
 
     fun updateHybridInnerImagesQuality(context: Context, quality: Int) {
         _currentCoverConfig.update { it.copy(hybridInnerImagesQuality = quality) }
+        saveProject(context)
+    }
+
+    fun updatePageBackgroundColor(context: Context, color: Color) {
+        _currentCoverConfig.update { it.copy(pageBackgroundColor = color.toArgb()) }
+        saveProject(context)
+    }
+
+    fun updateSheetBackgroundType(context: Context, type: SheetBackgroundType) {
+        _currentCoverConfig.update { it.copy(sheetBackgroundType = type) }
         saveProject(context)
     }
 

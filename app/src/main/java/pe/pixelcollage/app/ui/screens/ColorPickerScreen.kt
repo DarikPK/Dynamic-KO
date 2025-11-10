@@ -76,14 +76,8 @@ fun ColorPickerScreen(
                 actions = {
                     IconButton(onClick = {
                         val colorHex = String.format("%06X", (0xFFFFFF and finalColor.toArgb()))
-                        val resultKey = when (colorType) {
-                            "field" -> "selected_color_field"
-                            "background" -> "selected_color_background"
-                            "pattern_color" -> "selected_color_pattern_color"
-                            else -> "selected_color_background" // Default
-                        }
+                        val resultKey = if (colorType == "field") "selected_color_field" else "selected_color_background"
                         val resultValue = if (colorType == "field") "$fieldId:$colorHex" else colorHex
-
                         navController.previousBackStackEntry
                             ?.savedStateHandle
                             ?.set(resultKey, resultValue)
