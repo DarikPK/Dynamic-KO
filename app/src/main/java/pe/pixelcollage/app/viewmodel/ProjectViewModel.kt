@@ -383,27 +383,36 @@ class ProjectViewModel : ViewModel() {
         saveProject(context)
     }
 
-    fun updatePageBackgroundColor(context: Context, color: Color) {
-        _currentCoverConfig.update { it.copy(pageBackgroundColor = color.toArgb()) }
-        saveProject(context)
-    }
-
-    fun updateSheetBackgroundType(context: Context, type: SheetBackgroundType) {
-        _currentCoverConfig.update { it.copy(sheetBackgroundType = type) }
-        saveProject(context)
-    }
-
     fun updateImageBorderSettings(context: Context, newSettingsMap: Map<String, ImageBorderSettings>) {
         _currentCoverConfig.update { it.copy(imageBorderSettingsMap = newSettingsMap) }
         saveProject(context)
     }
 
-    fun updateGeneratedBackgroundConfig(context: Context, config: GeneratedBackgroundConfig) {
-        val current = _currentCoverConfig.value
-        // Forzamos una nueva instancia incluso si no cambió nada visible
-        val updated = current.copy(generatedBackgroundConfig = config.copy())
-        _currentCoverConfig.value = updated
+    // --- Background Editing ---
+    private val _draftGeneratedBackgroundConfig = MutableStateFlow<GeneratedBackgroundConfig?>(null)
+    val draftGeneratedBackgroundConfig: StateFlow<GeneratedBackgroundConfig?> = _draftGeneratedBackgroundConfig.asStateFlow()
+    private var isBackgroundEditingSessionActive = false
+
+    fun startBackgroundEditingSession() {
+        if (!isBackgroundEditingSessionActive) {
+            _draftGeneratedBackgroundConfig.value = _currentCoverConfig.value.generatedBackgroundConfig ?: GeneratedBackgroundConfig()
+            isBackgroundEditingSessionActive = true
+        }
+    }
+
+    fun saveBackgroundConfig(context: Context) {
+        _currentCoverConfig.update { it.copy(generatedBackgroundConfig = _draftGeneratedBackgroundConfig.value) }
+        isBackgroundEditingSessionActive = false
         saveProject(context)
+    }
+
+    fun discardBackgroundConfig() {
+        _draftGeneratedBackgroundConfig.value = _currentCoverConfig.value.generatedBackgroundConfig
+        isBackgroundEditingSessionActive = false
+    }
+
+    fun updateGeneratedBackgroundConfig(config: GeneratedBackgroundConfig) {
+        _draftGeneratedBackgroundConfig.value = config
     }
 
     fun addPageGroup(context: Context, group: PageGroup) {

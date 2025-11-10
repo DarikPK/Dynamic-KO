@@ -159,8 +159,8 @@ fun AppNavigation(
             composable(Screen.SheetDesign.route) {
                 SheetDesignScreen(navController = navController)
             }
-            composable(Screen.SheetBackgroundOptions.route) {
-                SheetBackgroundOptionsScreen(navController = navController, projectViewModel = projectViewModel)
+            composable(Screen.SheetBackgroundEditor.route) {
+                SheetBackgroundEditorScreen(navController = navController, projectViewModel = projectViewModel)
             }
         }
         composable(Screen.SheetBackground.route) {

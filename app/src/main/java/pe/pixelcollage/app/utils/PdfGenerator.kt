@@ -213,14 +213,9 @@ private fun drawCoverPageWithPdfBox(
         val pageWidth = page.mediaBox.width
         val pageHeight = page.mediaBox.height
 
-        config.pageBackgroundColor?.let {
-            val r = Color.red(it)
-            val g = Color.green(it)
-            val b = Color.blue(it)
-            contentStream.setNonStrokingColor(r, g, b)
-            contentStream.addRect(0f, 0f, pageWidth, pageHeight)
-            contentStream.fill()
-        }
+        contentStream.setNonStrokingColor(255, 255, 255) // White background
+        contentStream.addRect(0f, 0f, pageWidth, pageHeight)
+        contentStream.fill()
 
         config.generatedBackgroundConfig?.let {
             if (it.enabled) {
@@ -325,14 +320,9 @@ private fun drawInnerPagesWithPdfBox(
             val pageWidth = page.mediaBox.width
             val pageHeight = page.mediaBox.height
 
-            coverConfig.pageBackgroundColor?.let {
-                val r = Color.red(it)
-                val g = Color.green(it)
-                val b = Color.blue(it)
-                contentStream.setNonStrokingColor(r, g, b)
-                contentStream.addRect(0f, 0f, pageWidth, pageHeight)
-                contentStream.fill()
-            }
+            contentStream.setNonStrokingColor(255, 255, 255) // White background
+            contentStream.addRect(0f, 0f, pageWidth, pageHeight)
+            contentStream.fill()
 
             coverConfig.generatedBackgroundConfig?.let {
                 if (it.enabled) {

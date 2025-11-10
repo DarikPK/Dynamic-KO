@@ -39,7 +39,7 @@ fun SheetDesignScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Button(
-                onClick = { navController.navigate(Screen.SheetBackgroundOptions.route) },
+                onClick = { navController.navigate(Screen.SheetBackgroundEditor.route) },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Fondo de Hoja(s)")
