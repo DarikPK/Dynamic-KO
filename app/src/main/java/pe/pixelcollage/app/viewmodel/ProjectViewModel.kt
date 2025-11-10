@@ -59,20 +59,29 @@ class ProjectViewModel : ViewModel() {
 
     private val _draftImageEffectSettings = MutableStateFlow<Map<String, ImageEffectSettings>>(emptyMap())
     val draftImageEffectSettings: StateFlow<Map<String, ImageEffectSettings>> = _draftImageEffectSettings.asStateFlow()
+    private var isEditingSessionActive = false
 
     fun startImageEditingSession() {
-        Log.d("ImageEffectsDebug", "VM: Iniciando sesión de edición. Se sobreescribe el borrador con el estado original.")
-        _draftImageEffectSettings.value = _imageEffectSettings.value
+        if (!isEditingSessionActive) {
+            Log.d("ImageEffectsDebug", "VM: Iniciando nueva sesión de edición. Copiando desde original.")
+            _draftImageEffectSettings.value = _imageEffectSettings.value
+            isEditingSessionActive = true
+        } else {
+            Log.d("ImageEffectsDebug", "VM: Sesión de edición ya en curso. No se copia nada.")
+        }
     }
 
     fun saveImageEffects(context: Context) {
-        Log.d("ImageEffectsDebug", "VM: Guardando cambios. Draft -> Original.")
+        Log.d("ImageEffectsDebug", "VM: Guardando cambios. Draft -> Original. Finalizando sesión.")
         _imageEffectSettings.value = _draftImageEffectSettings.value
+        isEditingSessionActive = false
         saveProject(context)
     }
 
     fun discardImageEffects() {
+        Log.d("ImageEffectsDebug", "VM: Descartando cambios. Original -> Draft. Finalizando sesión.")
         _draftImageEffectSettings.value = _imageEffectSettings.value
+        isEditingSessionActive = false
     }
 
     private val _managerSelectedUri = MutableStateFlow<String?>(null)
