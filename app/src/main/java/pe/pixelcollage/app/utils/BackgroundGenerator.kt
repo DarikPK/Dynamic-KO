@@ -33,6 +33,7 @@ object BackgroundGenerator {
         )
 
         when (config.patternType) {
+            BackgroundPatternType.NONE -> { /* No-op, do nothing */ }
             BackgroundPatternType.CURVAS -> drawCurves(canvas, config, width, height, paint, colors)
             BackgroundPatternType.FIGURAS_GEOMETRICAS -> drawGeometricShapes(canvas, config, width, height, paint, colors)
             BackgroundPatternType.LINEAS -> drawLines(canvas, config, width, height, paint, colors)
