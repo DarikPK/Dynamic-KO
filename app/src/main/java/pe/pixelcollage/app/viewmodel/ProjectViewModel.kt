@@ -606,6 +606,10 @@ class ProjectViewModel : ViewModel() {
         }
     }
 
+    suspend fun copyAndGetPermanentUri(context: Context, uriString: String): String? {
+        return copyUriToInternalStorage(context, uriString)
+    }
+
     private suspend fun copyUriToInternalStorage(context: Context, uriString: String): String? {
         return withContext(Dispatchers.IO) {
             try {

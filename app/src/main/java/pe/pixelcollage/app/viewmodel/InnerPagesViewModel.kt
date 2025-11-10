@@ -245,8 +245,19 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
 
     fun onSaveChanges(context: android.content.Context) {
         viewModelScope.launch {
-            projectViewModel.updatePageGroups(context, _pageGroups.value)
-            _originalPageGroups.value = _pageGroups.value
+            val updatedGroups = _pageGroups.value.map { group ->
+                val updatedUris = group.imageUris.map { uri ->
+                    if (uri.startsWith("content://")) {
+                        projectViewModel.copyAndGetPermanentUri(context, uri) ?: uri
+                    } else {
+                        uri
+                    }
+                }
+                group.copy(imageUris = updatedUris)
+            }
+            projectViewModel.updatePageGroups(context, updatedGroups)
+            _pageGroups.value = updatedGroups
+            _originalPageGroups.value = updatedGroups
         }
     }
 
