@@ -439,6 +439,9 @@ class ProjectViewModel : ViewModel() {
         _currentPageGroups.value = emptyList()
         _sunatData.value = null
         _recycledUris.value = emptyList()
+
+        // After resetting in-memory state, save this empty state to disk
+        saveProject(context)
     }
 
     // --- Generación de PDF ---
