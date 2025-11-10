@@ -66,6 +66,9 @@ class ProjectViewModel : ViewModel() {
     private val _photoArrangement = MutableStateFlow<List<PhotoArrangementItem>>(emptyList())
     val photoArrangement: StateFlow<List<PhotoArrangementItem>> = _photoArrangement.asStateFlow()
 
+    private val _isProjectLoaded = MutableStateFlow(false)
+    val isProjectLoaded: StateFlow<Boolean> = _isProjectLoaded.asStateFlow()
+
     fun initializePhotoArrangement() {
         val arrangement = mutableListOf<PhotoArrangementItem>()
         var order = 1
@@ -722,6 +725,8 @@ class ProjectViewModel : ViewModel() {
             } catch (t: Throwable) {
                 Log.e("ProjectViewModel", "loadProject: A critical error occurred during project load. Starting fresh.", t)
                 _saveState.value = SaveState.Error("Fallo al cargar el proyecto guardado: ${t.javaClass.simpleName}")
+            } finally {
+                _isProjectLoaded.value = true
             }
         }
     }

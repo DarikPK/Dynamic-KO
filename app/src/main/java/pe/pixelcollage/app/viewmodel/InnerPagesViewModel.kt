@@ -32,10 +32,13 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
 
     init {
         viewModelScope.launch {
-            projectViewModel.currentPageGroups.first().let {
-                _pageGroups.value = it
-                _originalPageGroups.value = it
-            }
+            // Espera a que el proyecto se haya cargado completamente
+            projectViewModel.isProjectLoaded.first { it }
+
+            // Una vez cargado, obtiene el valor actual de los grupos de páginas
+            val initialGroups = projectViewModel.currentPageGroups.value
+            _pageGroups.value = initialGroups
+            _originalPageGroups.value = initialGroups
         }
     }
 
