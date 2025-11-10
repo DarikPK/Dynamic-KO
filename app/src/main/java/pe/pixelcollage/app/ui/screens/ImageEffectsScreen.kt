@@ -78,17 +78,8 @@ fun ImageEffectsScreen(
             TopAppBar(
                 title = { Text("Ajustar Efectos de Imagen") },
                 navigationIcon = {
-                    IconButton(onClick = {
-                        val updatedSettings = currentSettings.copy(
-                            brightness = brightnessSlider,
-                            contrast = contrastSlider,
-                            saturation = saturationSlider,
-                            sharpness = sharpnessSlider
-                        )
-                        projectViewModel.updateImageEffectSettings(imageUri, updatedSettings)
-                        navController.popBackStack()
-                    }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás (Cancelar)")
                     }
                 }
             )
@@ -150,8 +141,20 @@ fun ImageEffectsScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
+                    horizontalArrangement = Arrangement.SpaceAround
                 ) {
+                    Button(onClick = {
+                        val updatedSettings = currentSettings.copy(
+                            brightness = brightnessSlider,
+                            contrast = contrastSlider,
+                            saturation = saturationSlider,
+                            sharpness = sharpnessSlider
+                        )
+                        projectViewModel.updateImageEffectSettings(imageUri, updatedSettings)
+                        navController.popBackStack()
+                    }) {
+                        Text("Aplicar")
+                    }
                     Button(onClick = {
                         brightnessSlider = 0f
                         contrastSlider = 0f
