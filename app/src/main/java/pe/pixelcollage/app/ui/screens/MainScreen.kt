@@ -90,6 +90,19 @@ fun MainScreen(
         projectViewModel.loadProject(context)
     }
 
+    // Guardar el proyecto automáticamente cuando la app se va a segundo plano
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                projectViewModel.saveProject(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showLimitReachedDialog by remember { mutableStateOf(false) }
     val pdfGenerationState by projectViewModel.pdfGenerationState.collectAsState()
