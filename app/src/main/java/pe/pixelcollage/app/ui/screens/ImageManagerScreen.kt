@@ -62,7 +62,7 @@ fun ImageManagerScreen(
     }
 
     val hasChanges by remember {
-        derivedState of { draftEffectSettings != originalEffectSettings }
+        derivedStateOf { draftEffectSettings != originalEffectSettings }
     }
 
     val currentSettings = currentSelectedUriString?.let {
