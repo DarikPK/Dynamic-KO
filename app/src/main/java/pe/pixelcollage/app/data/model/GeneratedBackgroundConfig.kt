@@ -1,24 +1,18 @@
 package pe.pixelcollage.app.data.model
 
 enum class BackgroundPatternType(val displayName: String) {
-    NONE("Ninguno"),
-    CURVAS("Curvas"),
-    FIGURAS_GEOMETRICAS("Figuras Geométricas"),
-    LINEAS("Líneas"),
-    PUNTOS("Puntos"),
-    ESPIRALES("Espirales"),
-    ONDAS("Ondas"),
-    ONDAS_ALEATORIAS("Ondas Aleatorias"),
-    BURBUJAS("Burbujas"),
-    ESTRELLAS("Estrellas"),
-    MOSAICO("Mosaico")
+    SÓLIDO_BLANCO("Sólido Blanco"),
+    LOW_POLY("Polígono Bajo"),
+    CRISTALES("Cristales"),
+    GEOMETRICO("Geométrico"),
+    PAPELES_SUPERPUESTOS("Papeles Superpuestos"),
+    ONDAS_ABSTRACTAS("Ondas Abstractas"),
+    BOKEH_DORADO("Bokeh Dorado")
 }
 
 data class GeneratedBackgroundConfig(
-    val patternType: BackgroundPatternType = BackgroundPatternType.NONE,
+    val patternType: BackgroundPatternType = BackgroundPatternType.SÓLIDO_BLANCO,
     val opacity: Float = 0.5f,
     val size: Float = 10f,
-    val density: Float = 0.5f,
-    val enabled: Boolean = false,
-    val color: Int? = null
+    val density: Float = 0.5f
 )

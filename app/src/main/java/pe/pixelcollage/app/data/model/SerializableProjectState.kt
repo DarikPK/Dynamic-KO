@@ -33,7 +33,6 @@ data class SerializableCoverPageConfig(
     val photoWeight: Float,
     val photoStyle: SerializableRowStyle,
     val quality: Int?,
-    val pageBackgroundColor: Int?,
     val imageBorderSettingsMap: Map<String, SerializableImageBorderSettings>?,
     val templateName: String?,
     val forceFullResCover: Boolean? = false,

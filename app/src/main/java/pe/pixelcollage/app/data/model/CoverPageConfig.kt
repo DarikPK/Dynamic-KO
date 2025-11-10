@@ -4,33 +4,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-// Quitar Dp y dp si los márgenes son Float
-// import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import pe.pixelcollage.app.ui.theme.calibriFontFamily
-import pe.pixelcollage.app.data.model.GeneratedBackgroundConfig
 
 enum class DocumentType {
     RUC, DNI, NONE
 }
 
-enum class SheetBackgroundType {
-    SOLID,
-    CUSTOM
-}
-
 // Valores por defecto para la configuración de la portada
 object DefaultCoverConfig {
-    // IDs ya no son necesarios si TextStyleConfig no tiene 'id' y el ViewModel maneja estilos por separado
     const val CLIENT_NAME_ID = "clientName"
     const val RUC_ID = "ruc"
     const val SUBTITLE_ID = "subtitle"
-
-    // val BORDER_COLOR: Color = Color.Black
-    // const val BORDER_VISIBLE_TOP: Boolean = true
-    // const val BORDER_VISIBLE_BOTTOM: Boolean = true
-    // const val BORDER_VISIBLE_LEFT: Boolean = true
-    // const val BORDER_VISIBLE_RIGHT: Boolean = true
 
     // Márgenes como Float (cm)
     const val MARGIN_TOP_CM: Float = 0.5f
@@ -40,12 +25,10 @@ object DefaultCoverConfig {
 
     val PAGE_ORIENTATION: PageOrientation = PageOrientation.Vertical
 
-    // Función para obtener una instancia por defecto, si ProjectViewModel la necesita
     fun get(): CoverPageConfig = CoverPageConfig()
 }
 
 data class CoverPageConfig(
-    // Asumiendo que TextStyleConfig no tiene 'id' y fontSize es Int
     val clientNameStyle: TextStyleConfig = TextStyleConfig(
         content = "",
         fontFamily = calibriFontFamily,
@@ -93,17 +76,10 @@ data class CoverPageConfig(
             )
         )
     ),
-    val showAddressPrefix: Boolean = true, // Nuevo campo para el prefijo de dirección
-    val allCaps: Boolean = true, // Nuevo campo para texto en mayúsculas
+    val showAddressPrefix: Boolean = true,
+    val allCaps: Boolean = true,
 
     val mainImageUri: String? = null,
-
-    // Border properties are now part of RowStyle inside TextStyleConfig
-    // val borderColor: Color = DefaultCoverConfig.BORDER_COLOR,
-    // val borderVisibleTop: Boolean = DefaultCoverConfig.BORDER_VISIBLE_TOP,
-    // val borderVisibleBottom: Boolean = DefaultCoverConfig.BORDER_VISIBLE_BOTTOM,
-    // val borderVisibleLeft: Boolean = DefaultCoverConfig.BORDER_VISIBLE_LEFT,
-    // val borderVisibleRight: Boolean = DefaultCoverConfig.BORDER_VISIBLE_RIGHT,
 
     // Márgenes como Float (cm)
     val marginTop: Float = DefaultCoverConfig.MARGIN_TOP_CM,
@@ -111,7 +87,7 @@ data class CoverPageConfig(
     val marginLeft: Float = DefaultCoverConfig.MARGIN_LEFT_CM,
     val marginRight: Float = DefaultCoverConfig.MARGIN_RIGHT_CM,
 
-    val pageOrientation: PageOrientation = DefaultCoverConfig.PAGE_ORIENTATION, // Nuevo campo
+    val pageOrientation: PageOrientation = DefaultCoverConfig.PAGE_ORIENTATION,
 
     // Pesos para el diseño de la portada
     val clientWeight: Float = 0.5f,
@@ -128,12 +104,10 @@ data class CoverPageConfig(
     val useHybridPdfMode: Boolean = true,
 
     // Advanced Design
-    val pageBackgroundColor: Int? = null,
     val imageBorderSettingsMap: Map<String, ImageBorderSettings> = emptyMap(),
     val hybridCoverImageQuality: Int = 70,
     val hybridInnerImagesQuality: Int = 30,
 
     val templateName: String? = null,
-    val generatedBackgroundConfig: GeneratedBackgroundConfig? = null,
-    val sheetBackgroundType: SheetBackgroundType = SheetBackgroundType.SOLID
+    val generatedBackgroundConfig: GeneratedBackgroundConfig? = GeneratedBackgroundConfig()
 )

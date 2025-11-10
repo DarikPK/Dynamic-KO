@@ -383,16 +383,6 @@ class ProjectViewModel : ViewModel() {
         saveProject(context)
     }
 
-    fun updatePageBackgroundColor(context: Context, color: Color) {
-        _currentCoverConfig.update { it.copy(pageBackgroundColor = color.toArgb()) }
-        saveProject(context)
-    }
-
-    fun updateSheetBackgroundType(context: Context, type: SheetBackgroundType) {
-        _currentCoverConfig.update { it.copy(sheetBackgroundType = type) }
-        saveProject(context)
-    }
-
     fun updateImageBorderSettings(context: Context, newSettingsMap: Map<String, ImageBorderSettings>) {
         _currentCoverConfig.update { it.copy(imageBorderSettingsMap = newSettingsMap) }
         saveProject(context)

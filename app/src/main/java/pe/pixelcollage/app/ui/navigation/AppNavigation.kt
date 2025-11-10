@@ -261,17 +261,6 @@ fun AppNavigation(
                 projectViewModel = projectViewModel
             )
         }
-        composable(Screen.SheetDesign.route) {
-            SheetDesignScreen(
-                navController = navController
-            )
-        }
-        composable(Screen.SheetBackgroundOptions.route) {
-            SheetBackgroundOptionsScreen(
-                navController = navController,
-                projectViewModel = projectViewModel
-            )
-        }
         composable("account_management") {
             AccountManagementScreen(navController = navController)
         }
