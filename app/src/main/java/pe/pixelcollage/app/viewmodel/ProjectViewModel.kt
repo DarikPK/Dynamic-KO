@@ -1,32 +1,11 @@
 package pe.pixelcollage.app.viewmodel
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Matrix
 import android.net.Uri
 import android.util.Log
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import pe.pixelcollage.app.data.model.ColorTheme
-import pe.pixelcollage.app.data.model.GeneratedBackgroundConfig
-import pe.pixelcollage.app.data.model.ImageBorderSettings
-import pe.pixelcollage.app.data.toDomain
-import pe.pixelcollage.app.data.toSerializable
-import pe.pixelcollage.app.data.model.CoverPageConfig
-import pe.pixelcollage.app.data.model.ImageEffectSettings
-import pe.pixelcollage.app.data.model.PageGroup
-import pe.pixelcollage.app.data.model.PageOrientation
-import pe.pixelcollage.app.data.model.PhotoArrangementItem
-import pe.pixelcollage.app.data.model.SheetBackgroundType
-import pe.pixelcollage.app.data.model.SheetType
-import pe.pixelcollage.app.data.model.SerializableNormalizedRectF
-import pe.pixelcollage.app.data.model.SelectedSunatData
-import pe.pixelcollage.app.data.model.SerializableProjectState
-import pe.pixelcollage.app.utils.PdfGenerator
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -36,9 +15,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import pe.pixelcollage.app.data.model.*
+import pe.pixelcollage.app.data.toDomain
+import pe.pixelcollage.app.data.toSerializable
+import pe.pixelcollage.app.utils.PdfGenerator
 import java.io.File
 import java.io.FileOutputStream
-import java.util.UUID
+import java.util.*
 
 class ProjectViewModel : ViewModel() {
 
@@ -47,6 +30,34 @@ class ProjectViewModel : ViewModel() {
 
     private val _currentPageGroups = MutableStateFlow<List<PageGroup>>(emptyList())
     val currentPageGroups: StateFlow<List<PageGroup>> = _currentPageGroups.asStateFlow()
+
+    // --- Draft system for Background Editing ---
+    private val _draftGeneratedBackgroundConfig = MutableStateFlow<GeneratedBackgroundConfig?>(null)
+    val draftGeneratedBackgroundConfig: StateFlow<GeneratedBackgroundConfig?> = _draftGeneratedBackgroundConfig.asStateFlow()
+    private var isBackgroundEditingSessionActive = false
+
+    fun startBackgroundEditingSession() {
+        if (!isBackgroundEditingSessionActive) {
+            _draftGeneratedBackgroundConfig.value = _currentCoverConfig.value.generatedBackgroundConfig
+            isBackgroundEditingSessionActive = true
+        }
+    }
+
+    fun saveBackgroundConfig(context: Context) {
+        _currentCoverConfig.update { it.copy(generatedBackgroundConfig = _draftGeneratedBackgroundConfig.value) }
+        isBackgroundEditingSessionActive = false
+        saveProject(context)
+    }
+
+    fun discardBackgroundConfig() {
+        _draftGeneratedBackgroundConfig.value = _currentCoverConfig.value.generatedBackgroundConfig
+        isBackgroundEditingSessionActive = false
+    }
+
+    fun updateGeneratedBackgroundConfig(config: GeneratedBackgroundConfig?) {
+        _draftGeneratedBackgroundConfig.value = config
+    }
+    // --- End of Draft system ---
 
     private val _sunatData = MutableStateFlow<SelectedSunatData?>(null)
     val sunatData: StateFlow<SelectedSunatData?> = _sunatData.asStateFlow()
@@ -63,23 +74,18 @@ class ProjectViewModel : ViewModel() {
 
     fun startImageEditingSession() {
         if (!isEditingSessionActive) {
-            Log.d("ImageEffectsDebug", "VM: Iniciando nueva sesión de edición. Copiando desde original.")
             _draftImageEffectSettings.value = _imageEffectSettings.value
             isEditingSessionActive = true
-        } else {
-            Log.d("ImageEffectsDebug", "VM: Sesión de edición ya en curso. No se copia nada.")
         }
     }
 
     fun saveImageEffects(context: Context) {
-        Log.d("ImageEffectsDebug", "VM: Guardando cambios. Draft -> Original. Finalizando sesión.")
         _imageEffectSettings.value = _draftImageEffectSettings.value
         isEditingSessionActive = false
         saveProject(context)
     }
 
     fun discardImageEffects() {
-        Log.d("ImageEffectsDebug", "VM: Descartando cambios. Original -> Draft. Finalizando sesión.")
         _draftImageEffectSettings.value = _imageEffectSettings.value
         isEditingSessionActive = false
     }
@@ -116,13 +122,8 @@ class ProjectViewModel : ViewModel() {
     }
 
     fun updateImageEffectSettings(uri: String, settings: ImageEffectSettings) {
-        Log.d("ImageEffectsDebug", "VM: Recibido para actualizar draft para $uri: $settings")
         _draftImageEffectSettings.update { currentMap ->
-            val newMap = currentMap.toMutableMap().apply {
-                this[uri] = settings
-            }
-            Log.d("ImageEffectsDebug", "VM: Nuevo estado del draft: $newMap")
-            newMap
+            currentMap.toMutableMap().apply { this[uri] = settings }
         }
     }
 
@@ -143,7 +144,6 @@ class ProjectViewModel : ViewModel() {
             val fromOrder = fromItem.order
             val toOrder = toItem.order
             val newList = currentList.toMutableList()
-
             val itemToMove = newList.find { it.order == fromOrder }
             if (itemToMove != null) {
                 if (fromOrder < toOrder) {
@@ -172,7 +172,7 @@ class ProjectViewModel : ViewModel() {
                     PageGroup(
                         id = UUID.randomUUID().toString(),
                         groupName = "Grupo ${newPageGroups.size + 1}",
-                        orientation = PageOrientation.Vertical, // O la que corresponda
+                        orientation = PageOrientation.Vertical,
                         photosPerSheet = 1,
                         sheetCount = 1,
                         imageUris = listOf(currentPhoto.uri)
@@ -189,7 +189,7 @@ class ProjectViewModel : ViewModel() {
                     PageGroup(
                         id = UUID.randomUUID().toString(),
                         groupName = "Grupo ${newPageGroups.size + 1}",
-                        orientation = PageOrientation.Vertical, // O la que corresponda
+                        orientation = PageOrientation.Vertical,
                         photosPerSheet = 2,
                         sheetCount = 1,
                         imageUris = groupUris
@@ -203,14 +203,10 @@ class ProjectViewModel : ViewModel() {
     }
 
     fun deletePhoto(context: Context, uri: String) {
-        // Move the photo to the recycled bin
         _recycledUris.update { it + uri }
-
-        // Check if it's the cover photo
         if (_currentCoverConfig.value.mainImageUri == uri) {
             _currentCoverConfig.update { it.copy(mainImageUri = null) }
         } else {
-            // Find the group containing the photo and remove it
             _currentPageGroups.update { currentList ->
                 currentList.map { group ->
                     if (group.imageUris.contains(uri)) {
@@ -221,17 +217,12 @@ class ProjectViewModel : ViewModel() {
                 }
             }
         }
-        // Don't remove settings, they will be kept in case of restoration
         setManagerSelectedUri(null)
         saveProject(context)
     }
 
     fun restorePhoto(context: Context, uri: String) {
-        // Remove from recycled bin
         _recycledUris.update { it.filterNot { it == uri } }
-
-        // Add back to the main collage - for simplicity, let's add it as the main image if it's empty
-        // or to the first page group. A more complex logic could be to restore it to its original position.
         if (_currentCoverConfig.value.mainImageUri == null) {
             _currentCoverConfig.update { it.copy(mainImageUri = uri) }
         } else {
@@ -240,9 +231,6 @@ class ProjectViewModel : ViewModel() {
                 if (list.isNotEmpty()) {
                     val firstGroup = list[0]
                     list[0] = firstGroup.copy(imageUris = firstGroup.imageUris + uri)
-                } else {
-                    // Or create a new group if none exist
-                    // This case might need more specific handling depending on desired UX
                 }
                 list.toList()
             }
@@ -251,27 +239,17 @@ class ProjectViewModel : ViewModel() {
     }
 
     fun deletePhotoPermanently(context: Context, uri: String) {
-        // Remove from recycled bin
         _recycledUris.update { it.filterNot { it == uri } }
-
-        // And delete the file
-        viewModelScope.launch(Dispatchers.IO) {
-            deleteLocalImage(uri)
-        }
-
-        // Also remove any associated settings
+        viewModelScope.launch(Dispatchers.IO) { deleteLocalImage(uri) }
         _imageEffectSettings.update { it - uri }
         _currentCoverConfig.update { it.copy(imageBorderSettingsMap = it.imageBorderSettingsMap - uri) }
-
         saveProject(context)
     }
 
     fun updateImageRotation(uri: String, degrees: Float) {
         _draftImageEffectSettings.update { currentMap ->
             val currentSettings = currentMap[uri] ?: ImageEffectSettings()
-            currentMap.toMutableMap().apply {
-                this[uri] = currentSettings.copy(rotationDegrees = degrees)
-            }
+            currentMap.toMutableMap().apply { this[uri] = currentSettings.copy(rotationDegrees = degrees) }
         }
     }
 
@@ -279,9 +257,7 @@ class ProjectViewModel : ViewModel() {
         _draftImageEffectSettings.update { currentMap ->
             val currentSettings = currentMap[uri] ?: ImageEffectSettings()
             val existingCrop = currentSettings.cropRect
-
             val finalCrop = if (existingCrop != null && newRelativeCrop != null) {
-                // Compose the new crop with the existing one
                 SerializableNormalizedRectF(
                     left = existingCrop.left + newRelativeCrop.left * existingCrop.width,
                     top = existingCrop.top + newRelativeCrop.top * existingCrop.height,
@@ -291,20 +267,14 @@ class ProjectViewModel : ViewModel() {
             } else {
                 newRelativeCrop
             }
-
-            currentMap.toMutableMap().apply {
-                this[uri] = currentSettings.copy(cropRect = finalCrop)
-            }
+            currentMap.toMutableMap().apply { this[uri] = currentSettings.copy(cropRect = finalCrop) }
         }
     }
 
     fun resetImageTransforms(uri: String) {
         _draftImageEffectSettings.update { currentMap ->
             val currentSettings = currentMap[uri] ?: ImageEffectSettings()
-            currentMap.toMutableMap().apply {
-                // Reset only transform properties, keep other effects
-                this[uri] = currentSettings.copy(rotationDegrees = 0f, cropRect = null)
-            }
+            currentMap.toMutableMap().apply { this[uri] = currentSettings.copy(rotationDegrees = 0f, cropRect = null) }
         }
     }
 
@@ -326,38 +296,14 @@ class ProjectViewModel : ViewModel() {
         _currentCoverConfig.update { config ->
             config.copy(
                 templateName = theme.name,
-                clientNameStyle = config.clientNameStyle.copy(
-                    fontColor = theme.textColor,
-                    rowStyle = config.clientNameStyle.rowStyle.copy(
-                        border = config.clientNameStyle.rowStyle.border.copy(color = theme.borderColor)
-                    )
-                ),
-                rucStyle = config.rucStyle.copy(
-                    fontColor = theme.textColor,
-                    rowStyle = config.rucStyle.rowStyle.copy(
-                        backgroundColor = theme.rucBackgroundColor,
-                        border = config.rucStyle.rowStyle.border.copy(color = theme.borderColor)
-                    )
-                ),
-                subtitleStyle = config.subtitleStyle.copy(
-                    fontColor = theme.textColor,
-                    rowStyle = config.subtitleStyle.rowStyle.copy(
-                        border = config.subtitleStyle.rowStyle.border.copy(color = theme.borderColor)
-                    )
-                )
+                clientNameStyle = config.clientNameStyle.copy(fontColor = theme.textColor, rowStyle = config.clientNameStyle.rowStyle.copy(border = config.clientNameStyle.rowStyle.border.copy(color = theme.borderColor))),
+                rucStyle = config.rucStyle.copy(fontColor = theme.textColor, rowStyle = config.rucStyle.rowStyle.copy(backgroundColor = theme.rucBackgroundColor, border = config.rucStyle.rowStyle.border.copy(color = theme.borderColor))),
+                subtitleStyle = config.subtitleStyle.copy(fontColor = theme.textColor, rowStyle = config.subtitleStyle.rowStyle.copy(border = config.subtitleStyle.rowStyle.border.copy(color = theme.borderColor)))
             )
         }
         _currentPageGroups.update { groups ->
             groups.map { group ->
-                group.copy(
-                    optionalTextStyle = group.optionalTextStyle.copy(
-                        fontColor = theme.textColor,
-                        rowStyle = group.optionalTextStyle.rowStyle.copy(
-                            backgroundColor = theme.rucBackgroundColor,
-                            border = group.optionalTextStyle.rowStyle.border.copy(color = theme.borderColor)
-                        )
-                    )
-                )
+                group.copy(optionalTextStyle = group.optionalTextStyle.copy(fontColor = theme.textColor, rowStyle = group.optionalTextStyle.rowStyle.copy(backgroundColor = theme.rucBackgroundColor, border = group.optionalTextStyle.rowStyle.border.copy(color = theme.borderColor))))
             }
         }
         saveProject(context)
@@ -388,14 +334,6 @@ class ProjectViewModel : ViewModel() {
         saveProject(context)
     }
 
-    fun updateGeneratedBackgroundConfig(context: Context, config: GeneratedBackgroundConfig) {
-        val current = _currentCoverConfig.value
-        // Forzamos una nueva instancia incluso si no cambió nada visible
-        val updated = current.copy(generatedBackgroundConfig = config.copy())
-        _currentCoverConfig.value = updated
-        saveProject(context)
-    }
-
     fun addPageGroup(context: Context, group: PageGroup) {
         _currentPageGroups.update { currentList -> currentList + group }
         saveProject(context)
@@ -422,21 +360,12 @@ class ProjectViewModel : ViewModel() {
     fun deletePageGroup(context: Context, groupId: String) {
         val groupToDelete = _currentPageGroups.value.find { it.id == groupId }
         groupToDelete?.let { group ->
-            // Si la imagen seleccionada estaba en este grupo, deselecciónala.
             if (group.imageUris.contains(_managerSelectedUri.value)) {
                 _managerSelectedUri.value = null
             }
-
-            viewModelScope.launch(Dispatchers.IO) {
-                group.imageUris.forEach { uri ->
-                    deleteLocalImage(uri)
-                }
-            }
+            viewModelScope.launch(Dispatchers.IO) { group.imageUris.forEach { uri -> deleteLocalImage(uri) } }
         }
-
-        _currentPageGroups.update { currentList ->
-            currentList.filterNot { it.id == groupId }
-        }
+        _currentPageGroups.update { currentList -> currentList.filterNot { it.id == groupId } }
         saveProject(context)
     }
 
@@ -448,32 +377,20 @@ class ProjectViewModel : ViewModel() {
     fun resetProject(context: Context) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                // Delete images directory
                 val imagesDir = File(context.applicationContext.filesDir, "images")
-                if (imagesDir.exists()) {
-                    imagesDir.deleteRecursively()
-                }
-                // Delete saved project file
+                if (imagesDir.exists()) { imagesDir.deleteRecursively() }
                 val projectFile = File(context.applicationContext.filesDir, projectFileName)
-                if (projectFile.exists()) {
-                    projectFile.delete()
-                }
+                if (projectFile.exists()) { projectFile.delete() }
             }
-
-            // Reset in-memory state on the main thread after file deletion
             _currentCoverConfig.value = CoverPageConfig()
             _currentPageGroups.value = emptyList()
             _sunatData.value = null
             _recycledUris.value = emptyList()
             _managerSelectedUri.value = null
-
-            // After resetting in-memory state, save this empty state to disk.
-            // This call is now correctly sequenced.
             saveProject(context)
         }
     }
 
-    // --- Generación de PDF ---
     private val _pdfGenerationState = MutableStateFlow<PdfGenerationState>(PdfGenerationState.Idle)
     val pdfGenerationState: StateFlow<PdfGenerationState> = _pdfGenerationState.asStateFlow()
 
@@ -483,9 +400,7 @@ class ProjectViewModel : ViewModel() {
     private val _pdfSizeMode = MutableStateFlow(1)
     val pdfSizeMode: StateFlow<Int> = _pdfSizeMode.asStateFlow()
 
-    fun setPdfSizeMode(mode: Int) {
-        _pdfSizeMode.value = mode
-    }
+    fun setPdfSizeMode(mode: Int) { _pdfSizeMode.value = mode }
 
     fun getFormattedPdfSize(): String {
         val size = _pdfSize.value
@@ -499,11 +414,7 @@ class ProjectViewModel : ViewModel() {
     fun generatePdf(context: Context, fileName: String, userState: UserState) {
         val coverConfig = _currentCoverConfig.value
         val areInnerPagesEmpty = _currentPageGroups.value.all { it.imageUris.isEmpty() }
-
-        val isCoverEmpty = coverConfig.clientNameStyle.content.isBlank() &&
-                coverConfig.rucStyle.content.isBlank() &&
-                coverConfig.subtitleStyle.content.isBlank() &&
-                coverConfig.mainImageUri == null
+        val isCoverEmpty = coverConfig.clientNameStyle.content.isBlank() && coverConfig.rucStyle.content.isBlank() && coverConfig.subtitleStyle.content.isBlank() && coverConfig.mainImageUri == null
 
         if (isCoverEmpty && areInnerPagesEmpty) {
             _pdfGenerationState.value = PdfGenerationState.Error("No hay contenido para generar un PDF.")
@@ -511,16 +422,10 @@ class ProjectViewModel : ViewModel() {
         }
 
         viewModelScope.launch {
-            saveJob?.join() // Espera a que el guardado actual termine.
-            Log.d("ProjectViewModel", "generatePdf: Iniciando...")
+            saveJob?.join()
             _pdfGenerationState.value = PdfGenerationState.Loading
             val generatedFile = withContext(Dispatchers.IO) {
-                val generatedPages = pe.pixelcollage.app.utils.PdfContentManager.groupImagesForPdf(
-                    context,
-                    _currentPageGroups.value
-                )
-
-                Log.d("ProjectViewModel", "generatePdf: En el hilo de IO, llamando a PdfGenerator.")
+                val generatedPages = pe.pixelcollage.app.utils.PdfContentManager.groupImagesForPdf(context, _currentPageGroups.value)
                 PdfGenerator.generate(
                     context = context,
                     coverConfig = _currentCoverConfig.value,
@@ -531,11 +436,9 @@ class ProjectViewModel : ViewModel() {
                 )
             }
             if (generatedFile != null) {
-                Log.d("ProjectViewModel", "generatePdf: Éxito. Archivo: ${generatedFile.absolutePath}")
                 _pdfSize.value = generatedFile.length()
                 _pdfGenerationState.value = PdfGenerationState.Success(generatedFile)
             } else {
-                Log.e("ProjectViewModel", "generatePdf: Fallo. `generatedFile` es nulo.")
                 if (userState is UserState.Authenticated && userState.user.role == "guest") {
                     _pdfGenerationState.value = PdfGenerationState.Error("Límite de 10 PDFs alcanzado.")
                 } else {
@@ -545,11 +448,8 @@ class ProjectViewModel : ViewModel() {
         }
     }
 
-    fun resetPdfGenerationState() {
-        _pdfGenerationState.value = PdfGenerationState.Idle
-    }
+    fun resetPdfGenerationState() { _pdfGenerationState.value = PdfGenerationState.Idle }
 
-    // --- Lógica para Compartir PDF ---
     private val _shareablePdfUri = MutableStateFlow<Uri?>(null)
     val shareablePdfUri: StateFlow<Uri?> = _shareablePdfUri.asStateFlow()
 
@@ -564,9 +464,7 @@ class ProjectViewModel : ViewModel() {
         }
     }
 
-    fun resetShareableUri() {
-        _shareablePdfUri.value = null
-    }
+    fun resetShareableUri() { _shareablePdfUri.value = null }
 
     fun getAllImageUris(): List<String> {
         val coverImage = _currentCoverConfig.value.mainImageUri
@@ -581,9 +479,7 @@ class ProjectViewModel : ViewModel() {
         try {
             if (path.startsWith("file://")) {
                 val file = File(Uri.parse(path).path!!)
-                if (file.exists()) {
-                    file.delete()
-                }
+                if (file.exists()) { file.delete() }
             }
         } catch (e: Exception) {
             Log.e("ProjectViewModel", "Error deleting local image", e)
@@ -591,20 +487,14 @@ class ProjectViewModel : ViewModel() {
     }
 
     fun removeImageFromPageGroup(context: Context, groupId: String, uri: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            deleteLocalImage(uri)
-        }
-        updatePageGroup(context, groupId) { group ->
-            group.copy(imageUris = group.imageUris.filterNot { it == uri })
-        }
+        viewModelScope.launch(Dispatchers.IO) { deleteLocalImage(uri) }
+        updatePageGroup(context, groupId) { group -> group.copy(imageUris = group.imageUris.filterNot { it == uri }) }
     }
 
     fun removeAllImagesFromPageGroup(context: Context, groupId: String) {
         viewModelScope.launch(Dispatchers.IO) {
             val group = _currentPageGroups.value.find { it.id == groupId }
-            group?.imageUris?.forEach { uri ->
-                deleteLocalImage(uri)
-            }
+            group?.imageUris?.forEach { uri -> deleteLocalImage(uri) }
         }
         updatePageGroup(context, groupId) { it.copy(imageUris = emptyList()) }
     }
@@ -613,9 +503,7 @@ class ProjectViewModel : ViewModel() {
         viewModelScope.launch {
             val permanentPaths = uriStrings.mapNotNull { copyUriToInternalStorage(context, it) }
             if (permanentPaths.isNotEmpty()) {
-            updatePageGroup(context, groupId) { group ->
-                    group.copy(imageUris = group.imageUris + permanentPaths)
-                }
+                updatePageGroup(context, groupId) { group -> group.copy(imageUris = group.imageUris + permanentPaths) }
                 saveProject(context)
             }
         }
@@ -625,17 +513,14 @@ class ProjectViewModel : ViewModel() {
         viewModelScope.launch {
             val imageUri = coverConfig.mainImageUri
             var finalConfig = coverConfig
-
             if (imageUri != null && imageUri.startsWith("content://")) {
                 val permanentPath = copyUriToInternalStorage(context, imageUri)
                 finalConfig = coverConfig.copy(mainImageUri = permanentPath)
             }
-
             val oldImageUri = _currentCoverConfig.value.mainImageUri
             if (oldImageUri != null && oldImageUri != finalConfig.mainImageUri) {
                 deleteLocalImage(oldImageUri)
             }
-
             updateCoverConfig(finalConfig)
             saveProject(context)
         }
@@ -652,11 +537,7 @@ class ProjectViewModel : ViewModel() {
                 val newFile = File(context.applicationContext.filesDir, "images/${UUID.randomUUID()}.jpg")
                 newFile.parentFile?.mkdirs()
                 val outputStream = FileOutputStream(newFile)
-                inputStream?.use { input ->
-                    outputStream.use { output ->
-                        input.copyTo(output)
-                    }
-                }
+                inputStream?.use { input -> outputStream.use { output -> input.copyTo(output) } }
                 Uri.fromFile(newFile).toString()
             } catch (e: Exception) {
                 Log.e("ProjectViewModel", "Error copying URI to internal storage", e)
@@ -665,8 +546,6 @@ class ProjectViewModel : ViewModel() {
         }
     }
 
-
-    // --- Lógica de Guardado y Carga de Proyecto ---
     private val _saveState = MutableStateFlow<SaveState>(SaveState.Idle)
     val saveState: StateFlow<SaveState> = _saveState.asStateFlow()
 
@@ -690,22 +569,6 @@ class ProjectViewModel : ViewModel() {
         }
     }
 
-    fun forceSaveProject(context: Context) {
-        saveJob?.cancel()
-        saveJob = viewModelScope.launch {
-            val serializableState = SerializableProjectState(
-                coverConfig = _currentCoverConfig.value.toSerializable(),
-                pageGroups = _currentPageGroups.value.map { it.toSerializable() },
-                sunatData = _sunatData.value,
-                themeName = _themeName.value,
-                imageEffectSettings = _imageEffectSettings.value,
-                recycledUris = _recycledUris.value
-            )
-            val jsonString = gson.toJson(serializableState)
-            writeJsonToFile(context, jsonString)
-        }
-    }
-
     private suspend fun writeJsonToFile(context: Context, jsonString: String) {
         withContext(Dispatchers.IO) {
             try {
@@ -714,7 +577,6 @@ class ProjectViewModel : ViewModel() {
                 }
                 _saveState.value = SaveState.Success
             } catch (e: Exception) {
-                Log.e("ProjectViewModel", "Error saving project", e)
                 _saveState.value = SaveState.Error(e.message ?: "Unknown error")
             }
         }
@@ -723,28 +585,15 @@ class ProjectViewModel : ViewModel() {
     fun loadProject(context: Context) {
         viewModelScope.launch {
             try {
-                Log.d("ProjectViewModel", "loadProject: Attempting to load project...")
                 val file = File(context.applicationContext.filesDir, projectFileName)
-
-                if (!file.exists()) {
-                    Log.d("ProjectViewModel", "loadProject: No project file found. Starting fresh.")
-                    return@launch
-                }
-
-                Log.d("ProjectViewModel", "loadProject: Project file exists. Reading...")
+                if (!file.exists()) { return@launch }
                 val jsonString = withContext(Dispatchers.IO) {
                     try {
                         context.applicationContext.openFileInput(projectFileName).bufferedReader().use { it.readText() }
-                    } catch (e: Exception) {
-                        Log.e("ProjectViewModel", "loadProject: Error reading file.", e)
-                        null
-                    }
+                    } catch (e: Exception) { null }
                 }
-
                 if (jsonString != null) {
-                    Log.d("ProjectViewModel", "loadProject: File read success. Parsing JSON...")
                     val serializableState = gson.fromJson(jsonString, SerializableProjectState::class.java)
-                    Log.d("ProjectViewModel", "loadProject: JSON parsing success. Mapping to domain...")
                     val projectState = serializableState.toDomain()
                     _currentCoverConfig.value = projectState.coverConfig
                     _currentPageGroups.value = projectState.pageGroups
@@ -752,10 +601,8 @@ class ProjectViewModel : ViewModel() {
                     _themeName.value = projectState.themeName
                     _imageEffectSettings.value = projectState.imageEffectSettings
                     _recycledUris.value = projectState.recycledUris
-                    Log.d("ProjectViewModel", "loadProject: Project loaded and state restored successfully.")
                 }
             } catch (t: Throwable) {
-                Log.e("ProjectViewModel", "loadProject: A critical error occurred during project load. Starting fresh.", t)
                 _saveState.value = SaveState.Error("Fallo al cargar el proyecto guardado: ${t.javaClass.simpleName}")
             } finally {
                 _isProjectLoaded.value = true
@@ -763,14 +610,11 @@ class ProjectViewModel : ViewModel() {
         }
     }
 
-    fun resetSaveState() {
-        _saveState.value = SaveState.Idle
-    }
+    fun resetSaveState() { _saveState.value = SaveState.Idle }
 }
 
 sealed class SaveState {
     object Idle : SaveState()
-    data class RequiresConfirmation(val sizeInBytes: Long) : SaveState()
     object Success : SaveState()
     data class Error(val message: String) : SaveState()
 }

@@ -155,9 +155,6 @@ fun AppNavigation(
         composable(Screen.AdvancedDesign.route) {
             AdvancedDesignScreen(navController = navController)
         }
-        composable(Screen.SheetBackground.route) {
-            SheetBackgroundScreen(navController = navController, projectViewModel = projectViewModel)
-        }
         composable(Screen.ImageBorders.route) {
             ImageBordersScreen(navController = navController, projectViewModel = projectViewModel)
         }
@@ -257,6 +254,17 @@ fun AppNavigation(
         }
         composable(Screen.GeneratedBackground.route) {
             GeneratedBackgroundScreen(
+                navController = navController,
+                projectViewModel = projectViewModel
+            )
+        }
+        composable(Screen.SheetDesign.route) {
+            SheetDesignScreen(
+                navController = navController
+            )
+        }
+        composable(Screen.SheetBackgroundOptions.route) {
+            SheetBackgroundOptionsScreen(
                 navController = navController,
                 projectViewModel = projectViewModel
             )

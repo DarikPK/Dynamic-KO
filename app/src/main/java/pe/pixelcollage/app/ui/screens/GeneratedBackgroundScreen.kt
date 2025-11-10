@@ -32,9 +32,8 @@ fun GeneratedBackgroundScreen(
     projectViewModel: ProjectViewModel
 ) {
     val context = LocalContext.current
-    val draftConfig by projectViewModel.draftGeneratedBackgroundConfig.collectState()
+    val draftConfig by projectViewModel.draftGeneratedBackgroundConfig.collectAsState()
 
-    // Iniciar la sesión de edición cuando la pantalla aparece por primera vez
     LaunchedEffect(Unit) {
         projectViewModel.startBackgroundEditingSession()
     }
@@ -45,7 +44,7 @@ fun GeneratedBackgroundScreen(
                 title = { Text("Editor de Fondo de Hoja") },
                 navigationIcon = {
                     IconButton(onClick = {
-                        projectViewModel.discardBackgroundConfig() // Descartar cambios al volver
+                        projectViewModel.discardBackgroundConfig()
                         navController.popBackStack()
                     }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
@@ -78,13 +77,12 @@ fun GeneratedBackgroundScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // --- Previsualización ---
                 Text("Previsualización", style = MaterialTheme.typography.titleLarge)
 
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(0.6f)
-                        .aspectRatio(1f / 1.414f) // Ratio A4 (sqrt(2))
+                        .aspectRatio(1f / 1.414f)
                         .border(1.dp, Color.Gray)
                         .padding(1.dp)
                 ) {
@@ -104,7 +102,6 @@ fun GeneratedBackgroundScreen(
 
                 Divider(modifier = Modifier.padding(vertical = 8.dp))
 
-                // --- Lista de selección de fondos ---
                 Text("Seleccionar Estilo", style = MaterialTheme.typography.titleLarge)
 
                 LazyRow(

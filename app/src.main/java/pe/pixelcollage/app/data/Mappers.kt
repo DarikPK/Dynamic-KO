@@ -166,7 +166,6 @@ fun CoverPageConfig.toSerializable() = SerializableCoverPageConfig(
     photoWeight = this.photoWeight,
     photoStyle = this.photoStyle.toSerializable(),
     quality = this.quality,
-    pageBackgroundColor = this.pageBackgroundColor,
     imageBorderSettingsMap = this.imageBorderSettingsMap.mapValues { it.value.toSerializable() },
     templateName = this.templateName,
     forceFullResCover = this.forceFullResCover,
@@ -197,7 +196,6 @@ fun SerializableCoverPageConfig.toDomain() = CoverPageConfig(
     photoWeight = this.photoWeight,
     photoStyle = this.photoStyle.toDomain(),
     quality = this.quality ?: 90,
-    pageBackgroundColor = this.pageBackgroundColor,
     imageBorderSettingsMap = this.imageBorderSettingsMap?.mapValues { it.value.toDomain() } ?: emptyMap(),
     templateName = this.templateName,
     forceFullResCover = this.forceFullResCover ?: false,
@@ -209,19 +207,11 @@ fun SerializableCoverPageConfig.toDomain() = CoverPageConfig(
 
 // Mappers for GeneratedBackgroundConfig
 fun GeneratedBackgroundConfig.toSerializable() = SerializableGeneratedBackgroundConfig(
-    patternType = this.patternType.ordinal,
-    opacity = this.opacity,
-    size = this.size,
-    density = this.density,
-    enabled = this.enabled
+    patternType = this.patternType.ordinal
 )
 
 fun SerializableGeneratedBackgroundConfig.toDomain() = GeneratedBackgroundConfig(
-    patternType = BackgroundPatternType.values()[this.patternType],
-    opacity = this.opacity,
-    size = this.size,
-    density = this.density,
-    enabled = this.enabled
+    patternType = BackgroundPatternType.values().getOrElse(this.patternType) { BackgroundPatternType.SÓLIDO_BLANCO }
 )
 
 // Mappers for ImageBorderSettings

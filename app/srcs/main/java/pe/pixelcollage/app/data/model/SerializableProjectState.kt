@@ -3,7 +3,7 @@ package pe.pixelcollage.app.data.model
 // This file contains the data classes designed for JSON serialization.
 // They only use primitive types to ensure compatibility with Gson.
 
-data class SerializableProjectState(
+data class SerializableProject-State(
     val coverConfig: SerializableCoverPageConfig,
     val pageGroups: List<SerializablePageGroup>,
     val sunatData: SelectedSunatData?, // This one is already serializable
@@ -33,7 +33,6 @@ data class SerializableCoverPageConfig(
     val photoWeight: Float,
     val photoStyle: SerializableRowStyle,
     val quality: Int?,
-    val pageBackgroundColor: Int?,
     val imageBorderSettingsMap: Map<String, SerializableImageBorderSettings>?,
     val templateName: String?,
     val forceFullResCover: Boolean? = false,
@@ -44,11 +43,7 @@ data class SerializableCoverPageConfig(
 )
 
 data class SerializableGeneratedBackgroundConfig(
-    val patternType: Int, // ordinal of BackgroundPatternType enum
-    val opacity: Float,
-    val size: Float,
-    val density: Float,
-    val enabled: Boolean
+    val patternType: Int // ordinal of BackgroundPatternType enum
 )
 
 data class SerializableImageBorderSettings(

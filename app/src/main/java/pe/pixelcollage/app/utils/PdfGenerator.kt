@@ -213,8 +213,13 @@ private fun drawCoverPageWithPdfBox(
         val pageWidth = page.mediaBox.width
         val pageHeight = page.mediaBox.height
 
+        // Establecer fondo blanco
+        contentStream.setNonStrokingColor(255, 255, 255)
+        contentStream.addRect(0f, 0f, pageWidth, pageHeight)
+        contentStream.fill()
+
         config.generatedBackgroundConfig?.let {
-            if (it.enabled) {
+            if (it.patternType != BackgroundPatternType.SÓLIDO_BLANCO) {
                 val backgroundBitmap = Bitmap.createBitmap(pageWidth.toInt(), pageHeight.toInt(), Bitmap.Config.ARGB_8888)
                 val canvas = Canvas(backgroundBitmap)
                 BackgroundGenerator.drawGeneratedBackground(canvas, it, pageWidth, pageHeight, colorTheme)
@@ -316,8 +321,13 @@ private fun drawInnerPagesWithPdfBox(
             val pageWidth = page.mediaBox.width
             val pageHeight = page.mediaBox.height
 
+            // Establecer fondo blanco
+            contentStream.setNonStrokingColor(255, 255, 255)
+            contentStream.addRect(0f, 0f, pageWidth, pageHeight)
+            contentStream.fill()
+
             coverConfig.generatedBackgroundConfig?.let {
-                if (it.enabled) {
+                if (it.patternType != BackgroundPatternType.SÓLIDO_BLANCO) {
                     val backgroundBitmap = Bitmap.createBitmap(pageWidth.toInt(), pageHeight.toInt(), Bitmap.Config.ARGB_8888)
                     val canvas = Canvas(backgroundBitmap)
                     BackgroundGenerator.drawGeneratedBackground(canvas, it, pageWidth, pageHeight, colorTheme)
