@@ -140,10 +140,8 @@ internal fun drawCoverPage(pdfDocument: PdfDocument, context: Context, config: C
     val page = pdfDocument.startPage(pageInfo)
     val canvas = page.canvas
 
-    config.pageBackgroundColor?.let { color -> canvas.drawColor(color) }
-
     config.generatedBackgroundConfig?.let {
-        BackgroundGenerator.drawGeneratedBackground(canvas, it, pageWidth.toFloat(), pageHeight.toFloat(), colorTheme)
+        BackgroundGenerator.drawGeneratedBackground(canvas, it, pageWidth.toFloat(), pageHeight.toFloat())
     }
 
     drawCoverPageContent(canvas, context, config, quality, pageWidth, pageHeight, imageEffectSettings, renderImages)
@@ -339,10 +337,8 @@ internal fun drawInnerPages(pdfDocument: PdfDocument, context: Context, generate
         val page = pdfDocument.startPage(pageInfo)
         val canvas = page.canvas
 
-        coverConfig.pageBackgroundColor?.let { color -> canvas.drawColor(color) }
-
         coverConfig.generatedBackgroundConfig?.let {
-            BackgroundGenerator.drawGeneratedBackground(canvas, it, pageWidth.toFloat(), pageHeight.toFloat(), colorTheme)
+            BackgroundGenerator.drawGeneratedBackground(canvas, it, pageWidth.toFloat(), pageHeight.toFloat())
         }
 
         drawPageOnCanvas(canvas, context, pageData, coverConfig, quality, imageEffectSettings, renderImages)

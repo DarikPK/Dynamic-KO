@@ -19,8 +19,7 @@ object BackgroundGenerator {
         canvas: Canvas,
         config: GeneratedBackgroundConfig,
         width: Float,
-        height: Float,
-        colorTheme: ColorTheme // Aunque no se use en los nuevos, lo mantenemos por firma
+        height: Float
     ) {
         // El fondo base es blanco, así que no hacemos nada para SÓLIDO_BLANCO
         if (config.patternType == BackgroundPatternType.SÓLIDO_BLANCO) {

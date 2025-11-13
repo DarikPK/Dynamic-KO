@@ -88,19 +88,17 @@ fun GeneratedBackgroundScreen(
                 ) {
                     Canvas(modifier = Modifier.fillMaxSize()) {
                         drawIntoCanvas { canvas ->
-                            val dummyTheme = ColorTheme("Dummy", Color.Black, Color.LightGray, Color.DarkGray)
                             BackgroundGenerator.drawGeneratedBackground(
                                 canvas.nativeCanvas,
                                 currentConfig,
                                 size.width,
-                                size.height,
-                                dummyTheme
+                                size.height
                             )
                         }
                     }
                 }
 
-                Divider(modifier = Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                 Text("Seleccionar Estilo", style = MaterialTheme.typography.titleLarge)
 
@@ -150,14 +148,12 @@ private fun BackgroundThumbnail(
         ) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 drawIntoCanvas { canvas ->
-                     val dummyTheme = ColorTheme("Dummy", Color.Black, Color.LightGray, Color.DarkGray)
                      val config = GeneratedBackgroundConfig(patternType = patternType)
                      BackgroundGenerator.drawGeneratedBackground(
                          canvas.nativeCanvas,
                          config,
                          size.width,
-                         size.height,
-                         dummyTheme
+                         size.height
                      )
                 }
             }
