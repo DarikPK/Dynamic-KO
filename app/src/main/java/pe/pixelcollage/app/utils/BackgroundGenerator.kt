@@ -17,18 +17,18 @@ import kotlin.random.Random
 
 object BackgroundGenerator {
 
-    // Paletas de colores basadas en los temas
+    // Paletas de colores basadas en los temas, usando enteros ARGB
     private val colorPalettes = mapOf(
-        "SkyBlue" to listOf(Color.valueOf(0xFFDBE5F1), Color.valueOf(0xFF73A1D3), Color.valueOf(0xFF2C74B5)),
-        "Ruby Red" to listOf(Color.valueOf(0xFFF5D0D7), Color.valueOf(0xFFD46A7E), Color.valueOf(0xFF9B1B30)),
-        "Emerald Green" to listOf(Color.valueOf(0xFFD4EEE6), Color.valueOf(0xFF50C878), Color.valueOf(0xFF009B77)),
-        "Golden Sun" to listOf(Color.valueOf(0xFFFDF0D5), Color.valueOf(0xFFFBC02D), Color.valueOf(0xFFE49B0F)),
-        "Amethyst Purple" to listOf(Color.valueOf(0xFFE9D6F5), Color.valueOf(0xFF9966CC), Color.valueOf(0xFF6A0DAD)),
-        "Obsidian Black" to listOf(Color.valueOf(0xFFE0E0E0), Color.valueOf(0xFF808080), Color.valueOf(0xFF000000)),
-        "Graphite Gray" to listOf(Color.valueOf(0xFFF0F0F0), Color.valueOf(0xFFA0A0A0), Color.valueOf(0xFF4C4C4C)),
-        "Mocha Brown" to listOf(Color.valueOf(0xFFEAE0D9), Color.valueOf(0xFFB59477), Color.valueOf(0xFF6F4E37)),
-        "Ocean Teal" to listOf(Color.valueOf(0xFFD4EBEB), Color.valueOf(0xFF48D1CC), Color.valueOf(0xFF008080)),
-        "Crimson Velvet" to listOf(Color.valueOf(0xFFF5D0D0), Color.valueOf(0xFFDC143C), Color.valueOf(0xFF8B0000))
+        "SkyBlue" to listOf(0xFFDBE5F1.toInt(), 0xFF73A1D3.toInt(), 0xFF2C74B5.toInt()),
+        "Ruby Red" to listOf(0xFFF5D0D7.toInt(), 0xFFD46A7E.toInt(), 0xFF9B1B30.toInt()),
+        "Emerald Green" to listOf(0xFFD4EEE6.toInt(), 0xFF50C878.toInt(), 0xFF009B77.toInt()),
+        "Golden Sun" to listOf(0xFFFDF0D5.toInt(), 0xFFFBC02D.toInt(), 0xFFE49B0F.toInt()),
+        "Amethyst Purple" to listOf(0xFFE9D6F5.toInt(), 0xFF9966CC.toInt(), 0xFF6A0DAD.toInt()),
+        "Obsidian Black" to listOf(0xFFE0E0E0.toInt(), 0xFF808080.toInt(), 0xFF000000.toInt()),
+        "Graphite Gray" to listOf(0xFFF0F0F0.toInt(), 0xFFA0A0A0.toInt(), 0xFF4C4C4C.toInt()),
+        "Mocha Brown" to listOf(0xFFEAE0D9.toInt(), 0xFFB59477.toInt(), 0xFF6F4E37.toInt()),
+        "Ocean Teal" to listOf(0xFFD4EBEB.toInt(), 0xFF48D1CC.toInt(), 0xFF008080.toInt()),
+        "Crimson Velvet" to listOf(0xFFF5D0D0.toInt(), 0xFFDC143C.toInt(), 0xFF8B0000.toInt())
     )
 
     fun drawGeneratedBackground(
@@ -63,7 +63,7 @@ object BackgroundGenerator {
 
     private fun drawLowPoly(
         canvas: Canvas, width: Float, height: Float, paint: Paint,
-        config: GeneratedBackgroundConfig, random: Random, palette: List<Color>
+        config: GeneratedBackgroundConfig, random: Random, palette: List<Int>
     ) {
         val points = mutableListOf<Pair<Float, Float>>()
         // Density controla el número de puntos. Rango de 20 a 100
@@ -84,19 +84,17 @@ object BackgroundGenerator {
 
             val path = Path().apply { moveTo(p1.first, p1.second); lineTo(p2.first, p2.second); lineTo(p3.first, p3.second); close() }
 
-            val color = palette.random(random)
-            // Transparency controla el alfa. Rango de 10 a 200
+            val colorInt = palette.random(random)
             val alpha = (10 + config.transparency * 19).toInt()
             paint.style = Paint.Style.FILL
-            paint.color = color.toArgb()
-            paint.alpha = alpha
+            paint.setARGB(alpha, Color.red(colorInt), Color.green(colorInt), Color.blue(colorInt))
             canvas.drawPath(path, paint)
         }
     }
 
     private fun drawCrystals(
         canvas: Canvas, width: Float, height: Float, paint: Paint,
-        config: GeneratedBackgroundConfig, random: Random, palette: List<Color>
+        config: GeneratedBackgroundConfig, random: Random, palette: List<Int>
     ) {
         val numShapes = (10 + config.density * 4).toInt()
         val baseSize = (20 + config.size * 15).toInt()
@@ -111,18 +109,17 @@ object BackgroundGenerator {
             path.lineTo(startX + random.nextInt(-baseSize, baseSize), startY + 10)
             path.close()
 
-            val color = palette.random(random)
+            val colorInt = palette.random(random)
             val alpha = (20 + config.transparency * 8).toInt()
             paint.style = Paint.Style.FILL
-            paint.color = color.toArgb()
-            paint.alpha = alpha
+            paint.setARGB(alpha, Color.red(colorInt), Color.green(colorInt), Color.blue(colorInt))
             canvas.drawPath(path, paint)
         }
     }
 
     private fun drawGeometric(
         canvas: Canvas, width: Float, height: Float, paint: Paint,
-        config: GeneratedBackgroundConfig, random: Random, palette: List<Color>
+        config: GeneratedBackgroundConfig, random: Random, palette: List<Int>
     ) {
         val hexSize = (10 + config.size * 8).toFloat()
         val hexWidth = hexSize * 2
@@ -139,11 +136,10 @@ object BackgroundGenerator {
                 }
                 path.close()
 
-                val color = palette.random(random)
+                val colorInt = palette.random(random)
                 val alpha = (10 + config.transparency * 4).toInt()
                 paint.style = Paint.Style.FILL
-                paint.color = color.toArgb()
-                paint.alpha = alpha
+                paint.setARGB(alpha, Color.red(colorInt), Color.green(colorInt), Color.blue(colorInt))
                 canvas.drawPath(path, paint)
             }
         }
@@ -151,10 +147,12 @@ object BackgroundGenerator {
 
     private fun drawOverlappingPapers(
         canvas: Canvas, width: Float, height: Float, paint: Paint,
-        config: GeneratedBackgroundConfig, random: Random, palette: List<Color>
+        config: GeneratedBackgroundConfig, random: Random, palette: List<Int>
     ) {
         val numPapers = (5 + config.density * 3).toInt()
-        canvas.drawColor(palette[0].toArgb())
+        val colorInt = palette[0]
+        canvas.drawColor(Color.rgb(Color.red(colorInt), Color.green(colorInt), Color.blue(colorInt)))
+
 
         for (i in 0 until numPapers) {
             val paperWidth = width * (0.2f + config.size / 20f)
@@ -166,9 +164,8 @@ object BackgroundGenerator {
             canvas.rotate(random.nextFloat() * 90 - 45f, x + paperWidth / 2, y + paperHeight / 2)
 
             paint.style = Paint.Style.FILL
-            paint.color = Color.WHITE
             val alpha = (150 + config.transparency * 10).toInt()
-            paint.alpha = alpha
+            paint.setARGB(alpha, 255, 255, 255)
             paint.setShadowLayer(15f, 5f, 5f, Color.argb(50, 0, 0, 0))
             canvas.drawRect(x, y, x + paperWidth, y + paperHeight, paint)
             paint.clearShadowLayer()
@@ -179,7 +176,7 @@ object BackgroundGenerator {
 
     private fun drawAbstractWaves(
         canvas: Canvas, width: Float, height: Float, paint: Paint,
-        config: GeneratedBackgroundConfig, random: Random, palette: List<Color>
+        config: GeneratedBackgroundConfig, random: Random, palette: List<Int>
     ) {
         val numWaves = (2 + config.density).toInt()
         for (i in 0 until numWaves) {
@@ -189,7 +186,7 @@ object BackgroundGenerator {
 
             paint.style = Paint.Style.STROKE
             paint.strokeWidth = height * (0.05f + config.size / 100f)
-            val startColor = palette[1].toArgb()
+            val startColor = palette[1]
             val endColor = Color.TRANSPARENT
             paint.shader = LinearGradient(0f, 0f, 0f, height, startColor, endColor, Shader.TileMode.CLAMP)
             val alpha = (config.transparency * 25.5).toInt()
@@ -201,9 +198,10 @@ object BackgroundGenerator {
 
     private fun drawGoldenBokeh(
         canvas: Canvas, width: Float, height: Float, paint: Paint,
-        config: GeneratedBackgroundConfig, random: Random, palette: List<Color>
+        config: GeneratedBackgroundConfig, random: Random, palette: List<Int>
     ) {
-        canvas.drawColor(palette[2].toArgb())
+        val colorInt = palette[2]
+        canvas.drawColor(Color.rgb(Color.red(colorInt), Color.green(colorInt), Color.blue(colorInt)))
         val numCircles = (20 + config.density * 15).toInt()
 
         for (i in 0 until numCircles) {
@@ -211,8 +209,8 @@ object BackgroundGenerator {
             val y = random.nextFloat() * height
             val radius = (10 + config.size * 15).toInt()
             val alpha = (10 + config.transparency * 5).toInt()
-            paint.color = palette[0].toArgb()
-            paint.alpha = alpha
+            val circleColor = palette[0]
+            paint.setARGB(alpha, Color.red(circleColor), Color.green(circleColor), Color.blue(circleColor))
             paint.style = Paint.Style.FILL
             canvas.drawCircle(x, y, random.nextInt(radius).toFloat(), paint)
         }
