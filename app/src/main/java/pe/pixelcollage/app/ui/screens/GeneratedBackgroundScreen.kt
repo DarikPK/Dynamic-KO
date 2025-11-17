@@ -1,24 +1,34 @@
 package pe.pixelcollage.app.ui.screens
 
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import pe.pixelcollage.app.R
 import pe.pixelcollage.app.data.model.BackgroundPatternType
 import pe.pixelcollage.app.data.model.ColorTheme
 import pe.pixelcollage.app.data.model.GeneratedBackgroundConfig
@@ -33,6 +43,45 @@ fun GeneratedBackgroundScreen(
 ) {
     val context = LocalContext.current
     val draftConfig by projectViewModel.draftGeneratedBackgroundConfig.collectAsState()
+    val projectCoverConfig by projectViewModel.currentCoverConfig.collectAsState()
+    var hasChanges by remember { mutableStateOf(false) }
+    var showDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(draftConfig, projectCoverConfig) {
+        hasChanges = draftConfig != projectCoverConfig.generatedBackgroundConfig
+    }
+
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = if (hasChanges) 1.05f else 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(500),
+            repeatMode = RepeatMode.Reverse
+        ), label = "pulse"
+    )
+
+    BackHandler(enabled = hasChanges) {
+        showDialog = true
+    }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Salir sin guardar") },
+            text = { Text("Hay cambios sin guardar. ¿Quieres descartarlos y salir?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDialog = false
+                    projectViewModel.discardBackgroundConfig()
+                    navController.popBackStack()
+                }) { Text("Sí, salir") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) { Text("No, quedarse") }
+            }
+        )
+    }
 
     LaunchedEffect(Unit) {
         projectViewModel.startBackgroundEditingSession()
@@ -44,20 +93,47 @@ fun GeneratedBackgroundScreen(
                 title = { Text("Editor de Fondo de Hoja") },
                 navigationIcon = {
                     IconButton(onClick = {
-                        projectViewModel.discardBackgroundConfig()
-                        navController.popBackStack()
+                        if (hasChanges) {
+                            showDialog = true
+                        } else {
+                            navController.popBackStack()
+                        }
                     }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
                     }
                 },
                 actions = {
-                    Button(
-                        onClick = {
-                            projectViewModel.saveBackgroundConfig(context)
-                            navController.popBackStack()
-                        }
+                    Box(
+                        modifier = Modifier
+                            .padding(end = 8.dp)
+                            .size(40.dp)
+                            .graphicsLayer {
+                                scaleX = scale
+                                scaleY = scale
+                            }
+                            .clip(CircleShape)
+                            .background(if (hasChanges) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                            .border(
+                                width = if (hasChanges) 1.5.dp else 0.dp,
+                                color = if (hasChanges) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                shape = CircleShape
+                            )
                     ) {
-                        Text("Guardar")
+                        IconButton(
+                            onClick = {
+                                projectViewModel.saveBackgroundConfig(context)
+                                Toast.makeText(context, "Fondo guardado", Toast.LENGTH_SHORT).show()
+                                navController.popBackStack()
+                            },
+                            enabled = hasChanges,
+                            modifier = Modifier.align(Alignment.Center)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Save,
+                                contentDescription = "Guardar cambios en el fondo",
+                                tint = if (hasChanges) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            )
+                        }
                     }
                 }
             )
