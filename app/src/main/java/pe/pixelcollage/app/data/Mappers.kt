@@ -210,14 +210,16 @@ fun GeneratedBackgroundConfig.toSerializable() = SerializableGeneratedBackground
     patternType = this.patternType.ordinal,
     opacity = this.opacity,
     size = this.size,
-    density = this.density
+    density = this.density,
+    solidColor = this.solidColor.toArgb()
 )
 
 fun SerializableGeneratedBackgroundConfig.toDomain() = GeneratedBackgroundConfig(
-    patternType = BackgroundPatternType.values().getOrElse(this.patternType) { BackgroundPatternType.SÓLIDO_BLANCO },
+    patternType = BackgroundPatternType.values().getOrElse(this.patternType) { BackgroundPatternType.SÓLIDO },
     opacity = this.opacity ?: 0.5f,
     size = this.size ?: 10f,
-    density = this.density ?: 0.5f
+    density = this.density ?: 0.5f,
+    solidColor = this.solidColor?.let { Color(it) } ?: Color.White
 )
 
 

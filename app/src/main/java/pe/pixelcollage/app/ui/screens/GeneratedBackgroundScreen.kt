@@ -196,9 +196,76 @@ fun GeneratedBackgroundScreen(
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                if (currentConfig.patternType == BackgroundPatternType.SÓLIDO) {
+                    var showColorPicker by remember { mutableStateOf(false) }
+
+                    Button(
+                        onClick = { showColorPicker = true },
+                        modifier = Modifier.fillMaxWidth(0.8f)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .background(currentConfig.solidColor)
+                                    .border(1.dp, Color.Gray)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Cambiar Color")
+                        }
+                    }
+
+                    if (showColorPicker) {
+                        ColorPickerDialog(
+                            onDismiss = { showColorPicker = false },
+                            onColorSelected = { color ->
+                                val newConfig = currentConfig.copy(solidColor = color)
+                                projectViewModel.updateGeneratedBackgroundConfig(newConfig)
+                                showColorPicker = false
+                            }
+                        )
+                    }
+                }
             }
         }
     }
+}
+
+@Composable
+fun ColorPickerDialog(
+    onDismiss: () -> Unit,
+    onColorSelected: (Color) -> Unit
+) {
+    val colors = listOf(
+        Color.White, Color.Black, Color.Red, Color.Green, Color.Blue,
+        Color.Yellow, Color.Cyan, Color.Magenta, Color.Gray, Color.LightGray
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Selecciona un Color") },
+        text = {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(colors) { color ->
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .background(color)
+                            .border(1.dp, Color.DarkGray)
+                            .clickable { onColorSelected(color) }
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cerrar")
+            }
+        }
+    )
 }
 
 @Composable

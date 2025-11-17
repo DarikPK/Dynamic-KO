@@ -140,10 +140,12 @@ internal fun drawCoverPage(pdfDocument: PdfDocument, context: Context, config: C
     val page = pdfDocument.startPage(pageInfo)
     val canvas = page.canvas
 
-    canvas.drawColor(android.graphics.Color.WHITE) // Fondo blanco por defecto
+    // Dibuja el color sólido o el fondo blanco por defecto
+    val backgroundColor = config.generatedBackgroundConfig?.solidColor?.toArgb() ?: android.graphics.Color.WHITE
+    canvas.drawColor(backgroundColor)
 
     config.generatedBackgroundConfig?.let {
-        if (it.patternType != BackgroundPatternType.SÓLIDO_BLANCO) {
+        if (it.patternType != BackgroundPatternType.SÓLIDO) {
             BackgroundGenerator.drawGeneratedBackground(canvas, it, pageWidth.toFloat(), pageHeight.toFloat(), colorTheme)
         }
     }
@@ -341,10 +343,12 @@ internal fun drawInnerPages(pdfDocument: PdfDocument, context: Context, generate
         val page = pdfDocument.startPage(pageInfo)
         val canvas = page.canvas
 
-        canvas.drawColor(android.graphics.Color.WHITE) // Fondo blanco por defecto
+        // Dibuja el color sólido o el fondo blanco por defecto
+        val backgroundColor = coverConfig.generatedBackgroundConfig?.solidColor?.toArgb() ?: android.graphics.Color.WHITE
+        canvas.drawColor(backgroundColor)
 
         coverConfig.generatedBackgroundConfig?.let {
-            if (it.patternType != BackgroundPatternType.SÓLIDO_BLANCO) {
+            if (it.patternType != BackgroundPatternType.SÓLIDO) {
                 BackgroundGenerator.drawGeneratedBackground(canvas, it, pageWidth.toFloat(), pageHeight.toFloat(), colorTheme)
             }
         }

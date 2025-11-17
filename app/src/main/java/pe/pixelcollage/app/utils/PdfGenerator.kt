@@ -213,13 +213,15 @@ private fun drawCoverPageWithPdfBox(
         val pageWidth = page.mediaBox.width
         val pageHeight = page.mediaBox.height
 
-        // Establecer fondo blanco
-        contentStream.setNonStrokingColor(255, 255, 255)
+        // Establecer fondo con el color sólido o blanco por defecto
+        val backgroundColor = config.generatedBackgroundConfig?.solidColor ?: androidx.compose.ui.graphics.Color.White
+        val colorInt = backgroundColor.toArgb()
+        contentStream.setNonStrokingColor(Color.red(colorInt), Color.green(colorInt), Color.blue(colorInt))
         contentStream.addRect(0f, 0f, pageWidth, pageHeight)
         contentStream.fill()
 
         config.generatedBackgroundConfig?.let {
-            if (it.patternType != BackgroundPatternType.SÓLIDO_BLANCO) {
+            if (it.patternType != BackgroundPatternType.SÓLIDO) {
                 val backgroundBitmap = Bitmap.createBitmap(pageWidth.toInt(), pageHeight.toInt(), Bitmap.Config.ARGB_8888)
                 val canvas = Canvas(backgroundBitmap)
                 BackgroundGenerator.drawGeneratedBackground(canvas, it, pageWidth, pageHeight, colorTheme)
@@ -321,13 +323,15 @@ private fun drawInnerPagesWithPdfBox(
             val pageWidth = page.mediaBox.width
             val pageHeight = page.mediaBox.height
 
-            // Establecer fondo blanco
-            contentStream.setNonStrokingColor(255, 255, 255)
+            // Establecer fondo con el color sólido o blanco por defecto
+            val backgroundColor = coverConfig.generatedBackgroundConfig?.solidColor ?: androidx.compose.ui.graphics.Color.White
+            val colorInt = backgroundColor.toArgb()
+            contentStream.setNonStrokingColor(Color.red(colorInt), Color.green(colorInt), Color.blue(colorInt))
             contentStream.addRect(0f, 0f, pageWidth, pageHeight)
             contentStream.fill()
 
             coverConfig.generatedBackgroundConfig?.let {
-                if (it.patternType != BackgroundPatternType.SÓLIDO_BLANCO) {
+                if (it.patternType != BackgroundPatternType.SÓLIDO) {
                     val backgroundBitmap = Bitmap.createBitmap(pageWidth.toInt(), pageHeight.toInt(), Bitmap.Config.ARGB_8888)
                     val canvas = Canvas(backgroundBitmap)
                     BackgroundGenerator.drawGeneratedBackground(canvas, it, pageWidth, pageHeight, colorTheme)

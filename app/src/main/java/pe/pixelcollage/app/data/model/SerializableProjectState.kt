@@ -46,7 +46,8 @@ data class SerializableGeneratedBackgroundConfig(
     val patternType: Int, // ordinal of BackgroundPatternType enum
     val opacity: Float?,
     val size: Float?,
-    val density: Float?
+    val density: Float?,
+    val solidColor: Int?
 )
 
 data class SerializableImageBorderSettings(

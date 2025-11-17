@@ -22,9 +22,9 @@ object BackgroundGenerator {
         height: Float,
         colorTheme: ColorTheme // Aunque no se use en los nuevos, lo mantenemos por firma
     ) {
-        // El fondo base es blanco, así que no hacemos nada para SÓLIDO_BLANCO
-        if (config.patternType == BackgroundPatternType.SÓLIDO_BLANCO) {
-            canvas.drawColor(Color.WHITE)
+        // Para el modo SÓLIDO, usamos el color definido en la configuración
+        if (config.patternType == BackgroundPatternType.SÓLIDO) {
+            canvas.drawColor(config.solidColor.toArgb())
             return
         }
 

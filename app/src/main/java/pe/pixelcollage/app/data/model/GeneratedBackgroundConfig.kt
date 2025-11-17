@@ -1,7 +1,8 @@
+import androidx.compose.ui.graphics.Color
 package pe.pixelcollage.app.data.model
 
 enum class BackgroundPatternType(val displayName: String) {
-    SÓLIDO_BLANCO("Sólido Blanco"),
+    SÓLIDO("Sólido"),
     LOW_POLY("Polígono Bajo"),
     CRISTALES("Cristales"),
     GEOMETRICO("Geométrico"),
@@ -11,8 +12,9 @@ enum class BackgroundPatternType(val displayName: String) {
 }
 
 data class GeneratedBackgroundConfig(
-    val patternType: BackgroundPatternType = BackgroundPatternType.SÓLIDO_BLANCO,
+    val patternType: BackgroundPatternType = BackgroundPatternType.SÓLIDO,
     val opacity: Float = 0.5f,
     val size: Float = 10f,
-    val density: Float = 0.5f
+    val density: Float = 0.5f,
+    val solidColor: Color = Color.White
 )
