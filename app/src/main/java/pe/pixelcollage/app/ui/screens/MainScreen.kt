@@ -365,7 +365,7 @@ fun MainScreen(
             var showPdfUsage by remember { mutableStateOf(false) }
 
             val pdfUsageText = if (showPdfUsage) {
-                val usage = (userState as? UserState.Authenticated)?.user?.pdfUsage ?: 0
+                val usage = remainingPdfs ?: -1
                 " | PDF Usage: $usage"
             } else {
                 ""
