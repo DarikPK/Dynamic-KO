@@ -1,5 +1,12 @@
 package pe.pixelcollage.app.ui.screens
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.*
@@ -23,15 +30,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import pe.pixelcollage.app.R
 import pe.pixelcollage.app.data.model.BackgroundPatternType
 import pe.pixelcollage.app.data.model.ColorTheme
 import pe.pixelcollage.app.data.model.GeneratedBackgroundConfig
+import pe.pixelcollage.app.ui.navigation.Screen
 import pe.pixelcollage.app.utils.BackgroundGenerator
 import pe.pixelcollage.app.viewmodel.ProjectViewModel
 
@@ -46,6 +53,21 @@ fun GeneratedBackgroundScreen(
     val projectCoverConfig by projectViewModel.currentCoverConfig.collectAsState()
     var hasChanges by remember { mutableStateOf(false) }
     var showDialog by remember { mutableStateOf(false) }
+
+    // Listener para el resultado del ColorPickerScreen
+    LaunchedEffect(key1 = navController.currentBackStackEntry) {
+        navController.currentBackStackEntry
+            ?.savedStateHandle
+            ?.getLiveData<String>("selected_color_background")
+            ?.observe(navController.currentBackStackEntry!!) { colorHex ->
+                val newColor = Color(android.graphics.Color.parseColor("#$colorHex"))
+                projectViewModel.updateGeneratedBackgroundConfig(
+                    draftConfig?.copy(solidColor = newColor)
+                )
+                // Limpiar el estado para no volver a procesarlo
+                navController.currentBackStackEntry?.savedStateHandle?.remove<String>("selected_color_background")
+            }
+    }
 
     LaunchedEffect(draftConfig, projectCoverConfig) {
         hasChanges = draftConfig != projectCoverConfig.generatedBackgroundConfig
@@ -197,75 +219,34 @@ fun GeneratedBackgroundScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
                 if (currentConfig.patternType == BackgroundPatternType.SÓLIDO) {
-                    var showColorPicker by remember { mutableStateOf(false) }
-
-                    Button(
-                        onClick = { showColorPicker = true },
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("Color Sólido")
+                    OutlinedButton(
+                        onClick = {
+                            val colorHex = String.format("%06X", (0xFFFFFF and currentConfig.solidColor.toArgb()))
+                            navController.navigate(Screen.ColorPicker.withArgs("background", "", colorHex))
+                        },
                         modifier = Modifier.fillMaxWidth(0.8f)
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Color Actual")
                             Box(
                                 modifier = Modifier
                                     .size(24.dp)
-                                    .background(currentConfig.solidColor)
-                                    .border(1.dp, Color.Gray)
+                                    .background(currentConfig.solidColor, shape = CircleShape)
+                                    .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Cambiar Color")
                         }
-                    }
-
-                    if (showColorPicker) {
-                        ColorPickerDialog(
-                            onDismiss = { showColorPicker = false },
-                            onColorSelected = { color ->
-                                val newConfig = currentConfig.copy(solidColor = color)
-                                projectViewModel.updateGeneratedBackgroundConfig(newConfig)
-                                showColorPicker = false
-                            }
-                        )
                     }
                 }
             }
         }
     }
-}
-
-@Composable
-fun ColorPickerDialog(
-    onDismiss: () -> Unit,
-    onColorSelected: (Color) -> Unit
-) {
-    val colors = listOf(
-        Color.White, Color.Black, Color.Red, Color.Green, Color.Blue,
-        Color.Yellow, Color.Cyan, Color.Magenta, Color.Gray, Color.LightGray
-    )
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Selecciona un Color") },
-        text = {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(colors) { color ->
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .background(color)
-                            .border(1.dp, Color.DarkGray)
-                            .clickable { onColorSelected(color) }
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cerrar")
-            }
-        }
-    )
 }
 
 @Composable
