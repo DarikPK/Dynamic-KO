@@ -94,6 +94,10 @@ class MainViewModel(
         _userState.value = UserState.Unauthenticated
     }
 
+    fun getDeviceId(): String {
+        return authRepository.getDeviceId(getApplication())
+    }
+
     fun updateRemainingPdfs() {
         viewModelScope.launch {
             try {

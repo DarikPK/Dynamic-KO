@@ -364,9 +364,9 @@ fun MainScreen(
             var tapCount by remember { mutableStateOf(0) }
             var showPdfUsage by remember { mutableStateOf(false) }
 
+            var deviceId by remember { mutableStateOf<String?>(null) }
             val pdfUsageText = if (showPdfUsage) {
-                val usage = remainingPdfs ?: -1
-                " | PDF Usage: $usage"
+                deviceId?.let { " | Device ID: $it" } ?: ""
             } else {
                 ""
             }
@@ -380,6 +380,7 @@ fun MainScreen(
                     .clickable {
                         tapCount++
                         if (tapCount >= 3) {
+                            deviceId = mainViewModel.getDeviceId()
                             showPdfUsage = true
                         }
                     }
