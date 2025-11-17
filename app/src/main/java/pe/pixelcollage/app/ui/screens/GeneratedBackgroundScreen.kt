@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
@@ -290,21 +291,22 @@ private fun BackgroundThumbnail(
                     color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray
                 )
                 .padding(2.dp)
-        ) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                drawIntoCanvas { canvas ->
-                     val dummyTheme = ColorTheme("Dummy", Color.Black, Color.LightGray, Color.DarkGray)
-                     val config = GeneratedBackgroundConfig(patternType = patternType)
-                     BackgroundGenerator.drawGeneratedBackground(
-                         canvas.nativeCanvas,
-                         config,
-                         size.width,
-                         size.height,
-                         dummyTheme
-                     )
+                .drawWithCache {
+                    val dummyTheme = ColorTheme("Dummy", Color.Black, Color.LightGray, Color.DarkGray)
+                    val config = GeneratedBackgroundConfig(patternType = patternType)
+                    onDrawWithContent {
+                        drawIntoCanvas { canvas ->
+                            BackgroundGenerator.drawGeneratedBackground(
+                                canvas.nativeCanvas,
+                                config,
+                                size.width,
+                                size.height,
+                                dummyTheme
+                            )
+                        }
+                    }
                 }
-            }
-        }
+        )
         Text(
             text = patternType.displayName,
             style = MaterialTheme.typography.bodySmall,
