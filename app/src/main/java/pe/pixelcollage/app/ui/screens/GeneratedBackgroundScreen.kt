@@ -181,7 +181,7 @@ fun GeneratedBackgroundScreen(
                         .border(1.dp, Color.Gray)
                         .padding(1.dp)
                 ) {
-                    Canvas(modifier = Modifier.fillMaxSize()) {
+                    Canvas(modifier = Modifier.fillMaxSize().clipToBounds()) {
                         drawIntoCanvas { canvas ->
                             val dummyTheme = ColorTheme("Dummy", Color.Black, Color.LightGray, Color.DarkGray)
                             BackgroundGenerator.drawGeneratedBackground(
