@@ -208,18 +208,22 @@ fun SerializableCoverPageConfig.toDomain() = CoverPageConfig(
 // Mappers for GeneratedBackgroundConfig
 fun GeneratedBackgroundConfig.toSerializable() = SerializableGeneratedBackgroundConfig(
     patternType = this.patternType.ordinal,
-    opacity = this.opacity,
+    transparency = this.transparency,
     size = this.size,
     density = this.density,
+    colorThemeName = this.colorThemeName,
+    isRandom = this.isRandom,
     solidColor = this.solidColor.toArgb(),
     combineWithSolidColor = this.combineWithSolidColor
 )
 
 fun SerializableGeneratedBackgroundConfig.toDomain() = GeneratedBackgroundConfig(
     patternType = BackgroundPatternType.values().getOrElse(this.patternType) { BackgroundPatternType.SÓLIDO },
-    opacity = this.opacity ?: 0.5f,
-    size = this.size ?: 10f,
-    density = this.density ?: 0.5f,
+    transparency = this.transparency ?: 5f,
+    size = this.size ?: 5f,
+    density = this.density ?: 5f,
+    colorThemeName = this.colorThemeName ?: "SkyBlue",
+    isRandom = this.isRandom ?: false,
     solidColor = this.solidColor?.let { Color(it) } ?: Color.White,
     combineWithSolidColor = this.combineWithSolidColor ?: false
 )

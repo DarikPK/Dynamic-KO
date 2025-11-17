@@ -44,9 +44,11 @@ data class SerializableCoverPageConfig(
 
 data class SerializableGeneratedBackgroundConfig(
     val patternType: Int, // ordinal of BackgroundPatternType enum
-    val opacity: Float?,
+    val transparency: Float?,
     val size: Float?,
     val density: Float?,
+    val colorThemeName: String?,
+    val isRandom: Boolean?,
     val solidColor: Int?,
     val combineWithSolidColor: Boolean?
 )

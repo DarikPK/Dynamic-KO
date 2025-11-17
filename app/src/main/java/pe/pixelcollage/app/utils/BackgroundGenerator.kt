@@ -35,8 +35,7 @@ object BackgroundGenerator {
         canvas: Canvas,
         config: GeneratedBackgroundConfig,
         width: Float,
-        height: Float,
-        colorTheme: ColorTheme // Se mantiene por firma, pero usamos el del config
+        height: Float
     ) {
         val backgroundColor = if (config.combineWithSolidColor || config.patternType == BackgroundPatternType.SÓLIDO) {
             config.solidColor.toArgb()

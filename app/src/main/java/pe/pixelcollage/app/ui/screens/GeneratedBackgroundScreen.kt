@@ -190,15 +190,14 @@ fun GeneratedBackgroundScreen(
                                 canvas.nativeCanvas,
                                 currentConfig,
                                 size.width,
-                                size.height,
-                                dummyTheme
+                                size.height
                             )
                         }
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-                Divider()
+                HorizontalDivider()
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Row(
