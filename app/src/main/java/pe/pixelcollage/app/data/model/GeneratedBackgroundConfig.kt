@@ -1,5 +1,6 @@
-import androidx.compose.ui.graphics.Color
 package pe.pixelcollage.app.data.model
+
+import androidx.compose.ui.graphics.Color
 
 enum class BackgroundPatternType(val displayName: String) {
     SÓLIDO("Sólido"),
