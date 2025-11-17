@@ -53,11 +53,11 @@ object BackgroundGenerator {
 
         when (config.patternType) {
             BackgroundPatternType.LOW_POLY -> drawLowPoly(canvas, width, height, paint, config, random, palette)
-            BackgroundPatternType.CRISTALES -> drawCrystals(canvas, width, height, paint)
-            BackgroundPatternType.GEOMETRICO -> drawGeometric(canvas, width, height, paint)
-            BackgroundPatternType.PAPELES_SUPERPUESTOS -> drawOverlappingPapers(canvas, width, height, paint)
-            BackgroundPatternType.ONDAS_ABSTRACTAS -> drawAbstractWaves(canvas, width, height, paint)
-            BackgroundPatternType.BOKEH_DORADO -> drawGoldenBokeh(canvas, width, height, paint)
+            BackgroundPatternType.CRISTALES -> drawCrystals(canvas, width, height, paint, config, random, palette)
+            BackgroundPatternType.GEOMETRICO -> drawGeometric(canvas, width, height, paint, config, random, palette)
+            BackgroundPatternType.PAPELES_SUPERPUESTOS -> drawOverlappingPapers(canvas, width, height, paint, config, random, palette)
+            BackgroundPatternType.ONDAS_ABSTRACTAS -> drawAbstractWaves(canvas, width, height, paint, config, random, palette)
+            BackgroundPatternType.BOKEH_DORADO -> drawGoldenBokeh(canvas, width, height, paint, config, random, palette)
             else -> { /* No-op */ }
         }
     }
