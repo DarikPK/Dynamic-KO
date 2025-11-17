@@ -12,9 +12,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -207,15 +206,13 @@ fun GeneratedBackgroundScreen(
                 Text("Seleccionar Estilo", style = MaterialTheme.typography.titleLarge)
                 Spacer(modifier = Modifier.height(16.dp))
 
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
+                LazyColumn(
                     modifier = Modifier.weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(vertical = 8.dp)
                 ) {
                     items(BackgroundPatternType.values()) { patternType ->
-                        BackgroundThumbnail(
+                        BackgroundRowItem(
                             patternType = patternType,
                             isSelected = currentConfig.patternType == patternType,
                             onClick = {
@@ -278,29 +275,32 @@ fun GeneratedBackgroundScreen(
 }
 
 @Composable
-private fun BackgroundThumbnail(
+private fun BackgroundRowItem(
     patternType: BackgroundPatternType,
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+    Row(
         modifier = Modifier
-            .width(100.dp)
+            .fillMaxWidth()
+            .border(
+                width = 2.dp,
+                color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray,
+                shape = MaterialTheme.shapes.medium
+            )
             .clickable(onClick = onClick)
-            .padding(4.dp)
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Box(
             modifier = Modifier
-                .size(80.dp)
-                .border(
-                    width = 2.dp,
-                    color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray
-                )
-                .padding(2.dp)
+                .size(60.dp)
+                .border(1.dp, Color.Gray)
+                .padding(1.dp)
                 .drawWithCache {
-                    val dummyTheme = ColorTheme("Dummy", Color.Black, Color.LightGray, Color.DarkGray)
+                    val dummyTheme =
+                        ColorTheme("Dummy", Color.Black, Color.LightGray, Color.DarkGray)
                     val config = GeneratedBackgroundConfig(patternType = patternType)
                     onDrawWithContent {
                         drawIntoCanvas { canvas ->
@@ -317,9 +317,8 @@ private fun BackgroundThumbnail(
         )
         Text(
             text = patternType.displayName,
-            style = MaterialTheme.typography.bodySmall,
-            textAlign = TextAlign.Center,
-            maxLines = 2
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.weight(1f)
         )
     }
 }
