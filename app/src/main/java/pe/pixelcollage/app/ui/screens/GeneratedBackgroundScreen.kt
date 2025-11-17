@@ -202,7 +202,7 @@ fun GeneratedBackgroundScreen(
                 Text("Seleccionar Estilo", style = MaterialTheme.typography.titleLarge)
 
                 LazyRow(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(horizontal = 8.dp)
                 ) {
@@ -279,13 +279,13 @@ private fun BackgroundThumbnail(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier
-            .width(100.dp)
+            .width(60.dp)
             .clickable(onClick = onClick)
             .padding(4.dp)
     ) {
         Box(
             modifier = Modifier
-                .size(80.dp)
+                .size(50.dp)
                 .border(
                     width = 2.dp,
                     color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray
