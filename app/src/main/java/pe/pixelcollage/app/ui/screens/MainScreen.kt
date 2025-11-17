@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -360,12 +361,28 @@ fun MainScreen(
             // Version Text
             val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
             val versionName = packageInfo.versionName
+            var tapCount by remember { mutableStateOf(0) }
+            var showPdfUsage by remember { mutableStateOf(false) }
+
+            val pdfUsageText = if (showPdfUsage) {
+                val usage = (userState as? UserState.Authenticated)?.user?.pdfUsage ?: 0
+                " | PDF Usage: $usage"
+            } else {
+                ""
+            }
+
             Text(
-                text = "v$versionName",
+                text = "v$versionName$pdfUsageText",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 modifier = Modifier
                     .fillMaxWidth()
+                    .clickable {
+                        tapCount++
+                        if (tapCount >= 3) {
+                            showPdfUsage = true
+                        }
+                    }
                     .padding(top = 8.dp, end = 16.dp)
             )
         }
