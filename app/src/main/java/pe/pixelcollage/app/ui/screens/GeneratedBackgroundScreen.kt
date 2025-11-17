@@ -242,6 +242,30 @@ fun GeneratedBackgroundScreen(
                         }
                     }
                 }
+
+                if (currentConfig.patternType != BackgroundPatternType.SÓLIDO) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth(0.8f)
+                            .clickable {
+                                val newConfig = currentConfig.copy(combineWithSolidColor = !currentConfig.combineWithSolidColor)
+                                projectViewModel.updateGeneratedBackgroundConfig(newConfig)
+                            }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Combinar con otros fondos")
+                        Switch(
+                            checked = currentConfig.combineWithSolidColor,
+                            onCheckedChange = { isChecked ->
+                                val newConfig = currentConfig.copy(combineWithSolidColor = isChecked)
+                                projectViewModel.updateGeneratedBackgroundConfig(newConfig)
+                            }
+                        )
+                    }
+                }
             }
         }
     }

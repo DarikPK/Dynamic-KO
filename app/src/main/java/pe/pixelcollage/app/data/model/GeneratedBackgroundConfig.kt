@@ -17,5 +17,6 @@ data class GeneratedBackgroundConfig(
     val opacity: Float = 0.5f,
     val size: Float = 10f,
     val density: Float = 0.5f,
-    val solidColor: Color = Color.White
+    val solidColor: Color = Color.White,
+    val combineWithSolidColor: Boolean = false
 )

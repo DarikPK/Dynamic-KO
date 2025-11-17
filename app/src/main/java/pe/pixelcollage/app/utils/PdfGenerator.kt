@@ -214,7 +214,12 @@ private fun drawCoverPageWithPdfBox(
         val pageHeight = page.mediaBox.height
 
         // Establecer fondo con el color sólido o blanco por defecto
-        val backgroundColor = config.generatedBackgroundConfig?.solidColor ?: androidx.compose.ui.graphics.Color.White
+        val configBg = config.generatedBackgroundConfig
+        val backgroundColor = if (configBg != null && (configBg.combineWithSolidColor || configBg.patternType == BackgroundPatternType.SÓLIDO)) {
+            configBg.solidColor
+        } else {
+            androidx.compose.ui.graphics.Color.White
+        }
         val colorInt = backgroundColor.toArgb()
         contentStream.setNonStrokingColor(Color.red(colorInt), Color.green(colorInt), Color.blue(colorInt))
         contentStream.addRect(0f, 0f, pageWidth, pageHeight)
@@ -324,7 +329,12 @@ private fun drawInnerPagesWithPdfBox(
             val pageHeight = page.mediaBox.height
 
             // Establecer fondo con el color sólido o blanco por defecto
-            val backgroundColor = coverConfig.generatedBackgroundConfig?.solidColor ?: androidx.compose.ui.graphics.Color.White
+            val configBg = coverConfig.generatedBackgroundConfig
+            val backgroundColor = if (configBg != null && (configBg.combineWithSolidColor || configBg.patternType == BackgroundPatternType.SÓLIDO)) {
+                configBg.solidColor
+            } else {
+                androidx.compose.ui.graphics.Color.White
+            }
             val colorInt = backgroundColor.toArgb()
             contentStream.setNonStrokingColor(Color.red(colorInt), Color.green(colorInt), Color.blue(colorInt))
             contentStream.addRect(0f, 0f, pageWidth, pageHeight)

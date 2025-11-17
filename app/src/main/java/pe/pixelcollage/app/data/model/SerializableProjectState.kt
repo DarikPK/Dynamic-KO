@@ -47,7 +47,8 @@ data class SerializableGeneratedBackgroundConfig(
     val opacity: Float?,
     val size: Float?,
     val density: Float?,
-    val solidColor: Int?
+    val solidColor: Int?,
+    val combineWithSolidColor: Boolean?
 )
 
 data class SerializableImageBorderSettings(

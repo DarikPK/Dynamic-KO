@@ -211,7 +211,8 @@ fun GeneratedBackgroundConfig.toSerializable() = SerializableGeneratedBackground
     opacity = this.opacity,
     size = this.size,
     density = this.density,
-    solidColor = this.solidColor.toArgb()
+    solidColor = this.solidColor.toArgb(),
+    combineWithSolidColor = this.combineWithSolidColor
 )
 
 fun SerializableGeneratedBackgroundConfig.toDomain() = GeneratedBackgroundConfig(
@@ -219,7 +220,8 @@ fun SerializableGeneratedBackgroundConfig.toDomain() = GeneratedBackgroundConfig
     opacity = this.opacity ?: 0.5f,
     size = this.size ?: 10f,
     density = this.density ?: 0.5f,
-    solidColor = this.solidColor?.let { Color(it) } ?: Color.White
+    solidColor = this.solidColor?.let { Color(it) } ?: Color.White,
+    combineWithSolidColor = this.combineWithSolidColor ?: false
 )
 
 
