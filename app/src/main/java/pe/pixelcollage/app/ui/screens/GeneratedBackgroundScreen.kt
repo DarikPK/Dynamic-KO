@@ -12,9 +12,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Save
@@ -170,7 +173,8 @@ fun GeneratedBackgroundScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .padding(16.dp),
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -201,10 +205,14 @@ fun GeneratedBackgroundScreen(
 
                 Text("Seleccionar Estilo", style = MaterialTheme.typography.titleLarge)
 
-                LazyRow(
-                    modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background),
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp), // Altura fija para la rejilla
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(horizontal = 8.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(8.dp)
                 ) {
                     items(BackgroundPatternType.values()) { patternType ->
                         BackgroundThumbnail(
@@ -279,13 +287,13 @@ private fun BackgroundThumbnail(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier
-            .width(60.dp)
+            .width(100.dp)
             .clickable(onClick = onClick)
             .padding(4.dp)
     ) {
         Box(
             modifier = Modifier
-                .size(50.dp)
+                .size(80.dp)
                 .border(
                     width = 2.dp,
                     color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray
