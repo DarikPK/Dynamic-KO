@@ -187,24 +187,6 @@ fun AppNavigation(
             )
         }
         composable(
-            route = Screen.ColorPicker.route + "/{colorType}/{fieldId}/{initialColor}",
-            arguments = listOf(
-                navArgument("colorType") { type = NavType.StringType },
-                navArgument("fieldId") { type = NavType.StringType; nullable = true },
-                navArgument("initialColor") { type = NavType.StringType }
-            )
-        ) { backStackEntry ->
-            val colorType = backStackEntry.arguments?.getString("colorType") ?: ""
-            val fieldId = backStackEntry.arguments?.getString("fieldId")
-            val initialColorHex = backStackEntry.arguments?.getString("initialColor") ?: "FFFFFF"
-            ColorPickerScreen(
-                navController = navController,
-                colorType = colorType,
-                fieldId = fieldId,
-                initialColorHex = initialColorHex
-            )
-        }
-        composable(
             route = Screen.ImageEffects.route + "/{imageUri}",
             arguments = listOf(navArgument("imageUri") { type = NavType.StringType })
         ) { backStackEntry ->
@@ -281,6 +263,24 @@ fun AppNavigation(
                     parentId = user.uid
                 )
             }
+        }
+        composable(
+            route = Screen.ColorPicker.route + "/{colorType}/{fieldId}/{initialColor}",
+            arguments = listOf(
+                navArgument("colorType") { type = NavType.StringType },
+                navArgument("fieldId") { type = NavType.StringType; nullable = true },
+                navArgument("initialColor") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val colorType = backStackEntry.arguments?.getString("colorType") ?: ""
+            val fieldId = backStackEntry.arguments?.getString("fieldId")
+            val initialColorHex = backStackEntry.arguments?.getString("initialColor") ?: "FFFFFF"
+            ColorPickerScreen(
+                navController = navController,
+                colorType = colorType,
+                fieldId = fieldId,
+                initialColorHex = initialColorHex
+            )
         }
     }
 }
