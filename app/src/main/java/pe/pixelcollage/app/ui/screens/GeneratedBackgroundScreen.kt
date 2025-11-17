@@ -222,7 +222,7 @@ fun GeneratedBackgroundScreen(
                     OutlinedButton(
                         onClick = {
                             val colorHex = String.format("%06X", (0xFFFFFF and currentConfig.solidColor.toArgb()))
-                            navController.navigate(Screen.ColorPicker.withArgs("background", "", colorHex))
+                            navController.navigate(Screen.ColorPicker.withArgs("background", "background", colorHex))
                         },
                         modifier = Modifier.fillMaxWidth(0.8f)
                     ) {
