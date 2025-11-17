@@ -229,7 +229,7 @@ private fun drawCoverPageWithPdfBox(
             if (it.patternType != BackgroundPatternType.SÓLIDO) {
                 val backgroundBitmap = Bitmap.createBitmap(pageWidth.toInt(), pageHeight.toInt(), Bitmap.Config.ARGB_8888)
                 val canvas = Canvas(backgroundBitmap)
-                BackgroundGenerator.drawGeneratedBackground(canvas, it, pageWidth, pageHeight, colorTheme)
+                BackgroundGenerator.drawGeneratedBackground(canvas, it, pageWidth, pageHeight)
 
                 val tempFile = File.createTempFile("background", ".png", context.cacheDir)
                 FileOutputStream(tempFile).use { out ->
@@ -344,7 +344,7 @@ private fun drawInnerPagesWithPdfBox(
                 if (it.patternType != BackgroundPatternType.SÓLIDO) {
                     val backgroundBitmap = Bitmap.createBitmap(pageWidth.toInt(), pageHeight.toInt(), Bitmap.Config.ARGB_8888)
                     val canvas = Canvas(backgroundBitmap)
-                    BackgroundGenerator.drawGeneratedBackground(canvas, it, pageWidth, pageHeight, colorTheme)
+                    BackgroundGenerator.drawGeneratedBackground(canvas, it, pageWidth, pageHeight)
 
                     val tempFile = File.createTempFile("background_inner", ".png", context.cacheDir)
                     FileOutputStream(tempFile).use { out ->

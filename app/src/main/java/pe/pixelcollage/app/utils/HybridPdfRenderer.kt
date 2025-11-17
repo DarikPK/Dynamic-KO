@@ -151,7 +151,7 @@ internal fun drawCoverPage(pdfDocument: PdfDocument, context: Context, config: C
 
     config.generatedBackgroundConfig?.let {
         if (it.patternType != BackgroundPatternType.SÓLIDO) {
-            BackgroundGenerator.drawGeneratedBackground(canvas, it, pageWidth.toFloat(), pageHeight.toFloat(), colorTheme)
+            BackgroundGenerator.drawGeneratedBackground(canvas, it, pageWidth.toFloat(), pageHeight.toFloat())
         }
     }
 
@@ -359,7 +359,7 @@ internal fun drawInnerPages(pdfDocument: PdfDocument, context: Context, generate
 
         coverConfig.generatedBackgroundConfig?.let {
             if (it.patternType != BackgroundPatternType.SÓLIDO) {
-                BackgroundGenerator.drawGeneratedBackground(canvas, it, pageWidth.toFloat(), pageHeight.toFloat(), colorTheme)
+                BackgroundGenerator.drawGeneratedBackground(canvas, it, pageWidth.toFloat(), pageHeight.toFloat())
             }
         }
 
