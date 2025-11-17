@@ -57,6 +57,11 @@ object BackgroundGenerator {
             BackgroundPatternType.PAPELES_SUPERPUESTOS -> drawOverlappingPapers(canvas, width, height, paint, config, random, palette)
             BackgroundPatternType.ONDAS_ABSTRACTAS -> drawAbstractWaves(canvas, width, height, paint, config, random, palette)
             BackgroundPatternType.BOKEH_DORADO -> drawGoldenBokeh(canvas, width, height, paint, config, random, palette)
+            BackgroundPatternType.RAYAS_DIAGONALES -> drawDiagonalStripes(canvas, width, height, paint, config, random, palette)
+            BackgroundPatternType.TRAMA_DE_PUNTOS -> drawSubtleDotGrid(canvas, width, height, paint, config, random, palette)
+            BackgroundPatternType.ACUARELA -> drawWatercolorWash(canvas, width, height, paint, config, random, palette)
+            BackgroundPatternType.TEXTURA_PAPEL -> drawPaperTexture(canvas, width, height, paint, config, random, palette)
+            BackgroundPatternType.METAL_CEPILLADO -> drawBrushedMetal(canvas, width, height, paint, config, random, palette)
             else -> { /* No-op */ }
         }
     }
@@ -109,11 +114,22 @@ object BackgroundGenerator {
             path.lineTo(startX + random.nextInt(-baseSize, baseSize), startY + 10)
             path.close()
 
+            // Dibuja también desde abajo
+            val path2 = Path()
+            val startX2 = random.nextFloat() * width
+            val startY2 = height * 1.1f
+            path2.moveTo(startX2, startY2)
+            path2.lineTo(startX2 + random.nextInt(-baseSize, baseSize), height - (height * 0.3f * random.nextFloat()))
+            path2.lineTo(startX2 + random.nextInt(-baseSize * 2, baseSize * 2), height - (height * 0.4f * random.nextFloat()))
+            path2.lineTo(startX2 + random.nextInt(-baseSize, baseSize), startY2 - 10)
+            path2.close()
+
             val colorInt = palette.random(random)
             val alpha = (20 + config.transparency * 8).toInt()
             paint.style = Paint.Style.FILL
             paint.setARGB(alpha, Color.red(colorInt), Color.green(colorInt), Color.blue(colorInt))
             canvas.drawPath(path, paint)
+            canvas.drawPath(path2, paint)
         }
     }
 
@@ -213,6 +229,88 @@ object BackgroundGenerator {
             paint.setARGB(alpha, Color.red(circleColor), Color.green(circleColor), Color.blue(circleColor))
             paint.style = Paint.Style.FILL
             canvas.drawCircle(x, y, random.nextInt(radius).toFloat(), paint)
+        }
+    }
+
+    private fun drawDiagonalStripes(canvas: Canvas, width: Float, height: Float, paint: Paint, config: GeneratedBackgroundConfig, random: Random, palette: List<Int>) {
+        val stripeWidth = 20 + config.size * 10
+        val gapWidth = 20 + config.density * 10
+        val totalWidth = stripeWidth + gapWidth
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = stripeWidth
+        val alpha = (10 + config.transparency * 10).toInt()
+        val colorInt = palette[1]
+        paint.setARGB(alpha, Color.red(colorInt), Color.green(colorInt), Color.blue(colorInt))
+
+        val path = Path()
+        for (i in -((width + height) / totalWidth).toInt()..((width + height) / totalWidth).toInt()) {
+            path.moveTo(i * totalWidth - height, 0f)
+            path.lineTo(i * totalWidth + width, height + width)
+        }
+        canvas.drawPath(path, paint)
+    }
+
+    private fun drawSubtleDotGrid(canvas: Canvas, width: Float, height: Float, paint: Paint, config: GeneratedBackgroundConfig, random: Random, palette: List<Int>) {
+        val dotRadius = 1 + config.size
+        val gap = 10 + config.density * 5
+        paint.style = Paint.Style.FILL
+        val alpha = (20 + config.transparency * 20).toInt()
+        val colorInt = palette[1]
+        paint.setARGB(alpha, Color.red(colorInt), Color.green(colorInt), Color.blue(colorInt))
+
+        for (x in 0..(width / gap).toInt()) {
+            for (y in 0..(height / gap).toInt()) {
+                val jitterX = if (config.isRandom) random.nextFloat() * gap / 2 - gap / 4 else 0f
+                val jitterY = if (config.isRandom) random.nextFloat() * gap / 2 - gap / 4 else 0f
+                canvas.drawCircle(x * gap + jitterX, y * gap + jitterY, dotRadius, paint)
+            }
+        }
+    }
+
+    private fun drawWatercolorWash(canvas: Canvas, width: Float, height: Float, paint: Paint, config: GeneratedBackgroundConfig, random: Random, palette: List<Int>) {
+        val numBlobs = (10 + config.density * 2).toInt()
+        for (i in 0 until numBlobs) {
+            val cx = random.nextFloat() * width
+            val cy = random.nextFloat() * height
+            val radius = (width / 4) + (config.size * 20) * random.nextFloat()
+            val colorInt = palette.random(random)
+            val alpha = (5 + config.transparency * 2).toInt()
+            paint.style = Paint.Style.FILL
+            paint.setARGB(alpha, Color.red(colorInt), Color.green(colorInt), Color.blue(colorInt))
+            canvas.drawCircle(cx, cy, radius, paint)
+        }
+    }
+
+    private fun drawPaperTexture(canvas: Canvas, width: Float, height: Float, paint: Paint, config: GeneratedBackgroundConfig, random: Random, palette: List<Int>) {
+        val numGrains = (5000 + config.density * 2000).toInt()
+        val grainSize = 1 + config.size / 5
+        val alpha = (5 + config.transparency * 3).toInt()
+        val colorInt = palette[1]
+        paint.setARGB(alpha, Color.red(colorInt), Color.green(colorInt), Color.blue(colorInt))
+
+        for (i in 0 until numGrains) {
+            val x = random.nextFloat() * width
+            val y = random.nextFloat() * height
+            canvas.drawCircle(x, y, grainSize * random.nextFloat(), paint)
+        }
+    }
+
+    private fun drawBrushedMetal(canvas: Canvas, width: Float, height: Float, paint: Paint, config: GeneratedBackgroundConfig, random: Random, palette: List<Int>) {
+        val numLines = (100 + config.density * 50).toInt()
+        paint.strokeWidth = 1 + config.size / 10
+        val baseColor = palette[0]
+        val alpha = (5 + config.transparency * 2).toInt()
+        paint.setARGB(alpha, Color.red(baseColor), Color.green(baseColor), Color.blue(baseColor))
+
+        for (i in 0 until numLines) {
+            val y = random.nextFloat() * height
+            val lineAlpha = alpha + random.nextInt(-5, 5)
+            val colorVariation = random.nextInt(-10, 10)
+            val r = (Color.red(baseColor) + colorVariation).coerceIn(0, 255)
+            val g = (Color.green(baseColor) + colorVariation).coerceIn(0, 255)
+            val b = (Color.blue(baseColor) + colorVariation).coerceIn(0, 255)
+            paint.setARGB(lineAlpha.coerceIn(0,255), r, g, b)
+            canvas.drawLine(0f, y, width, y, paint)
         }
     }
 }

@@ -9,7 +9,12 @@ enum class BackgroundPatternType(val displayName: String) {
     GEOMETRICO("Geométrico"),
     PAPELES_SUPERPUESTOS("Papeles Superpuestos"),
     ONDAS_ABSTRACTAS("Ondas Abstractas"),
-    BOKEH_DORADO("Bokeh Dorado")
+    BOKEH_DORADO("Bokeh Dorado"),
+    RAYAS_DIAGONALES("Rayas Diagonales"),
+    TRAMA_DE_PUNTOS("Trama de Puntos"),
+    ACUARELA("Lavado de Acuarela"),
+    TEXTURA_PAPEL("Textura de Papel"),
+    METAL_CEPILLADO("Metal Cepillado")
 }
 
 data class GeneratedBackgroundConfig(
