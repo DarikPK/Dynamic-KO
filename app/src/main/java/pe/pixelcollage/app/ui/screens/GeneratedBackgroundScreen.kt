@@ -12,9 +12,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -37,9 +36,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import pe.pixelcollage.app.data.model.BackgroundPatternType
-import pe.pixelcollage.app.data.model.ColorTheme
-import pe.pixelcollage.app.data.model.GeneratedBackgroundConfig
+import pe.pixelcollage.app.data.model.*
 import pe.pixelcollage.app.ui.navigation.Screen
 import pe.pixelcollage.app.utils.BackgroundGenerator
 import pe.pixelcollage.app.viewmodel.ProjectViewModel
@@ -204,72 +201,63 @@ fun GeneratedBackgroundScreen(
                 Divider()
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text("Seleccionar Estilo", style = MaterialTheme.typography.titleLarge)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceAround
+                ) {
+                    Text("Estilos", style = MaterialTheme.typography.titleLarge)
+                    Text("Configuración", style = MaterialTheme.typography.titleLarge)
+                }
                 Spacer(modifier = Modifier.height(16.dp))
 
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    modifier = Modifier.weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(8.dp)
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    items(BackgroundPatternType.values()) { patternType ->
-                        BackgroundThumbnail(
-                            patternType = patternType,
-                            isSelected = currentConfig.patternType == patternType,
-                            onClick = {
-                                val newConfig = currentConfig.copy(patternType = patternType)
-                                projectViewModel.updateGeneratedBackgroundConfig(newConfig)
-                            }
-                        )
-                    }
-                }
-
-                if (currentConfig.patternType == BackgroundPatternType.SÓLIDO) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text("Color Sólido")
-                    OutlinedButton(
-                        onClick = {
-                            val colorHex = String.format("%06X", (0xFFFFFF and currentConfig.solidColor.toArgb()))
-                            navController.navigate(Screen.ColorPicker.withArgs("background", "background", colorHex))
-                        },
-                        modifier = Modifier.fillMaxWidth(0.8f)
+                    // Columna Izquierda: Lista de Estilos
+                    LazyColumn(
+                        modifier = Modifier.weight(0.4f),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(vertical = 8.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text("Color Actual")
-                            Box(
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .background(currentConfig.solidColor, shape = CircleShape)
-                                    .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                        items(BackgroundPatternType.values()) { patternType ->
+                            BackgroundTextItem(
+                                patternType = patternType,
+                                isSelected = currentConfig.patternType == patternType,
+                                onClick = {
+                                    val newConfig = currentConfig.copy(patternType = patternType)
+                                    projectViewModel.updateGeneratedBackgroundConfig(newConfig)
+                                }
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Row(
+
+                    // Columna Derecha: Opciones de Configuración
+                    Column(
                         modifier = Modifier
-                            .fillMaxWidth(0.8f)
-                            .clickable {
-                                val newConfig = currentConfig.copy(combineWithSolidColor = !currentConfig.combineWithSolidColor)
-                                projectViewModel.updateGeneratedBackgroundConfig(newConfig)
-                            }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                            .weight(0.6f)
+                            .verticalScroll(rememberScrollState())
+                            .padding(start = 8.dp, end = 8.dp)
                     ) {
-                        Text("Combinar con otros fondos")
-                        Switch(
-                            checked = currentConfig.combineWithSolidColor,
-                            onCheckedChange = { isChecked ->
-                                val newConfig = currentConfig.copy(combineWithSolidColor = isChecked)
-                                projectViewModel.updateGeneratedBackgroundConfig(newConfig)
+                        when (currentConfig.patternType) {
+                            BackgroundPatternType.SÓLIDO -> {
+                                SolidColorSettings(
+                                    navController = navController,
+                                    currentConfig = currentConfig,
+                                    onConfigChange = { newConfig ->
+                                        projectViewModel.updateGeneratedBackgroundConfig(newConfig)
+                                    }
+                                )
                             }
-                        )
+                            else -> {
+                                PatternSettings(
+                                    currentConfig = currentConfig,
+                                    onConfigChange = { newConfig ->
+                                        projectViewModel.updateGeneratedBackgroundConfig(newConfig)
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -277,49 +265,169 @@ fun GeneratedBackgroundScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun BackgroundThumbnail(
+private fun PatternSettings(
+    currentConfig: GeneratedBackgroundConfig,
+    onConfigChange: (GeneratedBackgroundConfig) -> Unit
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Dropdown para seleccionar el tema de color
+        var expanded by remember { mutableStateOf(false) }
+        val themes = ColorThemes.themes
+        val selectedTheme = themes.find { it.name == currentConfig.colorThemeName } ?: themes.first()
+
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = !expanded }
+        ) {
+            TextField(
+                value = selectedTheme.name,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Combinación de Colores") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                modifier = Modifier
+                    .menuAnchor()
+                    .fillMaxWidth()
+            )
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                themes.forEach { theme ->
+                    DropdownMenuItem(
+                        text = { Text(theme.name) },
+                        onClick = {
+                            onConfigChange(currentConfig.copy(colorThemeName = theme.name))
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
+
+        SettingsSlider(
+            label = "Transparencia",
+            value = currentConfig.transparency,
+            onValueChange = { onConfigChange(currentConfig.copy(transparency = it)) }
+        )
+
+        SettingsSlider(
+            label = "Densidad",
+            value = currentConfig.density,
+            onValueChange = { onConfigChange(currentConfig.copy(density = it)) }
+        )
+
+        SettingsSlider(
+            label = "Tamaño",
+            value = currentConfig.size,
+            onValueChange = { onConfigChange(currentConfig.copy(size = it)) }
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onConfigChange(currentConfig.copy(isRandom = !currentConfig.isRandom)) }
+                .padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text("Aleatoriedad")
+            Switch(
+                checked = currentConfig.isRandom,
+                onCheckedChange = { onConfigChange(currentConfig.copy(isRandom = it)) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun SettingsSlider(
+    label: String,
+    value: Float,
+    onValueChange: (Float) -> Unit
+) {
+    Column {
+        Text(text = "$label: ${"%.1f".format(value)}")
+        Slider(
+            value = value,
+            onValueChange = onValueChange,
+            valueRange = 0f..10f,
+            steps = 100
+        )
+    }
+}
+
+@Composable
+private fun SolidColorSettings(
+    navController: NavController,
+    currentConfig: GeneratedBackgroundConfig,
+    onConfigChange: (GeneratedBackgroundConfig) -> Unit
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        OutlinedButton(
+            onClick = {
+                val colorHex = String.format("%06X", (0xFFFFFF and currentConfig.solidColor.toArgb()))
+                navController.navigate(Screen.ColorPicker.withArgs("background", "background", colorHex))
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Color Actual")
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .background(currentConfig.solidColor, shape = CircleShape)
+                        .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    onConfigChange(currentConfig.copy(combineWithSolidColor = !currentConfig.combineWithSolidColor))
+                }
+                .padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text("Combinar con otros fondos")
+            Switch(
+                checked = currentConfig.combineWithSolidColor,
+                onCheckedChange = { isChecked ->
+                    onConfigChange(currentConfig.copy(combineWithSolidColor = isChecked))
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun BackgroundTextItem(
     patternType: BackgroundPatternType,
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+    Text(
+        text = patternType.displayName,
         modifier = Modifier
-            .width(100.dp)
+            .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(4.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(80.dp)
-                .border(
-                    width = 2.dp,
-                    color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray
-                )
-                .padding(2.dp)
-                .drawWithCache {
-                    val dummyTheme = ColorTheme("Dummy", Color.Black, Color.LightGray, Color.DarkGray)
-                    val config = GeneratedBackgroundConfig(patternType = patternType)
-                    onDrawWithContent {
-                        drawIntoCanvas { canvas ->
-                            BackgroundGenerator.drawGeneratedBackground(
-                                canvas.nativeCanvas,
-                                config,
-                                size.width,
-                                size.height,
-                                dummyTheme
-                            )
-                        }
-                    }
-                }
-        )
-        Text(
-            text = patternType.displayName,
-            style = MaterialTheme.typography.bodySmall,
-            textAlign = TextAlign.Center,
-            maxLines = 2
-        )
-    }
+            .background(
+                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                shape = MaterialTheme.shapes.medium
+            )
+            .padding(16.dp),
+        style = MaterialTheme.typography.titleMedium,
+        textAlign = TextAlign.Center
+    )
 }
