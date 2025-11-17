@@ -1,5 +1,6 @@
 package pe.pixelcollage.app.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import pe.pixelcollage.app.remote.ApiClient
@@ -58,6 +59,7 @@ class SunatDataViewModel : ViewModel() {
                     _sunatDataState.value = SunatDataState.Error("Error de red: ${e.message()}")
                 }
             } catch (e: Exception) {
+                Log.e("SunatDataViewModel", "Error fetching SUNAT data", e)
                 _sunatDataState.value = SunatDataState.Error(e.message ?: "Error desconocido")
             }
         }

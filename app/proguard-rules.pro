@@ -41,6 +41,9 @@
 # Mantener todos los modelos y servicios SUNAT
 -keep class pe.pixelcollage.app.remote.** { *; }
 
+# Mantener los modelos de datos para la serialización del estado del proyecto
+-keep class pe.pixelcollage.app.data.model.** { *; }
+
 # Mantener campos con @SerializedName
 -keepclassmembers class * {
     @com.google.gson.annotations.SerializedName <fields>;
