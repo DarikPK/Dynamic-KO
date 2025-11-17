@@ -241,9 +241,6 @@ fun GeneratedBackgroundScreen(
                             )
                         }
                     }
-                }
-
-                if (currentConfig.patternType != BackgroundPatternType.SÓLIDO) {
                     Spacer(modifier = Modifier.height(16.dp))
                     Row(
                         modifier = Modifier
