@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import pe.pixelcollage.app.data.model.SelectedSunatData
+import pe.pixelcollage.app.remote.DniData
+import pe.pixelcollage.app.remote.RucData
 import pe.pixelcollage.app.ui.navigation.Screen
 import pe.pixelcollage.app.ui.util.RucVisualTransformation
 import pe.pixelcollage.app.viewmodel.ProjectViewModel
@@ -214,106 +216,187 @@ fun SunatDataScreen(
 
             if (sunatDataState is SunatDataState.Success) {
                 val data = (sunatDataState as SunatDataState.Success).data
+
+                // Determinar el nombre a mostrar y el número de documento
+                val (displayName, docNum) = when (data) {
+                    is DniData -> "${data.nombres} ${data.apellidoPaterno} ${data.apellidoMaterno}" to data.numeroDocumento
+                    is RucData -> data.nombre to data.numeroDocumento
+                    else -> "" to ""
+                }
+
                 var useName by remember { mutableStateOf(true) }
-                var useAddress by remember { mutableStateOf(false) } // Dirección manual siempre empieza desactivada
                 var manualAddress by remember { mutableStateOf("") }
                 var manualDistrict by remember { mutableStateOf("") }
 
-                Column(
-                    modifier = Modifier.padding(top = 16.dp),
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    Text("Datos encontrados:", style = MaterialTheme.typography.titleMedium)
-                    Spacer(modifier = Modifier.height(8.dp))
+                // Lógica específica para RUC de Empresa (RUC20)
+                if (data is RucData && data.numeroDocumento.startsWith("20")) {
+                    var useApiAddress by remember { mutableStateOf(true) }
+                    var useManualAddress by remember { mutableStateOf(false) }
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(checked = useName, onCheckedChange = { useName = it })
-                        Text("Nombre: ${data.nombre}")
-                    }
+                    Column(modifier = Modifier.padding(top = 16.dp), horizontalAlignment = Alignment.Start) {
+                        Text("Datos encontrados:", style = MaterialTheme.typography.titleMedium)
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(checked = useAddress, onCheckedChange = { useAddress = it })
-                        Text("Añadir dirección")
-                    }
-
-                    if (useAddress) {
-                        OutlinedTextField(
-                            value = manualAddress,
-                            onValueChange = { manualAddress = it.replace("\n", "").uppercase() },
-                            label = { Text("Dirección") },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
-                        )
-                        val districts = listOf(
-                            "Ancón", "Ate", "Barranco", "Breña", "Callao", "Carabayllo", "Cercado de Lima",
-                            "Chaclacayo", "Chorrillos", "Cieneguilla", "Comas", "El agustino", "Independencia",
-                            "Jesús maría", "La molina", "La victoria", "Lince", "Los olivos", "Lurigancho",
-                            "Lurín", "Magdalena del mar", "Miraflores", "Pachacámac", "Pucusana", "Pueblo libre",
-                            "Puente piedra", "Punta hermosa", "Punta negra", "Rímac", "San bartolo", "San borja",
-                            "San isidro", "San Juan de Lurigancho", "San Juan de Miraflores", "San Luis",
-                            "San Martin de Porres", "San Miguel", "Santa Anita", "Santa María del Mar",
-                            "Santa Rosa", "Santiago de Surco", "Surquillo", "Villa el Salvador",
-                            "Villa Maria del Triunfo"
-                        )
-                        var expanded by remember { mutableStateOf(false) }
-                        val filteredDistricts = districts.filter { it.contains(manualDistrict, ignoreCase = true) }
-
-                        ExposedDropdownMenuBox(
-                            expanded = expanded,
-                            onExpandedChange = { expanded = !expanded }
-                        ) {
-                            OutlinedTextField(
-                                value = manualDistrict,
-                                onValueChange = { manualDistrict = it.replace("\n", "").uppercase() },
-                                label = { Text("Distrito (Opcional)") },
-                                modifier = Modifier.menuAnchor().fillMaxWidth(),
-                                singleLine = true
-                            )
-                            ExposedDropdownMenu(
-                                expanded = expanded,
-                                onDismissRequest = { expanded = false }
-                            ) {
-                                filteredDistricts.forEach { district ->
-                                    DropdownMenuItem(
-                                        text = { Text(district) },
-                                        onClick = {
-                                            manualDistrict = district.uppercase()
-                                            expanded = false
-                                        }
-                                    )
-                                }
-                            }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(checked = useName, onCheckedChange = { useName = it })
+                            Text("Nombre: $displayName")
                         }
-                    }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(
-                        onClick = {
-                            val finalAddress = if (useAddress) {
-                                if (manualDistrict.isNotBlank()) {
-                                    "${manualAddress.uppercase()} - ${manualDistrict.uppercase()}"
-                                } else {
-                                    manualAddress.uppercase()
+                        // Checkbox para la dirección de la API
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(
+                                checked = useApiAddress,
+                                onCheckedChange = {
+                                    useApiAddress = it
+                                    if (it) useManualAddress = false
                                 }
-                            } else {
-                                null
-                            }
+                            )
+                            Text("Dirección: ${data.direccion} - ${data.distrito}")
+                        }
 
+                        // Checkbox para otra dirección (mutuamente excluyente)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(
+                                checked = useManualAddress,
+                                onCheckedChange = {
+                                    useManualAddress = it
+                                    if (it) useApiAddress = false
+                                }
+                            )
+                            Text("Otra dirección")
+                        }
+
+                        if (useManualAddress) {
+                            AddressInputFields(
+                                manualAddress = manualAddress,
+                                onAddressChange = { manualAddress = it },
+                                manualDistrict = manualDistrict,
+                                onDistrictChange = { manualDistrict = it }
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(onClick = {
+                            val finalAddress = when {
+                                useApiAddress -> "${data.direccion.uppercase()} - ${data.distrito.uppercase()}"
+                                useManualAddress -> if (manualDistrict.isNotBlank()) "${manualAddress.uppercase()} - ${manualDistrict.uppercase()}" else manualAddress.uppercase()
+                                else -> null
+                            }
                             val selectedData = SelectedSunatData(
-                                nombre = if (useName) data.nombre else null,
-                                numeroDocumento = data.numeroDocumento,
+                                nombre = if (useName) displayName else null,
+                                numeroDocumento = docNum,
                                 direccion = finalAddress
                             )
                             projectViewModel.updateSunatData(context, selectedData)
                             sunatDataViewModel.resetState()
-                            navController.navigate(Screen.CoverSetup.route) {
-                                popUpTo(Screen.Main.route)
-                            }
+                            navController.navigate(Screen.CoverSetup.route) { popUpTo(Screen.Main.route) }
+                        }) {
+                            Text("Usar estos datos")
                         }
-                    ) {
-                        Text("Usar estos datos")
+                    }
+                } else {
+                    // Lógica para DNI y RUC de Persona
+                    var useAddress by remember { mutableStateOf(false) }
+
+                    Column(modifier = Modifier.padding(top = 16.dp), horizontalAlignment = Alignment.Start) {
+                        Text("Datos encontrados:", style = MaterialTheme.typography.titleMedium)
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(checked = useName, onCheckedChange = { useName = it })
+                            Text("Nombre: $displayName")
+                        }
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(checked = useAddress, onCheckedChange = { useAddress = it })
+                            Text("Añadir dirección")
+                        }
+
+                        if (useAddress) {
+                            AddressInputFields(
+                                manualAddress = manualAddress,
+                                onAddressChange = { manualAddress = it },
+                                manualDistrict = manualDistrict,
+                                onDistrictChange = { manualDistrict = it }
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(onClick = {
+                            val finalAddress = if (useAddress) {
+                                if (manualDistrict.isNotBlank()) "${manualAddress.uppercase()} - ${manualDistrict.uppercase()}" else manualAddress.uppercase()
+                            } else null
+
+                            val selectedData = SelectedSunatData(
+                                nombre = if (useName) displayName else null,
+                                numeroDocumento = docNum,
+                                direccion = finalAddress
+                            )
+                            projectViewModel.updateSunatData(context, selectedData)
+                            sunatDataViewModel.resetState()
+                            navController.navigate(Screen.CoverSetup.route) { popUpTo(Screen.Main.route) }
+                        }) {
+                            Text("Usar estos datos")
+                        }
                     }
                 }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AddressInputFields(
+    manualAddress: String,
+    onAddressChange: (String) -> Unit,
+    manualDistrict: String,
+    onDistrictChange: (String) -> Unit
+) {
+    OutlinedTextField(
+        value = manualAddress,
+        onValueChange = { onAddressChange(it.replace("\n", "").uppercase()) },
+        label = { Text("Dirección") },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true
+    )
+    val districts = listOf(
+        "Ancón", "Ate", "Barranco", "Breña", "Callao", "Carabayllo", "Cercado de Lima",
+        "Chaclacayo", "Chorrillos", "Cieneguilla", "Comas", "El agustino", "Independencia",
+        "Jesús maría", "La molina", "La victoria", "Lince", "Los olivos", "Lurigancho",
+        "Lurín", "Magdalena del mar", "Miraflores", "Pachacámac", "Pucusana", "Pueblo libre",
+        "Puente piedra", "Punta hermosa", "Punta negra", "Rímac", "San bartolo", "San borja",
+        "San isidro", "San Juan de Lurigancho", "San Juan de Miraflores", "San Luis",
+        "San Martin de Porres", "San Miguel", "Santa Anita", "Santa María del Mar",
+        "Santa Rosa", "Santiago de Surco", "Surquillo", "Villa el Salvador",
+        "Villa Maria del Triunfo"
+    )
+    var expanded by remember { mutableStateOf(false) }
+    val filteredDistricts = districts.filter { it.contains(manualDistrict, ignoreCase = true) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        OutlinedTextField(
+            value = manualDistrict,
+            onValueChange = { onDistrictChange(it.replace("\n", "").uppercase()) },
+            label = { Text("Distrito (Opcional)") },
+            modifier = Modifier.menuAnchor().fillMaxWidth(),
+            singleLine = true
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            filteredDistricts.forEach { district ->
+                DropdownMenuItem(
+                    text = { Text(district) },
+                    onClick = {
+                        onDistrictChange(district.uppercase())
+                        expanded = false
+                    }
+                )
             }
         }
     }
