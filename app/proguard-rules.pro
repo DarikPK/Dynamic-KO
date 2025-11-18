@@ -20,31 +20,33 @@
 # 🔐 CORRECCIÓN DE RETROFIT + GSON (SUNAT API)
 #######################################################
 
-# Mantener información de tipos genéricos
--keepattributes Signature
--keepattributes *Annotation*
+# 1. Preservar atributos críticos para la reflexión.
+# Signature: Necesario para tipos genéricos.
+# InnerClasses: Necesario si usas clases internas.
+# *Annotation*: Preserva todas las anotaciones.
+# RuntimeVisibleParameterAnnotations: CRÍTICO para que Retrofit lea las anotaciones de los parámetros de los métodos (@Query, @Path, etc.).
+-keepattributes Signature, InnerClasses, *Annotation*, RuntimeVisibleParameterAnnotations
 
-# Mantener clases e interfaces de Retrofit
+# 2. Preservar completamente las librerías Retrofit y Gson.
 -keep class retrofit2.** { *; }
 -keep interface retrofit2.** { *; }
 -dontwarn retrofit2.Platform$Java8
--dontwarn retrofit2.adapter.rxjava2.**
 
-# Mantener el convertidor Gson
 -keep class com.google.gson.** { *; }
 -dontwarn com.google.gson.**
--keep class com.google.gson.reflect.TypeToken
--keep class com.google.gson.TypeAdapter
--keep class com.google.gson.TypeAdapterFactory
--keep class com.google.gson.internal.bind.** { *; }
 
-# Mantener todos los modelos y servicios SUNAT
--keep class pe.pixelcollage.app.remote.** { *; }
+# 3. Preservar la interfaz del servicio de API de forma explícita.
+# Esto asegura que R8 no elimine la interfaz, sus métodos, ni sus anotaciones.
+-keep interface pe.pixelcollage.app.remote.SunatApiService { *; }
 
-# Mantener los modelos de datos para la serialización del estado del proyecto
+# 4. Preservar los modelos de datos (Data Classes) que usa la API.
+-keep class pe.pixelcollage.app.remote.RucData { *; }
+-keep class pe.pixelcollage.app.remote.DniData { *; }
+
+# 5. Preservar los modelos de datos para la serialización del estado del proyecto.
 -keep class pe.pixelcollage.app.data.model.** { *; }
 
-# Mantener campos con @SerializedName
+# 6. Preservar campos que usan la anotación @SerializedName de Gson.
 -keepclassmembers class * {
     @com.google.gson.annotations.SerializedName <fields>;
 }
