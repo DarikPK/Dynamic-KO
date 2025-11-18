@@ -11,7 +11,6 @@ import pe.pixelcollage.app.data.model.DocumentType
 import pe.pixelcollage.app.data.model.SelectedSunatData
 import pe.pixelcollage.app.remote.DniData
 import pe.pixelcollage.app.remote.RucData
-import pe.pixelcollage.app.remote.SunatData
 import pe.pixelcollage.app.data.model.TextStyleConfig
 import android.content.ContentResolver
 import android.graphics.BitmapFactory

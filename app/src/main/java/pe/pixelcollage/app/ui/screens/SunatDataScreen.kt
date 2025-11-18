@@ -13,13 +13,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import pe.pixelcollage.app.R
 import pe.pixelcollage.app.data.model.SelectedSunatData
 import pe.pixelcollage.app.ui.navigation.Screen
 import pe.pixelcollage.app.ui.util.RucVisualTransformation
@@ -217,10 +215,9 @@ fun SunatDataScreen(
             if (sunatDataState is SunatDataState.Success) {
                 val data = (sunatDataState as SunatDataState.Success).data
                 var useName by remember { mutableStateOf(true) }
-                var useAddress by remember { mutableStateOf(data is pe.pixelcollage.app.remote.RucData) }
+                var useAddress by remember { mutableStateOf(false) } // Dirección manual siempre empieza desactivada
                 var manualAddress by remember { mutableStateOf("") }
                 var manualDistrict by remember { mutableStateOf("") }
-                var addAnotherAddress by remember { mutableStateOf(false) }
 
                 Column(
                     modifier = Modifier.padding(top = 16.dp),
@@ -228,164 +225,82 @@ fun SunatDataScreen(
                 ) {
                     Text("Datos encontrados:", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))
-                    val displayName = if (data is pe.pixelcollage.app.remote.DniData) {
-                        "${data.nombres} ${data.apellidoPaterno} ${data.apellidoMaterno}"
-                    } else {
-                        data.nombre
-                    }
+
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = useName, onCheckedChange = { useName = it })
-                        Text("Nombre: $displayName")
+                        Text("Nombre: ${data.nombre}")
                     }
-                    if (data is pe.pixelcollage.app.remote.RucData && data.numeroDocumento.startsWith("20")) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(
-                                checked = useAddress,
-                                onCheckedChange = {
-                                    useAddress = it
-                                    if (it) {
-                                        addAnotherAddress = false
-                                    }
-                                }
-                            )
-                            Text("Dirección: ${data.direccion} - ${data.distrito}")
-                        }
-                        if (!useAddress) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Checkbox(
-                                    checked = addAnotherAddress,
-                                    onCheckedChange = { addAnotherAddress = it }
-                                )
-                                Text("Agregar otra dirección")
-                            }
-                            if (addAnotherAddress) {
-                                OutlinedTextField(
-                                    value = manualAddress,
-                                    onValueChange = { manualAddress = it.replace("\n", "").uppercase() },
-                                    label = { Text("Dirección") },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true
-                                )
-                                val districts = listOf(
-                                    "Ancón", "Ate", "Barranco", "Breña", "Callao", "Carabayllo", "Cercado de Lima",
-                                    "Chaclacayo", "Chorrillos", "Cieneguilla", "Comas", "El agustino", "Independencia",
-                                    "Jesús maría", "La molina", "La victoria", "Lince", "Los olivos", "Lurigancho",
-                                    "Lurín", "Magdalena del mar", "Miraflores", "Pachacámac", "Pucusana", "Pueblo libre",
-                                    "Puente piedra", "Punta hermosa", "Punta negra", "Rímac", "San bartolo", "San borja",
-                                    "San isidro", "San Juan de Lurigancho", "San Juan de Miraflores", "San Luis",
-                                    "San Martin de Porres", "San Miguel", "Santa Anita", "Santa María del Mar",
-                                    "Santa Rosa", "Santiago de Surco", "Surquillo", "Villa el Salvador",
-                                    "Villa Maria del Triunfo"
-                                )
-                                var expanded by remember { mutableStateOf(false) }
-                                val filteredDistricts = districts.filter { it.contains(manualDistrict, ignoreCase = true) }
 
-                                ExposedDropdownMenuBox(
-                                    expanded = expanded,
-                                    onExpandedChange = { expanded = !expanded }
-                                ) {
-                                    OutlinedTextField(
-                                        value = manualDistrict,
-                                        onValueChange = { manualDistrict = it.replace("\n", "").uppercase() },
-                                        label = { Text("Distrito (Opcional)") },
-                                        modifier = Modifier.menuAnchor().fillMaxWidth(),
-                                        singleLine = true
-                                    )
-                                    ExposedDropdownMenu(
-                                        expanded = expanded,
-                                        onDismissRequest = { expanded = false }
-                                    ) {
-                                        filteredDistricts.forEach { district ->
-                                            DropdownMenuItem(
-                                                text = { Text(district) },
-                                                onClick = {
-                                                    manualDistrict = district.uppercase()
-                                                    expanded = false
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(checked = useAddress, onCheckedChange = { useAddress = it })
-                            Text("Añadir dirección")
-                        }
-                        if (useAddress) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = useAddress, onCheckedChange = { useAddress = it })
+                        Text("Añadir dirección")
+                    }
+
+                    if (useAddress) {
+                        OutlinedTextField(
+                            value = manualAddress,
+                            onValueChange = { manualAddress = it.replace("\n", "").uppercase() },
+                            label = { Text("Dirección") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                        val districts = listOf(
+                            "Ancón", "Ate", "Barranco", "Breña", "Callao", "Carabayllo", "Cercado de Lima",
+                            "Chaclacayo", "Chorrillos", "Cieneguilla", "Comas", "El agustino", "Independencia",
+                            "Jesús maría", "La molina", "La victoria", "Lince", "Los olivos", "Lurigancho",
+                            "Lurín", "Magdalena del mar", "Miraflores", "Pachacámac", "Pucusana", "Pueblo libre",
+                            "Puente piedra", "Punta hermosa", "Punta negra", "Rímac", "San bartolo", "San borja",
+                            "San isidro", "San Juan de Lurigancho", "San Juan de Miraflores", "San Luis",
+                            "San Martin de Porres", "San Miguel", "Santa Anita", "Santa María del Mar",
+                            "Santa Rosa", "Santiago de Surco", "Surquillo", "Villa el Salvador",
+                            "Villa Maria del Triunfo"
+                        )
+                        var expanded by remember { mutableStateOf(false) }
+                        val filteredDistricts = districts.filter { it.contains(manualDistrict, ignoreCase = true) }
+
+                        ExposedDropdownMenuBox(
+                            expanded = expanded,
+                            onExpandedChange = { expanded = !expanded }
+                        ) {
                             OutlinedTextField(
-                                value = manualAddress,
-                                onValueChange = { manualAddress = it.replace("\n", "").uppercase() },
-                                label = { Text("Dirección") },
-                                modifier = Modifier.fillMaxWidth(),
+                                value = manualDistrict,
+                                onValueChange = { manualDistrict = it.replace("\n", "").uppercase() },
+                                label = { Text("Distrito (Opcional)") },
+                                modifier = Modifier.menuAnchor().fillMaxWidth(),
                                 singleLine = true
                             )
-                            val districts = listOf(
-                                "Ancón", "Ate", "Barranco", "Breña", "Callao", "Carabayllo", "Cercado de Lima",
-                                "Chaclacayo", "Chorrillos", "Cieneguilla", "Comas", "El agustino", "Independencia",
-                                "Jesús maría", "La molina", "La victoria", "Lince", "Los olivos", "Lurigancho",
-                                "Lurín", "Magdalena del mar", "Miraflores", "Pachacámac", "Pucusana", "Pueblo libre",
-                                "Puente piedra", "Punta hermosa", "Punta negra", "Rímac", "San bartolo", "San borja",
-                                "San isidro", "San Juan de Lurigancho", "San Juan de Miraflores", "San Luis",
-                                "San Martin de Porres", "San Miguel", "Santa Anita", "Santa María del Mar",
-                                "Santa Rosa", "Santiago de Surco", "Surquillo", "Villa el Salvador",
-                                "Villa Maria del Triunfo"
-                            )
-                            var expanded by remember { mutableStateOf(false) }
-                            val filteredDistricts = districts.filter { it.contains(manualDistrict, ignoreCase = true) }
-
-                            ExposedDropdownMenuBox(
+                            ExposedDropdownMenu(
                                 expanded = expanded,
-                                onExpandedChange = { expanded = !expanded }
+                                onDismissRequest = { expanded = false }
                             ) {
-                                OutlinedTextField(
-                                    value = manualDistrict,
-                                    onValueChange = { manualDistrict = it.replace("\n", "").uppercase() },
-                                    label = { Text("Distrito (Opcional)") },
-                                    modifier = Modifier.menuAnchor().fillMaxWidth(),
-                                    singleLine = true
-                                )
-                                ExposedDropdownMenu(
-                                    expanded = expanded,
-                                    onDismissRequest = { expanded = false }
-                                ) {
-                                    filteredDistricts.forEach { district ->
-                                        DropdownMenuItem(
-                                            text = { Text(district) },
-                                            onClick = {
-                                                manualDistrict = district.uppercase()
-                                                expanded = false
-                                            }
-                                        )
-                                    }
+                                filteredDistricts.forEach { district ->
+                                    DropdownMenuItem(
+                                        text = { Text(district) },
+                                        onClick = {
+                                            manualDistrict = district.uppercase()
+                                            expanded = false
+                                        }
+                                    )
                                 }
                             }
                         }
                     }
+
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(
                         onClick = {
-                            val finalAddress = when {
-                                useAddress && data is pe.pixelcollage.app.remote.RucData && data.numeroDocumento.startsWith("20") -> "${data.direccion.uppercase()} - ${data.distrito.uppercase()}"
-                                addAnotherAddress && data is pe.pixelcollage.app.remote.RucData && data.numeroDocumento.startsWith("20") -> {
-                                    if (manualDistrict.isNotBlank()) {
-                                        "${manualAddress.uppercase()} - ${manualDistrict.uppercase()}"
-                                    } else {
-                                        manualAddress.uppercase()
-                                    }
+                            val finalAddress = if (useAddress) {
+                                if (manualDistrict.isNotBlank()) {
+                                    "${manualAddress.uppercase()} - ${manualDistrict.uppercase()}"
+                                } else {
+                                    manualAddress.uppercase()
                                 }
-                                useAddress && (data is pe.pixelcollage.app.remote.DniData || (data is pe.pixelcollage.app.remote.RucData && data.numeroDocumento.startsWith("10"))) -> {
-                                    if (manualDistrict.isNotBlank()) {
-                                        "${manualAddress.uppercase()} - ${manualDistrict.uppercase()}"
-                                    } else {
-                                        manualAddress.uppercase()
-                                    }
-                                }
-                                else -> null
+                            } else {
+                                null
                             }
+
                             val selectedData = SelectedSunatData(
-                                nombre = if (useName) displayName else null,
+                                nombre = if (useName) data.nombre else null,
                                 numeroDocumento = data.numeroDocumento,
                                 direccion = finalAddress
                             )
