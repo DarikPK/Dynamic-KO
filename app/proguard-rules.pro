@@ -25,7 +25,8 @@
 # InnerClasses: Necesario si usas clases internas.
 # *Annotation*: Preserva todas las anotaciones.
 # RuntimeVisibleParameterAnnotations: CRÍTICO para que Retrofit lea las anotaciones de los parámetros de los métodos (@Query, @Path, etc.).
--keepattributes Signature, InnerClasses, *Annotation*, RuntimeVisibleParameterAnnotations
+# KotlinMetaData: CRÍTICO para preservar la información de las funciones suspend (corrutinas).
+-keepattributes Signature, InnerClasses, *Annotation*, RuntimeVisibleParameterAnnotations, KotlinMetaData
 
 # 2. Preservar completamente las librerías Retrofit y Gson.
 -keep class retrofit2.** { *; }
