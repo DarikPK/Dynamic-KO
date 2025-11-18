@@ -379,7 +379,7 @@ fun MainScreen(
                     .fillMaxWidth()
                     .clickable {
                         tapCount++
-                        if (tapCount >= 3) {
+                        if (tapCount >= 5) {
                             deviceId = mainViewModel.getDeviceId()
                             showPdfUsage = true
                         }
