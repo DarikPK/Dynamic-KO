@@ -18,7 +18,7 @@ class R8TypeInspectorFactory : TypeAdapterFactory {
             SunatData::class.java
         )
 
-        if (rawType in typesToInspect) {
+        if (typesToInspect.any { it == rawType }) {
             logClassAnatomy(rawType)
         }
 
