@@ -11,14 +11,9 @@ interface SunatApiService {
     suspend fun getDniData(@Query("numero") dni: String): DniData
 }
 
-interface SunatData {
-    val nombre: String
-    val numeroDocumento: String
-}
-
 data class RucData(
-    override val nombre: String,
-    override val numeroDocumento: String,
+    val nombre: String,
+    val numeroDocumento: String,
     val tipoDocumento: String,
     val estado: String,
     val condicion: String,
@@ -36,14 +31,14 @@ data class RucData(
     val kilometro: String,
     val distrito: String,
     val error: String? = null
-) : SunatData
+)
 
 data class DniData(
-    override val nombre: String,
+    val nombre: String,
     val tipoDocumento: String,
-    override val numeroDocumento: String,
+    val numeroDocumento: String,
     val apellidoPaterno: String,
     val apellidoMaterno: String,
     val nombres: String,
     val error: String? = null
-) : SunatData
+)

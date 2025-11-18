@@ -4,17 +4,22 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import pe.pixelcollage.app.remote.ApiClient
-import pe.pixelcollage.app.remote.SunatData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import retrofit2.HttpException
 import kotlinx.coroutines.launch
 
+// Nueva clase de datos para la UI, desacoplada de los modelos de red.
+data class SunatDisplayData(
+    val nombre: String,
+    val numeroDocumento: String
+)
+
 // A sealed class to represent the state of the API call
 sealed class SunatDataState {
     object Idle : SunatDataState()
     object Loading : SunatDataState()
-    data class Success(val data: SunatData) : SunatDataState()
+    data class Success(val data: SunatDisplayData) : SunatDataState() // Usa la nueva clase
     data class Error(val message: String) : SunatDataState()
 }
 
@@ -27,13 +32,14 @@ class SunatDataViewModel : ViewModel() {
         viewModelScope.launch {
             _sunatDataState.value = SunatDataState.Loading
             try {
-                val data: SunatData = when (documentType) {
+                // El resultado de la API se mapea a la nueva clase de datos.
+                val displayData: SunatDisplayData = when (documentType) {
                     "DNI" -> {
                         val dniData = ApiClient.instance.getDniData(documentNumber)
                         if (dniData.error != null) {
                             throw Exception(dniData.error)
                         }
-                        dniData
+                        SunatDisplayData(dniData.nombre, dniData.numeroDocumento)
                     }
                     "RUC10" -> {
                         val dniNumber = documentNumber.substring(2, 10)
@@ -41,17 +47,17 @@ class SunatDataViewModel : ViewModel() {
                         if (dniData.error != null) {
                             throw Exception(dniData.error)
                         }
-                        dniData.copy(numeroDocumento = documentNumber)
+                        SunatDisplayData(dniData.nombre, documentNumber)
                     }
                     else -> { // RUC20
                         val rucData = ApiClient.instance.getRucData(documentNumber)
                         if (rucData.error != null) {
                             throw Exception(rucData.error)
                         }
-                        rucData
+                        SunatDisplayData(rucData.nombre, rucData.numeroDocumento)
                     }
                 }
-                _sunatDataState.value = SunatDataState.Success(data)
+                _sunatDataState.value = SunatDataState.Success(displayData)
             } catch (e: HttpException) {
                 if (e.code() == 422) {
                     _sunatDataState.value = SunatDataState.Error("DNI o RUC no encontrado o inválido.")
