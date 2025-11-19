@@ -78,6 +78,7 @@ import pe.pixelcollage.app.viewmodel.ProjectViewModel
 import pe.pixelcollage.app.viewmodel.SaveState
 import pe.pixelcollage.app.viewmodel.UserState
 
+import androidx.compose.material3.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 
@@ -464,6 +465,7 @@ fun MainButton(
     }
 }
 
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Preview(showBackground = true)
 @Composable
 fun MainScreenPreview() {
@@ -475,7 +477,7 @@ fun MainScreenPreview() {
 
     DynamicCollageTheme {
         MainScreen(
-            windowSizeClass = WindowSizeClass.calculateFromSize(dpSize = androidx.compose.ui.unit.DpSize(411.dp, 891.dp)),
+            windowSizeClass = WindowSizeClass.calculateFromSize(androidx.compose.ui.unit.DpSize(411.dp, 891.dp)),
             navController = rememberNavController(),
             projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity),
             mainViewModel = mockMainViewModel
@@ -483,6 +485,7 @@ fun MainScreenPreview() {
     }
 }
 
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Preview(showBackground = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun MainScreenDarkPreview() {
@@ -494,7 +497,7 @@ fun MainScreenDarkPreview() {
 
     DynamicCollageTheme(darkTheme = true) {
         MainScreen(
-            windowSizeClass = WindowSizeClass.calculateFromSize(dpSize = androidx.compose.ui.unit.DpSize(411.dp, 891.dp)),
+            windowSizeClass = WindowSizeClass.calculateFromSize(androidx.compose.ui.unit.DpSize(411.dp, 891.dp)),
             navController = rememberNavController(),
             projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity),
             mainViewModel = mockMainViewModel

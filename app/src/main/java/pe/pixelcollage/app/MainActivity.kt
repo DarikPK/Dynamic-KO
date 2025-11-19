@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
@@ -20,6 +21,7 @@ import pe.pixelcollage.app.ui.navigation.AppNavigation
 import pe.pixelcollage.app.ui.theme.DynamicCollageTheme
 import pe.pixelcollage.app.viewmodel.*
 
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 class MainActivity : ComponentActivity() {
     internal val projectViewModel: ProjectViewModel by viewModels()
     private val authViewModel: AuthViewModel by viewModels()
