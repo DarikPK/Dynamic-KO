@@ -41,3 +41,8 @@
 -keepclassmembers class * {
     @com.google.gson.annotations.SerializedName *;
 }
+# -------------------------------
+# CORRUTINAS (NECESARIO PARA MÉTODOS suspend)
+# -------------------------------
+-keep class kotlin.coroutines.** { *; }
+-dontwarn kotlin.coroutines.**
