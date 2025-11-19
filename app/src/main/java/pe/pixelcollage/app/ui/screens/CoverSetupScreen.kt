@@ -177,7 +177,7 @@ fun CoverSetupScreen(
     Scaffold(
         topBar = {
             ResponsiveTopAppBar(
-                title = stringResource(id = R.string.cover_setup_title),
+                title = { Text(stringResource(id = R.string.cover_setup_title), fontSize = scaledSp(22)) },
                 navigationIcon = {
                     IconButton(onClick = {
                         if (hasChanges) {

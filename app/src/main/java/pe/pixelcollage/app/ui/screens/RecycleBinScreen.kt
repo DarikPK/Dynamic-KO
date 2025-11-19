@@ -46,7 +46,7 @@ fun RecycleBinScreen(
         Scaffold(
             topBar = {
                 ResponsiveTopAppBar(
-                    title = "Papelera",
+                    title = { Text("Papelera", fontSize = scaledSp(22)) },
                     navigationIcon = {
                         IconButton(onClick = { navController.popBackStack() }) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás", modifier = Modifier.size(dimensions.topBarIconSize))

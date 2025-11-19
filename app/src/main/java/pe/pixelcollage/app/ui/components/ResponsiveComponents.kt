@@ -48,17 +48,20 @@ fun ResponsiveMainButton(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ResponsiveTopAppBar(
-    title: String,
+    title: @Composable () -> Unit,
     navigationIcon: @Composable () -> Unit,
     actions: @Composable RowScope.() -> Unit = {}
 ) {
     val dimensions = Responsive.dimensions
 
-    TopAppBar(
-        title = { Text(text = title, fontSize = scaledSp(20)) },
+    CenterAlignedTopAppBar(
+        title = title,
         modifier = Modifier.height(dimensions.topBarHeight),
         navigationIcon = navigationIcon,
-        actions = actions
+        actions = actions,
+        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
     )
 }
 

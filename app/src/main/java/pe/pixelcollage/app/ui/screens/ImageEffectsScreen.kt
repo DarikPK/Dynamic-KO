@@ -88,7 +88,7 @@ fun ImageEffectsScreen(
     Scaffold(
         topBar = {
             ResponsiveTopAppBar(
-                title = "Ajustar Efectos de Imagen",
+                title = { Text("Ajustar Efectos de Imagen", fontSize = scaledSp(22)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás (Cancelar)", modifier = Modifier.size(dimensions.topBarIconSize))

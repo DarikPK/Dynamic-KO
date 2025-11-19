@@ -66,7 +66,7 @@ fun PdfPreviewScreen(
     Scaffold(
         topBar = {
             ResponsiveTopAppBar(
-                title = stringResource(id = R.string.main_btn_preview_pdf),
+                title = { Text(stringResource(id = R.string.main_btn_preview_pdf), fontSize = scaledSp(22)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(

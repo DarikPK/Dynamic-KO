@@ -225,8 +225,7 @@ fun MainScreen(
     Scaffold(
         topBar = {
             ResponsiveTopAppBar(
-                title = stringResource(id = R.string.app_name),
-                navigationIcon = {
+                title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.Palette,
@@ -238,7 +237,11 @@ fun MainScreen(
                             contentDescription = "Logo Pincel",
                             modifier = Modifier.padding(end = 8.dp).size(dimensions.topBarIconSize)
                         )
+                        Text(stringResource(id = R.string.app_name), fontSize = scaledSp(22))
                     }
+                },
+                navigationIcon = {
+                    // Vacío para mantener el centrado
                 },
                 actions = {
                     if (currentUser?.role == "admin") {

@@ -273,7 +273,7 @@ fun InnerPagesScreen(
     Scaffold(
         topBar = {
             ResponsiveTopAppBar(
-                title = stringResource(id = R.string.inner_pages_title),
+                title = { Text(stringResource(id = R.string.inner_pages_title), fontSize = scaledSp(22)) },
                 navigationIcon = {
                     IconButton(onClick = {
                         if (hasChanges) {

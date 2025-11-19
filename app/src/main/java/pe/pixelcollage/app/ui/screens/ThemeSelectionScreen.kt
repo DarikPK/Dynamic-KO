@@ -166,7 +166,7 @@ fun ThemeSelectionScreen(
     Scaffold(
         topBar = {
             ResponsiveTopAppBar(
-                title = "Seleccionar Tema",
+                title = { Text("Seleccionar Tema", fontSize = scaledSp(22)) },
                 navigationIcon = {
                     IconButton(onClick = {
                         if (hasChanges) {
