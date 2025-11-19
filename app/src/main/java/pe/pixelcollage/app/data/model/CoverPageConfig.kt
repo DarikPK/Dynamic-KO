@@ -37,7 +37,7 @@ data class CoverPageConfig(
         fontColor = DefaultTextConfig.FONT_COLOR,
         rowStyle = RowStyle(
             border = BorderProperties(
-                color = Color(0xFF73A1D3),
+                color = Color(0xFF50C878),
                 top = true,
                 bottom = false
             )
@@ -52,9 +52,9 @@ data class CoverPageConfig(
         fontWeight = FontWeight.Normal,
         fontColor = DefaultTextConfig.FONT_COLOR,
         rowStyle = RowStyle(
-            backgroundColor = Color(0xFFDBE5F1),
+            backgroundColor = Color(0xFFD4EEE6),
             border = BorderProperties(
-                color = Color(0xFF73A1D3),
+                color = Color(0xFF50C878),
                 top = true,
                 bottom = true
             )
@@ -71,7 +71,7 @@ data class CoverPageConfig(
         rowStyle = RowStyle(
             padding = PaddingValues(bottom = 2f),
             border = BorderProperties(
-                color = Color(0xFF73A1D3),
+                color = Color(0xFF50C878),
                 bottom = true
             )
         )
