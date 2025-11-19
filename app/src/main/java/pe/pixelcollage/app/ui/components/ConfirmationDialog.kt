@@ -22,8 +22,8 @@ fun ConfirmationDialog(
     if (show) {
         AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text(text = title, fontSize = scaledSp(20)) },
-            text = { Text(text = message, fontSize = scaledSp(16)) },
+            title = { Text(text = title, fontSize = scaledSp(20.sp)) },
+            text = { Text(text = message, fontSize = scaledSp(16.sp)) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -34,12 +34,12 @@ fun ConfirmationDialog(
                         containerColor = if (confirmButtonText == "Confirmar") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                     )
                 ) {
-                    Text(confirmButtonText, fontSize = scaledSp(14))
+                    Text(confirmButtonText, fontSize = scaledSp(14.sp))
                 }
             },
             dismissButton = {
                 TextButton(onClick = onDismiss) {
-                    Text(dismissButtonText, fontSize = scaledSp(14))
+                    Text(dismissButtonText, fontSize = scaledSp(14.sp))
                 }
             }
         )

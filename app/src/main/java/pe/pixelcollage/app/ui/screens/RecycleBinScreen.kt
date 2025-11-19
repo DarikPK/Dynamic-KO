@@ -46,7 +46,7 @@ fun RecycleBinScreen(
         Scaffold(
             topBar = {
                 ResponsiveTopAppBar(
-                    title = { Text("Papelera", fontSize = scaledSp(22)) },
+                    title = { Text("Papelera", fontSize = scaledSp(22.sp)) },
                     navigationIcon = {
                         IconButton(onClick = { navController.popBackStack() }) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás", modifier = Modifier.size(dimensions.topBarIconSize))
@@ -60,7 +60,7 @@ fun RecycleBinScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("La papelera está vacía", fontSize = scaledSp(18))
+                    Text("La papelera está vacía", fontSize = scaledSp(18.sp))
                 }
             } else {
             LazyVerticalGrid(
@@ -122,7 +122,7 @@ fun FullScreenImageView(uri: String, onDismiss: () -> Unit) {
                 .align(Alignment.TopStart)
                 .padding(16.dp)
         ) {
-            Text("Volver", fontSize = scaledSp(14))
+            Text("Volver", fontSize = scaledSp(14.sp))
         }
     }
 }

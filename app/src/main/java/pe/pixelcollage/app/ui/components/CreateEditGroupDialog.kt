@@ -70,7 +70,7 @@ fun CreateEditGroupDialog(
             Text(
                 text = if (originalGroup == null) stringResource(R.string.dialog_create_group_title)
                 else stringResource(R.string.dialog_edit_group_title),
-                fontSize = scaledSp(20)
+                fontSize = scaledSp(20.sp)
             )
         },
         text = {
@@ -81,25 +81,25 @@ fun CreateEditGroupDialog(
                 OutlinedTextField(
                     value = editingGroup.groupName,
                     onValueChange = { viewModel.onEditingGroupNameChange(it) },
-                    label = { Text(stringResource(R.string.group_name_label), fontSize = scaledSp(14)) },
+                    label = { Text(stringResource(R.string.group_name_label), fontSize = scaledSp(14.sp)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = scaledSp(16))
+                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = scaledSp(16.sp))
                 )
 
                 if (!editingGroup.smartLayoutEnabled) {
-                    Text(stringResource(R.string.group_orientation_label), style = MaterialTheme.typography.labelMedium, fontSize = scaledSp(14))
+                    Text(stringResource(R.string.group_orientation_label), style = MaterialTheme.typography.labelMedium, fontSize = scaledSp(14.sp))
                     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                         SegmentedButton(
                             selected = editingGroup.orientation == PageOrientation.Vertical,
                             onClick = { viewModel.onEditingGroupOrientationChange(PageOrientation.Vertical) },
                             shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
-                        ) { Text(stringResource(R.string.orientation_vertical), fontSize = scaledSp(14)) }
+                        ) { Text(stringResource(R.string.orientation_vertical), fontSize = scaledSp(14.sp)) }
                         SegmentedButton(
                             selected = editingGroup.orientation == PageOrientation.Horizontal,
                             onClick = { viewModel.onEditingGroupOrientationChange(PageOrientation.Horizontal) },
                             shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
-                        ) { Text(stringResource(R.string.orientation_horizontal), fontSize = scaledSp(14)) }
+                        ) { Text(stringResource(R.string.orientation_horizontal), fontSize = scaledSp(14.sp)) }
                     }
 
                     OutlinedTextField(
@@ -108,32 +108,32 @@ fun CreateEditGroupDialog(
                             sheetCountString = it
                             viewModel.onEditingGroupSheetCountChange(it)
                         },
-                        label = { Text(stringResource(R.string.sheet_count_label), fontSize = scaledSp(14)) },
+                        label = { Text(stringResource(R.string.sheet_count_label), fontSize = scaledSp(14.sp)) },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         isError = editingGroup.sheetCount <= 0,
                         supportingText = {
                             if (editingGroup.sheetCount <= 0) {
-                                Text(stringResource(id = R.string.error_sheet_count_invalid), fontSize = scaledSp(12))
+                                Text(stringResource(id = R.string.error_sheet_count_invalid), fontSize = scaledSp(12.sp))
                             }
                         },
-                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = scaledSp(16))
+                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = scaledSp(16.sp))
                     )
                 }
 
-                Text(stringResource(R.string.photos_per_sheet_label), style = MaterialTheme.typography.labelMedium, fontSize = scaledSp(14))
+                Text(stringResource(R.string.photos_per_sheet_label), style = MaterialTheme.typography.labelMedium, fontSize = scaledSp(14.sp))
                 SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                     SegmentedButton(
                         selected = editingGroup.photosPerSheet == 1,
                         onClick = { viewModel.onEditingGroupPhotosPerSheetChange(1) },
                         shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
-                    ) { Text(stringResource(R.string.one_photo), fontSize = scaledSp(14)) }
+                    ) { Text(stringResource(R.string.one_photo), fontSize = scaledSp(14.sp)) }
                     SegmentedButton(
                         selected = editingGroup.photosPerSheet == 2,
                         onClick = { viewModel.onEditingGroupPhotosPerSheetChange(2) },
                         shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
-                    ) { Text(stringResource(R.string.two_photos), fontSize = scaledSp(14)) }
+                    ) { Text(stringResource(R.string.two_photos), fontSize = scaledSp(14.sp)) }
                 }
 
                 OutlinedTextField(
@@ -142,11 +142,11 @@ fun CreateEditGroupDialog(
                         imageSpacingString = it
                         viewModel.onEditingGroupImageSpacingChange(it)
                     },
-                    label = { Text("Separación entre fotos (dp)", fontSize = scaledSp(14)) },
+                    label = { Text("Separación entre fotos (dp)", fontSize = scaledSp(14.sp)) },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
-                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = scaledSp(16))
+                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = scaledSp(16.sp))
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -160,7 +160,7 @@ fun CreateEditGroupDialog(
                     } else {
                         stringResource(id = R.string.dialog_add_header_button)
                     }
-                    Text(buttonText, fontSize = scaledSp(14))
+                    Text(buttonText, fontSize = scaledSp(14.sp))
                 }
 
                 if (originalGroup != null && originalGroup.imageUris.isNotEmpty() && !isConfigValid && editingGroup.sheetCount > 0) {
@@ -173,7 +173,7 @@ fun CreateEditGroupDialog(
                         ),
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall,
-                        fontSize = scaledSp(12)
+                        fontSize = scaledSp(12.sp)
                     )
                 }
             }
@@ -182,11 +182,11 @@ fun CreateEditGroupDialog(
             Button(
                 onClick = { viewModel.saveEditingGroup(context) },
                 enabled = isConfigValid && editingGroup.sheetCount > 0
-            ) { Text(stringResource(R.string.save_button), fontSize = scaledSp(14)) }
+            ) { Text(stringResource(R.string.save_button), fontSize = scaledSp(14.sp)) }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel_button), fontSize = scaledSp(14))
+                Text(stringResource(R.string.cancel_button), fontSize = scaledSp(14.sp))
             }
         },
         properties = DialogProperties(usePlatformDefaultWidth = false),

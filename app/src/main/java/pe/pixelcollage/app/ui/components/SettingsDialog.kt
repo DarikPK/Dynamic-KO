@@ -18,7 +18,7 @@ fun SettingsDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = "Ajustes de Página", fontSize = scaledSp(20)) },
+        title = { Text(text = "Ajustes de Página", fontSize = scaledSp(20.sp)) },
         text = {
             Column {
                 Row(
@@ -29,12 +29,12 @@ fun SettingsDialog(
                         Text(
                             text = stringResource(id = R.string.smart_layout_title),
                             style = MaterialTheme.typography.bodyLarge,
-                            fontSize = scaledSp(16)
+                            fontSize = scaledSp(16.sp)
                         )
                         Text(
                             text = stringResource(id = R.string.smart_layout_description),
                             style = MaterialTheme.typography.bodySmall,
-                            fontSize = scaledSp(14)
+                            fontSize = scaledSp(14.sp)
                         )
                     }
                     Spacer(modifier = Modifier.width(16.dp))
@@ -49,7 +49,7 @@ fun SettingsDialog(
         },
         confirmButton = {
             Button(onClick = onDismiss) {
-                Text("Cerrar", fontSize = scaledSp(14))
+                Text("Cerrar", fontSize = scaledSp(14.sp))
             }
         }
     )

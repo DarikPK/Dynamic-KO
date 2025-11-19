@@ -88,7 +88,7 @@ fun ImageEffectsScreen(
     Scaffold(
         topBar = {
             ResponsiveTopAppBar(
-                title = { Text("Ajustar Efectos de Imagen", fontSize = scaledSp(22)) },
+                title = { Text("Ajustar Efectos de Imagen", fontSize = scaledSp(22.sp)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás (Cancelar)", modifier = Modifier.size(dimensions.topBarIconSize))
@@ -122,25 +122,25 @@ fun ImageEffectsScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                Text("Brillo: ${"%.0f".format(localSettings.brightness)}", fontSize = scaledSp(16))
+                Text("Brillo: ${"%.0f".format(localSettings.brightness)}", fontSize = scaledSp(16.sp))
                 Slider(
                     value = localSettings.brightness,
                     onValueChange = { localSettings = localSettings.copy(brightness = it) },
                     valueRange = -100f..100f
                 )
-                Text("Contraste: ${"%.0f".format(localSettings.contrast)}", fontSize = scaledSp(16))
+                Text("Contraste: ${"%.0f".format(localSettings.contrast)}", fontSize = scaledSp(16.sp))
                 Slider(
                     value = localSettings.contrast,
                     onValueChange = { localSettings = localSettings.copy(contrast = it) },
                     valueRange = -100f..100f
                 )
-                Text("Saturación: ${"%.0f".format(localSettings.saturation)}", fontSize = scaledSp(16))
+                Text("Saturación: ${"%.0f".format(localSettings.saturation)}", fontSize = scaledSp(16.sp))
                 Slider(
                     value = localSettings.saturation,
                     onValueChange = { localSettings = localSettings.copy(saturation = it) },
                     valueRange = -100f..100f
                 )
-                Text("Nitidez: ${"%.0f".format(localSettings.sharpness)}", fontSize = scaledSp(16))
+                Text("Nitidez: ${"%.0f".format(localSettings.sharpness)}", fontSize = scaledSp(16.sp))
                 Slider(
                     value = localSettings.sharpness,
                     onValueChange = { localSettings = localSettings.copy(sharpness = it) },
