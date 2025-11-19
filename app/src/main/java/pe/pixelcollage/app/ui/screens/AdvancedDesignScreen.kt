@@ -36,7 +36,7 @@ fun AdvancedDesignScreen(
     Scaffold(
         topBar = {
             ResponsiveTopAppBar(
-                title = { Text("Diseño Avanzado", fontSize = scaledSp(22)) },
+                title = { Text("Diseño Avanzado", fontSize = scaledSp(22.sp, isTopBar = true)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás", modifier = Modifier.size(dimensions.topBarIconSize))

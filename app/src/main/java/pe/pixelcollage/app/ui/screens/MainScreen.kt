@@ -237,7 +237,7 @@ fun MainScreen(
                             contentDescription = "Logo Pincel",
                             modifier = Modifier.padding(end = 8.dp).size(dimensions.topBarIconSize)
                         )
-                        Text(stringResource(id = R.string.app_name), fontSize = scaledSp(22))
+                        Text(stringResource(id = R.string.app_name), fontSize = scaledSp(22.sp, isTopBar = true))
                     }
                 },
                 navigationIcon = {
