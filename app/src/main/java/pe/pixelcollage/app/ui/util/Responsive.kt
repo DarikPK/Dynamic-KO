@@ -73,12 +73,12 @@ fun ProvideResponsiveDimensions(content: @Composable () -> Unit) {
             buttonMinHeight = 48.dp,
             buttonWidthPercent = 0.9f,
             buttonInternalPadding = buttonInternalPadding,
-            buttonIconSize = maxOf(24.dp * phoneFactor, 20.dp),
+            buttonIconSize = maxOf((24f * phoneFactor).dp, 20.dp),
             buttonIconSpacing = 8.dp,
             verticalSpacing = if (isDensityCorrectionNeeded) 8.dp else 12.dp,
             cardPadding = if (isDensityCorrectionNeeded) 10.dp else 16.dp,
-            topBarHeight = maxOf(64.dp * phoneFactor, 56.dp),
-            topBarIconSize = maxOf(24.dp * phoneFactor, 20.dp),
+            topBarHeight = maxOf((64f * phoneFactor).dp, 56.dp),
+            topBarIconSize = maxOf((24f * phoneFactor).dp, 20.dp),
             externalMargin = 16.dp
         )
     }
