@@ -27,8 +27,8 @@ import pe.pixelcollage.app.viewmodel.ProjectViewModel
 import pe.pixelcollage.app.viewmodel.SunatDataState
 import pe.pixelcollage.app.viewmodel.SunatDataViewModel
 
-import androidx.compose.material3.adaptive.WindowSizeClass
-import androidx.compose.material3.adaptive.WindowWidthSizeClass
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

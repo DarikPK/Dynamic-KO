@@ -1,7 +1,7 @@
 package pe.pixelcollage.app.ui.navigation
 
 import androidx.activity.ComponentActivity
-import androidx.compose.material3.adaptive.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
