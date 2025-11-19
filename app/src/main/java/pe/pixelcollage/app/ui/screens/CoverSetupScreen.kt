@@ -78,6 +78,10 @@ import coil.request.ImageRequest
 import pe.pixelcollage.app.R
 import pe.pixelcollage.app.data.model.DocumentType
 import pe.pixelcollage.app.data.model.PageOrientation
+import pe.pixelcollage.app.ui.components.ResponsiveMainButton
+import pe.pixelcollage.app.ui.components.ResponsiveTopAppBar
+import pe.pixelcollage.app.ui.util.Responsive
+import pe.pixelcollage.app.ui.util.scaledSp
 import pe.pixelcollage.app.viewmodel.CoverSetupViewModel
 import pe.pixelcollage.app.viewmodel.ProjectViewModel
 
@@ -142,19 +146,19 @@ fun CoverSetupScreen(
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
-            title = { Text("Salir sin guardar") },
-            text = { Text("Has realizado cambios en la portada pero no los has guardado. ¿Estás seguro de que quieres salir?") },
+            title = { Text("Salir sin guardar", fontSize = scaledSp(20)) },
+            text = { Text("Has realizado cambios en la portada pero no los has guardado. ¿Estás seguro de que quieres salir?", fontSize = scaledSp(16)) },
             confirmButton = {
                 TextButton(onClick = {
                     showDialog = false
                     navController.popBackStack()
                 }) {
-                    Text("Sí, salir")
+                    Text("Sí, salir", fontSize = scaledSp(14))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDialog = false }) {
-                    Text("No, quedarse")
+                    Text("No, quedarse", fontSize = scaledSp(14))
                 }
             }
         )
@@ -168,10 +172,12 @@ fun CoverSetupScreen(
         }
     }
 
+    val dimensions = Responsive.dimensions
+
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text(stringResource(id = R.string.cover_setup_title)) },
+            ResponsiveTopAppBar(
+                title = stringResource(id = R.string.cover_setup_title),
                 navigationIcon = {
                     IconButton(onClick = {
                         if (hasChanges) {
@@ -182,7 +188,8 @@ fun CoverSetupScreen(
                     }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(id = R.string.cover_setup_navigate_back_description)
+                            contentDescription = stringResource(id = R.string.cover_setup_navigate_back_description),
+                            modifier = Modifier.size(dimensions.topBarIconSize)
                         )
                     }
                 },
@@ -190,13 +197,14 @@ fun CoverSetupScreen(
                     IconButton(onClick = { navController.navigate(pe.pixelcollage.app.ui.navigation.Screen.AdvancedCoverOptions.route) }) {
                         Icon(
                             imageVector = Icons.Default.Settings,
-                            contentDescription = "Opciones Avanzadas"
+                            contentDescription = "Opciones Avanzadas",
+                            modifier = Modifier.size(dimensions.topBarIconSize)
                         )
                     }
                     Box(
                         modifier = Modifier
                             .padding(end = 8.dp)
-                            .size(40.dp)
+                            .size(dimensions.topBarHeight - 8.dp)
                             .graphicsLayer {
                                 scaleX = scale
                                 scaleY = scale
@@ -224,17 +232,15 @@ fun CoverSetupScreen(
                             )
                         }
                     }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
+                }
             )
         }
     ) { paddingValues ->
-        val widthSizeClass = windowSizeClass.widthSizeClass
-        val isCompact = widthSizeClass == WindowWidthSizeClass.Compact
-        val contentPadding = if (isCompact) 12.dp else 16.dp
-        val verticalSpacing = if (isCompact) 10.dp else 12.dp
+        val columnModifier = if (dimensions.screenWidthClass == pe.pixelcollage.app.ui.util.ScreenWidthClass.Large) {
+            Modifier.widthIn(max = 600.dp)
+        } else {
+            Modifier
+        }
 
         Box(
             modifier = Modifier
@@ -243,31 +249,31 @@ fun CoverSetupScreen(
             contentAlignment = Alignment.TopCenter
         ) {
             Column(
-                modifier = Modifier
+                modifier = columnModifier
                     .fillMaxSize()
-                    .widthIn(max = 600.dp) // Contenedor máximo
-                    .padding(horizontal = contentPadding, vertical = 8.dp)
+                    .padding(dimensions.externalMargin)
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(verticalSpacing)
+                verticalArrangement = Arrangement.spacedBy(dimensions.verticalSpacing)
             ) {
                 SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                     SegmentedButton(
                         selected = coverConfig.showClientPrefix,
                         onClick = { coverSetupViewModel.onShowClientPrefixChange(true) },
                         shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
-                    ) { Text("Cliente") }
+                    ) { Text("Cliente", fontSize = scaledSp(14)) }
                     SegmentedButton(
                         selected = !coverConfig.showClientPrefix,
                         onClick = { coverSetupViewModel.onShowClientPrefixChange(false) },
                         shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
-                    ) { Text("-") }
+                    ) { Text("-", fontSize = scaledSp(14)) }
                 }
                 OutlinedTextField(
                     value = coverConfig.clientNameStyle.content,
                     onValueChange = { coverSetupViewModel.onClientNameChange(it) },
-                    label = { Text("Fila 1") },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    singleLine = true
+                    label = { Text("Fila 1", fontSize = scaledSp(14)) },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = dimensions.buttonMinHeight),
+                    singleLine = true,
+                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = scaledSp(16))
                 )
 
                 SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
@@ -275,27 +281,28 @@ fun CoverSetupScreen(
                         selected = coverConfig.documentType == DocumentType.RUC,
                         onClick = { coverSetupViewModel.onDocumentTypeChange(DocumentType.RUC) },
                         shape = SegmentedButtonDefaults.itemShape(index = 0, count = 3)
-                    ) { Text("RUC") }
+                    ) { Text("RUC", fontSize = scaledSp(14)) }
                     SegmentedButton(
                         selected = coverConfig.documentType == DocumentType.DNI,
                         onClick = { coverSetupViewModel.onDocumentTypeChange(DocumentType.DNI) },
                         shape = SegmentedButtonDefaults.itemShape(index = 1, count = 3)
-                    ) { Text("DNI") }
+                    ) { Text("DNI", fontSize = scaledSp(14)) }
                     SegmentedButton(
                         selected = coverConfig.documentType == DocumentType.NONE,
                         onClick = { coverSetupViewModel.onDocumentTypeChange(DocumentType.NONE) },
                         shape = SegmentedButtonDefaults.itemShape(index = 2, count = 3)
-                    ) { Text("-") }
+                    ) { Text("-", fontSize = scaledSp(14)) }
                 }
                 OutlinedTextField(
                     value = coverConfig.rucStyle.content,
                     onValueChange = { coverSetupViewModel.onRucChange(it) },
-                    label = { Text("Fila 2") },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                    label = { Text("Fila 2", fontSize = scaledSp(14)) },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = dimensions.buttonMinHeight),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = if (coverConfig.documentType == DocumentType.NONE) KeyboardType.Text else KeyboardType.Number
-                    )
+                    ),
+                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = scaledSp(16))
                 )
 
                 SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
@@ -303,29 +310,29 @@ fun CoverSetupScreen(
                         selected = coverConfig.showAddressPrefix,
                         onClick = { coverSetupViewModel.onShowAddressPrefixChange(true) },
                         shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
-                    ) { Text("Dirección") }
+                    ) { Text("Dirección", fontSize = scaledSp(14)) }
                     SegmentedButton(
                         selected = !coverConfig.showAddressPrefix,
                         onClick = { coverSetupViewModel.onShowAddressPrefixChange(false) },
                         shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
-                    ) { Text("-") }
+                    ) { Text("-", fontSize = scaledSp(14)) }
                 }
                 OutlinedTextField(
                     value = coverConfig.subtitleStyle.content,
                     onValueChange = { coverSetupViewModel.onAddressChange(it) },
-                    label = { Text("Fila 3") },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    singleLine = true
+                    label = { Text("Fila 3", fontSize = scaledSp(14)) },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = dimensions.buttonMinHeight),
+                    singleLine = true,
+                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = scaledSp(16))
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Button(
+                ResponsiveMainButton(
                     onClick = { imagePickerLauncher.launch("image/*") },
-                    modifier = Modifier.align(Alignment.CenterHorizontally).heightIn(min = 40.dp, max = 52.dp)
-                ) {
-                    Text(stringResource(id = R.string.cover_setup_select_image_button))
-                }
+                    text = stringResource(id = R.string.cover_setup_select_image_button),
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -386,7 +393,8 @@ fun CoverSetupScreen(
                     ) {
                         Text(
                             stringResource(R.string.cover_no_image_selected),
-                            style = MaterialTheme.typography.bodySmall
+                            style = MaterialTheme.typography.bodySmall,
+                            fontSize = scaledSp(12)
                         )
                     }
                 }
@@ -398,19 +406,20 @@ fun CoverSetupScreen(
                 Text(
                     "Orientación de foto recomendada",
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = 8.dp),
+                    fontSize = scaledSp(18)
                 )
                 SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                     SegmentedButton(
                         selected = coverConfig.pageOrientation == PageOrientation.Vertical,
                         onClick = { coverSetupViewModel.onPageOrientationChange(PageOrientation.Vertical) },
                         shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
-                    ) { Text(stringResource(R.string.orientation_vertical)) }
+                    ) { Text(stringResource(R.string.orientation_vertical), fontSize = scaledSp(14)) }
                     SegmentedButton(
                         selected = coverConfig.pageOrientation == PageOrientation.Horizontal,
                         onClick = { coverSetupViewModel.onPageOrientationChange(PageOrientation.Horizontal) },
                         shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
-                    ) { Text(stringResource(R.string.orientation_horizontal)) }
+                    ) { Text(stringResource(R.string.orientation_horizontal), fontSize = scaledSp(14)) }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))

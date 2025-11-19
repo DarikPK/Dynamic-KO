@@ -17,6 +17,10 @@ import androidx.navigation.NavController
 import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.asImageBitmap
 import pe.pixelcollage.app.data.model.ImageEffectSettings
+import pe.pixelcollage.app.ui.components.ResponsiveMainButton
+import pe.pixelcollage.app.ui.components.ResponsiveTopAppBar
+import pe.pixelcollage.app.ui.util.Responsive
+import pe.pixelcollage.app.ui.util.scaledSp
 import pe.pixelcollage.app.utils.ImageEffects
 import pe.pixelcollage.app.viewmodel.ProjectViewModel
 import kotlinx.coroutines.launch
@@ -79,13 +83,15 @@ fun ImageEffectsScreen(
         }
     }
 
+    val dimensions = Responsive.dimensions
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Ajustar Efectos de Imagen") },
+            ResponsiveTopAppBar(
+                title = "Ajustar Efectos de Imagen",
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás (Cancelar)")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás (Cancelar)", modifier = Modifier.size(dimensions.topBarIconSize))
                     }
                 }
             )
@@ -95,7 +101,7 @@ fun ImageEffectsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp)
+                .padding(dimensions.externalMargin)
         ) {
             Box(
                 modifier = Modifier.fillMaxWidth().weight(1f),
@@ -116,25 +122,25 @@ fun ImageEffectsScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                Text("Brillo: ${"%.0f".format(localSettings.brightness)}")
+                Text("Brillo: ${"%.0f".format(localSettings.brightness)}", fontSize = scaledSp(16))
                 Slider(
                     value = localSettings.brightness,
                     onValueChange = { localSettings = localSettings.copy(brightness = it) },
                     valueRange = -100f..100f
                 )
-                Text("Contraste: ${"%.0f".format(localSettings.contrast)}")
+                Text("Contraste: ${"%.0f".format(localSettings.contrast)}", fontSize = scaledSp(16))
                 Slider(
                     value = localSettings.contrast,
                     onValueChange = { localSettings = localSettings.copy(contrast = it) },
                     valueRange = -100f..100f
                 )
-                Text("Saturación: ${"%.0f".format(localSettings.saturation)}")
+                Text("Saturación: ${"%.0f".format(localSettings.saturation)}", fontSize = scaledSp(16))
                 Slider(
                     value = localSettings.saturation,
                     onValueChange = { localSettings = localSettings.copy(saturation = it) },
                     valueRange = -100f..100f
                 )
-                Text("Nitidez: ${"%.0f".format(localSettings.sharpness)}")
+                Text("Nitidez: ${"%.0f".format(localSettings.sharpness)}", fontSize = scaledSp(16))
                 Slider(
                     value = localSettings.sharpness,
                     onValueChange = { localSettings = localSettings.copy(sharpness = it) },
@@ -145,23 +151,19 @@ fun ImageEffectsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
-                    Button(onClick = {
+                    ResponsiveMainButton(onClick = {
                         Log.d("ImageEffectsDebug", "Aplicando cambios para $imageUri: $localSettings")
                         projectViewModel.updateImageEffectSettings(imageUri, localSettings)
                         navController.popBackStack()
-                    }) {
-                        Text("Aplicar")
-                    }
-                    Button(onClick = {
+                    }, text = "Aplicar")
+                    ResponsiveMainButton(onClick = {
                         localSettings = localSettings.copy(
                             brightness = 0f,
                             contrast = 0f,
                             saturation = 0f,
                             sharpness = 0f
                         )
-                    }) {
-                        Text("Restablecer")
-                    }
+                    }, text = "Restablecer")
                 }
             }
         }

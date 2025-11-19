@@ -22,6 +22,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import pe.pixelcollage.app.ui.components.ResponsiveTopAppBar
+import pe.pixelcollage.app.ui.util.Responsive
+import pe.pixelcollage.app.ui.util.scaledSp
 import pe.pixelcollage.app.viewmodel.ProjectViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,26 +42,27 @@ fun RecycleBinScreen(
             selectedImageUri = null
         }
     } else {
+        val dimensions = Responsive.dimensions
         Scaffold(
             topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Papelera") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
+                ResponsiveTopAppBar(
+                    title = "Papelera",
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás", modifier = Modifier.size(dimensions.topBarIconSize))
+                        }
                     }
-                }
-            )
-        }
-    ) { paddingValues ->
-        if (recycledUris.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("La papelera está vacía")
+                )
             }
-        } else {
+        ) { paddingValues ->
+            if (recycledUris.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("La papelera está vacía", fontSize = scaledSp(18))
+                }
+            } else {
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(minSize = 120.dp),
                 modifier = Modifier.padding(paddingValues).padding(8.dp),
@@ -118,7 +122,7 @@ fun FullScreenImageView(uri: String, onDismiss: () -> Unit) {
                 .align(Alignment.TopStart)
                 .padding(16.dp)
         ) {
-            Text("Volver")
+            Text("Volver", fontSize = scaledSp(14))
         }
     }
 }

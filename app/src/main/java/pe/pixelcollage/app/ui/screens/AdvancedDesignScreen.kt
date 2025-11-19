@@ -18,7 +18,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import pe.pixelcollage.app.ui.components.ResponsiveMainButton
+import pe.pixelcollage.app.ui.components.ResponsiveTopAppBar
 import pe.pixelcollage.app.ui.navigation.Screen
+import pe.pixelcollage.app.ui.util.Responsive
+import pe.pixelcollage.app.ui.util.scaledSp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,22 +30,25 @@ fun AdvancedDesignScreen(
     windowSizeClass: WindowSizeClass,
     navController: NavController
 ) {
+    val dimensions = Responsive.dimensions
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Diseño Avanzado") },
+            ResponsiveTopAppBar(
+                title = "Diseño Avanzado",
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás", modifier = Modifier.size(dimensions.topBarIconSize))
                     }
                 }
             )
         }
     ) { paddingValues ->
-        val widthSizeClass = windowSizeClass.widthSizeClass
-        val isCompact = widthSizeClass == WindowWidthSizeClass.Compact
-        val contentPadding = if (isCompact) 12.dp else 16.dp
-        val verticalSpacing = if (isCompact) 10.dp else 12.dp
+        val columnModifier = if (dimensions.screenWidthClass == pe.pixelcollage.app.ui.util.ScreenWidthClass.Large) {
+            Modifier.widthIn(max = 600.dp)
+        } else {
+            Modifier
+        }
 
         Box(
             modifier = Modifier
@@ -50,49 +57,29 @@ fun AdvancedDesignScreen(
             contentAlignment = Alignment.TopCenter
         ) {
             Column(
-                modifier = Modifier
+                modifier = columnModifier
                     .fillMaxSize()
-                    .widthIn(max = 600.dp)
-                    .padding(contentPadding),
-                verticalArrangement = Arrangement.spacedBy(verticalSpacing)
+                    .padding(dimensions.externalMargin),
+                verticalArrangement = Arrangement.spacedBy(dimensions.verticalSpacing),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                ResponsiveButton(
+                ResponsiveMainButton(
                     onClick = { navController.navigate(Screen.GeneratedBackground.route) },
-                    text = "Editor de Fondo de Hoja",
-                    isCompact = isCompact
+                    text = "Editor de Fondo de Hoja"
                 )
-                ResponsiveButton(
+                ResponsiveMainButton(
                     onClick = { navController.navigate(Screen.ImageBorders.route) },
-                    text = "Bordes de Imágenes",
-                    isCompact = isCompact
+                    text = "Bordes de Imágenes"
                 )
-                ResponsiveButton(
+                ResponsiveMainButton(
                     onClick = { navController.navigate(Screen.ColorThemeSelection.route) },
-                    text = "Color Texto/Tablas",
-                    isCompact = isCompact
+                    text = "Color Texto/Tablas"
                 )
-                ResponsiveButton(
+                ResponsiveMainButton(
                     onClick = { navController.navigate(Screen.HybridQuality.route) },
-                    text = "Calidad de Imagen",
-                    isCompact = isCompact
+                    text = "Calidad de Imagen"
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun ResponsiveButton(
-    onClick: () -> Unit,
-    text: String,
-    isCompact: Boolean
-) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth(if (isCompact) 0.95f else 0.85f)
-            .heightIn(min = 40.dp, max = 52.dp)
-    ) {
-        Text(text)
     }
 }

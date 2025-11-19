@@ -24,7 +24,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import pe.pixelcollage.app.R
+import pe.pixelcollage.app.ui.components.ResponsiveTopAppBar
 import pe.pixelcollage.app.ui.components.ZoomableImage
+import pe.pixelcollage.app.ui.util.Responsive
+import pe.pixelcollage.app.ui.util.scaledSp
 import pe.pixelcollage.app.viewmodel.ProjectViewModel
 import java.io.File
 
@@ -58,15 +61,18 @@ fun PdfPreviewScreen(
         }
     }
 
+    val dimensions = Responsive.dimensions
+
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text(stringResource(id = R.string.main_btn_preview_pdf)) },
+            ResponsiveTopAppBar(
+                title = stringResource(id = R.string.main_btn_preview_pdf),
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = "Back",
+                            modifier = Modifier.size(dimensions.topBarIconSize)
                         )
                     }
                 },
@@ -76,7 +82,8 @@ fun PdfPreviewScreen(
                     }) {
                         Icon(
                             imageVector = Icons.Filled.Edit,
-                            contentDescription = "Ordenar Fotos"
+                            contentDescription = "Ordenar Fotos",
+                            modifier = Modifier.size(dimensions.topBarIconSize)
                         )
                     }
                     if (file != null) {
@@ -85,12 +92,12 @@ fun PdfPreviewScreen(
                         }) {
                             Icon(
                                 imageVector = Icons.Filled.Share,
-                                contentDescription = "Share"
+                                contentDescription = "Share",
+                                modifier = Modifier.size(dimensions.topBarIconSize)
                             )
                         }
                     }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors()
+                }
             )
         }
     ) { paddingValues ->
@@ -99,8 +106,9 @@ fun PdfPreviewScreen(
             if (pdfSize > 0) {
                 Text(
                     text = "Tamaño del PDF: ${projectViewModel.getFormattedPdfSize()}",
-                    modifier = Modifier.padding(16.dp),
-                    style = MaterialTheme.typography.titleMedium
+                    modifier = Modifier.padding(dimensions.externalMargin),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontSize = scaledSp(18)
                 )
             }
             if (file != null && file.exists()) {
@@ -112,7 +120,7 @@ fun PdfPreviewScreen(
                         .padding(paddingValues),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Error: PDF not found")
+                    Text("Error: PDF not found", fontSize = scaledSp(16))
                 }
             }
         }
@@ -123,6 +131,7 @@ fun PdfPreviewScreen(
 @Composable
 fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
     val context = LocalContext.current
+    val dimensions = Responsive.dimensions
 
     val rendererState by remember(uri) {
         mutableStateOf(
@@ -149,7 +158,7 @@ fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
 
     if (rendererState.renderer == null) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Error opening PDF")
+            Text("Error opening PDF", fontSize = scaledSp(16))
         }
         return
     }

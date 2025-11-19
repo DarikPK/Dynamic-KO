@@ -66,7 +66,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import pe.pixelcollage.app.ui.components.ResponsiveTopAppBar
 import pe.pixelcollage.app.ui.theme.*
+import pe.pixelcollage.app.ui.util.Responsive
+import pe.pixelcollage.app.ui.util.scaledSp
 import pe.pixelcollage.app.viewmodel.ProjectViewModel
 
 // Data class to hold the necessary colors for a preview
@@ -140,28 +143,30 @@ fun ThemeSelectionScreen(
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
-            title = { Text("Salir sin guardar") },
-            text = { Text("Has seleccionado el tema '$selectedThemeName' pero no has guardado los cambios. ¿Estás seguro de que quieres salir?") },
+            title = { Text("Salir sin guardar", fontSize = scaledSp(20)) },
+            text = { Text("Has seleccionado el tema '$selectedThemeName' pero no has guardado los cambios. ¿Estás seguro de que quieres salir?", fontSize = scaledSp(16)) },
             confirmButton = {
                 TextButton(onClick = {
                     showDialog = false
                     navController.popBackStack()
                 }) {
-                    Text("Sí, salir")
+                    Text("Sí, salir", fontSize = scaledSp(14))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDialog = false }) {
-                    Text("No, quedarse")
+                    Text("No, quedarse", fontSize = scaledSp(14))
                 }
             }
         )
     }
 
+    val dimensions = Responsive.dimensions
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Seleccionar Tema") },
+            ResponsiveTopAppBar(
+                title = "Seleccionar Tema",
                 navigationIcon = {
                     IconButton(onClick = {
                         if (hasChanges) {
@@ -170,14 +175,14 @@ fun ThemeSelectionScreen(
                             navController.popBackStack()
                         }
                     }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", modifier = Modifier.size(dimensions.topBarIconSize))
                     }
                 },
                 actions = {
                     Box(
                         modifier = Modifier
                             .padding(end = 8.dp)
-                            .size(40.dp)
+                            .size(dimensions.topBarHeight - 8.dp)
                             .graphicsLayer {
                                 scaleX = scale
                                 scaleY = scale
@@ -210,9 +215,11 @@ fun ThemeSelectionScreen(
             )
         }
     ) { paddingValues ->
-        val widthSizeClass = windowSizeClass.widthSizeClass
-        val isCompact = widthSizeClass == WindowWidthSizeClass.Compact
-        val contentPadding = if (isCompact) 8.dp else 16.dp
+        val columnModifier = if (dimensions.screenWidthClass == pe.pixelcollage.app.ui.util.ScreenWidthClass.Large) {
+            Modifier.widthIn(max = 600.dp)
+        } else {
+            Modifier
+        }
 
         Box(
             modifier = Modifier
@@ -221,12 +228,11 @@ fun ThemeSelectionScreen(
             contentAlignment = Alignment.TopCenter
         ) {
             LazyColumn(
-                modifier = Modifier
+                modifier = columnModifier
                     .fillMaxSize()
-                    .widthIn(max = 600.dp)
-                    .padding(horizontal = contentPadding),
-                verticalArrangement = Arrangement.spacedBy(contentPadding),
-                contentPadding = PaddingValues(vertical = contentPadding)
+                    .padding(horizontal = dimensions.externalMargin),
+                verticalArrangement = Arrangement.spacedBy(dimensions.verticalSpacing),
+                contentPadding = PaddingValues(vertical = dimensions.verticalSpacing)
             ) {
                 items(themePreviews) { themePreview ->
                     ThemePreviewItem(
@@ -246,6 +252,7 @@ fun ThemePreviewItem(
     isSelected: Boolean,
     onThemeSelected: (String) -> Unit
 ) {
+    val dimensions = Responsive.dimensions
     Column(modifier = Modifier.clickable { onThemeSelected(themePreview.name) }) {
         Row(
             modifier = Modifier
@@ -258,16 +265,16 @@ fun ThemePreviewItem(
                     imageVector = Icons.Default.CheckCircle,
                     contentDescription = "Seleccionado",
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(dimensions.topBarIconSize)
                 )
             } else {
                 // Add a spacer to keep alignment consistent when icon is not present
-                Spacer(modifier = Modifier.width(24.dp))
+                Spacer(modifier = Modifier.width(dimensions.topBarIconSize))
             }
             Spacer(modifier = Modifier.width(16.dp))
             Text(
                 text = themePreview.name,
-                fontSize = 20.sp,
+                fontSize = scaledSp(20),
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.weight(1f)

@@ -7,6 +7,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import pe.pixelcollage.app.ui.util.scaledSp
 
 @Composable
 fun ConfirmationDialog(
@@ -21,8 +22,8 @@ fun ConfirmationDialog(
     if (show) {
         AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text(text = title) },
-            text = { Text(text = message) },
+            title = { Text(text = title, fontSize = scaledSp(20)) },
+            text = { Text(text = message, fontSize = scaledSp(16)) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -33,12 +34,12 @@ fun ConfirmationDialog(
                         containerColor = if (confirmButtonText == "Confirmar") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                     )
                 ) {
-                    Text(confirmButtonText)
+                    Text(confirmButtonText, fontSize = scaledSp(14))
                 }
             },
             dismissButton = {
                 TextButton(onClick = onDismiss) {
-                    Text(dismissButtonText)
+                    Text(dismissButtonText, fontSize = scaledSp(14))
                 }
             }
         )

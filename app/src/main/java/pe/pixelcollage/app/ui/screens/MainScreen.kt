@@ -46,8 +46,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import pe.pixelcollage.app.ui.components.ConfirmationDialog
 import pe.pixelcollage.app.ui.components.LoadingDialog
+import pe.pixelcollage.app.ui.components.ResponsiveMainButton
+import pe.pixelcollage.app.ui.components.ResponsiveTopAppBar
+import pe.pixelcollage.app.ui.components.TrialModeBanner
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import pe.pixelcollage.app.ui.util.Responsive
+import pe.pixelcollage.app.ui.util.scaledSp
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -140,18 +145,18 @@ fun MainScreen(
         val sizeInMb = "%.2f".format((saveState as SaveState.RequiresConfirmation).sizeInBytes / (1024.0 * 1024.0))
         AlertDialog(
             onDismissRequest = { projectViewModel.resetSaveState() },
-            title = { Text("Confirmar Guardado") },
-            text = { Text("El tamaño del proyecto ($sizeInMb MB) supera los 50MB. ¿Deseas guardarlo de todos modos?") },
+            title = { Text("Confirmar Guardado", fontSize = scaledSp(20)) },
+            text = { Text("El tamaño del proyecto ($sizeInMb MB) supera los 50MB. ¿Deseas guardarlo de todos modos?", fontSize = scaledSp(16)) },
             confirmButton = {
                 Button(onClick = {
                     projectViewModel.forceSaveProject(context)
                 }) {
-                    Text("Guardar")
+                    Text("Guardar", fontSize = scaledSp(14))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { projectViewModel.resetSaveState() }) {
-                    Text("Cancelar")
+                    Text("Cancelar", fontSize = scaledSp(14))
                 }
             }
         )
@@ -204,32 +209,34 @@ fun MainScreen(
     if (showLimitReachedDialog) {
         AlertDialog(
             onDismissRequest = { showLimitReachedDialog = false },
-            title = { Text("Límite Alcanzado") },
-            text = { Text("La aplicación aún está en versión de pruebas. Para obtener acceso completo, por favor contacta con el administrador al teléfono 930653718.") },
+            title = { Text("Límite Alcanzado", fontSize = scaledSp(20)) },
+            text = { Text("La aplicación aún está en versión de pruebas. Para obtener acceso completo, por favor contacta con el administrador al teléfono 930653718.", fontSize = scaledSp(16)) },
             confirmButton = {
                 Button(onClick = { showLimitReachedDialog = false }) {
-                    Text("Entendido")
+                    Text("Entendido", fontSize = scaledSp(14))
                 }
             }
         )
     }
 
+    val dimensions = Responsive.dimensions
+
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = {
+            ResponsiveTopAppBar(
+                title = stringResource(id = R.string.app_name),
+                navigationIcon = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.Palette,
                             contentDescription = "Logo Paleta",
-                            modifier = Modifier.padding(end = 4.dp)
+                            modifier = Modifier.padding(end = 4.dp).size(dimensions.topBarIconSize)
                         )
                         Icon(
                             imageVector = Icons.Default.Brush,
                             contentDescription = "Logo Pincel",
-                            modifier = Modifier.padding(end = 8.dp)
+                            modifier = Modifier.padding(end = 8.dp).size(dimensions.topBarIconSize)
                         )
-                        Text(stringResource(id = R.string.app_name))
                     }
                 },
                 actions = {
@@ -237,20 +244,18 @@ fun MainScreen(
                         Icon(
                             imageVector = Icons.Default.Star,
                             contentDescription = "Admin User",
-                            modifier = Modifier.padding(end = 8.dp)
+                            modifier = Modifier.padding(end = 8.dp).size(dimensions.topBarIconSize)
                         )
                     }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
+                }
             )
         }
     ) { paddingValues ->
-        val widthSizeClass = windowSizeClass.widthSizeClass
-        val isCompact = widthSizeClass == WindowWidthSizeClass.Compact
-        val contentPadding = if (isCompact) 12.dp else 16.dp
-        val verticalSpacing = if (isCompact) 10.dp else 12.dp
+        val columnModifier = if (dimensions.screenWidthClass == pe.pixelcollage.app.ui.util.ScreenWidthClass.Large) {
+            Modifier.widthIn(max = 600.dp)
+        } else {
+            Modifier
+        }
 
         Box(
             modifier = Modifier
@@ -259,62 +264,37 @@ fun MainScreen(
             contentAlignment = Alignment.TopCenter
         ) {
             Column(
-                modifier = Modifier
+                modifier = columnModifier
                     .fillMaxSize()
-                    .widthIn(max = 600.dp) // Contenedor máximo
-                    .padding(contentPadding)
-                    .verticalScroll(rememberScrollState()), // Añadido para pantallas pequeñas
+                    .padding(dimensions.externalMargin)
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(verticalSpacing)
+                verticalArrangement = Arrangement.spacedBy(dimensions.verticalSpacing)
             ) {
                 val remainingPdfs by mainViewModel.remainingPdfs.collectAsState()
 
-                if (currentUser?.role == "guest" && remainingPdfs != null) {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth(if (isCompact) 0.9f else 0.8f)
-                            .padding(bottom = contentPadding),
-                        elevation = CardDefaults.cardElevation(4.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                "Modo de Prueba",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            val remainingText = if (remainingPdfs == -1) "(No disponible)" else remainingPdfs.toString()
-                            Text(
-                                "PDFs restantes: $remainingText",
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                        }
-                    }
-                }
+                TrialModeBanner(
+                    remainingPdfs = remainingPdfs,
+                    isVisible = currentUser?.role == "guest" && remainingPdfs != null
+                )
 
-                MainButton(
+                ResponsiveMainButton(
                     text = stringResource(R.string.main_btn_get_data),
                     onClick = { navController.navigate(Screen.SunatData.route) },
-                    icon = Icons.Default.Search,
-                    isCompact = isCompact
+                    icon = Icons.Default.Search
                 )
-                MainButton(
+                ResponsiveMainButton(
                     text = stringResource(R.string.main_btn_cover_setup),
                     onClick = { navController.navigate(Screen.CoverSetup.route) },
-                    icon = Icons.Default.Settings,
-                    isCompact = isCompact
+                    icon = Icons.Default.Settings
                 )
-                MainButton(
+                ResponsiveMainButton(
                     text = "Gestionar Contenido",
                     onClick = { navController.navigate(Screen.InnerPages.route) },
-                    icon = Icons.Default.Collections,
-                    isCompact = isCompact
+                    icon = Icons.Default.Collections
                 )
 
-                MainButton(
+                ResponsiveMainButton(
                     text = stringResource(R.string.main_btn_preview_pdf),
                     onClick = {
                         if (currentUser?.role == "guest" && remainingPdfs != null && remainingPdfs!! <= 0) {
@@ -323,74 +303,73 @@ fun MainScreen(
                             projectViewModel.generatePdf(context, "collage_report", userState)
                         }
                     },
-                    icon = Icons.Default.PictureAsPdf,
-                    isCompact = isCompact
+                    icon = Icons.Default.PictureAsPdf
                 )
-                MainButton(
+                ResponsiveMainButton(
                     text = "Editar Imágenes",
                     onClick = {
                         navController.navigate(Screen.ImageManager.route)
                     },
-                    icon = Icons.Default.Edit,
-                    isCompact = isCompact
+                    icon = Icons.Default.Edit
                 )
-                MainButton(
+                ResponsiveMainButton(
                     text = "Diseño Avanzado",
                     onClick = { navController.navigate(Screen.AdvancedDesign.route) },
-                    icon = Icons.Default.AutoFixHigh,
-                    isCompact = isCompact
+                    icon = Icons.Default.AutoFixHigh
                 )
-                MainButton(
+                ResponsiveMainButton(
                     text = "Temas",
                     onClick = { navController.navigate(Screen.ThemeSelection.route) },
-                    icon = Icons.Outlined.Tonality,
-                    isCompact = isCompact
+                    icon = Icons.Outlined.Tonality
                 )
-                MainButton(
+                ResponsiveMainButton(
                     text = "Papelera",
                     onClick = {
                         navController.navigate(Screen.RecycleBin.route)
                     },
-                    icon = Icons.Default.Delete,
-                    isCompact = isCompact
+                    icon = Icons.Default.Delete
                 )
                 Spacer(modifier = Modifier.weight(1f))
 
                 if (currentUser?.role == "master") {
-                    MainButton(
+                    ResponsiveMainButton(
                         text = "Panel de Control",
-                        onClick = { navController.navigate(pe.pixelcollage.app.ui.navigation.AuthScreen.ControlPanel.route) },
-                        isCompact = isCompact
+                        onClick = { navController.navigate(pe.pixelcollage.app.ui.navigation.AuthScreen.ControlPanel.route) }
                     )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
                 if (currentUser?.role == "admin") {
-                    MainButton(
+                    ResponsiveMainButton(
                         text = "Gestionar Cuentas",
                         onClick = { navController.navigate("account_management") },
-                        icon = Icons.Default.Description,
-                        isCompact = isCompact
+                        icon = Icons.Default.Description
                     )
-                    MainButton(
-                        text = "Cerrar Sesión",
+                    Button(
                         onClick = {
                             mainViewModel.logout()
                         },
-                        buttonColor = MaterialTheme.colorScheme.secondaryContainer,
-                        textColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                        icon = Icons.Default.Logout,
-                        isCompact = isCompact
-                    )
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Logout,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                        Text("Cerrar Sesión", color = MaterialTheme.colorScheme.onSecondaryContainer, fontSize = scaledSp(14))
+                    }
                 }
-                MainButton(
-                    text = stringResource(R.string.main_btn_delete_project),
+                Button(
                     onClick = { showDeleteConfirmDialog = true },
-                    buttonColor = MaterialTheme.colorScheme.errorContainer,
-                    textColor = MaterialTheme.colorScheme.onErrorContainer,
-                    icon = Icons.Default.DeleteForever,
-                    isCompact = isCompact
-                )
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.DeleteForever,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                    Text(stringResource(R.string.main_btn_delete_project), color = MaterialTheme.colorScheme.onErrorContainer, fontSize = scaledSp(14))
+                }
 
                 // Version Text
                 val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
@@ -407,6 +386,7 @@ fun MainScreen(
 
                 Text(
                     text = "v$versionName$pdfUsageText",
+                    fontSize = scaledSp(12),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                     modifier = Modifier
@@ -421,46 +401,6 @@ fun MainScreen(
                         .padding(top = 8.dp, end = 16.dp)
                 )
             }
-        }
-    }
-}
-
-@Composable
-fun MainButton(
-    text: String,
-    onClick: () -> Unit,
-    buttonColor: Color? = null,
-    textColor: Color? = null,
-    icon: ImageVector? = null,
-    isCompact: Boolean
-) {
-    val colors = if (buttonColor != null) {
-        ButtonDefaults.buttonColors(containerColor = buttonColor)
-    } else {
-        ButtonDefaults.buttonColors()
-    }
-    val textFinalColor = textColor ?: MaterialTheme.colorScheme.onPrimary
-
-    Button(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth(if (isCompact) 0.9f else 0.8f)
-            .heightIn(min = 40.dp, max = 52.dp),
-        colors = colors
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            if (icon != null) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null, // Decorative icon
-                    modifier = Modifier.padding(end = 8.dp),
-                    tint = textFinalColor
-                )
-            }
-            Text(text.uppercase(), color = textFinalColor)
         }
     }
 }

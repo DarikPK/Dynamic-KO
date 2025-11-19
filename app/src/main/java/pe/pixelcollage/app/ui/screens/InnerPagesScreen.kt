@@ -80,7 +80,11 @@ import pe.pixelcollage.app.ui.theme.DynamicCollageTheme
 import pe.pixelcollage.app.ui.components.ConfirmationDialog
 import pe.pixelcollage.app.ui.components.CreateEditGroupDialog
 import pe.pixelcollage.app.ui.components.PageGroupItem
+import pe.pixelcollage.app.ui.components.ResponsiveMainButton
+import pe.pixelcollage.app.ui.components.ResponsiveTopAppBar
 import pe.pixelcollage.app.ui.components.SettingsDialog
+import pe.pixelcollage.app.ui.util.Responsive
+import pe.pixelcollage.app.ui.util.scaledSp
 import pe.pixelcollage.app.viewmodel.InnerPagesViewModel
 import pe.pixelcollage.app.viewmodel.InnerPagesViewModelFactory
 import pe.pixelcollage.app.viewmodel.ProjectViewModel
@@ -143,20 +147,20 @@ fun InnerPagesScreen(
     if (showExitConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showExitConfirmDialog = false },
-            title = { Text("Salir sin guardar") },
-            text = { Text("Has realizado cambios en las páginas interiores pero no los has guardado. ¿Estás seguro de que quieres salir?") },
+            title = { Text("Salir sin guardar", fontSize = scaledSp(20)) },
+            text = { Text("Has realizado cambios en las páginas interiores pero no los has guardado. ¿Estás seguro de que quieres salir?", fontSize = scaledSp(16)) },
             confirmButton = {
                 TextButton(onClick = {
                     showExitConfirmDialog = false
                     innerPagesViewModel.discardChanges()
                     navController.popBackStack()
                 }) {
-                    Text("Sí, salir")
+                    Text("Sí, salir", fontSize = scaledSp(14))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showExitConfirmDialog = false }) {
-                    Text("No, quedarse")
+                    Text("No, quedarse", fontSize = scaledSp(14))
                 }
             }
         )
@@ -263,10 +267,12 @@ fun InnerPagesScreen(
         )
     }
 
+    val dimensions = Responsive.dimensions
+
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text(stringResource(id = R.string.inner_pages_title)) },
+            ResponsiveTopAppBar(
+                title = stringResource(id = R.string.inner_pages_title),
                 navigationIcon = {
                     IconButton(onClick = {
                         if (hasChanges) {
@@ -288,24 +294,23 @@ fun InnerPagesScreen(
                     }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(id = R.string.cover_setup_navigate_back_description)
+                            contentDescription = stringResource(id = R.string.cover_setup_navigate_back_description),
+                            modifier = Modifier.size(dimensions.topBarIconSize)
                         )
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                ),
                 actions = {
                     IconButton(onClick = { showSettingsDialog = true }) {
                         Icon(
                             imageVector = Icons.Filled.Settings,
-                            contentDescription = "Ajustes"
+                            contentDescription = "Ajustes",
+                            modifier = Modifier.size(dimensions.topBarIconSize)
                         )
                     }
                     Box(
                         modifier = Modifier
                             .padding(end = 8.dp)
-                            .size(40.dp)
+                            .size(dimensions.topBarHeight - 8.dp)
                             .graphicsLayer {
                                 scaleX = scale
                                 scaleY = scale
@@ -337,20 +342,23 @@ fun InnerPagesScreen(
             )
         }
     ) { paddingValues ->
+        val columnModifier = if (dimensions.screenWidthClass == pe.pixelcollage.app.ui.util.ScreenWidthClass.Large) {
+            Modifier.widthIn(max = 600.dp)
+        } else {
+            Modifier
+        }
+
         Column(
-            modifier = Modifier
+            modifier = columnModifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .padding(dimensions.externalMargin)
         ) {
-            Button(
+            ResponsiveMainButton(
                 onClick = { innerPagesViewModel.onAddNewGroupClicked() },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Filled.Add, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("Añadir Grupo")
-            }
+                text = "Añadir Grupo",
+                icon = Icons.Filled.Add
+            )
             Spacer(Modifier.height(16.dp))
 
             if (pageGroups.isEmpty()) {
@@ -369,13 +377,15 @@ fun InnerPagesScreen(
                     )
                     Text(
                         text = "Crea tu primer grupo",
-                        style = MaterialTheme.typography.titleLarge
+                        style = MaterialTheme.typography.titleLarge,
+                        fontSize = scaledSp(22)
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "Añade un grupo para empezar a organizar tus imágenes.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                        fontSize = scaledSp(16)
                     )
                 }
             } else {

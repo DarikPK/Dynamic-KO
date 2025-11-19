@@ -19,6 +19,7 @@ import pe.pixelcollage.app.data.repository.AuthRepository
 import pe.pixelcollage.app.data.repository.UserRepository
 import pe.pixelcollage.app.ui.navigation.AppNavigation
 import pe.pixelcollage.app.ui.theme.DynamicCollageTheme
+import pe.pixelcollage.app.ui.util.ProvideResponsiveDimensions
 import pe.pixelcollage.app.viewmodel.*
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
@@ -66,12 +67,13 @@ class MainActivity : ComponentActivity() {
             val windowSizeClass = calculateWindowSizeClass(this)
 
             DynamicCollageTheme(themeName = themeName) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    if (isPlayStoreMode != null) {
-                        AppNavigation(
+                ProvideResponsiveDimensions {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background
+                    ) {
+                        if (isPlayStoreMode != null) {
+                            AppNavigation(
                             windowSizeClass = windowSizeClass,
                             projectViewModel = projectViewModel,
                             mainViewModel = viewModels<MainViewModel> { mainViewModelFactory }.value,
@@ -82,6 +84,7 @@ class MainActivity : ComponentActivity() {
                     } else {
                         pe.pixelcollage.app.ui.screens.SplashScreen()
                     }
+                }
                 }
             }
         }

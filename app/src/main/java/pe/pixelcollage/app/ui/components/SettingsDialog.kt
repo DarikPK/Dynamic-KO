@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import pe.pixelcollage.app.R
+import pe.pixelcollage.app.ui.util.scaledSp
 import pe.pixelcollage.app.viewmodel.InnerPagesViewModel
 
 @Composable
@@ -17,7 +18,7 @@ fun SettingsDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = "Ajustes de Página") },
+        title = { Text(text = "Ajustes de Página", fontSize = scaledSp(20)) },
         text = {
             Column {
                 Row(
@@ -27,11 +28,13 @@ fun SettingsDialog(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = stringResource(id = R.string.smart_layout_title),
-                            style = MaterialTheme.typography.bodyLarge
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontSize = scaledSp(16)
                         )
                         Text(
                             text = stringResource(id = R.string.smart_layout_description),
-                            style = MaterialTheme.typography.bodySmall
+                            style = MaterialTheme.typography.bodySmall,
+                            fontSize = scaledSp(14)
                         )
                     }
                     Spacer(modifier = Modifier.width(16.dp))
@@ -46,7 +49,7 @@ fun SettingsDialog(
         },
         confirmButton = {
             Button(onClick = onDismiss) {
-                Text("Cerrar")
+                Text("Cerrar", fontSize = scaledSp(14))
             }
         }
     )
