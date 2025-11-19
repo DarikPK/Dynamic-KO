@@ -100,5 +100,5 @@ object Responsive {
 fun scaledSp(size: TextUnit, minSize: TextUnit = 12.sp, isTopBar: Boolean = false): TextUnit {
     val scale = if (isTopBar) Responsive.dimensions.topBarTypographyScale else Responsive.dimensions.typographyScale
     val scaledSize = size * scale
-    return scaledSize.coerceAtLeast(minSize)
+    return maxOf(minSize, scaledSize)
 }
