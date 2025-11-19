@@ -46,7 +46,15 @@ class SunatDataViewModel : ViewModel() {
                             throw Exception(dniData.error)
                         }
                         // Devuelve DniData pero el ViewModel lo tratará como Any.
-                        dniData.copy(numeroDocumento = documentNumber)
+                        DniData(
+                            nombre = dniData.nombre,
+                            tipoDocumento = dniData.tipoDocumento,
+                            numeroDocumento = documentNumber,
+                            apellidoPaterno = dniData.apellidoPaterno,
+                            apellidoMaterno = dniData.apellidoMaterno,
+                            nombres = dniData.nombres,
+                            error = dniData.error
+                        )
                     }
                     else -> { // RUC20
                         val rucData = ApiClient.instance.getRucData(documentNumber)
