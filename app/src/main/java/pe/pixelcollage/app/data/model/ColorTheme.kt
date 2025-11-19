@@ -12,6 +12,12 @@ data class ColorTheme(
 object ColorThemes {
     val themes = listOf(
         ColorTheme(
+            name = "Verde Jade",
+            textColor = Color(0xFF009B77),
+            rucBackgroundColor = Color(0xFFD4EEE6),
+            borderColor = Color(0xFF50C878)
+        ),
+        ColorTheme(
             name = "SkyBlue",
             textColor = Color(0xFF2C74B5),
             rucBackgroundColor = Color(0xFFDBE5F1),
