@@ -78,7 +78,7 @@ import pe.pixelcollage.app.viewmodel.ProjectViewModel
 import pe.pixelcollage.app.viewmodel.SaveState
 import pe.pixelcollage.app.viewmodel.UserState
 
-import androidx.compose.material3.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 
