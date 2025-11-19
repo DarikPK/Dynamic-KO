@@ -3,6 +3,7 @@ package pe.pixelcollage.app.ui.screens
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,7 +11,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.Brush
@@ -73,9 +78,13 @@ import pe.pixelcollage.app.viewmodel.ProjectViewModel
 import pe.pixelcollage.app.viewmodel.SaveState
 import pe.pixelcollage.app.viewmodel.UserState
 
+import androidx.compose.material3.adaptive.WindowSizeClass
+import androidx.compose.material3.adaptive.WindowWidthSizeClass
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
+    windowSizeClass: WindowSizeClass,
     navController: NavController,
     projectViewModel: ProjectViewModel,
     mainViewModel: MainViewModel
@@ -237,155 +246,180 @@ fun MainScreen(
             )
         }
     ) { paddingValues ->
-        Column(
+        val widthSizeClass = windowSizeClass.widthSizeClass
+        val isCompact = widthSizeClass == WindowWidthSizeClass.Compact
+        val contentPadding = if (isCompact) 12.dp else 16.dp
+        val verticalSpacing = if (isCompact) 10.dp else 12.dp
+
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
         ) {
-            val remainingPdfs by mainViewModel.remainingPdfs.collectAsState()
-
-            if (currentUser?.role == "guest" && remainingPdfs != null) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth(0.8f)
-                        .padding(bottom = 16.dp),
-                    elevation = CardDefaults.cardElevation(4.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            "Modo de Prueba",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        val remainingText = if (remainingPdfs == -1) "(No disponible)" else remainingPdfs.toString()
-                        Text(
-                            "PDFs restantes: $remainingText",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    }
-                }
-            }
-
-            MainButton(
-                text = stringResource(R.string.main_btn_get_data),
-                onClick = { navController.navigate(Screen.SunatData.route) },
-                icon = Icons.Default.Search
-            )
-            MainButton(
-                text = stringResource(R.string.main_btn_cover_setup),
-                onClick = { navController.navigate(Screen.CoverSetup.route) },
-                icon = Icons.Default.Settings
-            )
-            MainButton(
-                text = "Gestionar Contenido",
-                onClick = { navController.navigate(Screen.InnerPages.route) },
-                icon = Icons.Default.Collections
-            )
-
-            MainButton(
-                text = stringResource(R.string.main_btn_preview_pdf),
-                onClick = {
-                    if (currentUser?.role == "guest" && remainingPdfs != null && remainingPdfs!! <= 0) {
-                        showLimitReachedDialog = true
-                    } else {
-                        projectViewModel.generatePdf(context, "collage_report", userState)
-                    }
-                },
-                icon = Icons.Default.PictureAsPdf
-            )
-            MainButton(
-                text = "Editar Imágenes",
-                onClick = {
-                    navController.navigate(Screen.ImageManager.route)
-                },
-                icon = Icons.Default.Edit
-            )
-            MainButton(
-                text = "Diseño Avanzado",
-                onClick = { navController.navigate(Screen.AdvancedDesign.route) },
-                icon = Icons.Default.AutoFixHigh
-            )
-            MainButton(
-                text = "Temas",
-                onClick = { navController.navigate(Screen.ThemeSelection.route) },
-                icon = Icons.Outlined.Tonality
-            )
-            MainButton(
-                text = "Papelera",
-                onClick = {
-                    navController.navigate(Screen.RecycleBin.route)
-                },
-                icon = Icons.Default.Delete
-            )
-            Spacer(modifier = Modifier.weight(1f))
-
-            if (currentUser?.role == "master") {
-                MainButton(
-                    text = "Panel de Control",
-                    onClick = { navController.navigate(pe.pixelcollage.app.ui.navigation.AuthScreen.ControlPanel.route) }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            if (currentUser?.role == "admin") {
-                MainButton(
-                    text = "Gestionar Cuentas",
-                    onClick = { navController.navigate("account_management") },
-                    icon = Icons.Default.Description
-                )
-                MainButton(
-                    text = "Cerrar Sesión",
-                    onClick = {
-                        mainViewModel.logout()
-                    },
-                    buttonColor = MaterialTheme.colorScheme.secondaryContainer,
-                    textColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                    icon = Icons.Default.Logout
-                )
-            }
-            MainButton(
-                text = stringResource(R.string.main_btn_delete_project),
-                onClick = { showDeleteConfirmDialog = true },
-                buttonColor = MaterialTheme.colorScheme.errorContainer,
-                textColor = MaterialTheme.colorScheme.onErrorContainer,
-                icon = Icons.Default.DeleteForever
-            )
-
-            // Version Text
-            val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            val versionName = packageInfo.versionName
-            var tapCount by remember { mutableStateOf(0) }
-            var showPdfUsage by remember { mutableStateOf(false) }
-
-            var deviceId by remember { mutableStateOf<String?>(null) }
-            val pdfUsageText = if (showPdfUsage) {
-                deviceId?.let { " | Device ID: $it" } ?: ""
-            } else {
-                ""
-            }
-
-            Text(
-                text = "v$versionName$pdfUsageText",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        tapCount++
-                        if (tapCount >= 5) {
-                            deviceId = mainViewModel.getDeviceId()
-                            showPdfUsage = true
+                    .fillMaxSize()
+                    .widthIn(max = 600.dp) // Contenedor máximo
+                    .padding(contentPadding)
+                    .verticalScroll(rememberScrollState()), // Añadido para pantallas pequeñas
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(verticalSpacing)
+            ) {
+                val remainingPdfs by mainViewModel.remainingPdfs.collectAsState()
+
+                if (currentUser?.role == "guest" && remainingPdfs != null) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth(if (isCompact) 0.9f else 0.8f)
+                            .padding(bottom = contentPadding),
+                        elevation = CardDefaults.cardElevation(4.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                "Modo de Prueba",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            val remainingText = if (remainingPdfs == -1) "(No disponible)" else remainingPdfs.toString()
+                            Text(
+                                "PDFs restantes: $remainingText",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
                         }
                     }
-                    .padding(top = 8.dp, end = 16.dp)
-            )
+                }
+
+                MainButton(
+                    text = stringResource(R.string.main_btn_get_data),
+                    onClick = { navController.navigate(Screen.SunatData.route) },
+                    icon = Icons.Default.Search,
+                    isCompact = isCompact
+                )
+                MainButton(
+                    text = stringResource(R.string.main_btn_cover_setup),
+                    onClick = { navController.navigate(Screen.CoverSetup.route) },
+                    icon = Icons.Default.Settings,
+                    isCompact = isCompact
+                )
+                MainButton(
+                    text = "Gestionar Contenido",
+                    onClick = { navController.navigate(Screen.InnerPages.route) },
+                    icon = Icons.Default.Collections,
+                    isCompact = isCompact
+                )
+
+                MainButton(
+                    text = stringResource(R.string.main_btn_preview_pdf),
+                    onClick = {
+                        if (currentUser?.role == "guest" && remainingPdfs != null && remainingPdfs!! <= 0) {
+                            showLimitReachedDialog = true
+                        } else {
+                            projectViewModel.generatePdf(context, "collage_report", userState)
+                        }
+                    },
+                    icon = Icons.Default.PictureAsPdf,
+                    isCompact = isCompact
+                )
+                MainButton(
+                    text = "Editar Imágenes",
+                    onClick = {
+                        navController.navigate(Screen.ImageManager.route)
+                    },
+                    icon = Icons.Default.Edit,
+                    isCompact = isCompact
+                )
+                MainButton(
+                    text = "Diseño Avanzado",
+                    onClick = { navController.navigate(Screen.AdvancedDesign.route) },
+                    icon = Icons.Default.AutoFixHigh,
+                    isCompact = isCompact
+                )
+                MainButton(
+                    text = "Temas",
+                    onClick = { navController.navigate(Screen.ThemeSelection.route) },
+                    icon = Icons.Outlined.Tonality,
+                    isCompact = isCompact
+                )
+                MainButton(
+                    text = "Papelera",
+                    onClick = {
+                        navController.navigate(Screen.RecycleBin.route)
+                    },
+                    icon = Icons.Default.Delete,
+                    isCompact = isCompact
+                )
+                Spacer(modifier = Modifier.weight(1f))
+
+                if (currentUser?.role == "master") {
+                    MainButton(
+                        text = "Panel de Control",
+                        onClick = { navController.navigate(pe.pixelcollage.app.ui.navigation.AuthScreen.ControlPanel.route) },
+                        isCompact = isCompact
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                if (currentUser?.role == "admin") {
+                    MainButton(
+                        text = "Gestionar Cuentas",
+                        onClick = { navController.navigate("account_management") },
+                        icon = Icons.Default.Description,
+                        isCompact = isCompact
+                    )
+                    MainButton(
+                        text = "Cerrar Sesión",
+                        onClick = {
+                            mainViewModel.logout()
+                        },
+                        buttonColor = MaterialTheme.colorScheme.secondaryContainer,
+                        textColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        icon = Icons.Default.Logout,
+                        isCompact = isCompact
+                    )
+                }
+                MainButton(
+                    text = stringResource(R.string.main_btn_delete_project),
+                    onClick = { showDeleteConfirmDialog = true },
+                    buttonColor = MaterialTheme.colorScheme.errorContainer,
+                    textColor = MaterialTheme.colorScheme.onErrorContainer,
+                    icon = Icons.Default.DeleteForever,
+                    isCompact = isCompact
+                )
+
+                // Version Text
+                val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                val versionName = packageInfo.versionName
+                var tapCount by remember { mutableStateOf(0) }
+                var showPdfUsage by remember { mutableStateOf(false) }
+
+                var deviceId by remember { mutableStateOf<String?>(null) }
+                val pdfUsageText = if (showPdfUsage) {
+                    deviceId?.let { " | Device ID: $it" } ?: ""
+                } else {
+                    ""
+                }
+
+                Text(
+                    text = "v$versionName$pdfUsageText",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            tapCount++
+                            if (tapCount >= 5) {
+                                deviceId = mainViewModel.getDeviceId()
+                                showPdfUsage = true
+                            }
+                        }
+                        .padding(top = 8.dp, end = 16.dp)
+                )
+            }
         }
     }
 }
@@ -396,7 +430,8 @@ fun MainButton(
     onClick: () -> Unit,
     buttonColor: Color? = null,
     textColor: Color? = null,
-    icon: ImageVector? = null
+    icon: ImageVector? = null,
+    isCompact: Boolean
 ) {
     val colors = if (buttonColor != null) {
         ButtonDefaults.buttonColors(containerColor = buttonColor)
@@ -408,8 +443,8 @@ fun MainButton(
     Button(
         onClick = onClick,
         modifier = Modifier
-            .fillMaxWidth(0.8f)
-            .height(48.dp),
+            .fillMaxWidth(if (isCompact) 0.9f else 0.8f)
+            .heightIn(min = 40.dp, max = 52.dp),
         colors = colors
     ) {
         Row(
@@ -440,6 +475,7 @@ fun MainScreenPreview() {
 
     DynamicCollageTheme {
         MainScreen(
+            windowSizeClass = WindowSizeClass.calculateFromSize(dpSize = androidx.compose.ui.unit.DpSize(411.dp, 891.dp)),
             navController = rememberNavController(),
             projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity),
             mainViewModel = mockMainViewModel
@@ -458,6 +494,7 @@ fun MainScreenDarkPreview() {
 
     DynamicCollageTheme(darkTheme = true) {
         MainScreen(
+            windowSizeClass = WindowSizeClass.calculateFromSize(dpSize = androidx.compose.ui.unit.DpSize(411.dp, 891.dp)),
             navController = rememberNavController(),
             projectViewModel = viewModel(viewModelStoreOwner = context as ComponentActivity),
             mainViewModel = mockMainViewModel

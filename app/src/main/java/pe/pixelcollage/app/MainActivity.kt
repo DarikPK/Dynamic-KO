@@ -7,6 +7,8 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.calculateWindowSizeClass
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -19,6 +21,7 @@ import pe.pixelcollage.app.ui.navigation.AppNavigation
 import pe.pixelcollage.app.ui.theme.DynamicCollageTheme
 import pe.pixelcollage.app.viewmodel.*
 
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 class MainActivity : ComponentActivity() {
     internal val projectViewModel: ProjectViewModel by viewModels()
     private val authViewModel: AuthViewModel by viewModels()
@@ -60,6 +63,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val themeName by projectViewModel.themeName.collectAsState()
             val isPlayStoreMode by authViewModel.isPlayStoreMode.collectAsState()
+            val windowSizeClass = calculateWindowSizeClass(this)
 
             DynamicCollageTheme(themeName = themeName) {
                 Surface(
@@ -68,6 +72,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     if (isPlayStoreMode != null) {
                         AppNavigation(
+                            windowSizeClass = windowSizeClass,
                             projectViewModel = projectViewModel,
                             mainViewModel = viewModels<MainViewModel> { mainViewModelFactory }.value,
                             loginViewModel = viewModels<LoginViewModel> { loginViewModelFactory }.value,

@@ -27,9 +27,13 @@ import pe.pixelcollage.app.viewmodel.ProjectViewModel
 import pe.pixelcollage.app.viewmodel.SunatDataState
 import pe.pixelcollage.app.viewmodel.SunatDataViewModel
 
+import androidx.compose.material3.adaptive.WindowSizeClass
+import androidx.compose.material3.adaptive.WindowWidthSizeClass
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SunatDataScreen(
+    windowSizeClass: WindowSizeClass,
     navController: NavController,
     projectViewModel: ProjectViewModel,
     sunatDataViewModel: SunatDataViewModel = viewModel()
@@ -72,271 +76,288 @@ fun SunatDataScreen(
             )
         }
     ) { paddingValues ->
-        Column(
+        val widthSizeClass = windowSizeClass.widthSizeClass
+        val isCompact = widthSizeClass == WindowWidthSizeClass.Compact
+        val contentPadding = if (isCompact) 12.dp else 16.dp
+        val verticalSpacing = if (isCompact) 10.dp else 12.dp
+
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .widthIn(max = 600.dp) // Contenedor máximo
+                    .padding(contentPadding)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(verticalSpacing)
             ) {
-                // DNI Option
-                Box(modifier = Modifier.weight(0.5f)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        RadioButton(
-                            selected = documentType == "DNI",
-                            onClick = {
-                                documentType = "DNI"
-                                documentNumber = ""
-                                sunatDataViewModel.resetState()
-                            }
-                        )
-                        Text(
-                            text = "DNI",
-                            modifier = Modifier.selectable(
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    // DNI Option
+                    Box(modifier = Modifier.weight(0.5f)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            RadioButton(
                                 selected = documentType == "DNI",
                                 onClick = {
                                     documentType = "DNI"
                                     documentNumber = ""
                                     sunatDataViewModel.resetState()
                                 }
-                            ).padding(start = 4.dp)
-                        )
+                            )
+                            Text(
+                                text = "DNI",
+                                modifier = Modifier.selectable(
+                                    selected = documentType == "DNI",
+                                    onClick = {
+                                        documentType = "DNI"
+                                        documentNumber = ""
+                                        sunatDataViewModel.resetState()
+                                    }
+                                ).padding(start = 4.dp)
+                            )
+                        }
                     }
-                }
 
-                // RUC Options
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(
-                            selected = documentType == "RUC20",
-                            onClick = {
-                                documentType = "RUC20"
-                                documentNumber = ""
-                                sunatDataViewModel.resetState()
-                            }
-                        )
-                        Text(
-                            text = "RUC (Empresa)",
-                            modifier = Modifier.selectable(
+                    // RUC Options
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
                                 selected = documentType == "RUC20",
                                 onClick = {
                                     documentType = "RUC20"
                                     documentNumber = ""
                                     sunatDataViewModel.resetState()
                                 }
-                            ).padding(start = 4.dp)
-                        )
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(
-                            selected = documentType == "RUC10",
-                            onClick = {
-                                documentType = "RUC10"
-                                documentNumber = ""
-                                sunatDataViewModel.resetState()
-                            }
-                        )
-                        Text(
-                            text = "RUC (Persona)",
-                            modifier = Modifier.selectable(
+                            )
+                            Text(
+                                text = "RUC (Empresa)",
+                                modifier = Modifier.selectable(
+                                    selected = documentType == "RUC20",
+                                    onClick = {
+                                        documentType = "RUC20"
+                                        documentNumber = ""
+                                        sunatDataViewModel.resetState()
+                                    }
+                                ).padding(start = 4.dp)
+                            )
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
                                 selected = documentType == "RUC10",
                                 onClick = {
                                     documentType = "RUC10"
                                     documentNumber = ""
                                     sunatDataViewModel.resetState()
                                 }
-                            ).padding(start = 4.dp)
-                        )
-                    }
-                }
-            }
-
-            val visualTransformation = when (documentType) {
-                "RUC10" -> RucVisualTransformation("10")
-                "RUC20" -> RucVisualTransformation("20")
-                else -> VisualTransformation.None
-            }
-            OutlinedTextField(
-                value = documentNumber,
-                onValueChange = { newValue ->
-                    val filtered = newValue.filter { it.isDigit() }
-                    val maxLength = if (documentType == "DNI") 8 else 9
-                    if (filtered.length <= maxLength) {
-                        documentNumber = filtered
-                    }
-                },
-                label = { Text("Número de ${documentType.replace("RUC20", "RUC").replace("RUC10", "RUC")}") },
-                modifier = Modifier.fillMaxWidth(0.8f),
-                enabled = sunatDataState !is SunatDataState.Loading,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                visualTransformation = visualTransformation
-            )
-
-            Box(modifier = Modifier.fillMaxWidth(0.8f), contentAlignment = Alignment.Center) {
-                if (sunatDataState is SunatDataState.Loading) {
-                    CircularProgressIndicator()
-                } else {
-                    Button(
-                        onClick = {
-                            val prefix = when (documentType) {
-                                "RUC10" -> "10"
-                                "RUC20" -> "20"
-                                else -> ""
-                            }
-                            val numberToValidate = prefix + documentNumber
-                            val isValid = when (documentType) {
-                                "DNI" -> numberToValidate.length == 8
-                                "RUC10", "RUC20" -> numberToValidate.length == 11
-                                else -> false
-                            }
-
-                            if (isValid) {
-                                sunatDataViewModel.getSunatData(documentType, numberToValidate)
-                            } else {
-                                val docName = documentType.replace("RUC20", "RUC").replace("RUC10", "RUC")
-                                val requiredLength = if (documentType == "DNI") 8 else 11
-                                Toast.makeText(context, "El $docName debe tener $requiredLength dígitos", Toast.LENGTH_SHORT).show()
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Buscar")
-                    }
-                }
-            }
-
-            if (sunatDataState is SunatDataState.Success) {
-                val data = (sunatDataState as SunatDataState.Success).data
-
-                // Determinar el nombre a mostrar y el número de documento
-                val (displayName, docNum) = when (data) {
-                    is DniData -> "${data.nombres} ${data.apellidoPaterno} ${data.apellidoMaterno}" to data.numeroDocumento
-                    is RucData -> data.nombre to data.numeroDocumento
-                    else -> "" to ""
-                }
-
-                var useName by remember { mutableStateOf(true) }
-                var manualAddress by remember { mutableStateOf("") }
-                var manualDistrict by remember { mutableStateOf("") }
-
-                // Lógica específica para RUC de Empresa (RUC20)
-                if (data is RucData && data.numeroDocumento.startsWith("20")) {
-                    var useApiAddress by remember { mutableStateOf(true) }
-                    var useManualAddress by remember { mutableStateOf(false) }
-
-                    Column(modifier = Modifier.padding(top = 16.dp), horizontalAlignment = Alignment.Start) {
-                        Text("Datos encontrados:", style = MaterialTheme.typography.titleMedium)
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(checked = useName, onCheckedChange = { useName = it })
-                            Text("Nombre: $displayName")
+                            )
+                            Text(
+                                text = "RUC (Persona)",
+                                modifier = Modifier.selectable(
+                                    selected = documentType == "RUC10",
+                                    onClick = {
+                                        documentType = "RUC10"
+                                        documentNumber = ""
+                                        sunatDataViewModel.resetState()
+                                    }
+                                ).padding(start = 4.dp)
+                            )
                         }
+                    }
+                }
 
-                        // Checkbox para la dirección de la API
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(
-                                checked = useApiAddress,
-                                onCheckedChange = {
-                                    useApiAddress = it
-                                    if (it) useManualAddress = false
+                val visualTransformation = when (documentType) {
+                    "RUC10" -> RucVisualTransformation("10")
+                    "RUC20" -> RucVisualTransformation("20")
+                    else -> VisualTransformation.None
+                }
+                OutlinedTextField(
+                    value = documentNumber,
+                    onValueChange = { newValue ->
+                        val filtered = newValue.filter { it.isDigit() }
+                        val maxLength = if (documentType == "DNI") 8 else 9
+                        if (filtered.length <= maxLength) {
+                            documentNumber = filtered
+                        }
+                    },
+                    label = { Text("Número de ${documentType.replace("RUC20", "RUC").replace("RUC10", "RUC")}") },
+                    modifier = Modifier
+                        .fillMaxWidth(if (isCompact) 0.9f else 0.8f)
+                        .heightIn(min = 48.dp),
+                    enabled = sunatDataState !is SunatDataState.Loading,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    visualTransformation = visualTransformation
+                )
+
+                Box(
+                    modifier = Modifier.fillMaxWidth(if (isCompact) 0.9f else 0.8f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (sunatDataState is SunatDataState.Loading) {
+                        CircularProgressIndicator()
+                    } else {
+                        Button(
+                            onClick = {
+                                val prefix = when (documentType) {
+                                    "RUC10" -> "10"
+                                    "RUC20" -> "20"
+                                    else -> ""
                                 }
-                            )
-                            Text("Dirección: ${data.direccion} - ${data.distrito}")
-                        }
-
-                        // Checkbox para otra dirección (mutuamente excluyente)
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(
-                                checked = useManualAddress,
-                                onCheckedChange = {
-                                    useManualAddress = it
-                                    if (it) useApiAddress = false
+                                val numberToValidate = prefix + documentNumber
+                                val isValid = when (documentType) {
+                                    "DNI" -> numberToValidate.length == 8
+                                    "RUC10", "RUC20" -> numberToValidate.length == 11
+                                    else -> false
                                 }
-                            )
-                            Text("Otra dirección")
-                        }
 
-                        if (useManualAddress) {
-                            AddressInputFields(
-                                manualAddress = manualAddress,
-                                onAddressChange = { manualAddress = it },
-                                manualDistrict = manualDistrict,
-                                onDistrictChange = { manualDistrict = it }
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = {
-                            val finalAddress = when {
-                                useApiAddress -> "${data.direccion.uppercase()} - ${data.distrito.uppercase()}"
-                                useManualAddress -> if (manualDistrict.isNotBlank()) "${manualAddress.uppercase()} - ${manualDistrict.uppercase()}" else manualAddress.uppercase()
-                                else -> null
-                            }
-                            val selectedData = SelectedSunatData(
-                                nombre = if (useName) displayName else null,
-                                numeroDocumento = docNum,
-                                direccion = finalAddress
-                            )
-                            projectViewModel.updateSunatData(context, selectedData)
-                            sunatDataViewModel.resetState()
-                            navController.navigate(Screen.CoverSetup.route) { popUpTo(Screen.Main.route) }
-                        }) {
-                            Text("Usar estos datos")
+                                if (isValid) {
+                                    sunatDataViewModel.getSunatData(documentType, numberToValidate)
+                                } else {
+                                    val docName = documentType.replace("RUC20", "RUC").replace("RUC10", "RUC")
+                                    val requiredLength = if (documentType == "DNI") 8 else 11
+                                    Toast.makeText(context, "El $docName debe tener $requiredLength dígitos", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp, max = 52.dp)
+                        ) {
+                            Text("Buscar")
                         }
                     }
-                } else {
-                    // Lógica para DNI y RUC de Persona
-                    var useAddress by remember { mutableStateOf(false) }
+                }
 
-                    Column(modifier = Modifier.padding(top = 16.dp), horizontalAlignment = Alignment.Start) {
-                        Text("Datos encontrados:", style = MaterialTheme.typography.titleMedium)
-                        Spacer(modifier = Modifier.height(8.dp))
+                if (sunatDataState is SunatDataState.Success) {
+                    val data = (sunatDataState as SunatDataState.Success).data
 
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(checked = useName, onCheckedChange = { useName = it })
-                            Text("Nombre: $displayName")
+                    // Determinar el nombre a mostrar y el número de documento
+                    val (displayName, docNum) = when (data) {
+                        is DniData -> "${data.nombres} ${data.apellidoPaterno} ${data.apellidoMaterno}" to data.numeroDocumento
+                        is RucData -> data.nombre to data.numeroDocumento
+                        else -> "" to ""
+                    }
+
+                    var useName by remember { mutableStateOf(true) }
+                    var manualAddress by remember { mutableStateOf("") }
+                    var manualDistrict by remember { mutableStateOf("") }
+
+                    // Lógica específica para RUC de Empresa (RUC20)
+                    if (data is RucData && data.numeroDocumento.startsWith("20")) {
+                        var useApiAddress by remember { mutableStateOf(true) }
+                        var useManualAddress by remember { mutableStateOf(false) }
+
+                        Column(modifier = Modifier.padding(top = 16.dp), horizontalAlignment = Alignment.Start) {
+                            Text("Datos encontrados:", style = MaterialTheme.typography.titleMedium)
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Checkbox(checked = useName, onCheckedChange = { useName = it })
+                                Text("Nombre: $displayName")
+                            }
+
+                            // Checkbox para la dirección de la API
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Checkbox(
+                                    checked = useApiAddress,
+                                    onCheckedChange = {
+                                        useApiAddress = it
+                                        if (it) useManualAddress = false
+                                    }
+                                )
+                                Text("Dirección: ${data.direccion} - ${data.distrito}")
+                            }
+
+                            // Checkbox para otra dirección (mutuamente excluyente)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Checkbox(
+                                    checked = useManualAddress,
+                                    onCheckedChange = {
+                                        useManualAddress = it
+                                        if (it) useApiAddress = false
+                                    }
+                                )
+                                Text("Otra dirección")
+                            }
+
+                            if (useManualAddress) {
+                                AddressInputFields(
+                                    manualAddress = manualAddress,
+                                    onAddressChange = { manualAddress = it },
+                                    manualDistrict = manualDistrict,
+                                    onDistrictChange = { manualDistrict = it }
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(onClick = {
+                                val finalAddress = when {
+                                    useApiAddress -> "${data.direccion.uppercase()} - ${data.distrito.uppercase()}"
+                                    useManualAddress -> if (manualDistrict.isNotBlank()) "${manualAddress.uppercase()} - ${manualDistrict.uppercase()}" else manualAddress.uppercase()
+                                    else -> null
+                                }
+                                val selectedData = SelectedSunatData(
+                                    nombre = if (useName) displayName else null,
+                                    numeroDocumento = docNum,
+                                    direccion = finalAddress
+                                )
+                                projectViewModel.updateSunatData(context, selectedData)
+                                sunatDataViewModel.resetState()
+                                navController.navigate(Screen.CoverSetup.route) { popUpTo(Screen.Main.route) }
+                            }) {
+                                Text("Usar estos datos")
+                            }
                         }
+                    } else {
+                        // Lógica para DNI y RUC de Persona
+                        var useAddress by remember { mutableStateOf(false) }
 
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(checked = useAddress, onCheckedChange = { useAddress = it })
-                            Text("Añadir dirección")
-                        }
+                        Column(modifier = Modifier.padding(top = 16.dp), horizontalAlignment = Alignment.Start) {
+                            Text("Datos encontrados:", style = MaterialTheme.typography.titleMedium)
+                            Spacer(modifier = Modifier.height(8.dp))
 
-                        if (useAddress) {
-                            AddressInputFields(
-                                manualAddress = manualAddress,
-                                onAddressChange = { manualAddress = it },
-                                manualDistrict = manualDistrict,
-                                onDistrictChange = { manualDistrict = it }
-                            )
-                        }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Checkbox(checked = useName, onCheckedChange = { useName = it })
+                                Text("Nombre: $displayName")
+                            }
 
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = {
-                            val finalAddress = if (useAddress) {
-                                if (manualDistrict.isNotBlank()) "${manualAddress.uppercase()} - ${manualDistrict.uppercase()}" else manualAddress.uppercase()
-                            } else null
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Checkbox(checked = useAddress, onCheckedChange = { useAddress = it })
+                                Text("Añadir dirección")
+                            }
 
-                            val selectedData = SelectedSunatData(
-                                nombre = if (useName) displayName else null,
-                                numeroDocumento = docNum,
-                                direccion = finalAddress
-                            )
-                            projectViewModel.updateSunatData(context, selectedData)
-                            sunatDataViewModel.resetState()
-                            navController.navigate(Screen.CoverSetup.route) { popUpTo(Screen.Main.route) }
-                        }) {
-                            Text("Usar estos datos")
+                            if (useAddress) {
+                                AddressInputFields(
+                                    manualAddress = manualAddress,
+                                    onAddressChange = { manualAddress = it },
+                                    manualDistrict = manualDistrict,
+                                    onDistrictChange = { manualDistrict = it }
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(onClick = {
+                                val finalAddress = if (useAddress) {
+                                    if (manualDistrict.isNotBlank()) "${manualAddress.uppercase()} - ${manualDistrict.uppercase()}" else manualAddress.uppercase()
+                                } else null
+
+                                val selectedData = SelectedSunatData(
+                                    nombre = if (useName) displayName else null,
+                                    numeroDocumento = docNum,
+                                    direccion = finalAddress
+                                )
+                                projectViewModel.updateSunatData(context, selectedData)
+                                sunatDataViewModel.resetState()
+                                navController.navigate(Screen.CoverSetup.route) { popUpTo(Screen.Main.route) }
+                            }) {
+                                Text("Usar estos datos")
+                            }
                         }
                     }
                 }
@@ -357,7 +378,7 @@ private fun AddressInputFields(
         value = manualAddress,
         onValueChange = { onAddressChange(it.replace("\n", "").uppercase()) },
         label = { Text("Dirección") },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
         singleLine = true
     )
     val districts = listOf(
@@ -382,7 +403,7 @@ private fun AddressInputFields(
             value = manualDistrict,
             onValueChange = { onDistrictChange(it.replace("\n", "").uppercase()) },
             label = { Text("Distrito (Opcional)") },
-            modifier = Modifier.menuAnchor().fillMaxWidth(),
+            modifier = Modifier.menuAnchor().fillMaxWidth().heightIn(min = 48.dp),
             singleLine = true
         )
         ExposedDropdownMenu(

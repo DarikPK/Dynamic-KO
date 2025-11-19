@@ -21,7 +21,9 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -46,6 +48,8 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.adaptive.WindowSizeClass
+import androidx.compose.material3.adaptive.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -60,6 +64,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
@@ -79,6 +84,7 @@ import pe.pixelcollage.app.viewmodel.ProjectViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CoverSetupScreen(
+    windowSizeClass: WindowSizeClass,
     navController: NavController,
     projectViewModel: ProjectViewModel,
     coverSetupViewModel: CoverSetupViewModel
@@ -225,175 +231,190 @@ fun CoverSetupScreen(
             )
         }
     ) { paddingValues ->
-        Column(
+        val widthSizeClass = windowSizeClass.widthSizeClass
+        val isCompact = widthSizeClass == WindowWidthSizeClass.Compact
+        val contentPadding = if (isCompact) 12.dp else 16.dp
+        val verticalSpacing = if (isCompact) 10.dp else 12.dp
+
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
         ) {
-            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                SegmentedButton(
-                    selected = coverConfig.showClientPrefix,
-                    onClick = { coverSetupViewModel.onShowClientPrefixChange(true) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
-                ) { Text("Cliente") }
-                SegmentedButton(
-                    selected = !coverConfig.showClientPrefix,
-                    onClick = { coverSetupViewModel.onShowClientPrefixChange(false) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
-                ) { Text("-") }
-            }
-            OutlinedTextField(
-                value = coverConfig.clientNameStyle.content,
-                onValueChange = { coverSetupViewModel.onClientNameChange(it) },
-                label = { Text("Fila 1") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-
-            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                SegmentedButton(
-                    selected = coverConfig.documentType == DocumentType.RUC,
-                    onClick = { coverSetupViewModel.onDocumentTypeChange(DocumentType.RUC) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 3)
-                ) { Text("RUC") }
-                SegmentedButton(
-                    selected = coverConfig.documentType == DocumentType.DNI,
-                    onClick = { coverSetupViewModel.onDocumentTypeChange(DocumentType.DNI) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 3)
-                ) { Text("DNI") }
-                SegmentedButton(
-                    selected = coverConfig.documentType == DocumentType.NONE,
-                    onClick = { coverSetupViewModel.onDocumentTypeChange(DocumentType.NONE) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 2, count = 3)
-                ) { Text("-") }
-            }
-            OutlinedTextField(
-                value = coverConfig.rucStyle.content,
-                onValueChange = { coverSetupViewModel.onRucChange(it) },
-                label = { Text("Fila 2") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = if (coverConfig.documentType == DocumentType.NONE) KeyboardType.Text else KeyboardType.Number
-                )
-            )
-
-            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                SegmentedButton(
-                    selected = coverConfig.showAddressPrefix,
-                    onClick = { coverSetupViewModel.onShowAddressPrefixChange(true) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
-                ) { Text("Dirección") }
-                SegmentedButton(
-                    selected = !coverConfig.showAddressPrefix,
-                    onClick = { coverSetupViewModel.onShowAddressPrefixChange(false) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
-                ) { Text("-") }
-            }
-            OutlinedTextField(
-                value = coverConfig.subtitleStyle.content,
-                onValueChange = { coverSetupViewModel.onAddressChange(it) },
-                label = { Text("Fila 3") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Button(
-                onClick = { imagePickerLauncher.launch("image/*") },
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .widthIn(max = 600.dp) // Contenedor máximo
+                    .padding(horizontal = contentPadding, vertical = 8.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(verticalSpacing)
             ) {
-                Text(stringResource(id = R.string.cover_setup_select_image_button))
-            }
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    SegmentedButton(
+                        selected = coverConfig.showClientPrefix,
+                        onClick = { coverSetupViewModel.onShowClientPrefixChange(true) },
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                    ) { Text("Cliente") }
+                    SegmentedButton(
+                        selected = !coverConfig.showClientPrefix,
+                        onClick = { coverSetupViewModel.onShowClientPrefixChange(false) },
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                    ) { Text("-") }
+                }
+                OutlinedTextField(
+                    value = coverConfig.clientNameStyle.content,
+                    onValueChange = { coverSetupViewModel.onClientNameChange(it) },
+                    label = { Text("Fila 1") },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                    singleLine = true
+                )
 
-            Spacer(modifier = Modifier.height(8.dp))
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    SegmentedButton(
+                        selected = coverConfig.documentType == DocumentType.RUC,
+                        onClick = { coverSetupViewModel.onDocumentTypeChange(DocumentType.RUC) },
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 3)
+                    ) { Text("RUC") }
+                    SegmentedButton(
+                        selected = coverConfig.documentType == DocumentType.DNI,
+                        onClick = { coverSetupViewModel.onDocumentTypeChange(DocumentType.DNI) },
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 3)
+                    ) { Text("DNI") }
+                    SegmentedButton(
+                        selected = coverConfig.documentType == DocumentType.NONE,
+                        onClick = { coverSetupViewModel.onDocumentTypeChange(DocumentType.NONE) },
+                        shape = SegmentedButtonDefaults.itemShape(index = 2, count = 3)
+                    ) { Text("-") }
+                }
+                OutlinedTextField(
+                    value = coverConfig.rucStyle.content,
+                    onValueChange = { coverSetupViewModel.onRucChange(it) },
+                    label = { Text("Fila 2") },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = if (coverConfig.documentType == DocumentType.NONE) KeyboardType.Text else KeyboardType.Number
+                    )
+                )
 
-            if (coverConfig.mainImageUri != null) {
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    val request = if (coverConfig.forceFullResCover) {
-                        ImageRequest.Builder(context)
-                            .data(coverConfig.mainImageUri)
-                            .allowHardware(false)
-                            .size(coil.size.Size.ORIGINAL)
-                            .diskCachePolicy(coil.request.CachePolicy.ENABLED)
-                            .memoryCachePolicy(coil.request.CachePolicy.ENABLED)
-                            .build()
-                    } else {
-                        ImageRequest.Builder(context)
-                            .data(coverConfig.mainImageUri)
-                            .allowHardware(true)
-                            .size(coil.size.Size(1080, 1080))
-                            .diskCachePolicy(coil.request.CachePolicy.ENABLED)
-                            .memoryCachePolicy(coil.request.CachePolicy.ENABLED)
-                            .crossfade(true)
-                            .build()
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    SegmentedButton(
+                        selected = coverConfig.showAddressPrefix,
+                        onClick = { coverSetupViewModel.onShowAddressPrefixChange(true) },
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                    ) { Text("Dirección") }
+                    SegmentedButton(
+                        selected = !coverConfig.showAddressPrefix,
+                        onClick = { coverSetupViewModel.onShowAddressPrefixChange(false) },
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                    ) { Text("-") }
+                }
+                OutlinedTextField(
+                    value = coverConfig.subtitleStyle.content,
+                    onValueChange = { coverSetupViewModel.onAddressChange(it) },
+                    label = { Text("Fila 3") },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = { imagePickerLauncher.launch("image/*") },
+                    modifier = Modifier.align(Alignment.CenterHorizontally).heightIn(min = 40.dp, max = 52.dp)
+                ) {
+                    Text(stringResource(id = R.string.cover_setup_select_image_button))
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+
+                if (coverConfig.mainImageUri != null) {
+                    Box(modifier = Modifier.fillMaxWidth().heightIn(max = screenHeight * 0.55f)) {
+                        val request = if (coverConfig.forceFullResCover) {
+                            ImageRequest.Builder(context)
+                                .data(coverConfig.mainImageUri)
+                                .allowHardware(false)
+                                .size(coil.size.Size.ORIGINAL)
+                                .diskCachePolicy(coil.request.CachePolicy.ENABLED)
+                                .memoryCachePolicy(coil.request.CachePolicy.ENABLED)
+                                .build()
+                        } else {
+                            ImageRequest.Builder(context)
+                                .data(coverConfig.mainImageUri)
+                                .allowHardware(true)
+                                .size(coil.size.Size(1080, 1080))
+                                .diskCachePolicy(coil.request.CachePolicy.ENABLED)
+                                .memoryCachePolicy(coil.request.CachePolicy.ENABLED)
+                                .crossfade(true)
+                                .build()
+                        }
+
+                        AsyncImage(
+                            model = request,
+                            contentDescription = stringResource(R.string.cover_image_selected_description),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(16f / 9f)
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .border(1.dp, MaterialTheme.colorScheme.outline),
+                            contentScale = ContentScale.Fit
+                        )
+                        IconButton(
+                            onClick = { coverSetupViewModel.clearMainImage() },
+                            modifier = Modifier.align(Alignment.TopEnd)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Eliminar imagen",
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                modifier = Modifier.background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
+                            )
+                        }
                     }
-
-                    AsyncImage(
-                        model = request,
-                        contentDescription = stringResource(R.string.cover_image_selected_description),
+                } else {
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(16f / 9f)
+                            .heightIn(max = screenHeight * 0.55f)
                             .background(MaterialTheme.colorScheme.surfaceVariant)
                             .border(1.dp, MaterialTheme.colorScheme.outline),
-                        contentScale = ContentScale.Fit
-                    )
-                    IconButton(
-                        onClick = { coverSetupViewModel.clearMainImage() },
-                        modifier = Modifier.align(Alignment.TopEnd)
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Eliminar imagen",
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            modifier = Modifier.background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
+                        Text(
+                            stringResource(R.string.cover_no_image_selected),
+                            style = MaterialTheme.typography.bodySmall
                         )
                     }
                 }
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(16f / 9f)
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .border(1.dp, MaterialTheme.colorScheme.outline),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        stringResource(R.string.cover_no_image_selected),
-                        style = MaterialTheme.typography.bodySmall
-                    )
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Divider()
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    "Orientación de foto recomendada",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    SegmentedButton(
+                        selected = coverConfig.pageOrientation == PageOrientation.Vertical,
+                        onClick = { coverSetupViewModel.onPageOrientationChange(PageOrientation.Vertical) },
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                    ) { Text(stringResource(R.string.orientation_vertical)) }
+                    SegmentedButton(
+                        selected = coverConfig.pageOrientation == PageOrientation.Horizontal,
+                        onClick = { coverSetupViewModel.onPageOrientationChange(PageOrientation.Horizontal) },
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                    ) { Text(stringResource(R.string.orientation_horizontal)) }
                 }
+
+                Spacer(modifier = Modifier.height(24.dp))
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            Divider()
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                "Orientación de foto recomendada",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                SegmentedButton(
-                    selected = coverConfig.pageOrientation == PageOrientation.Vertical,
-                    onClick = { coverSetupViewModel.onPageOrientationChange(PageOrientation.Vertical) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
-                ) { Text(stringResource(R.string.orientation_vertical)) }
-                SegmentedButton(
-                    selected = coverConfig.pageOrientation == PageOrientation.Horizontal,
-                    onClick = { coverSetupViewModel.onPageOrientationChange(PageOrientation.Horizontal) },
-                    shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
-                ) { Text(stringResource(R.string.orientation_horizontal)) }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }

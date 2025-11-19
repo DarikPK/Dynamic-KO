@@ -1,6 +1,7 @@
 package pe.pixelcollage.app.ui.navigation
 
 import androidx.activity.ComponentActivity
+import androidx.compose.material3.adaptive.WindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
@@ -28,6 +29,7 @@ import java.nio.charset.StandardCharsets
 
 @Composable
 fun AppNavigation(
+    windowSizeClass: WindowSizeClass,
     projectViewModel: ProjectViewModel,
     mainViewModel: MainViewModel,
     loginViewModel: LoginViewModel,
@@ -97,6 +99,7 @@ fun AppNavigation(
         navigation(startDestination = Screen.Main.route, route = "main_app_flow") {
             composable(Screen.Main.route) {
                 MainScreen(
+                    windowSizeClass = windowSizeClass,
                     navController = navController,
                     projectViewModel = projectViewModel,
                     mainViewModel = mainViewModel
@@ -104,6 +107,7 @@ fun AppNavigation(
             }
         composable(Screen.CoverSetup.route) {
             CoverSetupScreen(
+                windowSizeClass = windowSizeClass,
                 navController = navController,
                 projectViewModel = projectViewModel,
                 coverSetupViewModel = coverSetupViewModel
@@ -139,6 +143,7 @@ fun AppNavigation(
         }
         composable(Screen.SunatData.route) {
             SunatDataScreen(
+                windowSizeClass = windowSizeClass,
                 navController = navController,
                 projectViewModel = projectViewModel,
                 sunatDataViewModel = sunatDataViewModel
@@ -148,7 +153,10 @@ fun AppNavigation(
             ImageManagerScreen(navController = navController, projectViewModel = projectViewModel)
         }
         composable(Screen.AdvancedDesign.route) {
-            AdvancedDesignScreen(navController = navController)
+            AdvancedDesignScreen(
+                windowSizeClass = windowSizeClass,
+                navController = navController
+            )
         }
         composable(Screen.ImageBorders.route) {
             ImageBordersScreen(navController = navController, projectViewModel = projectViewModel)
@@ -200,6 +208,7 @@ fun AppNavigation(
         }
         composable(Screen.ThemeSelection.route) {
             ThemeSelectionScreen(
+                windowSizeClass = windowSizeClass,
                 navController = navController,
                 projectViewModel = projectViewModel
             )

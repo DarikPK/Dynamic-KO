@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -39,6 +40,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.adaptive.WindowSizeClass
+import androidx.compose.material3.adaptive.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -103,6 +106,7 @@ val themePreviews = listOf(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ThemeSelectionScreen(
+    windowSizeClass: WindowSizeClass,
     navController: NavController,
     projectViewModel: ProjectViewModel
 ) {
@@ -206,20 +210,31 @@ fun ThemeSelectionScreen(
             )
         }
     ) { paddingValues ->
-        LazyColumn(
+        val widthSizeClass = windowSizeClass.widthSizeClass
+        val isCompact = widthSizeClass == WindowWidthSizeClass.Compact
+        val contentPadding = if (isCompact) 8.dp else 16.dp
+
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(vertical = 16.dp)
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
         ) {
-            items(themePreviews) { themePreview ->
-                ThemePreviewItem(
-                    themePreview = themePreview,
-                    isSelected = themePreview.name == selectedThemeName,
-                    onThemeSelected = { selectedThemeName = it }
-                )
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .widthIn(max = 600.dp)
+                    .padding(horizontal = contentPadding),
+                verticalArrangement = Arrangement.spacedBy(contentPadding),
+                contentPadding = PaddingValues(vertical = contentPadding)
+            ) {
+                items(themePreviews) { themePreview ->
+                    ThemePreviewItem(
+                        themePreview = themePreview,
+                        isSelected = themePreview.name == selectedThemeName,
+                        onThemeSelected = { selectedThemeName = it }
+                    )
+                }
             }
         }
     }
