@@ -7,6 +7,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import pe.pixelcollage.app.R
 import pe.pixelcollage.app.ui.util.scaledSp
 import pe.pixelcollage.app.viewmodel.InnerPagesViewModel
