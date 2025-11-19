@@ -11,7 +11,7 @@
 # -------------------------------
 # ATRIBUTOS NECESARIOS (MUY IMPORTANTE)
 # -------------------------------
--keepattributes Signature, InnerClasses, EnclosingMethod, *Annotation*, RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations, KotlinMetadata
+-keepattributes Signature, RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations, AnnotationDefault, EnclosingMethod, InnerClasses, KotlinMetadata
 
 # -------------------------------
 # RETROFIT Y GSON
