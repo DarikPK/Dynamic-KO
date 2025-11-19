@@ -349,31 +349,23 @@ fun MainScreen(
                         onClick = { navController.navigate("account_management") },
                         icon = Icons.Default.Description
                     )
-                    Button(
+                    ResponsiveMainButton(
+                        text = "Cerrar Sesión",
                         onClick = {
                             mainViewModel.logout()
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Logout,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                        Text("Cerrar Sesión", color = MaterialTheme.colorScheme.onSecondaryContainer, fontSize = scaledSp(14))
-                    }
-                }
-                Button(
-                    onClick = { showDeleteConfirmDialog = true },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.DeleteForever,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onErrorContainer
+                        buttonColor = MaterialTheme.colorScheme.secondaryContainer,
+                        textColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        icon = Icons.Default.Logout
                     )
-                    Text(stringResource(R.string.main_btn_delete_project), color = MaterialTheme.colorScheme.onErrorContainer, fontSize = scaledSp(14))
                 }
+                ResponsiveMainButton(
+                    text = stringResource(R.string.main_btn_delete_project),
+                    onClick = { showDeleteConfirmDialog = true },
+                    buttonColor = MaterialTheme.colorScheme.errorContainer,
+                    textColor = MaterialTheme.colorScheme.onErrorContainer,
+                    icon = Icons.Default.DeleteForever
+                )
 
                 // Version Text
                 val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)

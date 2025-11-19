@@ -6,19 +6,18 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.max
+import kotlin.math.min
 
-// 1. Clasificación de Pantallas
-enum class ScreenWidthClass { Small, Medium, Large }
-enum class ScreenHeightClass { Short, Normal, Tall }
-
-// Clase para almacenar las dimensiones calculadas
+// Clases para almacenar las dimensiones calculadas
 data class ResponsiveDimensions(
-    val screenWidthClass: ScreenWidthClass,
-    val screenHeightClass: ScreenHeightClass,
     val typographyScale: Float,
+    val topBarTypographyScale: Float,
     val buttonMinHeight: Dp,
     val buttonWidthPercent: Float,
     val buttonInternalPadding: Dp,
@@ -37,90 +36,42 @@ val LocalResponsiveDimensions = compositionLocalOf<ResponsiveDimensions> { error
 @Composable
 fun ProvideResponsiveDimensions(content: @Composable () -> Unit) {
     val configuration = LocalConfiguration.current
+    val density = LocalDensity.current
     val screenWidthDp = configuration.screenWidthDp.dp
     val screenHeightDp = configuration.screenHeightDp.dp
 
-    val dimensions = remember(screenWidthDp, screenHeightDp) {
-        val widthClass = when {
-            screenWidthDp < 360.dp -> ScreenWidthClass.Small
-            screenWidthDp <= 420.dp -> ScreenWidthClass.Medium
-            else -> ScreenWidthClass.Large
+    val dimensions = remember(screenWidthDp, screenHeightDp, density.density) {
+        // Phone Factor basado en Pixel 9 Pro
+        var phoneFactor = min(screenWidthDp.value / 411f, screenHeightDp.value / 891f)
+        phoneFactor = max(0.90f, min(1.05f, phoneFactor))
+
+        // Corrección por densidad para Huawei y similares
+        val isDensityCorrectionNeeded = screenWidthDp <= 360.dp && density.densityDpi <= 330
+        if (isDensityCorrectionNeeded) {
+            phoneFactor = max(0.88f, phoneFactor - 0.05f)
         }
 
-        val heightClass = when {
-            screenHeightDp < 640.dp -> ScreenHeightClass.Short
-            screenHeightDp <= 880.dp -> ScreenHeightClass.Normal
-            else -> ScreenHeightClass.Tall
-        }
+        // Escalado de tipografía (contenido)
+        val typographyScale = phoneFactor
 
-        var typoScale = 1.0f
-        if (widthClass == ScreenWidthClass.Small) typoScale *= 0.85f
-        if (heightClass == ScreenHeightClass.Short) typoScale *= 0.90f
-        if (widthClass == ScreenWidthClass.Large || heightClass == ScreenHeightClass.Tall) typoScale *= 1.05f
+        // Escalado de tipografía (TopBar) - más suave
+        val topBarTypographyScale = max(0.97f, min(1.03f, phoneFactor))
 
-        // Reglas para pantallas muy pequeñas
-        if (screenWidthDp <= 320.dp) {
-            typoScale *= 0.80f // 20% adicional
-        }
-
-        val buttonHeight = when {
-            widthClass == ScreenWidthClass.Small && heightClass == ScreenHeightClass.Short -> 40.dp
-            widthClass == ScreenWidthClass.Small && heightClass != ScreenHeightClass.Short -> 44.dp
-            widthClass == ScreenWidthClass.Medium -> 48.dp
-            else -> 52.dp // Large
-        }.let { if (screenWidthDp <= 320.dp) 38.dp else it }
+        val buttonInternalPadding = if (isDensityCorrectionNeeded) 8.dp else 12.dp
 
         ResponsiveDimensions(
-            screenWidthClass = widthClass,
-            screenHeightClass = heightClass,
-            typographyScale = typoScale,
-            buttonMinHeight = buttonHeight,
-            buttonWidthPercent = when (widthClass) {
-                ScreenWidthClass.Small -> 0.90f
-                ScreenWidthClass.Medium -> 0.82f
-                ScreenWidthClass.Large -> 0.75f
-            },
-            buttonInternalPadding = when (widthClass) {
-                ScreenWidthClass.Small -> 8.dp
-                ScreenWidthClass.Medium -> 10.dp
-                ScreenWidthClass.Large -> 12.dp
-            },
-            buttonIconSize = when (widthClass) {
-                ScreenWidthClass.Small -> 18.dp
-                ScreenWidthClass.Medium -> 20.dp
-                ScreenWidthClass.Large -> 22.dp
-            },
-            buttonIconSpacing = when (widthClass) {
-                ScreenWidthClass.Small -> 6.dp
-                ScreenWidthClass.Medium -> 8.dp
-                ScreenWidthClass.Large -> 10.dp
-            },
-            verticalSpacing = when (heightClass) {
-                ScreenHeightClass.Short -> 8.dp
-                ScreenHeightClass.Normal -> 12.dp
-                ScreenHeightClass.Tall -> 16.dp
-            },
-            cardPadding = when {
-                widthClass == ScreenWidthClass.Small && heightClass == ScreenHeightClass.Short -> 8.dp
-                widthClass == ScreenWidthClass.Small -> 10.dp
-                widthClass == ScreenWidthClass.Medium -> 12.dp
-                else -> 16.dp
-            },
-            topBarHeight = when (widthClass) {
-                ScreenWidthClass.Small -> 48.dp
-                ScreenWidthClass.Medium -> 56.dp
-                ScreenWidthClass.Large -> 64.dp
-            },
-            topBarIconSize = when (widthClass) {
-                ScreenWidthClass.Small -> 18.dp
-                ScreenWidthClass.Medium -> 20.dp
-                ScreenWidthClass.Large -> 24.dp
-            },
-            externalMargin = when (widthClass) {
-                ScreenWidthClass.Small -> 10.dp
-                ScreenWidthClass.Medium -> 14.dp
-                ScreenWidthClass.Large -> 20.dp
-            }.let { if (screenWidthDp <= 320.dp) it * 0.8f else it }
+            typographyScale = typographyScale,
+            topBarTypographyScale = topBarTypographyScale,
+            buttonMinHeight = 48.dp,
+            buttonWidthPercent = 0.9f,
+            buttonInternalPadding = buttonInternalPadding,
+            buttonIconSize = max(20.dp, (24.dp * phoneFactor)),
+            buttonIconSpacing = 8.dp,
+            verticalSpacing = if (isDensityCorrectionNeeded) 8.dp else 12.dp,
+            cardPadding = if (isDensityCorrectionNeeded) 10.dp else 16.dp,
+            topBarHeight = max(56.dp, (64.dp * phoneFactor)),
+            topBarIconSize = max(20.dp, (24.dp * phoneFactor)),
+            externalMargin = 16.dp
         )
     }
 
@@ -136,6 +87,10 @@ object Responsive {
         get() = LocalResponsiveDimensions.current
 }
 
-// Extension para escalar tipografía
+// Extension para escalar tipografía con límites
 @Composable
-fun scaledSp(size: Int) = (size * Responsive.dimensions.typographyScale).sp
+fun scaledSp(size: TextUnit, minSize: TextUnit = 12.sp, isTopBar: Boolean = false): TextUnit {
+    val scale = if (isTopBar) Responsive.dimensions.topBarTypographyScale else Responsive.dimensions.typographyScale
+    val scaledSize = size * scale
+    return maxOf(minSize, scaledSize)
+}

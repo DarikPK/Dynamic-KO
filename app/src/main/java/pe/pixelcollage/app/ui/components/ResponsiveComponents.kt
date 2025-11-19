@@ -5,7 +5,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import pe.pixelcollage.app.ui.util.Responsive
@@ -17,9 +19,17 @@ fun ResponsiveMainButton(
     text: String,
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    buttonColor: Color? = null,
+    textColor: Color? = null
 ) {
     val dimensions = Responsive.dimensions
+    val colors = if (buttonColor != null) {
+        ButtonDefaults.buttonColors(containerColor = buttonColor)
+    } else {
+        ButtonDefaults.buttonColors()
+    }
+    val textFinalColor = textColor ?: LocalContentColor.current
 
     Button(
         onClick = onClick,
@@ -27,20 +37,23 @@ fun ResponsiveMainButton(
             .fillMaxWidth(dimensions.buttonWidthPercent)
             .heightIn(min = dimensions.buttonMinHeight),
         enabled = enabled,
-        contentPadding = PaddingValues(horizontal = dimensions.buttonInternalPadding)
+        contentPadding = PaddingValues(horizontal = dimensions.buttonInternalPadding),
+        colors = colors
     ) {
         if (icon != null) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                modifier = Modifier.size(dimensions.buttonIconSize)
+                modifier = Modifier.size(dimensions.buttonIconSize),
+                tint = textFinalColor
             )
             Spacer(modifier = Modifier.width(dimensions.buttonIconSpacing))
         }
         Text(
             text = text,
-            fontSize = scaledSp(16),
-            textAlign = TextAlign.Center
+            fontSize = scaledSp(16.sp),
+            textAlign = TextAlign.Center,
+            color = textFinalColor
         )
     }
 }
@@ -55,7 +68,11 @@ fun ResponsiveTopAppBar(
     val dimensions = Responsive.dimensions
 
     CenterAlignedTopAppBar(
-        title = title,
+        title = {
+            ProvideTextStyle(value = MaterialTheme.typography.titleLarge.copy(fontSize = scaledSp(20.sp, minSize = 14.sp, isTopBar = true))) {
+                title()
+            }
+        },
         modifier = Modifier.height(dimensions.topBarHeight),
         navigationIcon = navigationIcon,
         actions = actions,
@@ -71,7 +88,7 @@ fun TrialModeBanner(
     isVisible: Boolean
 ) {
     val dimensions = Responsive.dimensions
-    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
 
     androidx.compose.animation.AnimatedVisibility(
@@ -83,7 +100,7 @@ fun TrialModeBanner(
             modifier = Modifier
                 .fillMaxWidth(dimensions.buttonWidthPercent)
                 .padding(bottom = dimensions.verticalSpacing)
-                .heightIn(max = screenHeight * 0.12f),
+                .heightIn(max = screenHeight * 0.10f),
             elevation = CardDefaults.cardElevation(4.dp)
         ) {
             Column(
@@ -92,7 +109,7 @@ fun TrialModeBanner(
             ) {
                 Text(
                     "Modo de Prueba",
-                    fontSize = scaledSp(18),
+                    fontSize = scaledSp(18.sp, minSize = 14.sp),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -100,7 +117,7 @@ fun TrialModeBanner(
                 val remainingText = if (remainingPdfs == -1) "(No disponible)" else remainingPdfs.toString()
                 Text(
                     "PDFs restantes: $remainingText",
-                    fontSize = scaledSp(16),
+                    fontSize = scaledSp(16.sp),
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
