@@ -73,12 +73,12 @@ fun ProvideResponsiveDimensions(content: @Composable () -> Unit) {
             buttonMinHeight = 48.dp,
             buttonWidthPercent = 0.9f,
             buttonInternalPadding = buttonInternalPadding,
-            buttonIconSize = maxOf(20.dp, (24.dp * phoneFactor)),
+            buttonIconSize = (24.dp * phoneFactor).coerceAtLeast(20.dp),
             buttonIconSpacing = 8.dp,
             verticalSpacing = if (isDensityCorrectionNeeded) 8.dp else 12.dp,
             cardPadding = if (isDensityCorrectionNeeded) 10.dp else 16.dp,
-            topBarHeight = maxOf(56.dp, (64.dp * phoneFactor)),
-            topBarIconSize = maxOf(20.dp, (24.dp * phoneFactor)),
+            topBarHeight = (64.dp * phoneFactor).coerceAtLeast(56.dp),
+            topBarIconSize = (24.dp * phoneFactor).coerceAtLeast(20.dp),
             externalMargin = 16.dp
         )
     }
@@ -100,5 +100,5 @@ object Responsive {
 fun scaledSp(size: TextUnit, minSize: TextUnit = 12.sp, isTopBar: Boolean = false): TextUnit {
     val scale = if (isTopBar) Responsive.dimensions.topBarTypographyScale else Responsive.dimensions.typographyScale
     val scaledSize = size * scale
-    return maxOf(minSize, scaledSize)
+    return scaledSize.coerceAtLeast(minSize)
 }
