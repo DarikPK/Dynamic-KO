@@ -148,19 +148,19 @@ fun CoverSetupScreen(
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
-            title = { Text("Salir sin guardar", fontSize = scaledSp(20)) },
-            text = { Text("Has realizado cambios en la portada pero no los has guardado. ¿Estás seguro de que quieres salir?", fontSize = scaledSp(16)) },
+            title = { Text("Salir sin guardar", fontSize = scaledSp(20.sp)) },
+            text = { Text("Has realizado cambios en la portada pero no los has guardado. ¿Estás seguro de que quieres salir?", fontSize = scaledSp(16.sp)) },
             confirmButton = {
                 TextButton(onClick = {
                     showDialog = false
                     navController.popBackStack()
                 }) {
-                    Text("Sí, salir", fontSize = scaledSp(14))
+                    Text("Sí, salir", fontSize = scaledSp(14.sp))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDialog = false }) {
-                    Text("No, quedarse", fontSize = scaledSp(14))
+                    Text("No, quedarse", fontSize = scaledSp(14.sp))
                 }
             }
         )
@@ -262,20 +262,20 @@ fun CoverSetupScreen(
                         selected = coverConfig.showClientPrefix,
                         onClick = { coverSetupViewModel.onShowClientPrefixChange(true) },
                         shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
-                    ) { Text("Cliente", fontSize = scaledSp(14)) }
+                    ) { Text("Cliente", fontSize = scaledSp(14.sp)) }
                     SegmentedButton(
                         selected = !coverConfig.showClientPrefix,
                         onClick = { coverSetupViewModel.onShowClientPrefixChange(false) },
                         shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
-                    ) { Text("-", fontSize = scaledSp(14)) }
+                    ) { Text("-", fontSize = scaledSp(14.sp)) }
                 }
                 OutlinedTextField(
                     value = coverConfig.clientNameStyle.content,
                     onValueChange = { coverSetupViewModel.onClientNameChange(it) },
-                    label = { Text("Fila 1", fontSize = scaledSp(14)) },
+                    label = { Text("Fila 1", fontSize = scaledSp(14.sp)) },
                     modifier = Modifier.fillMaxWidth().heightIn(min = dimensions.buttonMinHeight),
                     singleLine = true,
-                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = scaledSp(16))
+                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = scaledSp(16.sp))
                 )
 
                 SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
@@ -283,28 +283,28 @@ fun CoverSetupScreen(
                         selected = coverConfig.documentType == DocumentType.RUC,
                         onClick = { coverSetupViewModel.onDocumentTypeChange(DocumentType.RUC) },
                         shape = SegmentedButtonDefaults.itemShape(index = 0, count = 3)
-                    ) { Text("RUC", fontSize = scaledSp(14)) }
+                    ) { Text("RUC", fontSize = scaledSp(14.sp)) }
                     SegmentedButton(
                         selected = coverConfig.documentType == DocumentType.DNI,
                         onClick = { coverSetupViewModel.onDocumentTypeChange(DocumentType.DNI) },
                         shape = SegmentedButtonDefaults.itemShape(index = 1, count = 3)
-                    ) { Text("DNI", fontSize = scaledSp(14)) }
+                    ) { Text("DNI", fontSize = scaledSp(14.sp)) }
                     SegmentedButton(
                         selected = coverConfig.documentType == DocumentType.NONE,
                         onClick = { coverSetupViewModel.onDocumentTypeChange(DocumentType.NONE) },
                         shape = SegmentedButtonDefaults.itemShape(index = 2, count = 3)
-                    ) { Text("-", fontSize = scaledSp(14)) }
+                    ) { Text("-", fontSize = scaledSp(14.sp)) }
                 }
                 OutlinedTextField(
                     value = coverConfig.rucStyle.content,
                     onValueChange = { coverSetupViewModel.onRucChange(it) },
-                    label = { Text("Fila 2", fontSize = scaledSp(14)) },
+                    label = { Text("Fila 2", fontSize = scaledSp(14.sp)) },
                     modifier = Modifier.fillMaxWidth().heightIn(min = dimensions.buttonMinHeight),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = if (coverConfig.documentType == DocumentType.NONE) KeyboardType.Text else KeyboardType.Number
                     ),
-                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = scaledSp(16))
+                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = scaledSp(16.sp))
                 )
 
                 SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
@@ -312,20 +312,20 @@ fun CoverSetupScreen(
                         selected = coverConfig.showAddressPrefix,
                         onClick = { coverSetupViewModel.onShowAddressPrefixChange(true) },
                         shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
-                    ) { Text("Dirección", fontSize = scaledSp(14)) }
+                    ) { Text("Dirección", fontSize = scaledSp(14.sp)) }
                     SegmentedButton(
                         selected = !coverConfig.showAddressPrefix,
                         onClick = { coverSetupViewModel.onShowAddressPrefixChange(false) },
                         shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
-                    ) { Text("-", fontSize = scaledSp(14)) }
+                    ) { Text("-", fontSize = scaledSp(14.sp)) }
                 }
                 OutlinedTextField(
                     value = coverConfig.subtitleStyle.content,
                     onValueChange = { coverSetupViewModel.onAddressChange(it) },
-                    label = { Text("Fila 3", fontSize = scaledSp(14)) },
+                    label = { Text("Fila 3", fontSize = scaledSp(14.sp)) },
                     modifier = Modifier.fillMaxWidth().heightIn(min = dimensions.buttonMinHeight),
                     singleLine = true,
-                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = scaledSp(16))
+                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = scaledSp(16.sp))
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -396,7 +396,7 @@ fun CoverSetupScreen(
                         Text(
                             stringResource(R.string.cover_no_image_selected),
                             style = MaterialTheme.typography.bodySmall,
-                            fontSize = scaledSp(12)
+                            fontSize = scaledSp(12.sp)
                         )
                     }
                 }
@@ -409,19 +409,19 @@ fun CoverSetupScreen(
                     "Orientación de foto recomendada",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(bottom = 8.dp),
-                    fontSize = scaledSp(18)
+                    fontSize = scaledSp(18.sp)
                 )
                 SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                     SegmentedButton(
                         selected = coverConfig.pageOrientation == PageOrientation.Vertical,
                         onClick = { coverSetupViewModel.onPageOrientationChange(PageOrientation.Vertical) },
                         shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
-                    ) { Text(stringResource(R.string.orientation_vertical), fontSize = scaledSp(14)) }
+                    ) { Text(stringResource(R.string.orientation_vertical), fontSize = scaledSp(14.sp)) }
                     SegmentedButton(
                         selected = coverConfig.pageOrientation == PageOrientation.Horizontal,
                         onClick = { coverSetupViewModel.onPageOrientationChange(PageOrientation.Horizontal) },
                         shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
-                    ) { Text(stringResource(R.string.orientation_horizontal), fontSize = scaledSp(14)) }
+                    ) { Text(stringResource(R.string.orientation_horizontal), fontSize = scaledSp(14.sp)) }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))

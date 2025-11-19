@@ -143,19 +143,19 @@ fun ThemeSelectionScreen(
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
-            title = { Text("Salir sin guardar", fontSize = scaledSp(20)) },
-            text = { Text("Has seleccionado el tema '$selectedThemeName' pero no has guardado los cambios. ¿Estás seguro de que quieres salir?", fontSize = scaledSp(16)) },
+            title = { Text("Salir sin guardar", fontSize = scaledSp(20.sp)) },
+            text = { Text("Has seleccionado el tema '$selectedThemeName' pero no has guardado los cambios. ¿Estás seguro de que quieres salir?", fontSize = scaledSp(16.sp)) },
             confirmButton = {
                 TextButton(onClick = {
                     showDialog = false
                     navController.popBackStack()
                 }) {
-                    Text("Sí, salir", fontSize = scaledSp(14))
+                    Text("Sí, salir", fontSize = scaledSp(14.sp))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDialog = false }) {
-                    Text("No, quedarse", fontSize = scaledSp(14))
+                    Text("No, quedarse", fontSize = scaledSp(14.sp))
                 }
             }
         )
@@ -274,7 +274,7 @@ fun ThemePreviewItem(
             Spacer(modifier = Modifier.width(16.dp))
             Text(
                 text = themePreview.name,
-                fontSize = scaledSp(20),
+                fontSize = scaledSp(20.sp),
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.weight(1f)

@@ -150,20 +150,20 @@ fun InnerPagesScreen(
     if (showExitConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showExitConfirmDialog = false },
-            title = { Text("Salir sin guardar", fontSize = scaledSp(20)) },
-            text = { Text("Has realizado cambios en las páginas interiores pero no los has guardado. ¿Estás seguro de que quieres salir?", fontSize = scaledSp(16)) },
+            title = { Text("Salir sin guardar", fontSize = scaledSp(20.sp)) },
+            text = { Text("Has realizado cambios en las páginas interiores pero no los has guardado. ¿Estás seguro de que quieres salir?", fontSize = scaledSp(16.sp)) },
             confirmButton = {
                 TextButton(onClick = {
                     showExitConfirmDialog = false
                     innerPagesViewModel.discardChanges()
                     navController.popBackStack()
                 }) {
-                    Text("Sí, salir", fontSize = scaledSp(14))
+                    Text("Sí, salir", fontSize = scaledSp(14.sp))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showExitConfirmDialog = false }) {
-                    Text("No, quedarse", fontSize = scaledSp(14))
+                    Text("No, quedarse", fontSize = scaledSp(14.sp))
                 }
             }
         )
@@ -381,14 +381,14 @@ fun InnerPagesScreen(
                     Text(
                         text = "Crea tu primer grupo",
                         style = MaterialTheme.typography.titleLarge,
-                        fontSize = scaledSp(22)
+                        fontSize = scaledSp(22.sp)
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "Añade un grupo para empezar a organizar tus imágenes.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-                        fontSize = scaledSp(16)
+                        fontSize = scaledSp(16.sp)
                     )
                 }
             } else {

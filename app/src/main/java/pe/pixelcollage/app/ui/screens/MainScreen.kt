@@ -148,18 +148,18 @@ fun MainScreen(
         val sizeInMb = "%.2f".format((saveState as SaveState.RequiresConfirmation).sizeInBytes / (1024.0 * 1024.0))
         AlertDialog(
             onDismissRequest = { projectViewModel.resetSaveState() },
-            title = { Text("Confirmar Guardado", fontSize = scaledSp(20)) },
-            text = { Text("El tamaño del proyecto ($sizeInMb MB) supera los 50MB. ¿Deseas guardarlo de todos modos?", fontSize = scaledSp(16)) },
+            title = { Text("Confirmar Guardado", fontSize = scaledSp(20.sp)) },
+            text = { Text("El tamaño del proyecto ($sizeInMb MB) supera los 50MB. ¿Deseas guardarlo de todos modos?", fontSize = scaledSp(16.sp)) },
             confirmButton = {
                 Button(onClick = {
                     projectViewModel.forceSaveProject(context)
                 }) {
-                    Text("Guardar", fontSize = scaledSp(14))
+                    Text("Guardar", fontSize = scaledSp(14.sp))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { projectViewModel.resetSaveState() }) {
-                    Text("Cancelar", fontSize = scaledSp(14))
+                    Text("Cancelar", fontSize = scaledSp(14.sp))
                 }
             }
         )
@@ -212,11 +212,11 @@ fun MainScreen(
     if (showLimitReachedDialog) {
         AlertDialog(
             onDismissRequest = { showLimitReachedDialog = false },
-            title = { Text("Límite Alcanzado", fontSize = scaledSp(20)) },
-            text = { Text("La aplicación aún está en versión de pruebas. Para obtener acceso completo, por favor contacta con el administrador al teléfono 930653718.", fontSize = scaledSp(16)) },
+            title = { Text("Límite Alcanzado", fontSize = scaledSp(20.sp)) },
+            text = { Text("La aplicación aún está en versión de pruebas. Para obtener acceso completo, por favor contacta con el administrador al teléfono 930653718.", fontSize = scaledSp(16.sp)) },
             confirmButton = {
                 Button(onClick = { showLimitReachedDialog = false }) {
-                    Text("Entendido", fontSize = scaledSp(14))
+                    Text("Entendido", fontSize = scaledSp(14.sp))
                 }
             }
         )
@@ -384,7 +384,7 @@ fun MainScreen(
 
                 Text(
                     text = "v$versionName$pdfUsageText",
-                    fontSize = scaledSp(12),
+                    fontSize = scaledSp(12.sp),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                     modifier = Modifier

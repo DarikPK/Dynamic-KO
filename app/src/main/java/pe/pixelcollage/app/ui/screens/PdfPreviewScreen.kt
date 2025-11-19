@@ -110,7 +110,7 @@ fun PdfPreviewScreen(
                     text = "Tamaño del PDF: ${projectViewModel.getFormattedPdfSize()}",
                     modifier = Modifier.padding(dimensions.externalMargin),
                     style = MaterialTheme.typography.titleMedium,
-                    fontSize = scaledSp(18)
+                    fontSize = scaledSp(18.sp)
                 )
             }
             if (file != null && file.exists()) {
@@ -122,7 +122,7 @@ fun PdfPreviewScreen(
                         .padding(paddingValues),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Error: PDF not found", fontSize = scaledSp(16))
+                    Text("Error: PDF not found", fontSize = scaledSp(16.sp))
                 }
             }
         }
@@ -160,7 +160,7 @@ fun PdfView(modifier: Modifier = Modifier, uri: Uri) {
 
     if (rendererState.renderer == null) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Error opening PDF", fontSize = scaledSp(16))
+            Text("Error opening PDF", fontSize = scaledSp(16.sp))
         }
         return
     }
