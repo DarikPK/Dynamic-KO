@@ -233,7 +233,7 @@ private val AmbarColorScheme = lightColorScheme(
 fun DynamicCollageTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = false,
-    themeName: String = "Default",
+    themeName: String = "Verde Jade",
     content: @Composable () -> Unit
 ) {
     val colorScheme = when (themeName) {
@@ -252,7 +252,7 @@ fun DynamicCollageTheme(
         "Verde Jade" -> VerdeJadeColorScheme
         "Rojo Rubí" -> RojoRubiColorScheme
         "Ámbar" -> AmbarColorScheme
-        else -> DarkColorScheme
+        else -> VerdeJadeColorScheme
     }
     val view = LocalView.current
     if (!view.isInEditMode) {
