@@ -203,3 +203,6 @@ val ambar_onPrimaryContainer = Color(0xFF000000)
 val ambar_secondary = Color(0xFFFFCA28) // Amber 400
 val ambar_background = Color(0xFFFFF8E1) // Amber 50
 val ambar_surface = Color(0xFFFFFFFF)
+
+// Custom Colors
+val gold = Color(0xFFFFD700)

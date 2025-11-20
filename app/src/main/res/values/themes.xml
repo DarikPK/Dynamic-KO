@@ -4,4 +4,12 @@
     <style name="Theme.DynamicCollage" parent="android:Theme.Material.Light.NoActionBar">
         <!-- Customize your theme here. -->
     </style>
+
+    <!-- Theme for the splash screen -->
+    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        <!-- Set the splash screen background to white -->
+        <item name="windowSplashScreenBackground">@android:color/white</item>
+        <!-- Set the theme of the main app -->
+        <item name="postSplashScreenTheme">@style/Theme.DynamicCollage</item>
+    </style>
 </resources>
