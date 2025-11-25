@@ -634,10 +634,12 @@ class ProjectViewModel : ViewModel() {
                     _imageEffectSettings.value = projectState.imageEffectSettings
                     _recycledUris.value = projectState.recycledUris
 
-                    // Aplicar el tema cargado
-                    val loadedTheme = ColorThemes.themes.find { it.name == projectState.themeName }
-                    if (loadedTheme != null) {
-                        applyColorTheme(context, loadedTheme, save = false)
+                    // Aplicar el tema cargado o el por defecto
+                    val themeNameToApply = if (projectState.themeName.isNullOrBlank()) "Sky Blue" else projectState.themeName
+                    _themeName.value = themeNameToApply
+                    val themeToApply = ColorThemes.themes.find { it.name == themeNameToApply }
+                    if (themeToApply != null) {
+                        applyColorTheme(context, themeToApply, save = false)
                     }
                 }
             } catch (t: Throwable) {
