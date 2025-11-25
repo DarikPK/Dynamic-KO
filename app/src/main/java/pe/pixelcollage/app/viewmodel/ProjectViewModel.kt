@@ -283,7 +283,12 @@ class ProjectViewModel : ViewModel() {
 
     fun updateTheme(context: Context, newThemeName: String) {
         _themeName.value = newThemeName
-        saveProject(context)
+        val theme = ColorThemes.themes.find { it.name == newThemeName }
+        if (theme != null) {
+            applyColorTheme(context, theme)
+        } else {
+            saveProject(context)
+        }
     }
 
     fun updateSunatData(context: Context, data: SelectedSunatData) {

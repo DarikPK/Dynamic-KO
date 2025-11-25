@@ -122,12 +122,9 @@ fun ColorThemeSelectionScreen(
                     ) {
                         IconButton(
                             onClick = {
-                                val selectedTheme = ColorThemes.themes.find { it.name == draftThemeName }
-                                if (selectedTheme != null) {
-                                    projectViewModel.applyColorTheme(context, selectedTheme)
-                                    originalThemeName = draftThemeName
-                                    Toast.makeText(context, "Tema guardado", Toast.LENGTH_SHORT).show()
-                                }
+                                projectViewModel.updateTheme(context, draftThemeName)
+                                originalThemeName = draftThemeName
+                                Toast.makeText(context, "Tema guardado", Toast.LENGTH_SHORT).show()
                             },
                             enabled = hasChanges,
                             modifier = Modifier.align(Alignment.Center)
