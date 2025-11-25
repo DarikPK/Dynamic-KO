@@ -626,6 +626,12 @@ class ProjectViewModel : ViewModel() {
                     _themeName.value = projectState.themeName
                     _imageEffectSettings.value = projectState.imageEffectSettings
                     _recycledUris.value = projectState.recycledUris
+
+                    // Aplicar el tema cargado
+                    val loadedTheme = ColorThemes.themes.find { it.name == projectState.themeName }
+                    if (loadedTheme != null) {
+                        applyColorTheme(context, loadedTheme)
+                    }
                 }
             } catch (t: Throwable) {
                 _saveState.value = SaveState.Error("Fallo al cargar el proyecto guardado: ${t.javaClass.simpleName}")
