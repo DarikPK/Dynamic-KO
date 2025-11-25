@@ -53,9 +53,20 @@ class CoverSetupViewModel : ViewModel() {
 
     fun onRucChange(newRuc: String) {
         _coverConfig.update { currentState ->
-            currentState.copy(
-                rucStyle = currentState.rucStyle.copy(content = newRuc)
-            )
+            val currentType = currentState.documentType
+            val maxLength = when (currentType) {
+                DocumentType.RUC -> 11
+                DocumentType.DNI -> 8
+                else -> Int.MAX_VALUE // Sin límite para otros casos
+            }
+
+            if (newRuc.length <= maxLength) {
+                currentState.copy(
+                    rucStyle = currentState.rucStyle.copy(content = newRuc)
+                )
+            } else {
+                currentState // No se actualiza si excede el límite
+            }
         }
     }
 

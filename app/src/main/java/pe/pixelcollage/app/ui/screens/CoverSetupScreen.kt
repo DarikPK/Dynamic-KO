@@ -273,17 +273,32 @@ fun CoverSetupScreen(
                 SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                     SegmentedButton(
                         selected = coverConfig.documentType == DocumentType.RUC,
-                        onClick = { coverSetupViewModel.onDocumentTypeChange(DocumentType.RUC) },
+                        onClick = {
+                            if (coverConfig.documentType != DocumentType.RUC) {
+                                coverSetupViewModel.onDocumentTypeChange(DocumentType.RUC)
+                                coverSetupViewModel.onRucChange("") // Limpiar campo
+                            }
+                        },
                         shape = SegmentedButtonDefaults.itemShape(index = 0, count = 3)
                     ) { Text("RUC") }
                     SegmentedButton(
                         selected = coverConfig.documentType == DocumentType.DNI,
-                        onClick = { coverSetupViewModel.onDocumentTypeChange(DocumentType.DNI) },
+                        onClick = {
+                            if (coverConfig.documentType != DocumentType.DNI) {
+                                coverSetupViewModel.onDocumentTypeChange(DocumentType.DNI)
+                                coverSetupViewModel.onRucChange("") // Limpiar campo
+                            }
+                        },
                         shape = SegmentedButtonDefaults.itemShape(index = 1, count = 3)
                     ) { Text("DNI") }
                     SegmentedButton(
                         selected = coverConfig.documentType == DocumentType.NONE,
-                        onClick = { coverSetupViewModel.onDocumentTypeChange(DocumentType.NONE) },
+                        onClick = {
+                            if (coverConfig.documentType != DocumentType.NONE) {
+                                coverSetupViewModel.onDocumentTypeChange(DocumentType.NONE)
+                                coverSetupViewModel.onRucChange("") // Limpiar campo
+                            }
+                        },
                         shape = SegmentedButtonDefaults.itemShape(index = 2, count = 3)
                     ) { Text("-") }
                 }

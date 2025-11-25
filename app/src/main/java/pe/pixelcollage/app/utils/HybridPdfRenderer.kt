@@ -233,7 +233,11 @@ internal fun drawCoverPageContent(canvas: Canvas, context: Context, config: Cove
         drawRow(canvas, context, "Cliente: ${config.clientNameStyle.content.let { if (config.allCaps) it.uppercase() else it }}", config.clientNameStyle, rect)
     }
     layoutRects["ruc"]?.let { rect ->
-        drawRow(canvas, context, "RUC: ${config.rucStyle.content.let { if (config.allCaps) it.uppercase() else it }}", config.rucStyle, rect)
+        val docLabel = when (config.documentType) {
+            DocumentType.DNI -> "DNI:"
+            else -> "RUC:"
+        }
+        drawRow(canvas, context, "$docLabel ${config.rucStyle.content.let { if (config.allCaps) it.uppercase() else it }}", config.rucStyle, rect)
     }
     layoutRects["address"]?.let { rect ->
         drawRow(canvas, context, "Dirección: ${config.subtitleStyle.content.let { if (config.allCaps) it.uppercase() else it }}", config.subtitleStyle, rect)
