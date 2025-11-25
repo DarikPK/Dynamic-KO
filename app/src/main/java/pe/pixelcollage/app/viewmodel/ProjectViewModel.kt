@@ -300,7 +300,7 @@ class ProjectViewModel : ViewModel() {
         _currentCoverConfig.value = newConfig
     }
 
-    fun applyColorTheme(context: Context, theme: ColorTheme) {
+    fun applyColorTheme(context: Context, theme: ColorTheme, save: Boolean = true) {
         _currentCoverConfig.update { config ->
             config.copy(
                 templateName = theme.name,
@@ -314,7 +314,9 @@ class ProjectViewModel : ViewModel() {
                 group.copy(optionalTextStyle = group.optionalTextStyle.copy(fontColor = theme.textColor, rowStyle = group.optionalTextStyle.rowStyle.copy(backgroundColor = theme.rucBackgroundColor, border = group.optionalTextStyle.rowStyle.border.copy(color = theme.borderColor))))
             }
         }
-        saveProject(context)
+        if (save) {
+            saveProject(context)
+        }
     }
 
     fun updateForceFullResCover(context: Context, forceFullRes: Boolean) {
@@ -630,7 +632,7 @@ class ProjectViewModel : ViewModel() {
                     // Aplicar el tema cargado
                     val loadedTheme = ColorThemes.themes.find { it.name == projectState.themeName }
                     if (loadedTheme != null) {
-                        applyColorTheme(context, loadedTheme)
+                        applyColorTheme(context, loadedTheme, save = false)
                     }
                 }
             } catch (t: Throwable) {
