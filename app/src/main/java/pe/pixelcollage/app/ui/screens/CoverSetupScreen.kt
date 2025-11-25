@@ -68,8 +68,11 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
@@ -92,9 +95,11 @@ fun CoverSetupScreen(
     val coverConfig by coverSetupViewModel.coverConfig.collectAsState()
     val projectCoverConfig by projectViewModel.currentCoverConfig.collectAsState()
     val sunatData by projectViewModel.sunatData.collectAsState()
+    val sunatDataConsumed by projectViewModel.sunatDataConsumed.collectAsState()
     val context = LocalContext.current
     var hasChanges by remember { mutableStateOf(false) }
-    var showDialog by remember { mutableStateOf(false) }
+    var showNavigateBackDialog by remember { mutableStateOf(false) }
+    var showSaveValidationDialog by remember { mutableStateOf(false) }
     val lifecycleOwner = LocalLifecycleOwner.current
 
     DisposableEffect(lifecycleOwner) {
@@ -115,9 +120,10 @@ fun CoverSetupScreen(
         coverSetupViewModel.loadInitialConfig(projectCoverConfig)
     }
 
-    LaunchedEffect(sunatData) {
-        sunatData?.let {
-            coverSetupViewModel.onSunatDataReceived(it)
+    LaunchedEffect(sunatData, sunatDataConsumed) {
+        if (sunatData != null && !sunatDataConsumed) {
+            coverSetupViewModel.onSunatDataReceived(sunatData!!)
+            projectViewModel.consumeSunatData()
         }
     }
 
@@ -135,26 +141,56 @@ fun CoverSetupScreen(
         ), label = "pulse"
     )
 
-    BackHandler(enabled = hasChanges) {
-        showDialog = true
+    val docNumber = coverConfig.rucStyle.content
+    val docType = coverConfig.documentType
+    val isDocNumberValid = when (docType) {
+        DocumentType.RUC -> docNumber.length == 11
+        DocumentType.DNI -> docNumber.length == 8
+        else -> true
     }
 
-    if (showDialog) {
+    BackHandler(enabled = hasChanges) {
+        showNavigateBackDialog = true
+    }
+
+    if (showNavigateBackDialog) {
         AlertDialog(
-            onDismissRequest = { showDialog = false },
+            onDismissRequest = { showNavigateBackDialog = false },
             title = { Text("Salir sin guardar") },
             text = { Text("Has realizado cambios en la portada pero no los has guardado. ¿Estás seguro de que quieres salir?") },
             confirmButton = {
                 TextButton(onClick = {
-                    showDialog = false
+                    showNavigateBackDialog = false
                     navController.popBackStack()
                 }) {
                     Text("Sí, salir")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDialog = false }) {
+                TextButton(onClick = { showNavigateBackDialog = false }) {
                     Text("No, quedarse")
+                }
+            }
+        )
+    }
+
+    if (showSaveValidationDialog) {
+        AlertDialog(
+            onDismissRequest = { showSaveValidationDialog = false },
+            title = { Text("Número de documento incompleto") },
+            text = { Text("El número de documento no tiene la longitud requerida. ¿Deseas guardarlo de todas formas?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    projectViewModel.saveCoverConfigAndProcessImage(context, coverConfig)
+                    Toast.makeText(context, context.getString(R.string.cover_config_saved_toast), Toast.LENGTH_SHORT).show()
+                    showSaveValidationDialog = false
+                }) {
+                    Text("Guardar igual")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSaveValidationDialog = false }) {
+                    Text("Cancelar")
                 }
             }
         )
@@ -175,7 +211,7 @@ fun CoverSetupScreen(
                 navigationIcon = {
                     IconButton(onClick = {
                         if (hasChanges) {
-                            showDialog = true
+                            showNavigateBackDialog = true
                         } else {
                             navController.popBackStack()
                         }
@@ -211,8 +247,12 @@ fun CoverSetupScreen(
                     ) {
                         IconButton(
                             onClick = {
-                                projectViewModel.saveCoverConfigAndProcessImage(context, coverConfig)
-                                Toast.makeText(context, context.getString(R.string.cover_config_saved_toast), Toast.LENGTH_SHORT).show()
+                                if (isDocNumberValid || docNumber.isEmpty()) {
+                                    projectViewModel.saveCoverConfigAndProcessImage(context, coverConfig)
+                                    Toast.makeText(context, context.getString(R.string.cover_config_saved_toast), Toast.LENGTH_SHORT).show()
+                                } else {
+                                    showSaveValidationDialog = true
+                                }
                             },
                             enabled = hasChanges,
                             modifier = Modifier.align(Alignment.Center)
@@ -302,15 +342,29 @@ fun CoverSetupScreen(
                         shape = SegmentedButtonDefaults.itemShape(index = 2, count = 3)
                     ) { Text("-") }
                 }
+                val docNumber = coverConfig.rucStyle.content
+                val docType = coverConfig.documentType
                 OutlinedTextField(
-                    value = coverConfig.rucStyle.content,
+                    value = docNumber,
                     onValueChange = { coverSetupViewModel.onRucChange(it) },
                     label = { Text("Fila 2") },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = if (coverConfig.documentType == DocumentType.NONE) KeyboardType.Text else KeyboardType.Number
-                    )
+                        keyboardType = if (docType == DocumentType.NONE) KeyboardType.Text else KeyboardType.Number
+                    ),
+                    supportingText = {
+                        if (!isDocNumberValid && docNumber.isNotEmpty()) {
+                            val requiredLength = if (docType == DocumentType.RUC) 11 else 8
+                            Text(
+                                text = "Se requieren $requiredLength dígitos",
+                                color = MaterialTheme.colorScheme.error,
+                                style = TextStyle(textAlign = TextAlign.End),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    },
+                    isError = !isDocNumberValid && docNumber.isNotEmpty()
                 )
 
                 SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {

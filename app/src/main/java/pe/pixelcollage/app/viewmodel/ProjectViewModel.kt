@@ -62,6 +62,9 @@ class ProjectViewModel : ViewModel() {
     private val _sunatData = MutableStateFlow<SelectedSunatData?>(null)
     val sunatData: StateFlow<SelectedSunatData?> = _sunatData.asStateFlow()
 
+    private val _sunatDataConsumed = MutableStateFlow(false)
+    val sunatDataConsumed: StateFlow<Boolean> = _sunatDataConsumed.asStateFlow()
+
     private val _themeName = MutableStateFlow("Emerald Green")
     val themeName: StateFlow<String> = _themeName.asStateFlow()
 
@@ -285,7 +288,12 @@ class ProjectViewModel : ViewModel() {
 
     fun updateSunatData(context: Context, data: SelectedSunatData) {
         _sunatData.value = data
+        _sunatDataConsumed.value = false // Marcar como no consumido
         saveProject(context)
+    }
+
+    fun consumeSunatData() {
+        _sunatDataConsumed.value = true
     }
 
     fun updateCoverConfig(newConfig: CoverPageConfig) {
@@ -614,6 +622,7 @@ class ProjectViewModel : ViewModel() {
                     _currentCoverConfig.value = projectState.coverConfig
                     _currentPageGroups.value = projectState.pageGroups
                     _sunatData.value = projectState.sunatData
+                    _sunatDataConsumed.value = true // Para evitar que se reaplique al cargar
                     _themeName.value = projectState.themeName
                     _imageEffectSettings.value = projectState.imageEffectSettings
                     _recycledUris.value = projectState.recycledUris
