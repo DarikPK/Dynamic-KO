@@ -111,7 +111,9 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         val uriStrings = uris.map { it.toString() }
         _pageGroups.value = _pageGroups.value.map {
             if (it.id == groupId) {
-                it.copy(imageUris = it.imageUris + uriStrings)
+                val existingUris = it.imageUris.toSet()
+                val newUniqueUris = uriStrings.filter { uri -> !existingUris.contains(uri) }
+                it.copy(imageUris = it.imageUris + newUniqueUris)
             } else {
                 it
             }
