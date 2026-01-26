@@ -184,6 +184,19 @@ fun SunatDataScreen(
                     value = documentNumber,
                     onValueChange = { newValue ->
                         val filtered = newValue.filter { it.isDigit() }
+                        val prefix = when (documentType) {
+                            "RUC10" -> "10"
+                            "RUC20" -> "20"
+                            else -> null
+                        }
+
+                        // Lógica de pegado inteligente
+                        if (prefix != null && filtered.length == 11 && filtered.startsWith(prefix)) {
+                            documentNumber = filtered.substring(2)
+                            return@OutlinedTextField
+                        }
+
+                        // Lógica original
                         val maxLength = if (documentType == "DNI") 8 else 9
                         if (filtered.length <= maxLength) {
                             documentNumber = filtered
