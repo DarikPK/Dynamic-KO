@@ -63,6 +63,12 @@ fun ImageUploadScreen(
     val group = pageGroups.find { it.id == groupId }
     val context = LocalContext.current
 
+    LaunchedEffect(Unit) {
+        innerPagesViewModel.toastEvent.collect { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+    }
+
     val multipleImagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris ->

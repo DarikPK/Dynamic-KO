@@ -244,6 +244,17 @@ fun AppNavigation(
                 projectViewModel = projectViewModel
             )
         }
+        composable(
+            route = Screen.ImageUpload.route + "/{groupId}",
+            arguments = listOf(navArgument("groupId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val groupId = backStackEntry.arguments?.getString("groupId") ?: ""
+            ImageUploadScreen(
+                navController = navController,
+                projectViewModel = projectViewModel,
+                groupId = groupId
+            )
+        }
         composable("account_management") {
             AccountManagementScreen(navController = navController)
         }

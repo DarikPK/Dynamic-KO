@@ -11,6 +11,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import android.net.Uri
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import androidx.lifecycle.viewModelScope
@@ -23,6 +26,9 @@ import androidx.compose.runtime.setValue
 class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : ViewModel() {
 
     var newGroupIsSmart by mutableStateOf(true)
+
+    private val _toastEvent = MutableSharedFlow<String>()
+    val toastEvent: SharedFlow<String> = _toastEvent.asSharedFlow()
 
     private val _pageGroups = MutableStateFlow<List<PageGroup>>(emptyList())
     val pageGroups: StateFlow<List<PageGroup>> = _pageGroups.asStateFlow()
@@ -109,15 +115,25 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
 
     fun onImagesSelectedForGroup(context: android.content.Context, uris: List<Uri>, groupId: String) {
         val uriStrings = uris.map { it.toString() }
+        var duplicatesFound = 0
+
         _pageGroups.value = _pageGroups.value.map {
             if (it.id == groupId) {
                 val existingUris = it.imageUris.toSet()
                 val newUniqueUris = uriStrings.filter { uri -> !existingUris.contains(uri) }
+                duplicatesFound = uriStrings.size - newUniqueUris.size
                 it.copy(imageUris = it.imageUris + newUniqueUris)
             } else {
                 it
             }
         }
+
+        if (duplicatesFound > 0) {
+            viewModelScope.launch {
+                _toastEvent.emit("Se han omitido $duplicatesFound imágenes duplicadas.")
+            }
+        }
+
         _currentGroupAddingImages.value = null
     }
 

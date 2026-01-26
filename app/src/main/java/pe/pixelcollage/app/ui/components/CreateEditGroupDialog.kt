@@ -158,6 +158,21 @@ fun CreateEditGroupDialog(
                     Text(buttonText)
                 }
 
+                if (originalGroup != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = {
+                            viewModel.saveEditingGroup(context) // Guardar cambios antes de navegar
+                            onDismiss()
+                            navController.navigate(Screen.ImageUpload.createRoute(editingGroup.id))
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                    ) {
+                        Text("Gestionar Imágenes (${originalGroup.imageUris.size})")
+                    }
+                }
+
                 if (originalGroup != null && originalGroup.imageUris.isNotEmpty() && !isConfigValid && editingGroup.sheetCount > 0) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
