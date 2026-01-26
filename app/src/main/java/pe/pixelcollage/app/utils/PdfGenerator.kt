@@ -83,20 +83,8 @@ object PdfGenerator {
         coverConfig: CoverPageConfig,
         generatedPages: List<GeneratedPage>,
         fileName: String,
-        imageEffectSettings: Map<String, ImageEffectSettings>,
-        userState: UserState
+        imageEffectSettings: Map<String, ImageEffectSettings>
     ): File? {
-        if (userState is UserState.Authenticated && userState.user.role == "guest") {
-            runBlocking {
-                val authRepository = AuthRepository()
-                val deviceId = authRepository.getDeviceId(context)
-                val pdfCount = authRepository.getPdfCount(deviceId)
-                if (pdfCount >= 10) {
-                    return@runBlocking null
-                }
-                authRepository.incrementPdfCount(deviceId)
-            }
-        }
 
         if (coverConfig.useHybridPdfMode) {
             return generateHybridPdf(context, coverConfig, generatedPages, fileName, imageEffectSettings)

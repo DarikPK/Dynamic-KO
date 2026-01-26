@@ -17,8 +17,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import pe.pixelcollage.app.data.model.*
 import pe.pixelcollage.app.data.toDomain
+import pe.pixelcollage.app.data.repository.AuthRepository
 import pe.pixelcollage.app.data.toSerializable
-import pe.pixelcollage.app.utils.NetworkUtils
 import pe.pixelcollage.app.utils.PdfGenerator
 import java.io.File
 import java.io.FileOutputStream
@@ -428,23 +428,39 @@ class ProjectViewModel : ViewModel() {
     }
 
     fun generatePdf(context: Context, fileName: String, userState: UserState) {
-        if (userState is UserState.Authenticated && userState.user.role == "guest" && !NetworkUtils.isNetworkAvailable(context)) {
-            _pdfGenerationState.value = PdfGenerationState.Error("Se requiere conexión a internet para generar el PDF en la versión gratuita.")
-            return
-        }
-
-        val coverConfig = _currentCoverConfig.value
-        val areInnerPagesEmpty = _currentPageGroups.value.all { it.imageUris.isEmpty() }
-        val isCoverEmpty = coverConfig.clientNameStyle.content.isBlank() && coverConfig.rucStyle.content.isBlank() && coverConfig.subtitleStyle.content.isBlank() && coverConfig.mainImageUri == null
-
-        if (isCoverEmpty && areInnerPagesEmpty) {
-            _pdfGenerationState.value = PdfGenerationState.Error("No hay contenido para generar un PDF.")
-            return
-        }
-
         viewModelScope.launch {
-            saveJob?.join()
+            val coverConfig = _currentCoverConfig.value
+            val areInnerPagesEmpty = _currentPageGroups.value.all { it.imageUris.isEmpty() }
+            val isCoverEmpty = coverConfig.clientNameStyle.content.isBlank() &&
+                    coverConfig.rucStyle.content.isBlank() &&
+                    coverConfig.subtitleStyle.content.isBlank() &&
+                    coverConfig.mainImageUri == null
+
+            if (isCoverEmpty && areInnerPagesEmpty) {
+                _pdfGenerationState.value = PdfGenerationState.Error("No hay contenido para generar un PDF.")
+                return@launch
+            }
+
             _pdfGenerationState.value = PdfGenerationState.Loading
+
+            if (userState is UserState.Authenticated && userState.user.role == "guest") {
+                try {
+                    val authRepository = AuthRepository()
+                    val deviceId = authRepository.getDeviceId(context)
+                    val pdfCount = authRepository.getPdfCount(deviceId)
+                    if (pdfCount >= 10) {
+                        _pdfGenerationState.value = PdfGenerationState.Error("Límite de 10 PDFs alcanzado para usuarios invitados.")
+                        return@launch
+                    }
+                    authRepository.incrementPdfCount(deviceId)
+                } catch (e: Exception) {
+                    Log.e("ProjectViewModel", "Error de red al verificar el límite de PDF", e)
+                    _pdfGenerationState.value = PdfGenerationState.Error("Se requiere conexión a internet para generar PDFs en la versión gratuita.")
+                    return@launch
+                }
+            }
+
+            saveJob?.join()
             val generatedFile = withContext(Dispatchers.IO) {
                 val generatedPages = pe.pixelcollage.app.utils.PdfContentManager.groupImagesForPdf(context, _currentPageGroups.value)
                 PdfGenerator.generate(
@@ -452,19 +468,15 @@ class ProjectViewModel : ViewModel() {
                     coverConfig = _currentCoverConfig.value,
                     generatedPages = generatedPages,
                     fileName = fileName.ifBlank { "DynamicCollage" },
-                    imageEffectSettings = _imageEffectSettings.value,
-                    userState = userState
+                    imageEffectSettings = _imageEffectSettings.value
                 )
             }
+
             if (generatedFile != null) {
                 _pdfSize.value = generatedFile.length()
                 _pdfGenerationState.value = PdfGenerationState.Success(generatedFile)
             } else {
-                if (userState is UserState.Authenticated && userState.user.role == "guest") {
-                    _pdfGenerationState.value = PdfGenerationState.Error("Límite de 10 PDFs alcanzado.")
-                } else {
-                    _pdfGenerationState.value = PdfGenerationState.Error("No se pudo generar el PDF.")
-                }
+                _pdfGenerationState.value = PdfGenerationState.Error("No se pudo generar el PDF.")
             }
         }
     }
