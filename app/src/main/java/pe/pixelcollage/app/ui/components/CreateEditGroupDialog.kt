@@ -166,10 +166,9 @@ fun CreateEditGroupDialog(
                             onDismiss()
                             navController.navigate(Screen.ImageUpload.createRoute(editingGroup.id))
                         },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Gestionar Imágenes (${originalGroup.imageUris.size})")
+                        Text("Imagenes Cargadas (${originalGroup.imageUris.size})")
                     }
                 }
 
