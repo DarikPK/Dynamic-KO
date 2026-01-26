@@ -87,18 +87,14 @@ object PdfGenerator {
         userState: UserState
     ): File? {
         if (userState is UserState.Authenticated && userState.user.role == "guest") {
-            try {
-                runBlocking {
-                    val authRepository = AuthRepository()
-                    val deviceId = authRepository.getDeviceId(context)
-                    val pdfCount = authRepository.getPdfCount(deviceId)
-                    if (pdfCount >= 10) {
-                        return@runBlocking null
-                    }
-                    authRepository.incrementPdfCount(deviceId)
+            runBlocking {
+                val authRepository = AuthRepository()
+                val deviceId = authRepository.getDeviceId(context)
+                val pdfCount = authRepository.getPdfCount(deviceId)
+                if (pdfCount >= 10) {
+                    return@runBlocking null
                 }
-            } catch (e: Exception) {
-                Log.w("PdfGenerator", "No se pudo verificar el límite de PDFs para el invitado. Es probable que no haya conexión a internet. Continuando con la generación...", e)
+                authRepository.incrementPdfCount(deviceId)
             }
         }
 

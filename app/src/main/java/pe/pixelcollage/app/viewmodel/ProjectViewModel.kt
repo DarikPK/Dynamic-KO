@@ -18,6 +18,7 @@ import kotlinx.coroutines.withContext
 import pe.pixelcollage.app.data.model.*
 import pe.pixelcollage.app.data.toDomain
 import pe.pixelcollage.app.data.toSerializable
+import pe.pixelcollage.app.utils.NetworkUtils
 import pe.pixelcollage.app.utils.PdfGenerator
 import java.io.File
 import java.io.FileOutputStream
@@ -427,6 +428,11 @@ class ProjectViewModel : ViewModel() {
     }
 
     fun generatePdf(context: Context, fileName: String, userState: UserState) {
+        if (userState is UserState.Authenticated && userState.user.role == "guest" && !NetworkUtils.isNetworkAvailable(context)) {
+            _pdfGenerationState.value = PdfGenerationState.Error("Se requiere conexión a internet para generar el PDF en la versión gratuita.")
+            return
+        }
+
         val coverConfig = _currentCoverConfig.value
         val areInnerPagesEmpty = _currentPageGroups.value.all { it.imageUris.isEmpty() }
         val isCoverEmpty = coverConfig.clientNameStyle.content.isBlank() && coverConfig.rucStyle.content.isBlank() && coverConfig.subtitleStyle.content.isBlank() && coverConfig.mainImageUri == null
