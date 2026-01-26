@@ -100,21 +100,6 @@ fun CoverSetupScreen(
     var hasChanges by remember { mutableStateOf(false) }
     var showNavigateBackDialog by remember { mutableStateOf(false) }
     var showSaveValidationDialog by remember { mutableStateOf(false) }
-    val lifecycleOwner = LocalLifecycleOwner.current
-
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_STOP) {
-                if (hasChanges) {
-                    projectViewModel.saveCoverConfigAndProcessImage(context, coverConfig)
-                }
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
-    }
 
     LaunchedEffect(projectCoverConfig) {
         coverSetupViewModel.loadInitialConfig(projectCoverConfig)
