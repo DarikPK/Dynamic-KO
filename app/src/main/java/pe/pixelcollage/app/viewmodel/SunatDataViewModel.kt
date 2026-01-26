@@ -74,7 +74,12 @@ class SunatDataViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 Log.e("SunatDataViewModel", "Error fetching SUNAT data", e)
-                _sunatDataState.value = SunatDataState.Error(e.message ?: "Error desconocido")
+                val errorMessage = if (e is java.net.UnknownHostException) {
+                    "Se requiere conexión a internet para esta función."
+                } else {
+                    e.message ?: "Error desconocido"
+                }
+                _sunatDataState.value = SunatDataState.Error(errorMessage)
             }
         }
     }
