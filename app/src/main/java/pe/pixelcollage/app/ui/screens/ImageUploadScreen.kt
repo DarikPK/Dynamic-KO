@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Close // Icono para eliminar
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,8 +41,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -75,6 +80,38 @@ fun ImageUploadScreen(
     val group = pageGroups.find { it.id == groupId }
     val context = LocalContext.current
     val hasChanges by innerPagesViewModel.hasChangesInGroup.collectAsState()
+    var showExitConfirmDialog by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = hasChanges) {
+        showExitConfirmDialog = true
+    }
+
+    if (showExitConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitConfirmDialog = false },
+            title = { Text("Cambios sin guardar") },
+            text = { Text("Has modificado las imágenes. ¿Qué deseas hacer?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    innerPagesViewModel.onSaveChanges(context)
+                    showExitConfirmDialog = false
+                    navController.popBackStack()
+                }) {
+                    Text("Guardar y Salir")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    innerPagesViewModel.discardChanges()
+                    showExitConfirmDialog = false
+                    navController.popBackStack()
+                }) {
+                    Text("Descartar y Salir")
+                }
+            }
+        )
+    }
+
 
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val scale by infiniteTransition.animateFloat(
@@ -115,7 +152,13 @@ fun ImageUploadScreen(
             CenterAlignedTopAppBar(
                 title = { Text(stringResource(id = R.string.image_upload_title)) },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = {
+                        if (hasChanges) {
+                            showExitConfirmDialog = true
+                        } else {
+                            navController.popBackStack()
+                        }
+                    }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(id = R.string.cover_setup_navigate_back_description)
