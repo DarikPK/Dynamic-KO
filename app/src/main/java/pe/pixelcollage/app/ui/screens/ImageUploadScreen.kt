@@ -186,6 +186,7 @@ fun ImageUploadScreen(
                         IconButton(
                             onClick = {
                                 innerPagesViewModel.onSaveChanges(context)
+                                innerPagesViewModel.loadOriginalUrisForGroup(groupId) // Recargar estado
                                 Toast.makeText(context, R.string.page_groups_saved_toast, Toast.LENGTH_SHORT).show()
                             },
                             enabled = hasChanges,

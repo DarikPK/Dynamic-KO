@@ -48,14 +48,10 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
             _originalPageGroups.value = initialGroups
 
             // After initialization, start collecting changes from the source of truth.
-            // This is to react to events like a full project reset.
+            // This ensures the ViewModel always has the freshest data.
             projectViewModel.currentPageGroups.collect { projectGroups ->
-                // If the source of truth becomes empty and our original state was not,
-                // it implies an external reset. We must sync our state.
-                if (projectGroups.isEmpty() && _originalPageGroups.value.isNotEmpty()) {
-                    _pageGroups.value = projectGroups
-                    _originalPageGroups.value = projectGroups
-                }
+                _pageGroups.value = projectGroups
+                _originalPageGroups.value = projectGroups
             }
         }
     }
