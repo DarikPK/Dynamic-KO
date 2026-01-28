@@ -36,22 +36,6 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
     private val _originalPageGroups = MutableStateFlow<List<PageGroup>>(emptyList())
     val originalPageGroups: StateFlow<List<PageGroup>> = _originalPageGroups.asStateFlow()
 
-    private val _originalImageUris = MutableStateFlow<List<String>>(emptyList())
-
-    val hasChangesInGroup: StateFlow<Boolean> = combine(_pageGroups, _originalImageUris, editingGroup) { groups, originalUris, group ->
-        group?.let { g ->
-            val currentGroup = groups.find { it.id == g.id }
-            currentGroup?.imageUris?.toSet() != originalUris.toSet()
-        } ?: false
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
-
-
-    fun loadOriginalUrisForGroup(groupId: String) {
-        _pageGroups.value.find { it.id == groupId }?.let {
-            _originalImageUris.value = it.imageUris
-            _editingGroup.value = it
-        }
-    }
 
     init {
         viewModelScope.launch {
@@ -81,6 +65,25 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
 
     private val _editingGroup = MutableStateFlow<PageGroup?>(null)
     val editingGroup: StateFlow<PageGroup?> = _editingGroup.asStateFlow()
+
+    private val _originalImageUris = MutableStateFlow<List<String>>(emptyList())
+
+    val hasChangesInGroup: StateFlow<Boolean> = combine(_pageGroups, _originalImageUris) { groups, originalUris ->
+        val currentGroupId = _editingGroup.value?.id
+        if (currentGroupId != null) {
+            val currentGroup = groups.find { it.id == currentGroupId }
+            currentGroup?.imageUris?.toSet() != originalUris.toSet()
+        } else {
+            false
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    fun loadOriginalUrisForGroup(groupId: String) {
+        _pageGroups.value.find { it.id == groupId }?.let {
+            _originalImageUris.value = it.imageUris
+            _editingGroup.value = it
+        }
+    }
 
     private val _currentGroupAddingImages = MutableStateFlow<String?>(null)
     val currentGroupAddingImages: StateFlow<String?> = _currentGroupAddingImages.asStateFlow()
