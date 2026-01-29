@@ -39,20 +39,10 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
 
     init {
         viewModelScope.launch {
-            // Wait for the project to be fully loaded
             projectViewModel.isProjectLoaded.first { it }
-
-            // Once loaded, get the current value of the page groups
             val initialGroups = projectViewModel.currentPageGroups.value
             _pageGroups.value = initialGroups
-            _originalPageGroups.value = initialGroups
-
-            // After initialization, start collecting changes from the source of truth.
-            // This ensures the ViewModel always has the freshest data.
-            projectViewModel.currentPageGroups.collect { projectGroups ->
-                _pageGroups.value = projectGroups
-                _originalPageGroups.value = projectGroups
-            }
+            _originalPageGroups.value = initialGroups.map { it.copy(imageUris = it.imageUris.toMutableList()) }
         }
     }
 
@@ -292,19 +282,25 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
 
     fun onSaveChanges(context: android.content.Context) {
         viewModelScope.launch {
-            val updatedGroups = _pageGroups.value.map { group ->
-                val updatedUris = group.imageUris.map { uri ->
+            // Create a deep copy for saving with permanent URIs
+            val groupsToSave = _pageGroups.value.map { group ->
+                val permanentUris = group.imageUris.map { uri ->
                     if (uri.startsWith("content://")) {
                         projectViewModel.copyAndGetPermanentUri(context, uri) ?: uri
                     } else {
                         uri
                     }
                 }
-                group.copy(imageUris = updatedUris)
+                group.copy(imageUris = permanentUris)
             }
-            projectViewModel.updatePageGroups(context, updatedGroups)
-            _pageGroups.value = updatedGroups
-            _originalPageGroups.value = updatedGroups
+
+            // Update the central repository with the modified groups
+            projectViewModel.updatePageGroups(context, groupsToSave)
+
+            // Update the original state to match the current working state
+            _originalPageGroups.value = _pageGroups.value.map { it.copy(imageUris = it.imageUris.toMutableList()) }
+
+            // Save the project to disk
             projectViewModel.saveProject(context)
         }
     }
