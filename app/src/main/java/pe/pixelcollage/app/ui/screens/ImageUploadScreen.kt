@@ -80,7 +80,7 @@ fun ImageUploadScreen(
     val pageGroups by innerPagesViewModel.pageGroups.collectAsState()
     val group = pageGroups.find { it.id == groupId }
     val context = LocalContext.current
-    val hasChanges by innerPagesViewModel.hasChangesInGroup.collectAsState()
+    val hasChanges by innerPagesViewModel.hasChanges.collectAsState()
     var showExitConfirmDialog by remember { mutableStateOf(false) }
 
     BackHandler(enabled = hasChanges) {
@@ -125,7 +125,7 @@ fun ImageUploadScreen(
     )
 
     LaunchedEffect(groupId) {
-        innerPagesViewModel.loadOriginalUrisForGroup(groupId)
+        // No action needed on load, viewModel handles initialization.
     }
 
     LaunchedEffect(Unit) {
@@ -186,7 +186,6 @@ fun ImageUploadScreen(
                         IconButton(
                             onClick = {
                                 innerPagesViewModel.onSaveChanges(context)
-                                innerPagesViewModel.loadOriginalUrisForGroup(groupId) // Recargar estado
                                 Toast.makeText(context, R.string.page_groups_saved_toast, Toast.LENGTH_SHORT).show()
                             },
                             enabled = hasChanges,
