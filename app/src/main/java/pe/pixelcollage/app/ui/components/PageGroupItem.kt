@@ -166,8 +166,7 @@ fun PageGroupItemPreview() {
             ),
             onAddImagesClicked = {},
             onEditGroupClicked = {},
-            onDeleteGroupClicked = {},
-            onDeleteImagesClicked = {}
+            onDeleteGroupClicked = {}
         )
     }
 }
@@ -186,8 +185,7 @@ fun PageGroupItemUnnamedPreview() {
             ),
             onAddImagesClicked = {},
             onEditGroupClicked = {},
-            onDeleteGroupClicked = {},
-            onDeleteImagesClicked = {}
+            onDeleteGroupClicked = {}
         )
     }
 }
