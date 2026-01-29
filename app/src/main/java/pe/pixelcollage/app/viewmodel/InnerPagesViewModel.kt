@@ -39,20 +39,10 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
 
     init {
         viewModelScope.launch {
-            // Wait for the project to be fully loaded
             projectViewModel.isProjectLoaded.first { it }
-
-            // Once loaded, get the current value of the page groups
             val initialGroups = projectViewModel.currentPageGroups.value
             _pageGroups.value = initialGroups
-            _originalPageGroups.value = initialGroups
-
-            // After initialization, start collecting changes from the source of truth.
-            // This ensures the ViewModel always has the freshest data.
-            projectViewModel.currentPageGroups.collect { projectGroups ->
-                _pageGroups.value = projectGroups
-                _originalPageGroups.value = projectGroups
-            }
+            _originalPageGroups.value = initialGroups.map { it.copy() }
         }
     }
 
@@ -62,24 +52,9 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
     private val _editingGroup = MutableStateFlow<PageGroup?>(null)
     val editingGroup: StateFlow<PageGroup?> = _editingGroup.asStateFlow()
 
-    private val _originalImageUris = MutableStateFlow<List<String>>(emptyList())
-
-    val hasChangesInGroup: StateFlow<Boolean> = combine(_pageGroups, _originalImageUris) { groups, originalUris ->
-        val currentGroupId = _editingGroup.value?.id
-        if (currentGroupId != null) {
-            val currentGroup = groups.find { it.id == currentGroupId }
-            currentGroup?.imageUris?.toSet() != originalUris.toSet()
-        } else {
-            false
-        }
+    val hasChanges: StateFlow<Boolean> = combine(_pageGroups, _originalPageGroups) { current, original ->
+        current != original
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
-
-    fun loadOriginalUrisForGroup(groupId: String) {
-        _pageGroups.value.find { it.id == groupId }?.let {
-            _originalImageUris.value = it.imageUris
-            _editingGroup.value = it
-        }
-    }
 
     private val _currentGroupAddingImages = MutableStateFlow<String?>(null)
     val currentGroupAddingImages: StateFlow<String?> = _currentGroupAddingImages.asStateFlow()
@@ -318,7 +293,7 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
 
             projectViewModel.updatePageGroups(context, groupsWithPermanentUris)
             _pageGroups.value = groupsWithPermanentUris
-            _originalPageGroups.value = groupsWithPermanentUris
+            _originalPageGroups.value = groupsWithPermanentUris.map { it.copy() }
         }
     }
 
