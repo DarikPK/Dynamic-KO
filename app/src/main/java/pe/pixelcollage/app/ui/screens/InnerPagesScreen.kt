@@ -219,13 +219,6 @@ fun InnerPagesScreen(
         message = "Estás seguro de que quieres eliminar este grupo?"
     )
 
-    ConfirmationDialog(
-        show = imagesToDelete != null,
-        onDismiss = { innerPagesViewModel.onDismissRemoveImagesDialog() },
-        onConfirm = { innerPagesViewModel.onConfirmRemoveImages(context) },
-        title = "Eliminar Imágenes",
-        message = "Estás seguro de que quieres eliminar todas las imágenes de este grupo?"
-    )
 
     // Dialog for permission rationale
     ConfirmationDialog(
@@ -394,9 +387,6 @@ fun InnerPagesScreen(
                             },
                             onDeleteGroupClicked = { groupId ->
                                 innerPagesViewModel.onRemoveGroupClicked(groupId)
-                            },
-                            onDeleteImagesClicked = { groupId ->
-                                innerPagesViewModel.onRemoveImagesClicked(groupId)
                             }
                         )
                     }

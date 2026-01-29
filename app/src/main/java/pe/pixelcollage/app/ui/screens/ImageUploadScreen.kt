@@ -151,7 +151,7 @@ fun ImageUploadScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(stringResource(id = R.string.image_upload_title)) },
+                title = { Text("Imágenes Cargadas") },
                 navigationIcon = {
                     IconButton(onClick = {
                         if (hasChanges) {
@@ -268,20 +268,6 @@ fun ImageUploadScreen(
                 }
             }
 
-            Button(
-                onClick = { multipleImagePickerLauncher.launch("image/*") },
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
-            ) {
-                Text(stringResource(R.string.image_upload_add_photos_button))
-            }
-
-            Button(
-                onClick = { navController.popBackStack() },
-                enabled = group.isPhotoQuotaMet,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(R.string.image_upload_done_button))
-            }
         }
     }
 }
