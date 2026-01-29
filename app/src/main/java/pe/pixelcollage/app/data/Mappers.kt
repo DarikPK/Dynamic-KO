@@ -129,7 +129,8 @@ fun PageGroup.toSerializable() = SerializablePageGroup(
     optionalTextStyle = this.optionalTextStyle.toSerializable(),
     imageUris = this.imageUris,
     imageSpacing = this.imageSpacing,
-    smartLayoutEnabled = this.smartLayoutEnabled
+    smartLayoutEnabled = this.smartLayoutEnabled,
+    hybridImageQuality = this.hybridImageQuality
 )
 
 fun SerializablePageGroup.toDomain() = PageGroup(
@@ -141,7 +142,8 @@ fun SerializablePageGroup.toDomain() = PageGroup(
     optionalTextStyle = this.optionalTextStyle?.toDomain() ?: TextStyleConfig(id = "pageGroupOptionalText"),
     imageUris = this.imageUris,
     imageSpacing = this.imageSpacing,
-    smartLayoutEnabled = this.smartLayoutEnabled ?: false
+    smartLayoutEnabled = this.smartLayoutEnabled ?: false,
+    hybridImageQuality = this.hybridImageQuality ?: 30
 )
 
 // Mappers for CoverPageConfig
@@ -172,6 +174,7 @@ fun CoverPageConfig.toSerializable() = SerializableCoverPageConfig(
     useHybridPdfMode = this.useHybridPdfMode,
     hybridCoverImageQuality = this.hybridCoverImageQuality,
     hybridInnerImagesQuality = this.hybridInnerImagesQuality,
+    qualityMode = this.qualityMode,
     generatedBackgroundConfig = this.generatedBackgroundConfig?.toSerializable()
 )
 
@@ -202,6 +205,7 @@ fun SerializableCoverPageConfig.toDomain() = CoverPageConfig(
     useHybridPdfMode = this.useHybridPdfMode ?: false,
     hybridCoverImageQuality = this.hybridCoverImageQuality ?: 100,
     hybridInnerImagesQuality = this.hybridInnerImagesQuality ?: 100,
+    qualityMode = this.qualityMode ?: "general",
     generatedBackgroundConfig = this.generatedBackgroundConfig?.toDomain()
 )
 

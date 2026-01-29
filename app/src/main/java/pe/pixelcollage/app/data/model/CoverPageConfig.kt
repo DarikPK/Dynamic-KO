@@ -107,6 +107,7 @@ data class CoverPageConfig(
     val imageBorderSettingsMap: Map<String, ImageBorderSettings> = emptyMap(),
     val hybridCoverImageQuality: Int = 70,
     val hybridInnerImagesQuality: Int = 30,
+    val qualityMode: String = "general",
 
     val templateName: String? = null,
     val generatedBackgroundConfig: GeneratedBackgroundConfig? = GeneratedBackgroundConfig()

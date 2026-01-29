@@ -39,20 +39,10 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
 
     init {
         viewModelScope.launch {
-            // Wait for the project to be fully loaded
             projectViewModel.isProjectLoaded.first { it }
-
-            // Once loaded, get the current value of the page groups
             val initialGroups = projectViewModel.currentPageGroups.value
             _pageGroups.value = initialGroups
-            _originalPageGroups.value = initialGroups
-
-            // After initialization, start collecting changes from the source of truth.
-            // This ensures the ViewModel always has the freshest data.
-            projectViewModel.currentPageGroups.collect { projectGroups ->
-                _pageGroups.value = projectGroups
-                _originalPageGroups.value = projectGroups
-            }
+            _originalPageGroups.value = initialGroups.map { it.copy() }
         }
     }
 
@@ -62,24 +52,9 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
     private val _editingGroup = MutableStateFlow<PageGroup?>(null)
     val editingGroup: StateFlow<PageGroup?> = _editingGroup.asStateFlow()
 
-    private val _originalImageUris = MutableStateFlow<List<String>>(emptyList())
-
-    val hasChangesInGroup: StateFlow<Boolean> = combine(_pageGroups, _originalImageUris) { groups, originalUris ->
-        val currentGroupId = _editingGroup.value?.id
-        if (currentGroupId != null) {
-            val currentGroup = groups.find { it.id == currentGroupId }
-            currentGroup?.imageUris?.toSet() != originalUris.toSet()
-        } else {
-            false
-        }
+    val hasChanges: StateFlow<Boolean> = combine(_pageGroups, _originalPageGroups) { current, original ->
+        current != original
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
-
-    fun loadOriginalUrisForGroup(groupId: String) {
-        _pageGroups.value.find { it.id == groupId }?.let {
-            _originalImageUris.value = it.imageUris
-            _editingGroup.value = it
-        }
-    }
 
     private val _currentGroupAddingImages = MutableStateFlow<String?>(null)
     val currentGroupAddingImages: StateFlow<String?> = _currentGroupAddingImages.asStateFlow()
@@ -132,17 +107,25 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
     fun onImagesSelectedForGroup(context: android.content.Context, uris: List<Uri>, groupId: String) {
         val uriStrings = uris.map { it.toString() }
         var duplicatesFound = 0
+        val originalGroup = _originalPageGroups.value.find { it.id == groupId }
+        val existingUris = originalGroup?.imageUris?.toSet() ?: emptySet()
 
-        _pageGroups.value = _pageGroups.value.map {
+        val updatedGroups = _pageGroups.value.map {
             if (it.id == groupId) {
-                val existingUris = it.imageUris.toSet()
-                val newUniqueUris = uriStrings.filter { uri -> !existingUris.contains(uri) }
+                val newUniqueUris = uriStrings.filter { uri ->
+                    val isDuplicate = existingUris.contains(uri) ||
+                            (uri.startsWith("content://") && projectViewModel.isUriAlreadyInProject(context, uri))
+                    !isDuplicate
+                }
                 duplicatesFound = uriStrings.size - newUniqueUris.size
                 it.copy(imageUris = it.imageUris + newUniqueUris)
             } else {
                 it
             }
         }
+        _pageGroups.value = updatedGroups
+        projectViewModel.updatePageGroups(context, updatedGroups)
+
 
         if (duplicatesFound > 0) {
             viewModelScope.launch {
@@ -153,24 +136,26 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         _currentGroupAddingImages.value = null
     }
 
-    fun removeSingleImageFromGroup(context: android.content.Context, groupId: String, uri: String) {
-        _pageGroups.value = _pageGroups.value.map {
+    fun removeSingleImageFromGroup(groupId: String, uri: String) {
+        val updatedGroups = _pageGroups.value.map {
             if (it.id == groupId) {
                 it.copy(imageUris = it.imageUris - uri)
             } else {
                 it
             }
         }
+        _pageGroups.value = updatedGroups
     }
 
-    fun removeImagesFromGroup(context: android.content.Context, groupId: String) {
-        _pageGroups.value = _pageGroups.value.map {
+    fun removeImagesFromGroup(groupId: String) {
+        val updatedGroups = _pageGroups.value.map {
             if (it.id == groupId) {
                 it.copy(imageUris = emptyList())
             } else {
                 it
             }
         }
+        _pageGroups.value = updatedGroups
     }
 
     fun onRemoveGroupClicked(groupId: String) {
@@ -192,15 +177,16 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         _showDeleteImagesDialog.value = groupId
     }
 
-    fun onConfirmRemoveImages(context: android.content.Context) {
+    fun onConfirmRemoveImages() {
         _showDeleteImagesDialog.value?.let { groupId ->
-            _pageGroups.value = _pageGroups.value.map {
+            val updatedGroups = _pageGroups.value.map {
                 if (it.id == groupId) {
                     it.copy(imageUris = emptyList())
                 } else {
                     it
                 }
             }
+            _pageGroups.value = updatedGroups
         }
         _showDeleteImagesDialog.value = null
     }
@@ -270,7 +256,7 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         _editingGroup.value = _editingGroup.value?.copy(optionalTextStyle = newStyle)
     }
 
-    fun saveEditingGroup(context: android.content.Context) {
+    fun saveEditingGroup() {
         viewModelScope.launch {
             _editingGroup.value?.let { groupToSave ->
                 val currentGroups = _pageGroups.value
@@ -293,19 +279,20 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
 
     fun onSaveChanges(context: android.content.Context) {
         viewModelScope.launch {
-            val updatedGroups = _pageGroups.value.map { group ->
-                val updatedUris = group.imageUris.map { uri ->
+            val groupsWithPermanentUris = _pageGroups.value.map { group ->
+                val permanentUris = group.imageUris.map { uri ->
                     if (uri.startsWith("content://")) {
                         projectViewModel.copyAndGetPermanentUri(context, uri) ?: uri
                     } else {
                         uri
                     }
                 }
-                group.copy(imageUris = updatedUris)
+                group.copy(imageUris = permanentUris)
             }
-            projectViewModel.updatePageGroups(context, updatedGroups)
-            _pageGroups.value = updatedGroups
-            _originalPageGroups.value = updatedGroups
+
+            projectViewModel.updatePageGroups(context, groupsWithPermanentUris)
+            _pageGroups.value = groupsWithPermanentUris
+            _originalPageGroups.value = groupsWithPermanentUris.map { it.copy() }
         }
     }
 

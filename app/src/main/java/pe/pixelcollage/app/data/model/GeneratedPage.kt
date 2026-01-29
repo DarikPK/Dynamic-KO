@@ -7,5 +7,6 @@ data class GeneratedPage(
     val imageSpacing: Float,
     val groupId: String, // To look up border settings
     val optionalTextStyle: TextStyleConfig? = null,
-    val isFirstPageOfGroup: Boolean = false
+    val isFirstPageOfGroup: Boolean = false,
+    val hybridImageQuality: Int = 30
 )

@@ -39,6 +39,7 @@ data class SerializableCoverPageConfig(
     val useHybridPdfMode: Boolean? = false,
     val hybridCoverImageQuality: Int? = 100,
     val hybridInnerImagesQuality: Int? = 100,
+    val qualityMode: String? = "general",
     val generatedBackgroundConfig: SerializableGeneratedBackgroundConfig? = null
 )
 
@@ -67,7 +68,8 @@ data class SerializablePageGroup(
     val optionalTextStyle: SerializableTextStyleConfig?,
     val imageUris: List<String>,
     val imageSpacing: Float,
-    val smartLayoutEnabled: Boolean?
+    val smartLayoutEnabled: Boolean?,
+    val hybridImageQuality: Int? = 30
 )
 
 data class SerializableTextStyleConfig(

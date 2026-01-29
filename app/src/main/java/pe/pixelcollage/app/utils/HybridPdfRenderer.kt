@@ -736,8 +736,13 @@ private fun drawImagesWithPdfBox(
                         }
 
                         val imageXObject: PDImageXObject
-                        if (coverConfig.hybridInnerImagesQuality < 100) {
-                            val quality = coverConfig.hybridInnerImagesQuality
+                        val quality = if (coverConfig.qualityMode == "group") {
+                            pageData.hybridImageQuality
+                        } else {
+                            coverConfig.hybridInnerImagesQuality
+                        }
+
+                        if (quality < 100) {
                             val scale = quality / 100f
                             val newWidth = (bitmap.width * scale).toInt()
                             val newHeight = (bitmap.height * scale).toInt()

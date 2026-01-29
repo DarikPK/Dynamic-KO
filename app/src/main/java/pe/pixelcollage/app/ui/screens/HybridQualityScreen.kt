@@ -1,10 +1,10 @@
 package pe.pixelcollage.app.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -26,6 +26,7 @@ fun HybridQualityScreen(
 ) {
     val context = LocalContext.current
     val coverConfig by projectViewModel.currentCoverConfig.collectAsState()
+    val pageGroups by projectViewModel.currentPageGroups.collectAsState()
 
     Scaffold(
         topBar = {
@@ -43,40 +44,49 @@ fun HybridQualityScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState())
         ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+            // Slider for Cover Image Quality
+            Text(
+                text = "Calidad de Imagen de Portada: ${coverConfig.hybridCoverImageQuality}%",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Slider(
+                value = coverConfig.hybridCoverImageQuality.toFloat(),
+                onValueChange = { newValue ->
+                    projectViewModel.updateHybridCoverImageQuality(context, newValue.roundToInt())
+                },
+                valueRange = 10f..100f,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Slider for Cover Image Quality
-                Text(
-                    text = "Calidad de Imagen de Portada: ${coverConfig.hybridCoverImageQuality}%",
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Slider(
-                    value = coverConfig.hybridCoverImageQuality.toFloat(),
-                    onValueChange = { newValue ->
-                        projectViewModel.updateHybridCoverImageQuality(context, newValue.roundToInt())
-                    },
-                    valueRange = 10f..100f,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text("Baja")
-                    Text("Alta")
-                }
+                Text("Baja")
+                Text("Alta")
+            }
 
-                Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
+            Divider()
+            Spacer(modifier = Modifier.height(24.dp))
 
-                // Slider for Inner Images Quality
+            // Quality Mode Selection
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Checkbox(
+                    checked = coverConfig.qualityMode == "general",
+                    onCheckedChange = { projectViewModel.updateQualityMode(context, "general") }
+                )
                 Text(
                     text = "Calidad de Imágenes Interiores: ${coverConfig.hybridInnerImagesQuality}%",
                     style = MaterialTheme.typography.titleMedium
                 )
+            }
+            if (coverConfig.qualityMode == "general") {
                 Slider(
                     value = coverConfig.hybridInnerImagesQuality.toFloat(),
                     onValueChange = { newValue ->
@@ -85,35 +95,39 @@ fun HybridQualityScreen(
                     valueRange = 10f..100f,
                     modifier = Modifier.fillMaxWidth()
                 )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text("Baja")
-                    Text("Alta")
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.ArrowUpward, contentDescription = "Alta calidad")
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Alta: Mayor calidad, archivos más grandes.")
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.ArrowDownward, contentDescription = "Baja calidad")
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Baja: Menor calidad, archivos más pequeños.")
-                    }
-                }
             }
-            Button(
-                onClick = { navController.popBackStack() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp)
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Guardar y Volver")
+                Checkbox(
+                    checked = coverConfig.qualityMode == "group",
+                    onCheckedChange = { projectViewModel.updateQualityMode(context, "group") }
+                )
+                Text("Calidad de Imágenes por Grupo", style = MaterialTheme.typography.titleMedium)
+            }
+
+            if (coverConfig.qualityMode == "group") {
+                Spacer(modifier = Modifier.height(16.dp))
+                pageGroups.forEach { group ->
+                    Column(modifier = Modifier.padding(bottom = 16.dp)) {
+                        Text(
+                            text = "${group.groupName}: ${group.hybridImageQuality}%",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Slider(
+                            value = group.hybridImageQuality.toFloat(),
+                            onValueChange = { newValue ->
+                                projectViewModel.updateGroupQuality(context, group.id, newValue.roundToInt())
+                            },
+                            valueRange = 10f..100f,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
             }
         }
     }

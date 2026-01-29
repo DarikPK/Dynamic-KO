@@ -162,7 +162,7 @@ fun CreateEditGroupDialog(
                     Spacer(modifier = Modifier.height(8.dp))
                     Button(
                         onClick = {
-                            viewModel.saveEditingGroup(context) // Guardar cambios antes de navegar
+                            viewModel.saveEditingGroup() // Guardar cambios antes de navegar
                             onDismiss()
                             navController.navigate(Screen.ImageUpload.createRoute(editingGroup.id))
                         },
@@ -188,7 +188,7 @@ fun CreateEditGroupDialog(
         },
         confirmButton = {
             Button(
-                onClick = { viewModel.saveEditingGroup(context) },
+                onClick = { viewModel.saveEditingGroup() },
                 enabled = isConfigValid && editingGroup.sheetCount > 0
             ) { Text(stringResource(R.string.save_button)) }
         },

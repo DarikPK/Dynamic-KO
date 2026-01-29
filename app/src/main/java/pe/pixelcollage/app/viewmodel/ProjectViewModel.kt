@@ -242,6 +242,10 @@ class ProjectViewModel : ViewModel() {
         saveProject(context)
     }
 
+    fun updateGroupQuality(context: Context, groupId: String, quality: Int) {
+        updatePageGroup(context, groupId) { it.copy(hybridImageQuality = quality) }
+    }
+
     fun deletePhotoPermanently(context: Context, uri: String) {
         _recycledUris.update { it.filterNot { it == uri } }
         viewModelScope.launch(Dispatchers.IO) { deleteLocalImage(uri) }
@@ -342,6 +346,11 @@ class ProjectViewModel : ViewModel() {
 
     fun updateHybridInnerImagesQuality(context: Context, quality: Int) {
         _currentCoverConfig.update { it.copy(hybridInnerImagesQuality = quality) }
+        saveProject(context)
+    }
+
+    fun updateQualityMode(context: Context, mode: String) {
+        _currentCoverConfig.update { it.copy(qualityMode = mode) }
         saveProject(context)
     }
 
@@ -669,6 +678,39 @@ class ProjectViewModel : ViewModel() {
     }
 
     fun resetSaveState() { _saveState.value = SaveState.Idle }
+
+    fun isUriAlreadyInProject(context: Context, uri: String): Boolean {
+        val allUris = getAllImageUris()
+        if (allUris.contains(uri)) return true
+
+        // Content URIs might be different for the same image, so we need to check the actual file
+        try {
+            val inputStream = context.contentResolver.openInputStream(Uri.parse(uri)) ?: return false
+            val newFileHash = inputStream.use { it.readBytes() }.contentHashCode()
+
+            for (existingUri in allUris) {
+                try {
+                    val existingInputStream = if (existingUri.startsWith("content://")) {
+                        context.contentResolver.openInputStream(Uri.parse(existingUri))
+                    } else {
+                        File(Uri.parse(existingUri).path!!).inputStream()
+                    }
+
+                    if (existingInputStream != null) {
+                        val existingFileHash = existingInputStream.use { it.readBytes() }.contentHashCode()
+                        if (newFileHash == existingFileHash) {
+                            return true
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Ignore if we can't read an existing file
+                }
+            }
+        } catch (e: Exception) {
+            // Ignore if we can't read the new file
+        }
+        return false
+    }
 }
 
 sealed class SaveState {

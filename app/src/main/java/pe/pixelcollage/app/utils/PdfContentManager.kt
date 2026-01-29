@@ -54,7 +54,8 @@ object PdfContentManager {
                     imageSpacing = group.imageSpacing,
                     groupId = group.id,
                     optionalTextStyle = if (isFirstPageOfGroup) group.optionalTextStyle else null,
-                    isFirstPageOfGroup = isFirstPageOfGroup
+                    isFirstPageOfGroup = isFirstPageOfGroup,
+                    hybridImageQuality = group.hybridImageQuality
                 )
             )
             isFirstPageOfGroup = false // The flag is turned off after the first page is created
@@ -71,7 +72,8 @@ object PdfContentManager {
                     imageSpacing = group.imageSpacing,
                     groupId = group.id,
                     optionalTextStyle = if (isFirstPageOfGroup) group.optionalTextStyle else null,
-                    isFirstPageOfGroup = isFirstPageOfGroup
+                    isFirstPageOfGroup = isFirstPageOfGroup,
+                    hybridImageQuality = group.hybridImageQuality
                 )
             )
             isFirstPageOfGroup = false // The flag is turned off after the first page is created
@@ -97,7 +99,8 @@ object PdfContentManager {
                     imageSpacing = group.imageSpacing,
                     groupId = group.id,
                     optionalTextStyle = if (index == 0) group.optionalTextStyle else null,
-                    isFirstPageOfGroup = index == 0
+                    isFirstPageOfGroup = index == 0,
+                    hybridImageQuality = group.hybridImageQuality
                 )
             )
         }
