@@ -228,6 +228,10 @@ fun ImageUploadScreen(
                 color = if (group.isPhotoQuotaMet) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
             )
 
+            Button(onClick = { multipleImagePickerLauncher.launch("image/*") }) {
+                Text("Añadir Imágenes")
+            }
+
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(minSize = 100.dp),
                 modifier = Modifier.weight(1f),

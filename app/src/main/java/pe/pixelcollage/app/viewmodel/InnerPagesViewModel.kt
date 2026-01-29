@@ -177,7 +177,7 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
         _showDeleteImagesDialog.value = groupId
     }
 
-    fun onConfirmRemoveImages(context: android.content.Context) {
+    fun onConfirmRemoveImages() {
         _showDeleteImagesDialog.value?.let { groupId ->
             val updatedGroups = _pageGroups.value.map {
                 if (it.id == groupId) {
@@ -187,7 +187,6 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
                 }
             }
             _pageGroups.value = updatedGroups
-            projectViewModel.updatePageGroups(context, updatedGroups)
         }
         _showDeleteImagesDialog.value = null
     }
