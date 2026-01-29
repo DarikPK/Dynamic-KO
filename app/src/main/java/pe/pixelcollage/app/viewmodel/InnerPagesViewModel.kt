@@ -288,7 +288,6 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
 
     fun saveProject(context: android.content.Context) {
         onSaveChanges(context)
-        projectViewModel.saveProject(context)
     }
 
     fun onSaveChanges(context: android.content.Context) {
@@ -306,6 +305,7 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
             projectViewModel.updatePageGroups(context, updatedGroups)
             _pageGroups.value = updatedGroups
             _originalPageGroups.value = updatedGroups
+            projectViewModel.saveProject(context)
         }
     }
 
