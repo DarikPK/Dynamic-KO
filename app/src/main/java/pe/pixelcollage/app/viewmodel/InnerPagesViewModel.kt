@@ -130,7 +130,6 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
             }
         }
         _pageGroups.value = updatedGroups
-        projectViewModel.updatePageGroups(context, updatedGroups)
 
 
         if (duplicatesFound > 0) {
