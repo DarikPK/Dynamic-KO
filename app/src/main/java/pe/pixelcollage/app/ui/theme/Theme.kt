@@ -258,11 +258,15 @@ fun DynamicCollageTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb() // Puedes cambiarlo a surface o background
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
-            // Para la barra de navegación (si es visible y se quiere colorear)
-            // window.navigationBarColor = colorScheme.surface.toArgb()
-            // WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = !darkTheme
+            val windowInsetsController = WindowCompat.getInsetsController(window, view)
+
+            // Configuración de la barra de estado
+            window.statusBarColor = colorScheme.primary.toArgb()
+            windowInsetsController.isAppearanceLightStatusBars = false // Forzar iconos claros sobre fondo primario (generalmente oscuro)
+
+            // Configuración de la barra de navegación para máximo contraste
+            window.navigationBarColor = colorScheme.primary.toArgb()
+            windowInsetsController.isAppearanceLightNavigationBars = false // Forzar iconos claros sobre fondo primario
         }
     }
 
