@@ -420,8 +420,14 @@ class ProjectViewModel : ViewModel() {
             _currentCoverConfig.value = CoverPageConfig()
             _currentPageGroups.value = emptyList()
             _sunatData.value = null
+            _sunatDataConsumed.value = false
             _recycledUris.value = emptyList()
             _managerSelectedUri.value = null
+            _imageEffectSettings.value = emptyMap()
+            _draftImageEffectSettings.value = emptyMap()
+            _draftGeneratedBackgroundConfig.value = GeneratedBackgroundConfig()
+            _photoArrangement.value = emptyList()
+            _themeName.value = "Sky Blue"
             saveProject(context)
         }
     }

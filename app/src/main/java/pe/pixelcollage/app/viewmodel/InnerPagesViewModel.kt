@@ -40,9 +40,14 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
     init {
         viewModelScope.launch {
             projectViewModel.isProjectLoaded.first { it }
-            val initialGroups = projectViewModel.currentPageGroups.value
-            _pageGroups.value = initialGroups
-            _originalPageGroups.value = initialGroups.map { it.copy() }
+            projectViewModel.currentPageGroups.collect { groups ->
+                // Si el proyecto se resetea o cambia externamente, actualizamos
+                // Solo si el usuario no tiene cambios locales o si el cambio externo es un vaciado (reset)
+                if (groups.isEmpty() || (!hasChanges.value)) {
+                    _pageGroups.value = groups
+                    _originalPageGroups.value = groups.map { it.copy() }
+                }
+            }
         }
     }
 
