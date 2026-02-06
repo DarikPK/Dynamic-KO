@@ -28,6 +28,20 @@ fun HybridQualityScreen(
     val coverConfig by projectViewModel.currentCoverConfig.collectAsState()
     val pageGroups by projectViewModel.currentPageGroups.collectAsState()
 
+    // Estado local para permitir el patrón de "Borrador"
+    var localCoverQuality by remember(coverConfig.hybridCoverImageQuality) {
+        mutableStateOf(coverConfig.hybridCoverImageQuality.toFloat())
+    }
+    var localQualityMode by remember(coverConfig.qualityMode) {
+        mutableStateOf(coverConfig.qualityMode)
+    }
+    var localInnerQuality by remember(coverConfig.hybridInnerImagesQuality) {
+        mutableStateOf(coverConfig.hybridInnerImagesQuality.toFloat())
+    }
+    var localGroupQualities by remember(pageGroups) {
+        mutableStateOf(pageGroups.associate { it.id to it.hybridImageQuality.toFloat() })
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -49,14 +63,12 @@ fun HybridQualityScreen(
         ) {
             // Slider for Cover Image Quality
             Text(
-                text = "Calidad de Imagen de Portada: ${coverConfig.hybridCoverImageQuality}%",
+                text = "Calidad de Imagen de Portada: ${localCoverQuality.toInt()}%",
                 style = MaterialTheme.typography.titleMedium
             )
             Slider(
-                value = coverConfig.hybridCoverImageQuality.toFloat(),
-                onValueChange = { newValue ->
-                    projectViewModel.updateHybridCoverImageQuality(context, newValue.roundToInt())
-                },
+                value = localCoverQuality,
+                onValueChange = { localCoverQuality = it },
                 valueRange = 10f..100f,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -78,20 +90,18 @@ fun HybridQualityScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Checkbox(
-                    checked = coverConfig.qualityMode == "general",
-                    onCheckedChange = { projectViewModel.updateQualityMode(context, "general") }
+                    checked = localQualityMode == "general",
+                    onCheckedChange = { localQualityMode = "general" }
                 )
                 Text(
-                    text = "Calidad de Imágenes Interiores: ${coverConfig.hybridInnerImagesQuality}%",
+                    text = "Calidad de Imágenes Interiores: ${localInnerQuality.toInt()}%",
                     style = MaterialTheme.typography.titleMedium
                 )
             }
-            if (coverConfig.qualityMode == "general") {
+            if (localQualityMode == "general") {
                 Slider(
-                    value = coverConfig.hybridInnerImagesQuality.toFloat(),
-                    onValueChange = { newValue ->
-                        projectViewModel.updateHybridInnerImagesQuality(context, newValue.roundToInt())
-                    },
+                    value = localInnerQuality,
+                    onValueChange = { localInnerQuality = it },
                     valueRange = 10f..100f,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -104,30 +114,62 @@ fun HybridQualityScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Checkbox(
-                    checked = coverConfig.qualityMode == "group",
-                    onCheckedChange = { projectViewModel.updateQualityMode(context, "group") }
+                    checked = localQualityMode == "group",
+                    onCheckedChange = { localQualityMode = "group" }
                 )
                 Text("Calidad de Imágenes por Grupo", style = MaterialTheme.typography.titleMedium)
             }
 
-            if (coverConfig.qualityMode == "group") {
+            if (localQualityMode == "group") {
                 Spacer(modifier = Modifier.height(16.dp))
                 pageGroups.forEach { group ->
+                    val currentGroupQuality = localGroupQualities[group.id] ?: group.hybridImageQuality.toFloat()
                     Column(modifier = Modifier.padding(bottom = 16.dp)) {
                         Text(
-                            text = "${group.groupName}: ${group.hybridImageQuality}%",
+                            text = "${group.groupName}: ${currentGroupQuality.toInt()}%",
                             style = MaterialTheme.typography.bodyLarge
                         )
                         Slider(
-                            value = group.hybridImageQuality.toFloat(),
+                            value = currentGroupQuality,
                             onValueChange = { newValue ->
-                                projectViewModel.updateGroupQuality(context, group.id, newValue.roundToInt())
+                                localGroupQualities = localGroupQualities.toMutableMap().apply {
+                                    this[group.id] = newValue
+                                }
                             },
                             valueRange = 10f..100f,
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
                 }
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Button(
+                onClick = {
+                    val updatedConfig = coverConfig.copy(
+                        hybridCoverImageQuality = localCoverQuality.roundToInt(),
+                        qualityMode = localQualityMode,
+                        hybridInnerImagesQuality = localInnerQuality.roundToInt()
+                    )
+                    projectViewModel.updateCoverConfig(updatedConfig)
+
+                    val updatedGroups = pageGroups.map { group ->
+                        group.copy(
+                            hybridImageQuality = localGroupQualities[group.id]?.roundToInt()
+                                ?: group.hybridImageQuality
+                        )
+                    }
+                    projectViewModel.updatePageGroups(context, updatedGroups)
+                    // updatePageGroups ya llama a saveProject(context)
+
+                    navController.popBackStack()
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp)
+            ) {
+                Text("Guardar y Volver")
             }
         }
     }
