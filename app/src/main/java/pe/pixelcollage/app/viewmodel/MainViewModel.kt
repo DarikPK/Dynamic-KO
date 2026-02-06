@@ -103,7 +103,7 @@ class MainViewModel(
             try {
                 val deviceId = authRepository.getDeviceId(getApplication())
                 val pdfCount = authRepository.getPdfCount(deviceId)
-                _remainingPdfs.value = (10 - pdfCount).coerceAtLeast(0)
+                _remainingPdfs.value = (30 - pdfCount).coerceAtLeast(0)
             } catch (e: Exception) {
                 // Si falla, se usa -1 para indicar "No disponible"
                 _remainingPdfs.value = -1

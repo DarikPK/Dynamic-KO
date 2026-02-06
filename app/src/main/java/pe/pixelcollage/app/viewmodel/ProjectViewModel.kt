@@ -473,8 +473,8 @@ class ProjectViewModel : ViewModel() {
                     val authRepository = AuthRepository()
                     val deviceId = authRepository.getDeviceId(context)
                     val pdfCount = authRepository.getPdfCount(deviceId)
-                    if (pdfCount >= 10) {
-                        _pdfGenerationState.value = PdfGenerationState.Error("Límite de 10 PDFs alcanzado para usuarios invitados.")
+                    if (pdfCount >= 30) {
+                        _pdfGenerationState.value = PdfGenerationState.Error("Límite de 30 PDFs alcanzado para usuarios invitados.")
                         return@launch
                     }
                     authRepository.incrementPdfCount(deviceId)

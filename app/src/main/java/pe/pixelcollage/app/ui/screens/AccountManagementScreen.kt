@@ -48,7 +48,7 @@ fun AccountManagementScreen(
                             style = MaterialTheme.typography.bodyLarge
                         )
                         Text(
-                            if (isPlayStoreMode) "Acceso libre con límite de 10 PDFs" else "Acceso con credenciales (empresarial)",
+                            if (isPlayStoreMode) "Acceso libre con límite de 30 PDFs" else "Acceso con credenciales (empresarial)",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
