@@ -34,6 +34,94 @@ import pe.pixelcollage.app.viewmodel.UserState
 
 object PdfGenerator {
 
+    private fun applyPdfBoxClippingPath(
+        contentStream: PDPageContentStream,
+        borderSettings: ImageBorderSettings,
+        finalRect: RectF,
+        pageHeight: Float
+    ) {
+        val size = borderSettings.size
+        val left = finalRect.left
+        val right = finalRect.right
+        val top = pageHeight - finalRect.top
+        val bottom = pageHeight - finalRect.bottom
+
+        contentStream.saveGraphicsState()
+
+        when (borderSettings.style) {
+            ImageBorderStyle.CURVED -> {
+                val k = 0.552284749831f
+                contentStream.moveTo(left + size, top)
+                contentStream.lineTo(right - size, top)
+                contentStream.curveTo(right - size + size * k, top, right, top - size + size * k, right, top - size)
+                contentStream.lineTo(right, bottom + size)
+                contentStream.curveTo(right, bottom + size - size * k, right - size + size * k, bottom, right - size, bottom)
+                contentStream.lineTo(left + size, bottom)
+                contentStream.curveTo(left + size - size * k, bottom, left, bottom + size - size * k, left, bottom + size)
+                contentStream.lineTo(left, top - size)
+                contentStream.curveTo(left, top - size + size * k, left + size - size * k, top, left + size, top)
+                contentStream.closePath()
+            }
+            ImageBorderStyle.CHAMFERED -> {
+                contentStream.moveTo(left + size, top)
+                contentStream.lineTo(right - size, top)
+                contentStream.lineTo(right, top - size)
+                contentStream.lineTo(right, bottom + size)
+                contentStream.lineTo(right - size, bottom)
+                contentStream.lineTo(left + size, bottom)
+                contentStream.lineTo(left, bottom + size)
+                contentStream.lineTo(left, top - size)
+                contentStream.closePath()
+            }
+            ImageBorderStyle.NONE -> {}
+        }
+        contentStream.clip()
+    }
+
+    private fun getFinalBitmapRect(bitmap: Bitmap, cellRect: RectF, alignment: ImageAlignment): RectF {
+        val bitmapWidth = bitmap.width.toFloat()
+        val bitmapHeight = bitmap.height.toFloat()
+        val cellWidth = cellRect.width()
+        val cellHeight = cellRect.height()
+        val scale: Float
+        val newWidth: Float
+        val newHeight: Float
+        if (bitmapWidth / bitmapHeight > cellWidth / cellHeight) {
+            scale = cellWidth / bitmapWidth
+            newWidth = cellWidth
+            newHeight = bitmapHeight * scale
+        } else {
+            scale = cellHeight / bitmapHeight
+            newHeight = cellHeight
+            newWidth = bitmapWidth * scale
+        }
+        var x = cellRect.left
+        var y = cellRect.top
+        when (alignment) {
+            ImageAlignment.CENTER -> {
+                x += (cellWidth - newWidth) / 2
+                y += (cellHeight - newHeight) / 2
+            }
+            ImageAlignment.LEFT -> {
+                x = cellRect.left
+                y += (cellHeight - newHeight) / 2
+            }
+            ImageAlignment.RIGHT -> {
+                x = cellRect.right - newWidth
+                y += (cellHeight - newHeight) / 2
+            }
+            ImageAlignment.TOP -> {
+                x += (cellWidth - newWidth) / 2
+                y = cellRect.top
+            }
+            ImageAlignment.BOTTOM -> {
+                x += (cellWidth - newWidth) / 2
+                y = cellRect.bottom - newHeight
+            }
+        }
+        return RectF(x, y, x + newWidth, y + newHeight)
+    }
+
     private fun applyAllEffects(input: Bitmap, settings: ImageEffectSettings): Bitmap {
         var processedBitmap = input
 
@@ -265,9 +353,30 @@ private fun drawCoverPageWithPdfBox(
                     context.contentResolver.openInputStream(uri)?.use { input ->
                         tmpFile.outputStream().use { out -> input.copyTo(out) }
                     }
+
+                    var bitmap = BitmapFactory.decodeFile(tmpFile.absolutePath)
+                    val settings = imageEffectSettings[row["uri"] as String]
+                    if (settings != null) {
+                        bitmap = applyAllEffects(bitmap, settings)
+                    }
+
+                    val finalRect = getFinalBitmapRect(bitmap, rect, ImageAlignment.CENTER)
+                    val borderSettings = config.imageBorderSettingsMap["cover"] ?: ImageBorderSettings()
+                    val clippingApplied = borderSettings.style != ImageBorderStyle.NONE
+
+                    if (clippingApplied) {
+                        applyPdfBoxClippingPath(contentStream, borderSettings, finalRect, pageHeight)
+                    }
+
                     val image = PDImageXObject.createFromFileByContent(tmpFile, pdDocument)
+                    contentStream.drawImage(image, finalRect.left, pageHeight - finalRect.bottom, finalRect.width(), finalRect.height())
+
+                    if (clippingApplied) {
+                        contentStream.restoreGraphicsState()
+                    }
+
                     tmpFile.delete()
-                    contentStream.drawImage(image, rect.left, pageHeight - rect.bottom, rect.width(), rect.height())
+                    bitmap.recycle()
                 } catch (e: Exception) {
                     Log.e("PdfBoxCrash", "Error cargando imagen: ${e.message}")
                 }
@@ -356,10 +465,12 @@ private fun drawInnerPagesWithPdfBox(
             val uris = pageData.imageUris.take(imagesPerPage)
             val spacingInPoints = pageData.imageSpacing * 0.75f // Convert dp to points
 
+            val borderSettings = coverConfig.imageBorderSettingsMap[pageData.groupId] ?: ImageBorderSettings()
+
             when (imagesPerPage) {
                 1 -> {
                     if (uris.isNotEmpty()) {
-                        drawImage(context, pdDocument, contentStream, uris[0], marginLeft, pageHeight - marginTop - contentHeight, contentWidth, contentHeight)
+                        drawImage(context, pdDocument, contentStream, uris[0], marginLeft, pageHeight - marginTop - contentHeight, contentWidth, contentHeight, ImageAlignment.CENTER, borderSettings, imageEffectSettings, pageHeight)
                     }
                 }
                 2 -> {
@@ -367,19 +478,19 @@ private fun drawInnerPagesWithPdfBox(
                         // Separación vertical
                         val imgHeight = (contentHeight - spacingInPoints) / 2f
                         if (uris.size >= 1) {
-                            drawImage(context, pdDocument, contentStream, uris[0], marginLeft, pageHeight - marginTop - imgHeight, contentWidth, imgHeight)
+                            drawImage(context, pdDocument, contentStream, uris[0], marginLeft, pageHeight - marginTop - imgHeight, contentWidth, imgHeight, ImageAlignment.BOTTOM, borderSettings, imageEffectSettings, pageHeight)
                         }
                         if (uris.size >= 2) {
-                            drawImage(context, pdDocument, contentStream, uris[1], marginLeft, pageHeight - marginTop - (imgHeight * 2) - spacingInPoints, contentWidth, imgHeight)
+                            drawImage(context, pdDocument, contentStream, uris[1], marginLeft, pageHeight - marginTop - (imgHeight * 2) - spacingInPoints, contentWidth, imgHeight, ImageAlignment.TOP, borderSettings, imageEffectSettings, pageHeight)
                         }
                     } else { // Orientación Horizontal
                         // Separación horizontal
                         val imgWidth = (contentWidth - spacingInPoints) / 2f
                         if (uris.size >= 1) {
-                            drawImage(context, pdDocument, contentStream, uris[0], marginLeft, pageHeight - marginTop - contentHeight, imgWidth, contentHeight)
+                            drawImage(context, pdDocument, contentStream, uris[0], marginLeft, pageHeight - marginTop - contentHeight, imgWidth, contentHeight, ImageAlignment.RIGHT, borderSettings, imageEffectSettings, pageHeight)
                         }
                         if (uris.size >= 2) {
-                            drawImage(context, pdDocument, contentStream, uris[1], marginLeft + imgWidth + spacingInPoints, pageHeight - marginTop - contentHeight, imgWidth, contentHeight)
+                            drawImage(context, pdDocument, contentStream, uris[1], marginLeft + imgWidth + spacingInPoints, pageHeight - marginTop - contentHeight, imgWidth, contentHeight, ImageAlignment.LEFT, borderSettings, imageEffectSettings, pageHeight)
                         }
                     }
                 }
@@ -387,10 +498,10 @@ private fun drawInnerPagesWithPdfBox(
                 4 -> {
                     val imgWidth = (contentWidth - spacingInPoints) / 2f
                     val imgHeight = (contentHeight - spacingInPoints) / 2f
-                    if (uris.size >= 1) drawImage(context, pdDocument, contentStream, uris[0], marginLeft, pageHeight - marginTop - imgHeight, imgWidth, imgHeight)
-                    if (uris.size >= 2) drawImage(context, pdDocument, contentStream, uris[1], marginLeft + imgWidth + spacingInPoints, pageHeight - marginTop - imgHeight, imgWidth, imgHeight)
-                    if (uris.size >= 3) drawImage(context, pdDocument, contentStream, uris[2], marginLeft, pageHeight - marginTop - (imgHeight * 2) - spacingInPoints, imgWidth, imgHeight)
-                    if (uris.size >= 4) drawImage(context, pdDocument, contentStream, uris[3], marginLeft + imgWidth + spacingInPoints, pageHeight - marginTop - (imgHeight * 2) - spacingInPoints, imgWidth, imgHeight)
+                    if (uris.size >= 1) drawImage(context, pdDocument, contentStream, uris[0], marginLeft, pageHeight - marginTop - imgHeight, imgWidth, imgHeight, ImageAlignment.CENTER, borderSettings, imageEffectSettings, pageHeight)
+                    if (uris.size >= 2) drawImage(context, pdDocument, contentStream, uris[1], marginLeft + imgWidth + spacingInPoints, pageHeight - marginTop - imgHeight, imgWidth, imgHeight, ImageAlignment.CENTER, borderSettings, imageEffectSettings, pageHeight)
+                    if (uris.size >= 3) drawImage(context, pdDocument, contentStream, uris[2], marginLeft, pageHeight - marginTop - (imgHeight * 2) - spacingInPoints, imgWidth, imgHeight, ImageAlignment.CENTER, borderSettings, imageEffectSettings, pageHeight)
+                    if (uris.size >= 4) drawImage(context, pdDocument, contentStream, uris[3], marginLeft + imgWidth + spacingInPoints, pageHeight - marginTop - (imgHeight * 2) - spacingInPoints, imgWidth, imgHeight, ImageAlignment.CENTER, borderSettings, imageEffectSettings, pageHeight)
                 }
             }
         } finally {
@@ -407,7 +518,11 @@ private fun drawImage(
     x: Float,
     y: Float,
     width: Float,
-    height: Float
+    height: Float,
+    alignment: ImageAlignment,
+    borderSettings: ImageBorderSettings,
+    imageEffectSettings: Map<String, ImageEffectSettings>,
+    pageHeight: Float
 ) {
     try {
         val uri = Uri.parse(uriString)
@@ -415,9 +530,33 @@ private fun drawImage(
         context.contentResolver.openInputStream(uri)?.use { input ->
             tmpFile.outputStream().use { out -> input.copyTo(out) }
         }
+
+        var bitmap = BitmapFactory.decodeFile(tmpFile.absolutePath)
+        imageEffectSettings[uriString]?.let {
+            bitmap = applyAllEffects(bitmap, it)
+        }
+
+        // En PDFBox, x, y son coordenadas de abajo hacia arriba.
+        // Pero getFinalBitmapRect espera coordenadas de arriba hacia abajo para su lógica.
+        // Sin embargo, como solo calcula proporciones dentro de un rectángulo, da igual
+        // siempre que seamos consistentes.
+        val cellRect = RectF(x, pageHeight - y - height, x + width, pageHeight - y)
+        val finalRectTopDown = getFinalBitmapRect(bitmap, cellRect, alignment)
+
+        val clippingApplied = borderSettings.style != ImageBorderStyle.NONE
+        if (clippingApplied) {
+            applyPdfBoxClippingPath(contentStream, borderSettings, finalRectTopDown, pageHeight)
+        }
+
         val image = PDImageXObject.createFromFileByContent(tmpFile, pdDocument)
+        contentStream.drawImage(image, finalRectTopDown.left, pageHeight - finalRectTopDown.bottom, finalRectTopDown.width(), finalRectTopDown.height())
+
+        if (clippingApplied) {
+            contentStream.restoreGraphicsState()
+        }
+
         tmpFile.delete()
-        contentStream.drawImage(image, x, y, width, height)
+        bitmap.recycle()
     } catch (e: Exception) {
         Log.e("PdfBoxCrash", "Error en drawImage para URI: $uriString", e)
     }

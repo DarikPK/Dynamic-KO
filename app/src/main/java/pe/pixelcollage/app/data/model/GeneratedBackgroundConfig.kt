@@ -14,12 +14,12 @@ enum class BackgroundPatternType(val displayName: String) {
 }
 
 data class GeneratedBackgroundConfig(
-    val patternType: BackgroundPatternType = BackgroundPatternType.SÓLIDO,
-    val transparency: Float = 5f,
+    val patternType: BackgroundPatternType = BackgroundPatternType.LOW_POLY,
+    val transparency: Float = 0.5f,
     val size: Float = 5f,
-    val density: Float = 5f,
+    val density: Float = 2f,
     val colorThemeName: String = "SkyBlue",
-    val isRandom: Boolean = false,
+    val isRandom: Boolean = true,
     val solidColor: Color = Color.White,
     val combineWithSolidColor: Boolean = false
 )

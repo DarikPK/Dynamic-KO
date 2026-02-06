@@ -48,11 +48,7 @@ fun ImageBordersScreen(
             onDismiss = { editingItemId = null },
             onConfirm = { newSettings ->
                 val newMap = tempBorderSettingsMap.toMutableMap()
-                if (newSettings.style == ImageBorderStyle.NONE) {
-                    newMap.remove(id)
-                } else {
-                    newMap[id] = newSettings
-                }
+                newMap[id] = newSettings
                 tempBorderSettingsMap = newMap
                 editingItemId = null
             }

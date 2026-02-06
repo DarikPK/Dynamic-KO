@@ -262,7 +262,7 @@ internal fun drawCoverPageContent(canvas: Canvas, context: Context, config: Cove
                     if (settings != null) {
                         bitmap = applyAllEffects(it, settings)
                     }
-                    val borderSettings = config.imageBorderSettingsMap["cover"]
+                    val borderSettings = config.imageBorderSettingsMap["cover"] ?: ImageBorderSettings()
                     drawBitmapToCanvas(canvas, bitmap!!, paddedRect, ImageAlignment.CENTER, borderSettings)
                     it.recycle()
                 }
@@ -306,7 +306,7 @@ internal fun drawPageOnCanvas(canvas: Canvas, context: Context, pageData: Genera
         marginRight,
         marginBottom
     )
-    val borderSettings = coverConfig.imageBorderSettingsMap[pageData.groupId]
+    val borderSettings = coverConfig.imageBorderSettingsMap[pageData.groupId] ?: ImageBorderSettings()
 
     pageData.imageUris.forEachIndexed { index, uriString ->
         if (index < rects.size) {
@@ -604,11 +604,11 @@ private fun drawImagesWithPdfBox(context: Context, pdDocument: PDDocument, confi
 
                 val finalRect = getFinalBitmapRect(bitmap, paddedRect, ImageAlignment.CENTER)
 
-                val borderSettings = config.imageBorderSettingsMap["cover"]
-                val clippingApplied = borderSettings != null && borderSettings.style != ImageBorderStyle.NONE
+                val borderSettings = config.imageBorderSettingsMap["cover"] ?: ImageBorderSettings()
+                val clippingApplied = borderSettings.style != ImageBorderStyle.NONE
 
                 if (clippingApplied) {
-                    applyPdfBoxClippingPath(contentStream, borderSettings!!, finalRect, pageHeight)
+                    applyPdfBoxClippingPath(contentStream, borderSettings, finalRect, pageHeight)
                 }
 
                 val imageXObject: PDImageXObject
@@ -705,7 +705,7 @@ private fun drawImagesWithPdfBox(
             marginRight,
             marginBottom
         )
-        val borderSettings = coverConfig.imageBorderSettingsMap[pageData.groupId]
+        val borderSettings = coverConfig.imageBorderSettingsMap[pageData.groupId] ?: ImageBorderSettings()
 
         pageData.imageUris.forEachIndexed { index, uriString ->
             if (index < rects.size) {
@@ -729,10 +729,10 @@ private fun drawImagesWithPdfBox(
                         }
 
                         val finalRect = getFinalBitmapRect(bitmap, rect, alignment)
-                        val clippingApplied = borderSettings != null && borderSettings.style != ImageBorderStyle.NONE
+                        val clippingApplied = borderSettings.style != ImageBorderStyle.NONE
 
                         if (clippingApplied) {
-                            applyPdfBoxClippingPath(contentStream, borderSettings!!, finalRect, pageHeight)
+                            applyPdfBoxClippingPath(contentStream, borderSettings, finalRect, pageHeight)
                         }
 
                         val imageXObject: PDImageXObject

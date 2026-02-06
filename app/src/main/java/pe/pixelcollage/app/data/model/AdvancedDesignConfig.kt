@@ -7,6 +7,6 @@ enum class ImageBorderStyle {
 }
 
 data class ImageBorderSettings(
-    val style: ImageBorderStyle = ImageBorderStyle.NONE,
-    val size: Float = 10f // Represents radius for curved, or cut size for chamfered
+    val style: ImageBorderStyle = ImageBorderStyle.CURVED,
+    val size: Float = 15f // Represents radius for curved, or cut size for chamfered
 )
