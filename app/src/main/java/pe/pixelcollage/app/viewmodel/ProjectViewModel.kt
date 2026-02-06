@@ -9,10 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import pe.pixelcollage.app.data.model.*
@@ -31,6 +28,19 @@ class ProjectViewModel : ViewModel() {
 
     private val _currentPageGroups = MutableStateFlow<List<PageGroup>>(emptyList())
     val currentPageGroups: StateFlow<List<PageGroup>> = _currentPageGroups.asStateFlow()
+
+    val hasContent: StateFlow<Boolean> = combine(
+        _currentCoverConfig,
+        _currentPageGroups
+    ) { coverConfig, pageGroups ->
+        val hasCoverText = coverConfig.clientNameStyle.content.isNotBlank() ||
+                coverConfig.rucStyle.content.isNotBlank() ||
+                coverConfig.subtitleStyle.content.isNotBlank()
+        val hasCoverImage = coverConfig.mainImageUri != null
+        val hasPageGroups = pageGroups.isNotEmpty()
+
+        hasCoverText || hasCoverImage || hasPageGroups
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     // --- Draft system for Background Editing ---
     private val _draftGeneratedBackgroundConfig = MutableStateFlow<GeneratedBackgroundConfig?>(null)

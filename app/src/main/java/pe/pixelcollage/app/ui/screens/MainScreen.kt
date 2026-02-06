@@ -119,6 +119,7 @@ fun MainScreen(
     val pdfGenerationState by projectViewModel.pdfGenerationState.collectAsState()
     val shareablePdfUri by projectViewModel.shareablePdfUri.collectAsState()
     val saveState by projectViewModel.saveState.collectAsState()
+    val hasContent by projectViewModel.hasContent.collectAsState()
 
     // Efecto para mostrar Toasts de guardado o errores
     LaunchedEffect(saveState) {
@@ -389,7 +390,8 @@ fun MainScreen(
                     buttonColor = MaterialTheme.colorScheme.errorContainer,
                     textColor = MaterialTheme.colorScheme.onErrorContainer,
                     icon = Icons.Default.DeleteForever,
-                    isCompact = isCompact
+                    isCompact = isCompact,
+                    enabled = hasContent
                 )
 
                 // Version Text
@@ -432,21 +434,27 @@ fun MainButton(
     buttonColor: Color? = null,
     textColor: Color? = null,
     icon: ImageVector? = null,
-    isCompact: Boolean
+    isCompact: Boolean,
+    enabled: Boolean = true
 ) {
     val colors = if (buttonColor != null) {
         ButtonDefaults.buttonColors(containerColor = buttonColor)
     } else {
         ButtonDefaults.buttonColors()
     }
-    val textFinalColor = textColor ?: MaterialTheme.colorScheme.onPrimary
+    val textFinalColor = if (enabled) {
+        textColor ?: MaterialTheme.colorScheme.onPrimary
+    } else {
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+    }
 
     Button(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth(if (isCompact) 0.9f else 0.8f)
             .heightIn(min = 40.dp, max = 52.dp),
-        colors = colors
+        colors = colors,
+        enabled = enabled
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
