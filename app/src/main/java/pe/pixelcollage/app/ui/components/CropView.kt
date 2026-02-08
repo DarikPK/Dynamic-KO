@@ -59,9 +59,9 @@ fun CropView(
     onCrop: (cropRect: Rect, imageBounds: Rect) -> Unit
 ) {
     val imageBitmap = remember(bitmap) { bitmap.asImageBitmap() }
-    var cropRect by remember { mutableStateOf(Rect.Zero) }
-    var dragOffset by remember { mutableStateOf(Offset.Zero) }
-    var isInitialized by remember { mutableStateOf(false) }
+    var cropRect by remember(bitmap) { mutableStateOf(Rect.Zero) }
+    var dragOffset by remember(bitmap) { mutableStateOf(Offset.Zero) }
+    var isInitialized by remember(bitmap) { mutableStateOf(false) }
     var touchRegion by remember { mutableStateOf<TouchRegion>(TouchRegion.None) }
     var imageBounds by remember { mutableStateOf(Rect.Zero) }
     val imageAspectRatio = bitmap.width.toFloat() / bitmap.height.toFloat()
@@ -192,9 +192,9 @@ fun CropView(
     onCrop: (cropRect: Rect, imageBounds: Rect) -> Unit,
     transformations: List<coil.transform.Transformation> = emptyList()
 ) {
-    var cropRect by remember { mutableStateOf(Rect.Zero) }
-    var dragOffset by remember { mutableStateOf(Offset.Zero) }
-    var isInitialized by remember { mutableStateOf(false) }
+    var cropRect by remember(uri) { mutableStateOf(Rect.Zero) }
+    var dragOffset by remember(uri) { mutableStateOf(Offset.Zero) }
+    var isInitialized by remember(uri) { mutableStateOf(false) }
     var touchRegion by remember { mutableStateOf<TouchRegion>(TouchRegion.None) }
     var imageBounds by remember { mutableStateOf(Rect.Zero) }
     var imageAspectRatio by remember { mutableStateOf(0f) }

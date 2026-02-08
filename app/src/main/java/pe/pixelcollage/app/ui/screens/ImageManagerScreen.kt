@@ -54,7 +54,6 @@ fun ImageManagerScreen(
 
     val imageUris = projectViewModel.getAllImageUris()
 
-    var cropViewResetKey by remember { mutableStateOf(0) }
     var showExitConfirmDialog by remember { mutableStateOf(false) }
 
     // Iniciar la sesión de edición al entrar en la pantalla
@@ -148,7 +147,6 @@ fun ImageManagerScreen(
                         onClick = {
                             if (currentSelectedUriString != null) {
                                 projectViewModel.resetImageTransforms(currentSelectedUriString!!)
-                                cropViewResetKey++
                             }
                         },
                         enabled = currentSelectedUriString != null && currentSettings.hasTransforms()
@@ -250,23 +248,20 @@ fun ImageManagerScreen(
 
                 if (bitmapForCropper != null) {
                     val b = bitmapForCropper!!
-                    key(currentSelectedUriString, cropViewResetKey) {
-                        CropView(
-                            bitmap = b,
-                            onCrop = { cropRect, imageBounds ->
-                                if (imageBounds.width > 0 && imageBounds.height > 0) {
-                                    val normalizedRect = SerializableNormalizedRectF(
-                                        left = (cropRect.left - imageBounds.left) / imageBounds.width,
-                                        top = (cropRect.top - imageBounds.top) / imageBounds.height,
-                                        width = cropRect.width / imageBounds.width,
-                                        height = cropRect.height / imageBounds.height
-                                    )
-                                    projectViewModel.updateImageCrop(currentSelectedUriString!!, normalizedRect)
-                                    cropViewResetKey++ // Reseteamos para que el nuevo recorte empiece al 100% y se vea el cambio
-                                }
+                    CropView(
+                        bitmap = b,
+                        onCrop = { cropRect, imageBounds ->
+                            if (imageBounds.width > 0 && imageBounds.height > 0) {
+                                val normalizedRect = SerializableNormalizedRectF(
+                                    left = (cropRect.left - imageBounds.left) / imageBounds.width,
+                                    top = (cropRect.top - imageBounds.top) / imageBounds.height,
+                                    width = cropRect.width / imageBounds.width,
+                                    height = cropRect.height / imageBounds.height
+                                )
+                                projectViewModel.updateImageCrop(currentSelectedUriString!!, normalizedRect)
                             }
-                        )
-                    }
+                        }
+                    )
                 } else if (currentSelectedUri != null) {
                     CircularProgressIndicator()
                 } else {
