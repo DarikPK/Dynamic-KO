@@ -205,18 +205,30 @@ fun ImageManagerScreen(
                     val settings = draftEffectSettings[currentSelectedUriString] ?: ImageEffectSettings()
                     val inputStream = context.contentResolver.openInputStream(uri)
 
-                    val processed = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    val finalBitmap = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                         val original = inputStream?.use {
                             android.graphics.BitmapFactory.decodeStream(it)
                         } ?: return@withContext null
 
-                        // Rotación
-                        val rotated = if (settings.rotationDegrees != 0f) {
-                            val matrix = Matrix().apply { postRotate(settings.rotationDegrees) }
-                            Bitmap.createBitmap(original, 0, 0, original.width, original.height, matrix, true)
+                        // 1. Aplicar Recorte (Visualiza el recorte acumulado)
+                        val crop = settings.cropRect
+                        val cropped = if (crop != null && crop.width > 0 && crop.height > 0) {
+                            val left = (crop.left * original.width).toInt().coerceIn(0, original.width - 1)
+                            val top = (crop.top * original.height).toInt().coerceIn(0, original.height - 1)
+                            val width = (crop.width * original.width).toInt().coerceAtMost(original.width - left)
+                            val height = (crop.height * original.height).toInt().coerceAtMost(original.height - top)
+                            if (width > 0 && height > 0) {
+                                Bitmap.createBitmap(original, left, top, width, height)
+                            } else original
                         } else original
 
-                        // Efectos de Color
+                        // 2. Rotación
+                        val rotated = if (settings.rotationDegrees != 0f) {
+                            val matrix = Matrix().apply { postRotate(settings.rotationDegrees) }
+                            Bitmap.createBitmap(cropped, 0, 0, cropped.width, cropped.height, matrix, true)
+                        } else cropped
+
+                        // 3. Efectos de Color
                         val effected = pe.pixelcollage.app.utils.ImageEffects.applyEffects(
                             rotated,
                             settings.brightness,
@@ -224,23 +236,23 @@ fun ImageManagerScreen(
                             1.0f + settings.saturation / 100.0f
                         )
 
-                        // Nitidez/Desenfoque
-                        val sharpnessValue = settings.sharpness / 100.0f
-                        val final = when {
-                            sharpnessValue > 0 -> pe.pixelcollage.app.utils.ImageEffects.applySharpen(effected, sharpnessValue)
-                            sharpnessValue < 0 -> pe.pixelcollage.app.utils.ImageEffects.applyBlur(effected, -sharpnessValue)
+                        // 4. Nitidez/Desenfoque
+                        val s = settings.sharpness / 100.0f
+                        val sharpened = when {
+                            s > 0 -> pe.pixelcollage.app.utils.ImageEffects.applySharpen(effected, s)
+                            s < 0 -> pe.pixelcollage.app.utils.ImageEffects.applyBlur(effected, -s)
                             else -> effected
                         }
-                        final
+                        sharpened
                     }
-                    bitmapForCropper = processed
+                    bitmapForCropper = finalBitmap
                 }
 
                 if (bitmapForCropper != null) {
-                    val bitmapToDisplay = bitmapForCropper!!
+                    val b = bitmapForCropper!!
                     key(currentSelectedUriString, cropViewResetKey) {
                         CropView(
-                            bitmap = bitmapToDisplay,
+                            bitmap = b,
                             onCrop = { cropRect, imageBounds ->
                                 if (imageBounds.width > 0 && imageBounds.height > 0) {
                                     val normalizedRect = SerializableNormalizedRectF(
@@ -250,7 +262,7 @@ fun ImageManagerScreen(
                                         height = cropRect.height / imageBounds.height
                                     )
                                     projectViewModel.updateImageCrop(currentSelectedUriString!!, normalizedRect)
-                                    // No reseteamos para visualizar el recorte en los tiradores
+                                    cropViewResetKey++ // Reseteamos para que el nuevo recorte empiece al 100% y se vea el cambio
                                 }
                             }
                         )
