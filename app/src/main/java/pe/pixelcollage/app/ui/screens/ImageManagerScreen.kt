@@ -209,28 +209,14 @@ fun ImageManagerScreen(
 
                             var current: Bitmap = originalBitmap
 
-                            // 1. Aplicar Recorte
-                            val cropRect = settings.cropRect
-                            if (cropRect != null && cropRect.width > 0 && cropRect.height > 0) {
-                                val b = current
-                                val left = (cropRect.left * b.width).toInt().coerceIn(0, b.width - 1)
-                                val top = (cropRect.top * b.height).toInt().coerceIn(0, b.height - 1)
-                                val width = (cropRect.width * b.width).toInt().coerceAtMost(b.width - left)
-                                val height = (cropRect.height * b.height).toInt().coerceAtMost(b.height - top)
-
-                                if (width > 0 && height > 0) {
-                                    current = Bitmap.createBitmap(b, left, top, width, height)
-                                }
-                            }
-
-                            // 2. Aplicar Rotación
+                            // 1. Aplicar Rotación
                             if (settings.rotationDegrees != 0f) {
                                 val b = current
                                 val matrix = Matrix().apply { postRotate(settings.rotationDegrees) }
                                 current = Bitmap.createBitmap(b, 0, 0, b.width, b.height, matrix, true)
                             }
 
-                            // 3. Aplicar Efectos de Color
+                            // 2. Aplicar Efectos de Color
                             current = pe.pixelcollage.app.utils.ImageEffects.applyEffects(
                                 current,
                                 settings.brightness,
@@ -238,7 +224,7 @@ fun ImageManagerScreen(
                                 1.0f + settings.saturation / 100.0f
                             )
 
-                            // 4. Aplicar Nitidez/Desenfoque
+                            // 3. Aplicar Nitidez/Desenfoque
                             val sharpness = settings.sharpness / 100.0f
                             current = when {
                                 sharpness > 0 -> pe.pixelcollage.app.utils.ImageEffects.applySharpen(current, sharpness)
