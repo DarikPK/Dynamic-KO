@@ -1,6 +1,7 @@
 package pe.pixelcollage.app.ui.screens
 
 import android.graphics.Bitmap
+import android.graphics.Matrix
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -198,28 +199,58 @@ fun ImageManagerScreen(
 
                 LaunchedEffect(currentSelectedUri, draftEffectSettings) {
                     if (currentSelectedUri != null) {
-                        coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-                            val originalBitmap = context.contentResolver.openInputStream(currentSelectedUri)?.use {
+                        val settings = draftEffectSettings[currentSelectedUriString] ?: ImageEffectSettings()
+                        val inputStream = context.contentResolver.openInputStream(currentSelectedUri)
+
+                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                            val originalBitmap = inputStream?.use {
                                 android.graphics.BitmapFactory.decodeStream(it)
                             }
-                            if (originalBitmap != null) {
-                                val cropRect = draftEffectSettings[currentSelectedUriString]?.cropRect
-                                if (cropRect != null) {
-                                    val left = (cropRect.left * originalBitmap.width).toInt()
-                                    val top = (cropRect.top * originalBitmap.height).toInt()
-                                    val width = (cropRect.width * originalBitmap.width).toInt()
-                                    val height = (cropRect.height * originalBitmap.height).toInt()
 
-                                    if (width > 0 && height > 0 && (left + width) <= originalBitmap.width && (top + height) <= originalBitmap.height) {
-                                        bitmapForCropper = Bitmap.createBitmap(originalBitmap, left, top, width, height)
-                                    } else {
-                                        bitmapForCropper = originalBitmap
+                            if (originalBitmap != null) {
+                                var processed = originalBitmap
+
+                                // 1. Aplicar Recorte
+                                settings.cropRect?.let { rect ->
+                                    if (rect.width > 0 && rect.height > 0) {
+                                        val left = (rect.left * processed.width).toInt().coerceIn(0, processed.width - 1)
+                                        val top = (rect.top * processed.height).toInt().coerceIn(0, processed.height - 1)
+                                        val width = (rect.width * processed.width).toInt().coerceAtMost(processed.width - left)
+                                        val height = (rect.height * processed.height).toInt().coerceAtMost(processed.height - top)
+
+                                        if (width > 0 && height > 0) {
+                                            processed = Bitmap.createBitmap(processed, left, top, width, height)
+                                        }
                                     }
-                                } else {
-                                    bitmapForCropper = originalBitmap
                                 }
+
+                                // 2. Aplicar Rotación
+                                if (settings.rotationDegrees != 0f) {
+                                    val matrix = Matrix().apply { postRotate(settings.rotationDegrees) }
+                                    processed = Bitmap.createBitmap(processed, 0, 0, processed.width, processed.height, matrix, true)
+                                }
+
+                                // 3. Aplicar Efectos de Color
+                                processed = pe.pixelcollage.app.utils.ImageEffects.applyEffects(
+                                    processed,
+                                    settings.brightness,
+                                    1.0f + settings.contrast / 100.0f,
+                                    1.0f + settings.saturation / 100.0f
+                                )
+
+                                // 4. Aplicar Nitidez/Desenfoque
+                                val sharpness = settings.sharpness / 100.0f
+                                processed = when {
+                                    sharpness > 0 -> pe.pixelcollage.app.utils.ImageEffects.applySharpen(processed, sharpness)
+                                    sharpness < 0 -> pe.pixelcollage.app.utils.ImageEffects.applyBlur(processed, -sharpness)
+                                    else -> processed
+                                }
+
+                                bitmapForCropper = processed
                             }
                         }
+                    } else {
+                        bitmapForCropper = null
                     }
                 }
 

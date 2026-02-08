@@ -1,6 +1,8 @@
 package pe.pixelcollage.app.ui.screens
 
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.layout.*
@@ -41,15 +43,15 @@ fun ImageEffectsScreen(
         localSettings = currentSettings
     }
 
-    var previewBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
-    var originalBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    var previewBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var baseBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
-    fun updatePreview(settings: ImageEffectSettings) {
-        coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            originalBitmap?.let { ob ->
+    suspend fun updatePreview(settings: ImageEffectSettings) {
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            baseBitmap?.let { ob ->
                 val scaleFactor = 400.0 / ob.width.coerceAtLeast(ob.height)
                 val thumbnail = if (scaleFactor < 1.0) {
-                    android.graphics.Bitmap.createScaledBitmap(ob, (ob.width * scaleFactor).toInt(), (ob.height * scaleFactor).toInt(), true)
+                    Bitmap.createScaledBitmap(ob, (ob.width * scaleFactor).toInt(), (ob.height * scaleFactor).toInt(), true)
                 } else ob
                 val processedBitmap = ImageEffects.applyEffects(
                     thumbnail,
@@ -68,13 +70,36 @@ fun ImageEffectsScreen(
         }
     }
 
-    LaunchedEffect(uri, localSettings) {
-        if (originalBitmap == null) {
-            coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-                originalBitmap = context.contentResolver.openInputStream(uri)?.use(BitmapFactory::decodeStream)
-                updatePreview(localSettings)
+    LaunchedEffect(uri) {
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val fullBitmap = context.contentResolver.openInputStream(uri)?.use {
+                BitmapFactory.decodeStream(it)
             }
-        } else {
+            if (fullBitmap != null) {
+                var processed = fullBitmap
+                // Aplicar recorte y rotación actuales antes de entrar a esta pantalla
+                currentSettings.cropRect?.let { rect ->
+                    if (rect.width > 0 && rect.height > 0) {
+                        val left = (rect.left * processed.width).toInt().coerceIn(0, processed.width - 1)
+                        val top = (rect.top * processed.height).toInt().coerceIn(0, processed.height - 1)
+                        val width = (rect.width * processed.width).toInt().coerceAtMost(processed.width - left)
+                        val height = (rect.height * processed.height).toInt().coerceAtMost(processed.height - top)
+                        if (width > 0 && height > 0) {
+                            processed = Bitmap.createBitmap(processed, left, top, width, height)
+                        }
+                    }
+                }
+                if (currentSettings.rotationDegrees != 0f) {
+                    val matrix = Matrix().apply { postRotate(currentSettings.rotationDegrees) }
+                    processed = Bitmap.createBitmap(processed, 0, 0, processed.width, processed.height, matrix, true)
+                }
+                baseBitmap = processed
+            }
+        }
+    }
+
+    LaunchedEffect(baseBitmap, localSettings) {
+        if (baseBitmap != null) {
             updatePreview(localSettings)
         }
     }
