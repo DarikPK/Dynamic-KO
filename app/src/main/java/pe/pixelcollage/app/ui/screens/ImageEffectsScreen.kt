@@ -72,29 +72,29 @@ fun ImageEffectsScreen(
 
     LaunchedEffect(uri) {
         val processed = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-            val fullBitmap = context.contentResolver.openInputStream(uri)?.use {
+            val full = context.contentResolver.openInputStream(uri)?.use {
                 BitmapFactory.decodeStream(it)
             } ?: return@withContext null
 
-            var current: Bitmap = fullBitmap
-            // Aplicar recorte y rotación actuales antes de entrar a esta pantalla
+            // Recorte
             val cropRect = currentSettings.cropRect
-            if (cropRect != null && cropRect.width > 0 && cropRect.height > 0) {
-                val b = current
-                val left = (cropRect.left * b.width).toInt().coerceIn(0, b.width - 1)
-                val top = (cropRect.top * b.height).toInt().coerceIn(0, b.height - 1)
-                val width = (cropRect.width * b.width).toInt().coerceAtMost(b.width - left)
-                val height = (cropRect.height * b.height).toInt().coerceAtMost(b.height - top)
+            val cropped = if (cropRect != null && cropRect.width > 0 && cropRect.height > 0) {
+                val left = (cropRect.left * full.width).toInt().coerceIn(0, full.width - 1)
+                val top = (cropRect.top * full.height).toInt().coerceIn(0, full.height - 1)
+                val width = (cropRect.width * full.width).toInt().coerceAtMost(full.width - left)
+                val height = (cropRect.height * full.height).toInt().coerceAtMost(full.height - top)
                 if (width > 0 && height > 0) {
-                    current = Bitmap.createBitmap(b, left, top, width, height)
-                }
-            }
-            if (currentSettings.rotationDegrees != 0f) {
-                val b = current
+                    Bitmap.createBitmap(full, left, top, width, height)
+                } else full
+            } else full
+
+            // Rotación
+            val final = if (currentSettings.rotationDegrees != 0f) {
                 val matrix = Matrix().apply { postRotate(currentSettings.rotationDegrees) }
-                current = Bitmap.createBitmap(b, 0, 0, b.width, b.height, matrix, true)
-            }
-            current
+                Bitmap.createBitmap(cropped, 0, 0, cropped.width, cropped.height, matrix, true)
+            } else cropped
+
+            final
         }
         baseBitmap = processed
     }
