@@ -36,6 +36,9 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
     private val _originalPageGroups = MutableStateFlow<List<PageGroup>>(emptyList())
     val originalPageGroups: StateFlow<List<PageGroup>> = _originalPageGroups.asStateFlow()
 
+    val hasChanges: StateFlow<Boolean> = combine(_pageGroups, _originalPageGroups) { current, original ->
+        current != original
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     init {
         viewModelScope.launch {
@@ -57,10 +60,6 @@ class InnerPagesViewModel(private val projectViewModel: ProjectViewModel) : View
 
     private val _editingGroup = MutableStateFlow<PageGroup?>(null)
     val editingGroup: StateFlow<PageGroup?> = _editingGroup.asStateFlow()
-
-    val hasChanges: StateFlow<Boolean> = combine(_pageGroups, _originalPageGroups) { current, original ->
-        current != original
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     private val _currentGroupAddingImages = MutableStateFlow<String?>(null)
     val currentGroupAddingImages: StateFlow<String?> = _currentGroupAddingImages.asStateFlow()
