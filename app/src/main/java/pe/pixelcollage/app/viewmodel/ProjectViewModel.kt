@@ -218,6 +218,8 @@ class ProjectViewModel : ViewModel() {
 
     fun deletePhoto(context: Context, uri: String) {
         _recycledUris.update { it + uri }
+        _imageEffectSettings.update { it - uri }
+        _draftImageEffectSettings.update { it - uri }
         if (_currentCoverConfig.value.mainImageUri == uri) {
             _currentCoverConfig.update { it.copy(mainImageUri = null) }
         } else {
@@ -375,12 +377,16 @@ class ProjectViewModel : ViewModel() {
     }
 
     fun updatePageGroups(context: Context, newGroups: List<PageGroup>) {
+        val oldUris = _currentPageGroups.value.flatMap { it.imageUris }.toSet()
+        val newUris = newGroups.flatMap { it.imageUris }.toSet()
+        val urisToDelete = oldUris - newUris
+
         viewModelScope.launch(Dispatchers.IO) {
-            val oldUris = _currentPageGroups.value.flatMap { it.imageUris }.toSet()
-            val newUris = newGroups.flatMap { it.imageUris }.toSet()
-            val urisToDelete = oldUris - newUris
             urisToDelete.forEach { deleteLocalImage(it) }
         }
+        _imageEffectSettings.update { it - urisToDelete }
+        _draftImageEffectSettings.update { it - urisToDelete }
+
         _currentPageGroups.value = newGroups
         saveProject(context)
     }
@@ -399,6 +405,8 @@ class ProjectViewModel : ViewModel() {
                 _managerSelectedUri.value = null
             }
             viewModelScope.launch(Dispatchers.IO) { group.imageUris.forEach { uri -> deleteLocalImage(uri) } }
+            _imageEffectSettings.update { it - group.imageUris.toSet() }
+            _draftImageEffectSettings.update { it - group.imageUris.toSet() }
         }
         _currentPageGroups.update { currentList -> currentList.filterNot { it.id == groupId } }
         saveProject(context)
@@ -546,14 +554,21 @@ class ProjectViewModel : ViewModel() {
 
     fun removeImageFromPageGroup(context: Context, groupId: String, uri: String) {
         viewModelScope.launch(Dispatchers.IO) { deleteLocalImage(uri) }
+        _imageEffectSettings.update { it - uri }
+        _draftImageEffectSettings.update { it - uri }
         updatePageGroup(context, groupId) { group -> group.copy(imageUris = group.imageUris.filterNot { it == uri }) }
     }
 
     fun removeAllImagesFromPageGroup(context: Context, groupId: String) {
+        val group = _currentPageGroups.value.find { it.id == groupId }
+        val urisToDelete = group?.imageUris ?: emptyList()
+
         viewModelScope.launch(Dispatchers.IO) {
-            val group = _currentPageGroups.value.find { it.id == groupId }
-            group?.imageUris?.forEach { uri -> deleteLocalImage(uri) }
+            urisToDelete.forEach { deleteLocalImage(it) }
         }
+        _imageEffectSettings.update { it - urisToDelete.toSet() }
+        _draftImageEffectSettings.update { it - urisToDelete.toSet() }
+
         updatePageGroup(context, groupId) { it.copy(imageUris = emptyList()) }
     }
 
@@ -578,6 +593,12 @@ class ProjectViewModel : ViewModel() {
             val oldImageUri = _currentCoverConfig.value.mainImageUri
             if (oldImageUri != null && oldImageUri != finalConfig.mainImageUri) {
                 deleteLocalImage(oldImageUri)
+                // Limpiar efectos de la imagen anterior si fue reemplazada
+                _imageEffectSettings.update { it - oldImageUri }
+                _draftImageEffectSettings.update { it - oldImageUri }
+                if (_managerSelectedUri.value == oldImageUri) {
+                    _managerSelectedUri.value = finalConfig.mainImageUri
+                }
             }
             updateCoverConfig(finalConfig)
             saveProject(context)

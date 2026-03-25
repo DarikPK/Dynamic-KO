@@ -70,7 +70,9 @@ fun ImageManagerScreen(
     } ?: ImageEffectSettings()
 
     LaunchedEffect(imageUris) {
-        if (currentSelectedUriString == null && imageUris.isNotEmpty()) {
+        if (imageUris.isEmpty()) {
+            projectViewModel.setManagerSelectedUri(null)
+        } else if (currentSelectedUriString == null || !imageUris.contains(currentSelectedUriString)) {
             projectViewModel.setManagerSelectedUri(imageUris.first())
         }
     }
@@ -201,11 +203,14 @@ fun ImageManagerScreen(
                         return@LaunchedEffect
                     }
                     val settings = draftEffectSettings[currentSelectedUriString] ?: ImageEffectSettings()
-                    val inputStream = context.contentResolver.openInputStream(uri)
 
                     val finalBitmap = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                        val original = inputStream?.use {
-                            android.graphics.BitmapFactory.decodeStream(it)
+                        val original = try {
+                            context.contentResolver.openInputStream(uri)?.use {
+                                android.graphics.BitmapFactory.decodeStream(it)
+                            }
+                        } catch (e: Exception) {
+                            null
                         } ?: return@withContext null
 
                         // 1. Aplicar Recorte (Visualiza el recorte acumulado)
