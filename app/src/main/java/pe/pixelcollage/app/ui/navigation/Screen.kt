@@ -1,6 +1,8 @@
 package pe.pixelcollage.app.ui.navigation
 
 sealed class Screen(val route: String) {
+    object Home : Screen("home_screen")
+    object Templates : Screen("templates_screen")
     object Main : Screen("main_screen")
     object CoverSetup : Screen("cover_setup_screen")
     object InnerPages : Screen("inner_pages_screen")
