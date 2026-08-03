@@ -269,7 +269,10 @@ fun AppNavigation(
             )
         }
         composable("account_management") {
-            AccountManagementScreen(navController = navController)
+            AccountManagementScreen(
+                navController = navController,
+                mainViewModel = mainViewModel
+            )
         }
         composable("create_account") {
             val authRepository = AuthRepository()

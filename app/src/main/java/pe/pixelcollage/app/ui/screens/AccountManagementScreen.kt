@@ -10,21 +10,40 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import pe.pixelcollage.app.viewmodel.AccountManagementViewModel
+import pe.pixelcollage.app.viewmodel.MainViewModel
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.ArrowBack
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccountManagementScreen(
     navController: NavController,
+    mainViewModel: MainViewModel,
     viewModel: AccountManagementViewModel = viewModel()
 ) {
     val isPlayStoreMode by viewModel.playStoreModeState.collectAsState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Spacer(modifier = Modifier.height(32.dp))
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Ajustes de Cuenta") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.navigateUp() }) {
+                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Atrás")
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
 
         // Selector de Modo de Autenticación
         Card(
@@ -79,5 +98,24 @@ fun AccountManagementScreen(
                 }
             }
         }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        Button(
+            onClick = { mainViewModel.logout() },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+                contentColor = MaterialTheme.colorScheme.onErrorContainer
+            ),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Logout,
+                contentDescription = null,
+                modifier = Modifier.padding(end = 8.dp)
+            )
+            Text("CERRAR SESIÓN")
+        }
     }
+}
 }
