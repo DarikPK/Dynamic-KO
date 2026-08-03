@@ -1,8 +1,10 @@
 package pe.pixelcollage.app.ui.screens
 
 import android.content.Context
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -21,6 +23,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -88,7 +91,7 @@ fun HomeScreen(
                 onSettingsClick = { navController.navigate("account_management") }
             )
 
-            // Tarjeta principal de Crear Collage (Morado/Violeta) - Compactada con previsualización
+            // Tarjeta principal de Crear Collage (Morado/Violeta) - Rediseño Premium con previsualización refinada
             CreateCollageCardRefined(
                 onNavigateToTemplates = { navController.navigate(Screen.Templates.route) },
                 onNavigateToClassic = { navController.navigate(Screen.Main.route) }
@@ -175,13 +178,55 @@ fun HeaderSection(onSettingsClick: () -> Unit) {
 }
 
 @Composable
+fun Sparkle(
+    modifier: Modifier = Modifier,
+    color: Color = Color(0xFFFFC0CB), // Rosa claro decorativo
+    alpha: Float = 0.6f
+) {
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        val path = Path().apply {
+            val cx = w / 2f
+            val cy = h / 2f
+            val rx = w / 2f
+            val ry = h / 2f
+            moveTo(cx, cy - ry)
+            quadraticTo(cx, cy, cx + rx, cy)
+            quadraticTo(cx, cy, cx, cy + ry)
+            quadraticTo(cx, cy, cx - rx, cy)
+            quadraticTo(cx, cy, cx, cy - ry)
+            close()
+        }
+        drawPath(path = path, color = color.copy(alpha = alpha))
+    }
+}
+
+@Composable
+fun AmbientGlow(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(110.dp) // Tamaño aproximado del 70% del corazón
+            .background(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        Color.White.copy(alpha = 0.18f), // Blanco brillante de baja opacidad
+                        Color(0xFFE1BEE7).copy(alpha = 0.08f), // Ligero matiz violeta
+                        Color.Transparent
+                    )
+                ),
+                shape = CircleShape
+            )
+    )
+}
+
+@Composable
 fun CollageHeroPreview(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
-            .rotate(5f)
-            .shadow(elevation = 6.dp, shape = RoundedCornerShape(8.dp))
-            .background(Color.White.copy(alpha = 0.1f), shape = RoundedCornerShape(8.dp))
-            .clip(RoundedCornerShape(8.dp))
+            .rotate(6f) // Inclinación suave refinada entre 5° y 8°
+            .shadow(elevation = 3.dp, shape = RoundedCornerShape(10.dp)) // Sombra extremadamente suave
+            .clip(RoundedCornerShape(10.dp))
     ) {
         Image(
             painter = painterResource(id = pe.pixelcollage.app.R.drawable.heart_collage_preview),
@@ -198,82 +243,151 @@ fun CreateCollageCardRefined(
     onNavigateToClassic: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(elevation = 3.dp, shape = RoundedCornerShape(22.dp)), // Sombra exterior muy suave
+        shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(Color(0xFF7E57C2), Color(0xFF5E35B1))
+                    brush = Brush.linearGradient(
+                        colors = listOf(
+                            Color(0xFF1B0B2E), // Morado profundo
+                            Color(0xFF3B1E63)  // Violeta
+                        )
                     )
                 )
-                .padding(14.dp) // Reducido el padding para compactar
         ) {
+            // Un toque de magenta en la esquina superior derecha para un degradado premium
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .align(Alignment.TopEnd)
+                    .background(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                Color(0xFFD81B60).copy(alpha = 0.22f), // Ligero matiz magenta
+                                Color.Transparent
+                            ),
+                            radius = 450f
+                        )
+                    )
+            )
+
+            // Fina línea de iluminación superior
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(Color.White.copy(alpha = 0.15f))
+                    .align(Alignment.TopCenter)
+            )
+
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Columna Izquierda: Título, Subtítulo y Accesos (60% del ancho)
                 Column(
-                    modifier = Modifier.weight(0.6f)
+                    modifier = Modifier.weight(0.58f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        text = "Crear collage",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
+                    // Título con destellos decorativos al lado
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = "Crear collage",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White,
+                            fontSize = 20.sp
+                        )
+                        // Tres pequeños destellos junto al título
+                        Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Sparkle(modifier = Modifier.size(10.dp), alpha = 0.8f)
+                            Sparkle(modifier = Modifier.size(6.dp), alpha = 0.6f)
+                            Sparkle(modifier = Modifier.size(8.dp), alpha = 0.7f)
+                        }
+                    }
+
                     Text(
                         text = "Diseña collages increíbles a tu manera",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.8f),
-                        modifier = Modifier.padding(bottom = 10.dp)
+                        color = Color.White.copy(alpha = 0.65f), // Menor contraste para jerarquía clara
+                        fontSize = 11.sp,
+                        lineHeight = 14.sp
                     )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // Accesos de opciones
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        AccessItemRefined(
+                            icon = Icons.Default.AddCircleOutline,
+                            title = "Desde cero",
+                            subtitle = "Empieza vacío",
+                            enabled = false,
+                            onClick = {}
+                        )
+                        AccessItemRefined(
+                            icon = Icons.Default.Dashboard,
+                            title = "Plantillas",
+                            subtitle = "Elige un diseño",
+                            enabled = true,
+                            onClick = onNavigateToTemplates
+                        )
+                        AccessItemRefined(
+                            icon = Icons.Default.FlashOn,
+                            title = "Collage rápido",
+                            subtitle = "Crea en segundos",
+                            enabled = true,
+                            onClick = onNavigateToClassic
+                        )
+                        AccessItemRefined(
+                            icon = Icons.Default.Code,
+                            title = "Modelo personalizado",
+                            subtitle = "Usa un código",
+                            enabled = false,
+                            onClick = {}
+                        )
+                    }
                 }
-                CollageHeroPreview(
+
+                // Columna Derecha: Resplandor, Héroe Corazón y 4-5 destellos (42% del ancho)
+                Box(
                     modifier = Modifier
-                        .weight(0.4f)
-                        .padding(start = 8.dp)
-                        .height(80.dp)
-                )
-            }
+                        .weight(0.42f)
+                        .padding(start = 6.dp)
+                        .fillMaxHeight(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    // 1. Resplandor radial detrás del corazón
+                    AmbientGlow()
 
-            Spacer(modifier = Modifier.height(10.dp))
+                    // 2. Imagen héroe corazón con inclinación suave (6 grados) y sombra extremadamente suave
+                    CollageHeroPreview(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(0.85f)
+                    )
 
-            // Accesos compactados
-            Column(
-                verticalArrangement = Arrangement.spacedBy(6.dp) // Reducida la separación de 10.dp a 6.dp
-            ) {
-                AccessItemRefined(
-                    icon = Icons.Default.AddCircleOutline,
-                    title = "Desde cero",
-                    subtitle = "Empieza con un collage vacío",
-                    enabled = false,
-                    onClick = {}
-                )
-                AccessItemRefined(
-                    icon = Icons.Default.Dashboard,
-                    title = "Plantillas",
-                    subtitle = "Elige un diseño para comenzar",
-                    enabled = true,
-                    onClick = onNavigateToTemplates
-                )
-                AccessItemRefined(
-                    icon = Icons.Default.FlashOn,
-                    title = "Collage rápido",
-                    subtitle = "Selecciona tus fotos y crea en segundos",
-                    enabled = true,
-                    onClick = onNavigateToClassic
-                )
-                AccessItemRefined(
-                    icon = Icons.Default.Code,
-                    title = "Modelo personalizado",
-                    subtitle = "Abre un diseño mediante código",
-                    enabled = false,
-                    onClick = {}
-                )
+                    // 3. Destellos alrededor del corazón (irregular, discreto, no simétrico)
+                    Sparkle(modifier = Modifier.align(Alignment.TopStart).offset(x = (-4).dp, y = (-8).dp).size(12.dp), alpha = 0.65f)
+                    Sparkle(modifier = Modifier.align(Alignment.TopEnd).offset(x = 6.dp, y = (-2).dp).size(8.dp), alpha = 0.5f)
+                    Sparkle(modifier = Modifier.align(Alignment.BottomStart).offset(x = (-6).dp, y = 10.dp).size(9.dp), alpha = 0.55f)
+                    Sparkle(modifier = Modifier.align(Alignment.BottomEnd).offset(x = 8.dp, y = 4.dp).size(11.dp), alpha = 0.7f)
+                    Sparkle(modifier = Modifier.align(Alignment.CenterEnd).offset(x = 12.dp, y = (-25).dp).size(7.dp), alpha = 0.45f)
+                }
             }
         }
     }
@@ -282,70 +396,84 @@ fun CreateCollageCardRefined(
 @Composable
 fun EditPhotoCardRefined() {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(elevation = 2.dp, shape = RoundedCornerShape(20.dp)),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .background(
                     brush = Brush.verticalGradient(
-                        colors = listOf(Color(0xFF29B6F6), Color(0xFF0288D1)) // Azul más vivo y elegante
+                        colors = listOf(Color(0xFF152A38), Color(0xFF0F1E29)) // Un azul-gris profundo y secundario sumamente premium
                     )
                 )
-                .padding(14.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Editar foto",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-                // Insignia general para evitar redundancia en los botones
-                Box(
-                    modifier = Modifier
-                        .background(Color.Black.copy(alpha = 0.35f), shape = RoundedCornerShape(4.dp))
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                ) {
-                    Text(
-                        text = "PRÓXIMAMENTE",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFFFFD700),
-                        fontSize = 8.sp,
-                        maxLines = 1
-                    )
-                }
-            }
-            Text(
-                text = "Mejora, transforma y personaliza tus fotos",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = 0.85f),
-                modifier = Modifier.padding(bottom = 10.dp)
+            // Fina línea de iluminación superior
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(Color.White.copy(alpha = 0.10f))
+                    .align(Alignment.TopCenter)
             )
 
-            // Cuadrícula 2x2 para mayor compactación y alto contraste legible
             Column(
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                modifier = Modifier.padding(14.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    EditToolButton(text = "Eliminar objeto", modifier = Modifier.weight(1f))
-                    EditToolButton(text = "Quitar fondo", modifier = Modifier.weight(1f))
+                    Text(
+                        text = "Editar foto",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    // Insignia general para evitar redundancia en los botones
+                    Box(
+                        modifier = Modifier
+                            .background(Color.Black.copy(alpha = 0.45f), shape = RoundedCornerShape(4.dp))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "PRÓXIMAMENTE",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFFFFD700),
+                            fontSize = 8.sp,
+                            maxLines = 1
+                        )
+                    }
                 }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                Text(
+                    text = "Mejora, transforma y personaliza tus fotos",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.65f),
+                    modifier = Modifier.padding(bottom = 10.dp)
+                )
+
+                // Cuadrícula 2x2 para mayor compactación y alto contraste legible
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    EditToolButton(text = "Mejorar calidad", modifier = Modifier.weight(1f))
-                    EditToolButton(text = "Ver todas", modifier = Modifier.weight(1f))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        EditToolButton(text = "Eliminar objeto", modifier = Modifier.weight(1f))
+                        EditToolButton(text = "Quitar fondo", modifier = Modifier.weight(1f))
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        EditToolButton(text = "Mejorar calidad", modifier = Modifier.weight(1f))
+                        EditToolButton(text = "Ver todas", modifier = Modifier.weight(1f))
+                    }
                 }
             }
         }
@@ -356,8 +484,20 @@ fun EditPhotoCardRefined() {
 fun EditToolButton(text: String, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
-            .height(44.dp)
-            .background(Color.White.copy(alpha = 0.22f), shape = RoundedCornerShape(10.dp)) // Mejorado contraste
+            .height(40.dp)
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(Color.White.copy(alpha = 0.06f), Color.White.copy(alpha = 0.02f))
+                ),
+                shape = RoundedCornerShape(10.dp)
+            )
+            .border(
+                width = 0.8.dp,
+                brush = Brush.verticalGradient(
+                    colors = listOf(Color.White.copy(alpha = 0.08f), Color.White.copy(alpha = 0.01f))
+                ),
+                shape = RoundedCornerShape(10.dp)
+            )
             .clickable(enabled = false) {}
             .padding(horizontal = 8.dp, vertical = 4.dp),
         contentAlignment = Alignment.Center
@@ -366,9 +506,10 @@ fun EditToolButton(text: String, modifier: Modifier = Modifier) {
             text = text,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.SemiBold,
-            color = Color.White.copy(alpha = 0.9f), // Perfectamente legible
+            color = Color.White.copy(alpha = 0.60f), // Sutil pero perfectamente legible
             textAlign = TextAlign.Center,
-            maxLines = 1
+            maxLines = 1,
+            fontSize = 12.sp
         )
     }
 }
@@ -381,58 +522,76 @@ fun AccessItemRefined(
     enabled: Boolean,
     onClick: () -> Unit
 ) {
-    // Legibilidad mejorada para deshabilitados (0.75f/0.65f en lugar de 0.5f)
-    val textAlpha = if (enabled) 1f else 0.75f
-    val subtextAlpha = if (enabled) 0.7f else 0.65f
+    val textAlpha = if (enabled) 1.0f else 0.72f
+    val subtextAlpha = if (enabled) 0.75f else 0.60f
+
+    val buttonBackground = if (enabled) {
+        Brush.verticalGradient(
+            colors = listOf(Color.White.copy(alpha = 0.14f), Color.White.copy(alpha = 0.08f))
+        )
+    } else {
+        Brush.verticalGradient(
+            colors = listOf(Color.White.copy(alpha = 0.04f), Color.White.copy(alpha = 0.02f))
+        )
+    }
+
+    val borderBrush = if (enabled) {
+        Brush.verticalGradient(
+            colors = listOf(Color.White.copy(alpha = 0.18f), Color.White.copy(alpha = 0.04f))
+        )
+    } else {
+        Brush.verticalGradient(
+            colors = listOf(Color.White.copy(alpha = 0.08f), Color.White.copy(alpha = 0.01f))
+        )
+    }
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(
-                color = if (enabled) Color.White.copy(alpha = 0.12f) else Color.White.copy(alpha = 0.04f)
-            )
+            .clip(RoundedCornerShape(10.dp))
+            .background(brush = buttonBackground)
+            .border(width = 0.8.dp, brush = borderBrush, shape = RoundedCornerShape(10.dp))
             .clickable(enabled = enabled, onClick = onClick)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp), // Reducido el padding vertical de 12 a 8 para compactar
+                .padding(horizontal = 10.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(32.dp) // Reducido de 40.dp a 32.dp
-                    .background(Color.White.copy(alpha = 0.2f), shape = CircleShape),
+                    .size(28.dp)
+                    .background(Color.White.copy(alpha = 0.15f), shape = CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
                     tint = Color.White.copy(alpha = textAlpha),
-                    modifier = Modifier.size(18.dp) // Reducido de 22.dp a 18.dp
+                    modifier = Modifier.size(16.dp)
                 )
             }
-            Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.width(8.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = Color.White.copy(alpha = textAlpha),
-                    fontSize = 14.sp
+                    fontSize = 13.sp
                 )
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.White.copy(alpha = subtextAlpha),
-                    fontSize = 11.sp
+                    fontSize = 10.sp
                 )
             }
             Icon(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = null,
-                tint = Color.White.copy(alpha = subtextAlpha * 0.7f),
+                tint = Color.White.copy(alpha = subtextAlpha),
                 modifier = Modifier.size(16.dp)
             )
         }
@@ -441,17 +600,17 @@ fun AccessItemRefined(
         if (!enabled) {
             Box(
                 modifier = Modifier
-                    .padding(top = 4.dp, end = 12.dp)
-                    .background(Color.Black.copy(alpha = 0.45f), shape = RoundedCornerShape(4.dp))
-                    .padding(horizontal = 5.dp, vertical = 1.dp)
+                    .padding(top = 2.dp, end = 8.dp)
+                    .background(Color.Black.copy(alpha = 0.55f), shape = RoundedCornerShape(3.dp))
+                    .padding(horizontal = 4.dp, vertical = 1.dp)
                     .align(Alignment.TopEnd)
             ) {
                 Text(
                     text = "PRÓXIMAMENTE",
                     style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.ExtraBold,
                     color = Color(0xFFFFD700), // Amarillo dorado de alta visibilidad
-                    fontSize = 7.sp,
+                    fontSize = 6.sp,
                     maxLines = 1
                 )
             }
