@@ -192,10 +192,10 @@ fun Sparkle(
             val rx = w / 2f
             val ry = h / 2f
             moveTo(cx, cy - ry)
-            quadraticTo(cx, cy, cx + rx, cy)
-            quadraticTo(cx, cy, cx, cy + ry)
-            quadraticTo(cx, cy, cx - rx, cy)
-            quadraticTo(cx, cy, cx, cy - ry)
+            quadraticBezierTo(cx, cy, cx + rx, cy)
+            quadraticBezierTo(cx, cy, cx, cy + ry)
+            quadraticBezierTo(cx, cy, cx - rx, cy)
+            quadraticBezierTo(cx, cy, cx, cy - ry)
             close()
         }
         drawPath(path = path, color = color.copy(alpha = alpha))
