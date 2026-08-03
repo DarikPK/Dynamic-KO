@@ -15,6 +15,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -400,8 +403,8 @@ fun EditPhotoCardRefined() {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(elevation = 3.dp, shape = RoundedCornerShape(22.dp)),
-        shape = RoundedCornerShape(22.dp),
+            .shadow(elevation = 6.dp, shape = RoundedCornerShape(24.dp)),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
         Box(
@@ -409,13 +412,22 @@ fun EditPhotoCardRefined() {
                 .background(
                     brush = Brush.linearGradient(
                         colors = listOf(
-                            Color(0xFF0F2027), // Azul oscuro
-                            Color(0xFF203A43)  // Azul pizarra medio
+                            Color(0xFF142C44), // Azul profundo
+                            Color(0xFF1B4965)  // Azul pizarra premium más iluminado
                         )
                     )
                 )
         ) {
-            // Un sutil resplandor azul en la esquina superior derecha para toque premium
+            // Fina línea de iluminación superior para un acabado extremadamente pro
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(Color.White.copy(alpha = 0.22f))
+                    .align(Alignment.TopCenter)
+            )
+
+            // Resplandor azul en la parte superior derecha
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -424,34 +436,25 @@ fun EditPhotoCardRefined() {
                     .background(
                         brush = Brush.radialGradient(
                             colors = listOf(
-                                Color(0xFF00B0FF).copy(alpha = 0.15f), // Azul celeste brillante
+                                Color(0xFF38BDF8).copy(alpha = 0.25f), // Azul celeste brillante
                                 Color.Transparent
                             ),
-                            radius = 350f
+                            radius = 450f
                         )
                     )
-            )
-
-            // Fina línea de iluminación superior
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(Color.White.copy(alpha = 0.12f))
-                    .align(Alignment.TopCenter)
             )
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(12.dp),
+                    .padding(14.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Columna Izquierda: Título, Descripción, Botón Blanco CTA, Fila de Herramientas (58% del ancho)
+                // Columna Izquierda: Título, Descripción, Botón Premium CTA, Acciones con Iconos (55% del ancho)
                 Column(
-                    modifier = Modifier.weight(0.58f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.weight(0.55f),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -462,22 +465,12 @@ fun EditPhotoCardRefined() {
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.ExtraBold,
                             color = Color.White,
-                            fontSize = 18.sp
+                            fontSize = 20.sp
                         )
-                        // Pequeño indicador de Próximamente
-                        Box(
-                            modifier = Modifier
-                                .background(Color.Black.copy(alpha = 0.55f), shape = RoundedCornerShape(3.dp))
-                                .padding(horizontal = 4.dp, vertical = 1.dp)
-                        ) {
-                            Text(
-                                text = "PRÓXIMAMENTE",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = Color(0xFFFFD700),
-                                fontSize = 6.sp,
-                                maxLines = 1
-                            )
+                        // Destellos discretos decorativos
+                        Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Sparkle(modifier = Modifier.size(8.dp), color = Color(0xFF38BDF8), alpha = 0.7f)
+                            Sparkle(modifier = Modifier.size(5.dp), color = Color(0xFF38BDF8), alpha = 0.5f)
                         }
                     }
 
@@ -489,14 +482,15 @@ fun EditPhotoCardRefined() {
                         lineHeight = 14.sp
                     )
 
-                    // Botón Destacado Blanco "Comenzar a editar"
+                    // Botón Principal Premium "Comenzar a editar" con excelente CTA
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(34.dp)
-                            .background(Color.White.copy(alpha = 0.9f), shape = RoundedCornerShape(8.dp))
+                            .height(38.dp)
+                            .shadow(elevation = 4.dp, shape = RoundedCornerShape(12.dp))
+                            .background(Color.White, shape = RoundedCornerShape(12.dp))
                             .clickable(enabled = false) {}
-                            .padding(horizontal = 10.dp),
+                            .padding(horizontal = 12.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Row(
@@ -506,40 +500,63 @@ fun EditPhotoCardRefined() {
                             Text(
                                 text = "Comenzar a editar",
                                 style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF0F2027),
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color(0xFF142C44),
                                 fontSize = 12.sp
                             )
-                            Spacer(modifier = Modifier.width(4.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
                             Icon(
                                 imageVector = Icons.Default.Edit,
                                 contentDescription = null,
-                                tint = Color(0xFF0F2027),
-                                modifier = Modifier.size(12.dp)
+                                tint = Color(0xFF142C44),
+                                modifier = Modifier.size(13.dp)
                             )
                         }
                     }
 
-                    // Fila de herramientas secundarias
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    // Botones de acciones inferiores con iconos y degradados
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        EditToolBadge(text = "Eliminar objeto")
-                        EditToolBadge(text = "Quitar fondo")
-                        EditToolBadge(text = "Mejorar calidad")
-                        EditToolBadge(text = "Ver todas")
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            EditActionItem(
+                                icon = Icons.Default.Delete,
+                                label = "Eliminar objeto",
+                                modifier = Modifier.weight(1f)
+                            )
+                            EditActionItem(
+                                icon = Icons.Default.Brush,
+                                label = "Quitar fondo",
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            EditActionItem(
+                                icon = Icons.Default.Star,
+                                label = "Mejorar calidad",
+                                modifier = Modifier.weight(1f)
+                            )
+                            EditActionItem(
+                                icon = Icons.Default.GridView,
+                                label = "Ver todas",
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
                 }
 
-                // Columna Derecha: Imágenes superpuestas con resplandor azul (42% del ancho)
+                // Columna Derecha: Protagonista visual con imágenes grandes y superposición
                 Box(
                     modifier = Modifier
-                        .weight(0.42f)
-                        .height(130.dp)
-                        .padding(start = 4.dp),
+                        .weight(0.45f)
+                        .height(160.dp)
+                        .padding(start = 6.dp),
                     contentAlignment = Alignment.CenterStart
                 ) {
                     EditPhotoOverlappingImages(modifier = Modifier.fillMaxSize())
@@ -550,25 +567,53 @@ fun EditPhotoCardRefined() {
 }
 
 @Composable
-fun EditToolBadge(text: String) {
+fun EditActionItem(
+    icon: ImageVector,
+    label: String,
+    modifier: Modifier = Modifier
+) {
     Box(
-        modifier = Modifier
-            .background(Color.White.copy(alpha = 0.08f), shape = RoundedCornerShape(6.dp))
-            .border(
-                width = 0.5.dp,
-                color = Color.White.copy(alpha = 0.12f),
-                shape = RoundedCornerShape(6.dp)
+        modifier = modifier
+            .height(34.dp)
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(Color.White.copy(alpha = 0.08f), Color.White.copy(alpha = 0.03f))
+                ),
+                shape = RoundedCornerShape(8.dp)
             )
-            .padding(horizontal = 6.dp, vertical = 3.dp)
+            .border(
+                width = 0.8.dp,
+                brush = Brush.verticalGradient(
+                    colors = listOf(Color.White.copy(alpha = 0.10f), Color.White.copy(alpha = 0.02f))
+                ),
+                shape = RoundedCornerShape(8.dp)
+            )
+            .clickable(enabled = false) {}
+            .padding(horizontal = 4.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Medium,
-            color = Color.White.copy(alpha = 0.7f),
-            fontSize = 9.sp,
-            maxLines = 1
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = Color.White.copy(alpha = 0.7f),
+                modifier = Modifier.size(11.dp)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = Color.White.copy(alpha = 0.7f),
+                fontSize = 9.sp,
+                maxLines = 1,
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }
 
@@ -580,15 +625,15 @@ fun EditPhotoOverlappingImages(modifier: Modifier = Modifier) {
             .clipToBounds(),
         contentAlignment = Alignment.CenterStart
     ) {
-        // Soft blue background glow
+        // Resplandor azul de fondo pro
         Box(
             modifier = Modifier
                 .align(Alignment.Center)
-                .size(100.dp)
+                .size(110.dp)
                 .background(
                     brush = Brush.radialGradient(
                         colors = listOf(
-                            Color(0xFF29B6F6).copy(alpha = 0.25f), // Blue glow
+                            Color(0xFF38BDF8).copy(alpha = 0.35f), // Resplandor azul
                             Color.Transparent
                         )
                     ),
@@ -596,56 +641,82 @@ fun EditPhotoOverlappingImages(modifier: Modifier = Modifier) {
                 )
         )
 
-        // Tres imágenes superpuestas ligeramente:
-        // 1. edit_before_after
+        // 1. Imagen 1 (Antes / Después) -> Grande, ocupa ~45% de la escala de tamaño
         Box(
             modifier = Modifier
-                .offset(x = 0.dp, y = 8.dp)
-                .size(width = 54.dp, height = 76.dp)
-                .rotate(-4f)
-                .shadow(2.dp, shape = RoundedCornerShape(8.dp))
-                .clip(RoundedCornerShape(8.dp))
-                .border(0.5.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                .offset(x = (-4).dp, y = 14.dp)
+                .size(width = 68.dp, height = 96.dp)
+                .rotate(-5f)
+                .shadow(3.dp, shape = RoundedCornerShape(10.dp))
+                .clip(RoundedCornerShape(10.dp))
+                .border(0.8.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(10.dp))
         ) {
             Image(
                 painter = painterResource(id = pe.pixelcollage.app.R.drawable.edit_before_after),
-                contentDescription = null,
+                contentDescription = "Antes / Después",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
         }
 
-        // 2. edit_portrait
+        // 2. Imagen 2 (Retrato) -> Ocupa ~30% de la escala con patrón Checkerboard de transparencia pro
         Box(
             modifier = Modifier
-                .offset(x = 38.dp, y = (-4).dp)
-                .size(width = 54.dp, height = 76.dp)
-                .rotate(2f)
-                .shadow(4.dp, shape = RoundedCornerShape(8.dp))
-                .clip(RoundedCornerShape(8.dp))
-                .border(0.5.dp, Color.White.copy(alpha = 0.20f), RoundedCornerShape(8.dp))
+                .offset(x = 48.dp, y = (-8).dp)
+                .size(width = 62.dp, height = 88.dp)
+                .rotate(3f)
+                .shadow(5.dp, shape = RoundedCornerShape(10.dp))
+                .clip(RoundedCornerShape(10.dp))
+                .border(0.8.dp, Color.White.copy(alpha = 0.30f), RoundedCornerShape(10.dp))
+                .drawBehind {
+                    // Recrear un patrón checkerboard impecable de transparencia (Photoshop/CapCut style)
+                    val sizePx = 6.dp.toPx()
+                    val width = size.width
+                    val height = size.height
+                    var y = 0f
+                    var rowIdx = 0
+                    while (y < height) {
+                        var x = 0f
+                        var colIdx = 0
+                        while (x < width) {
+                            val color = if ((rowIdx + colIdx) % 2 == 0) Color(0xFFFFFFFF) else Color(0xFFD4D4D8)
+                            drawRect(
+                                color = color,
+                                topLeft = Offset(x, y),
+                                size = Size(
+                                    if (x + sizePx > width) width - x else sizePx,
+                                    if (y + sizePx > height) height - y else sizePx
+                                )
+                            )
+                            x += sizePx
+                            colIdx++
+                        }
+                        y += sizePx
+                        rowIdx++
+                    }
+                }
         ) {
             Image(
                 painter = painterResource(id = pe.pixelcollage.app.R.drawable.edit_portrait),
-                contentDescription = null,
+                contentDescription = "Retrato",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
         }
 
-        // 3. edit_scissor
+        // 3. Imagen 3 (Recorte con tijeras) -> Ocupa ~25% de la escala de tamaño y sobresale un 35% del contenedor
         Box(
             modifier = Modifier
-                .offset(x = 76.dp, y = 6.dp)
-                .size(width = 54.dp, height = 76.dp)
-                .rotate(-2f)
-                .shadow(2.dp, shape = RoundedCornerShape(8.dp))
-                .clip(RoundedCornerShape(8.dp))
-                .border(0.5.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                .offset(x = 94.dp, y = 16.dp)
+                .size(width = 56.dp, height = 78.dp)
+                .rotate(-3f)
+                .shadow(3.dp, shape = RoundedCornerShape(10.dp))
+                .clip(RoundedCornerShape(10.dp))
+                .border(0.8.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(10.dp))
         ) {
             Image(
                 painter = painterResource(id = pe.pixelcollage.app.R.drawable.edit_scissor),
-                contentDescription = null,
+                contentDescription = "Recorte",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
