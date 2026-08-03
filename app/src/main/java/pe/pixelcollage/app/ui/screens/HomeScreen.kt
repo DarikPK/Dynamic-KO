@@ -1,6 +1,7 @@
 package pe.pixelcollage.app.ui.screens
 
 import android.content.Context
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -16,11 +17,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -84,7 +88,7 @@ fun HomeScreen(
                 onSettingsClick = { navController.navigate("account_management") }
             )
 
-            // Tarjeta principal de Crear Collage (Morado/Violeta) - Compactada
+            // Tarjeta principal de Crear Collage (Morado/Violeta) - Compactada con previsualización
             CreateCollageCardRefined(
                 onNavigateToTemplates = { navController.navigate(Screen.Templates.route) },
                 onNavigateToClassic = { navController.navigate(Screen.Main.route) }
@@ -171,6 +175,24 @@ fun HeaderSection(onSettingsClick: () -> Unit) {
 }
 
 @Composable
+fun CollageHeroPreview(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .rotate(5f)
+            .shadow(elevation = 6.dp, shape = RoundedCornerShape(8.dp))
+            .background(Color.White.copy(alpha = 0.1f), shape = RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(8.dp))
+    ) {
+        Image(
+            painter = painterResource(id = pe.pixelcollage.app.R.drawable.heart_collage_preview),
+            contentDescription = "Previsualización de Collage",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+    }
+}
+
+@Composable
 fun CreateCollageCardRefined(
     onNavigateToTemplates: () -> Unit,
     onNavigateToClassic: () -> Unit
@@ -189,18 +211,36 @@ fun CreateCollageCardRefined(
                 )
                 .padding(14.dp) // Reducido el padding para compactar
         ) {
-            Text(
-                text = "Crear collage",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-            Text(
-                text = "Diseña collages increíbles a tu manera",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = 0.8f),
-                modifier = Modifier.padding(bottom = 10.dp)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    modifier = Modifier.weight(0.6f)
+                ) {
+                    Text(
+                        text = "Crear collage",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    Text(
+                        text = "Diseña collages increíbles a tu manera",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.8f),
+                        modifier = Modifier.padding(bottom = 10.dp)
+                    )
+                }
+                CollageHeroPreview(
+                    modifier = Modifier
+                        .weight(0.4f)
+                        .padding(start = 8.dp)
+                        .height(80.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
 
             // Accesos compactados
             Column(
