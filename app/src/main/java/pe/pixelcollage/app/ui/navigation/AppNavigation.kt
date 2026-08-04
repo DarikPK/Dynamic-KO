@@ -96,7 +96,25 @@ fun AppNavigation(
             }
         }
 
-        navigation(startDestination = Screen.Main.route, route = "main_app_flow") {
+        navigation(startDestination = Screen.Home.route, route = "main_app_flow") {
+            composable(Screen.Home.route) {
+                HomeScreen(
+                    windowSizeClass = windowSizeClass,
+                    navController = navController,
+                    projectViewModel = projectViewModel,
+                    mainViewModel = mainViewModel
+                )
+            }
+            composable(Screen.Templates.route) {
+                TemplatesScreen(
+                    navController = navController
+                )
+            }
+            composable(Screen.Subscription.route) {
+                SubscriptionScreen(
+                    navController = navController
+                )
+            }
             composable(Screen.Main.route) {
                 MainScreen(
                     windowSizeClass = windowSizeClass,
@@ -256,7 +274,10 @@ fun AppNavigation(
             )
         }
         composable("account_management") {
-            AccountManagementScreen(navController = navController)
+            AccountManagementScreen(
+                navController = navController,
+                mainViewModel = mainViewModel
+            )
         }
         composable("create_account") {
             val authRepository = AuthRepository()
