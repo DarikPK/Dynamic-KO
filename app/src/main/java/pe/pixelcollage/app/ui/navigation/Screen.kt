@@ -27,6 +27,7 @@ sealed class Screen(val route: String) {
     object ColorThemeSelection : Screen("color_theme_selection_screen")
     object HybridQuality : Screen("hybrid_quality_screen")
     object GeneratedBackground : Screen("generated_background_screen")
+    object PhotoEditor : Screen("photo_editor_screen")
     object ImageUpload : Screen("image_upload_screen") {
         fun createRoute(groupId: String) = "image_upload_screen/$groupId"
     }
