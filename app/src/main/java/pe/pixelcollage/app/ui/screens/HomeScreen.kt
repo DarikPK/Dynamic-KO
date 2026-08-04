@@ -45,6 +45,8 @@ import pe.pixelcollage.app.ui.navigation.Screen
 import pe.pixelcollage.app.viewmodel.MainViewModel
 import pe.pixelcollage.app.viewmodel.ProjectViewModel
 import pe.pixelcollage.app.viewmodel.UserState
+import pe.pixelcollage.app.ui.components.Sparkle
+import pe.pixelcollage.app.ui.components.multicolorShimmer
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 
@@ -226,7 +228,8 @@ fun HeaderSection(navController: NavController) {
                 contentDescription = "Logo Oficial Pixel Collage",
                 modifier = Modifier
                     .height(84.dp) // Aumentado en un 40%-60% su tamaño anterior (de 58dp a 84dp de altura) para ser el protagonista
-                    .fillMaxWidth(), // Adaptativo
+                    .fillMaxWidth() // Adaptativo
+                    .multicolorShimmer(),
                 contentScale = ContentScale.Fit
             )
             Spacer(modifier = Modifier.height(4.dp)) // Espaciado refinado entre logo y subtítulo
@@ -270,31 +273,6 @@ fun HeaderSection(navController: NavController) {
                 )
             }
         }
-    }
-}
-
-@Composable
-fun Sparkle(
-    modifier: Modifier = Modifier,
-    color: Color = Color(0xFFFFC0CB), // Rosa claro decorativo
-    alpha: Float = 0.6f
-) {
-    Canvas(modifier = modifier) {
-        val w = size.width
-        val h = size.height
-        val path = Path().apply {
-            val cx = w / 2f
-            val cy = h / 2f
-            val rx = w / 2f
-            val ry = h / 2f
-            moveTo(cx, cy - ry)
-            quadraticBezierTo(cx, cy, cx + rx, cy)
-            quadraticBezierTo(cx, cy, cx, cy + ry)
-            quadraticBezierTo(cx, cy, cx - rx, cy)
-            quadraticBezierTo(cx, cy, cx, cy - ry)
-            close()
-        }
-        drawPath(path = path, color = color.copy(alpha = alpha))
     }
 }
 
