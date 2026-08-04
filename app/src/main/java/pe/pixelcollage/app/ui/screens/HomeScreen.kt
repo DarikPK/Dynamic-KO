@@ -636,7 +636,7 @@ fun EditPhotoCardRefined(
                                 icon = Icons.Default.Brush,
                                 label = "Quitar fondo",
                                 modifier = Modifier.weight(1f),
-                                onClick = { onStartEditing("ai_bg") }
+                                onClick = { onStartEditing("background_removal") }
                             )
                         }
                         Row(

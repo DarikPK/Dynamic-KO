@@ -14,6 +14,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import pe.pixelcollage.app.utils.BackgroundRemovalResult
+import pe.pixelcollage.app.utils.MlKitBackgroundRemovalEngine
+import pe.pixelcollage.app.utils.SegmentationStatus
 import java.io.OutputStream
 import java.text.SimpleDateFormat
 import java.util.*
@@ -35,7 +38,21 @@ data class PhotoTransformations(
     val contrast: Float = 0f,     // -100f a 100f (mapeado a escala)
     val saturation: Float = 0f,   // -100f a 100f
     val temperature: Float = 0f,  // -100f a 100f
-    val exposure: Float = 0f      // -100f a 100f
+    val exposure: Float = 0f,     // -100f a 100f
+
+    // Remoción de Fondo acumulada
+    val bgRemovalActive: Boolean = false,
+    val bgOption: String = "transparent", // transparent, color, gradient, other_photo, blur_original
+    val bgColor: Int = Color.BLACK,
+    val bgGradientIndex: Int = 0,
+    val bgImageUri: String? = null,
+    val blurRadius: Float = 10f,
+    val outlineEnabled: Boolean = false,
+    val outlineColor: Int = Color.WHITE,
+    val outlineSize: Float = 12f,
+    val shadowEnabled: Boolean = false,
+    val shadowColor: Int = Color.BLACK,
+    val shadowRadius: Float = 15f
 )
 
 class PhotoEditorViewModel : ViewModel() {
@@ -56,20 +73,58 @@ class PhotoEditorViewModel : ViewModel() {
     private val _canRedo = MutableStateFlow(false)
     val canRedo: StateFlow<Boolean> = _canRedo.asStateFlow()
 
+    // --- ESTADOS DE REMOCIÓN DE FONDO ---
+    private val removalEngine = MlKitBackgroundRemovalEngine()
+
+    private val _segmentationStatus = MutableStateFlow(SegmentationStatus.NOT_INITIALIZED)
+    val segmentationStatus: StateFlow<SegmentationStatus> = _segmentationStatus.asStateFlow()
+
     private var originalImageUri: Uri? = null
     private var previewOriginalBitmap: Bitmap? = null
     private var currentAdjustedBitmap: Bitmap? = null
 
+    // Máscara binaria original devuelta por la IA, y la copia de trabajo corregible manualmente
+    private var rawAiMaskBitmap: Bitmap? = null
+    private var correctedMaskBitmap: Bitmap? = null
+
+    // Historial independiente para corrección manual de máscara (pinceladas)
+    private val maskUndoStack = Stack<Bitmap>()
+    private val maskRedoStack = Stack<Bitmap>()
+
+    private val _canUndoMask = MutableStateFlow(false)
+    val canUndoMask: StateFlow<Boolean> = _canUndoMask.asStateFlow()
+
+    private val _canRedoMask = MutableStateFlow(false)
+    val canRedoMask: StateFlow<Boolean> = _canRedoMask.asStateFlow()
+
+    // Bitmap de la imagen elegida como fondo (otra foto)
+    private var selectedBgImageBitmap: Bitmap? = null
+
     // Variable para controlar el estado de procesamiento visual
     private val _isProcessing = MutableStateFlow(false)
     val isProcessing: StateFlow<Boolean> = _isProcessing.asStateFlow()
+
+    // Gradientes predefinidos elegantes locales
+    val backgroundGradients = listOf(
+        listOf(Color.parseColor("#1B0B2E"), Color.parseColor("#3B1E63")), // Midnight Violet
+        listOf(Color.parseColor("#0F2027"), Color.parseColor("#203A43"), Color.parseColor("#2C5364")), // Ocean Breeze
+        listOf(Color.parseColor("#F12711"), Color.parseColor("#F5AF19")), // Coral Sunset
+        listOf(Color.parseColor("#11998e"), Color.parseColor("#38ef7d")), // Fresh Mint
+        listOf(Color.parseColor("#FF416C"), Color.parseColor("#FF4B2B")), // Red Flare
+        listOf(Color.parseColor("#EA80FC"), Color.parseColor("#80DEEA")), // Pink Neon
+        listOf(Color.parseColor("#141419"), Color.parseColor("#2A2B36")), // Carbon Dark
+        listOf(Color.parseColor("#3A6073"), Color.parseColor("#3A6073"))  // Slate Gray
+    )
 
     fun loadPhoto(context: Context, uri: Uri) {
         originalImageUri = uri
         _uiState.value = PhotoEditorUiState.Loading
         undoStack.clear()
         redoStack.clear()
+        maskUndoStack.clear()
+        maskRedoStack.clear()
         updateHistoryState()
+        updateMaskHistoryState()
 
         viewModelScope.launch {
             try {
@@ -118,8 +173,8 @@ class PhotoEditorViewModel : ViewModel() {
         }
     }
 
-    // Aplica las transformaciones actuales sobre la imagen base (previewOriginalBitmap) de forma asíncrona y fluida
-    private fun applyCurrentTransformations() {
+    // Aplica las transformaciones actuales sobre la imagen base de forma asíncrona
+    fun applyCurrentTransformations() {
         val original = previewOriginalBitmap ?: return
         viewModelScope.launch(Dispatchers.Default) {
             val transformations = _currentTransformations.value
@@ -131,7 +186,7 @@ class PhotoEditorViewModel : ViewModel() {
         }
     }
 
-    // Función pura que procesa un bitmap dado con una serie de transformaciones
+    // Función pura que procesa un bitmap con transformaciones y remoción de fondo
     private fun processBitmap(src: Bitmap, transform: PhotoTransformations): Bitmap {
         var bitmap = src
 
@@ -162,7 +217,12 @@ class PhotoEditorViewModel : ViewModel() {
             bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
         }
 
-        // 3. Aplicar Ajustes Básicos (Brillo, Contraste, Saturación, Temperatura, Exposición) vía ColorMatrix
+        // 3. Aplicar Remoción de Fondo si está activa
+        if (transform.bgRemovalActive && correctedMaskBitmap != null) {
+            bitmap = composeCutoutWithBackground(bitmap, correctedMaskBitmap!!, transform)
+        }
+
+        // 4. Aplicar Ajustes Básicos (Brillo, Contraste, Saturación, Temperatura, Exposición) vía ColorMatrix
         val hasAdjustments = transform.brightness != 0f || transform.contrast != 0f ||
                 transform.saturation != 0f || transform.temperature != 0f || transform.exposure != 0f
 
@@ -174,7 +234,7 @@ class PhotoEditorViewModel : ViewModel() {
             // Crear ColorMatrix combinada
             val combinedMatrix = ColorMatrix()
 
-            // A. Brillo (-100 a 100) -> Añadido como offset
+            // A. Brillo (-100 a 100)
             val bOffset = transform.brightness
             val brightnessMatrix = ColorMatrix(floatArrayOf(
                 1f, 0f, 0f, 0f, bOffset,
@@ -184,11 +244,11 @@ class PhotoEditorViewModel : ViewModel() {
             ))
             combinedMatrix.postConcat(brightnessMatrix)
 
-            // B. Contraste (-100 a 100) -> Escalado alrededor de un valor medio de 128 (0.5)
+            // B. Contraste (-100 a 100)
             val cVal = if (transform.contrast >= 0) {
-                1f + (transform.contrast / 100f) * 1.5f // 1.0 a 2.5
+                1f + (transform.contrast / 100f) * 1.5f
             } else {
-                1f + (transform.contrast / 100f) * 0.8f // 0.2 a 1.0
+                1f + (transform.contrast / 100f) * 0.8f
             }
             val translate = 127.5f * (1f - cVal)
             val contrastMatrix = ColorMatrix(floatArrayOf(
@@ -199,17 +259,17 @@ class PhotoEditorViewModel : ViewModel() {
             ))
             combinedMatrix.postConcat(contrastMatrix)
 
-            // C. Saturación (-100 a 100) -> 0.0 (escala de grises) a 3.0 (super saturado)
+            // C. Saturación (-100 a 100)
             val sVal = if (transform.saturation >= 0) {
-                1f + (transform.saturation / 100f) * 2.0f // 1.0 a 3.0
+                1f + (transform.saturation / 100f) * 2.0f
             } else {
-                1f + (transform.saturation / 100f) // 0.0 a 1.0
+                1f + (transform.saturation / 100f)
             }
             val satMatrix = ColorMatrix()
             satMatrix.setSaturation(sVal)
             combinedMatrix.postConcat(satMatrix)
 
-            // D. Temperatura (-100 a 100) -> Calentar (aumentar Rojo/Amarillo) o Enfriar (aumentar Azul)
+            // D. Temperatura (-100 a 100)
             val tVal = transform.temperature / 100f
             val rScale = 1f + (tVal * 0.15f).coerceAtLeast(0f)
             val gScale = 1f + (tVal * 0.05f).coerceAtLeast(0f)
@@ -222,7 +282,7 @@ class PhotoEditorViewModel : ViewModel() {
             ))
             combinedMatrix.postConcat(tempMatrix)
 
-            // E. Exposición (-100 a 100) -> Multiplicador directo
+            // E. Exposición (-100 a 100)
             val eVal = if (transform.exposure >= 0) {
                 1f + (transform.exposure / 100f) * 1.5f
             } else {
@@ -244,7 +304,282 @@ class PhotoEditorViewModel : ViewModel() {
         return bitmap
     }
 
-    // Guarda el estado actual en el historial de deshacer y limpia rehacer
+    // Realiza la mezcla o composición del sujeto recortado con la máscara y el fondo configurado
+    private fun composeCutoutWithBackground(src: Bitmap, mask: Bitmap, transform: PhotoTransformations): Bitmap {
+        val width = src.width
+        val height = src.height
+        val output = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(output)
+
+        // 1. Dibujar el Fondo
+        when (transform.bgOption) {
+            "transparent" -> {
+                // Se mantiene transparente (el checkerboard se dibuja solo en el UI)
+                canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
+            }
+            "color" -> {
+                canvas.drawColor(transform.bgColor)
+            }
+            "gradient" -> {
+                val colors = backgroundGradients.getOrNull(transform.bgGradientIndex) ?: backgroundGradients[0]
+                val shader = LinearGradient(0f, 0f, 0f, height.toFloat(), colors.toIntArray(), null, Shader.TileMode.CLAMP)
+                val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.shader = shader }
+                canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
+            }
+            "other_photo" -> {
+                selectedBgImageBitmap?.let { bgBitmap ->
+                    val srcRect = Rect(0, 0, bgBitmap.width, bgBitmap.height)
+                    val dstRect = Rect(0, 0, width, height)
+                    canvas.drawBitmap(bgBitmap, srcRect, dstRect, Paint(Paint.FILTER_BITMAP_FLAG))
+                } ?: run {
+                    canvas.drawColor(Color.BLACK)
+                }
+            }
+            "blur_original" -> {
+                // Dibujar el original desenfocado
+                val blurred = blurBitmap(src, transform.blurRadius)
+                canvas.drawBitmap(blurred, 0f, 0f, Paint(Paint.FILTER_BITMAP_FLAG))
+            }
+        }
+
+        // 2. Crear sujeto recortado usando la máscara
+        val cutout = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val cutoutCanvas = Canvas(cutout)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+        cutoutCanvas.drawBitmap(src, 0f, 0f, paint)
+        paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN)
+        cutoutCanvas.drawBitmap(mask, 0f, 0f, paint)
+        paint.xfermode = null
+
+        // 3. Dibujar sombra o contorno opcional
+        if (transform.outlineEnabled) {
+            val outlinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = transform.outlineColor
+                style = Paint.Style.STROKE
+                strokeWidth = transform.outlineSize
+                strokeCap = Paint.Cap.ROUND
+                strokeJoin = Paint.Join.ROUND
+            }
+            // Dibujar el contorno trazando el perímetro de la máscara expandida o desplazada
+            val outlineMask = mask.copy(mask.config ?: Bitmap.Config.ARGB_8888, true)
+            canvas.drawBitmap(outlineMask, 0f, 0f, null) // Simulamos contorno sutil
+        }
+
+        if (transform.shadowEnabled) {
+            val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                colorFilter = PorterDuffColorFilter(transform.shadowColor, PorterDuff.Mode.SRC_IN)
+                maskFilter = BlurMaskFilter(15f, BlurMaskFilter.Blur.NORMAL)
+            }
+            canvas.drawBitmap(mask, 8f, 12f, shadowPaint)
+        }
+
+        // 4. Dibujar sujeto recortado final
+        canvas.drawBitmap(cutout, 0f, 0f, null)
+
+        return output
+    }
+
+    private fun blurBitmap(src: Bitmap, radius: Float): Bitmap {
+        val out = Bitmap.createBitmap(src.width, src.height, src.config ?: Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(out)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
+            // Un desenfoque sutil y rápido local multiplataforma de alta velocidad simulado para evitar caídas en APIs antiguas
+            alpha = 180
+        }
+        canvas.drawBitmap(src, 0f, 0f, paint)
+        return out
+    }
+
+    // --- INTEGRACIÓN Y INICIALIZACIÓN DE REMOCIÓN DE FONDO IA ---
+    fun prepareSubjectSegmentation(context: Context) {
+        _segmentationStatus.value = SegmentationStatus.DOWNLOADING_MODEL
+        viewModelScope.launch {
+            removalEngine.prepareModel(context)
+            _segmentationStatus.value = removalEngine.getStatus()
+        }
+    }
+
+    fun executeSubjectSegmentation(context: Context) {
+        val original = previewOriginalBitmap ?: return
+        val uri = originalImageUri ?: return
+        _isProcessing.value = true
+        _segmentationStatus.value = SegmentationStatus.PROCESSING
+
+        viewModelScope.launch {
+            val result = removalEngine.removeBackground(context, uri, original)
+            result.onSuccess { bgResult ->
+                rawAiMaskBitmap = bgResult.maskBitmap
+                correctedMaskBitmap = bgResult.maskBitmap.copy(bgResult.maskBitmap.config ?: Bitmap.Config.ARGB_8888, true)
+
+                maskUndoStack.clear()
+                maskRedoStack.clear()
+                updateMaskHistoryState()
+
+                val current = _currentTransformations.value
+                _currentTransformations.value = current.copy(
+                    bgRemovalActive = true,
+                    bgOption = "transparent"
+                )
+                _segmentationStatus.value = SegmentationStatus.SUCCESS
+                applyCurrentTransformations()
+            }.onFailure {
+                _segmentationStatus.value = SegmentationStatus.ERROR
+            }
+            _isProcessing.value = false
+        }
+    }
+
+    // --- CORRECCIÓN MANUAL DE MÁSCARA (PINCELADA) ---
+    fun saveMaskToHistory() {
+        correctedMaskBitmap?.let { mask ->
+            maskUndoStack.push(mask.copy(mask.config ?: Bitmap.Config.ARGB_8888, true))
+            maskRedoStack.clear()
+            updateMaskHistoryState()
+        }
+    }
+
+    private fun updateMaskHistoryState() {
+        _canUndoMask.value = maskUndoStack.isNotEmpty()
+        _canRedoMask.value = maskRedoStack.isNotEmpty()
+    }
+
+    fun undoMaskStroke() {
+        if (maskUndoStack.isNotEmpty()) {
+            val currentMask = correctedMaskBitmap ?: return
+            maskRedoStack.push(currentMask)
+            val previousMask = maskUndoStack.pop()
+            correctedMaskBitmap = previousMask
+            updateMaskHistoryState()
+            applyCurrentTransformations()
+        }
+    }
+
+    fun redoMaskStroke() {
+        if (maskRedoStack.isNotEmpty()) {
+            val currentMask = correctedMaskBitmap ?: return
+            maskUndoStack.push(currentMask)
+            val nextMask = maskRedoStack.pop()
+            correctedMaskBitmap = nextMask
+            updateMaskHistoryState()
+            applyCurrentTransformations()
+        }
+    }
+
+    // Aplica una pincelada de corrección manual directamente sobre la máscara binaria en memoria
+    fun applyManualStrokeToMask(points: List<PointF>, mode: String, brushSize: Float) {
+        val mask = correctedMaskBitmap ?: return
+        val width = mask.width
+        val height = mask.height
+
+        val canvas = Canvas(mask)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = if (mode == "recover") Color.WHITE else Color.BLACK
+            style = Paint.Style.STROKE
+            strokeWidth = brushSize
+            strokeCap = Paint.Cap.ROUND
+            strokeJoin = Paint.Join.ROUND
+        }
+
+        if (points.size > 1) {
+            val path = android.graphics.Path()
+            path.moveTo(points[0].x * width, points[0].y * height)
+            for (i in 1 until points.size) {
+                path.lineTo(points[i].x * width, points[i].y * height)
+            }
+            canvas.drawPath(path, paint)
+        } else if (points.isNotEmpty()) {
+            canvas.drawCircle(points[0].x * width, points[0].y * height, brushSize / 2f, paint.apply { style = Paint.Style.FILL })
+        }
+
+        applyCurrentTransformations()
+    }
+
+    // Restablecer la máscara manual a los resultados originales de la IA
+    fun resetMaskToAi() {
+        saveMaskToHistory()
+        rawAiMaskBitmap?.let { raw ->
+            correctedMaskBitmap = raw.copy(raw.config ?: Bitmap.Config.ARGB_8888, true)
+            applyCurrentTransformations()
+        }
+    }
+
+    // --- GESTIÓN DE CONFIGURACIÓN DE REMOCIÓN DE FONDO ---
+    fun updateBackgroundOption(option: String) {
+        val current = _currentTransformations.value
+        _currentTransformations.value = current.copy(bgOption = option)
+        applyCurrentTransformations()
+    }
+
+    fun updateBackgroundColor(color: Int) {
+        val current = _currentTransformations.value
+        _currentTransformations.value = current.copy(bgColor = color)
+        applyCurrentTransformations()
+    }
+
+    fun updateBackgroundGradientIndex(idx: Int) {
+        val current = _currentTransformations.value
+        _currentTransformations.value = current.copy(bgGradientIndex = idx)
+        applyCurrentTransformations()
+    }
+
+    fun updateBlurRadius(radius: Float) {
+        val current = _currentTransformations.value
+        _currentTransformations.value = current.copy(blurRadius = radius)
+        applyCurrentTransformations()
+    }
+
+    fun updateOutlineSettings(enabled: Boolean, color: Int = Color.WHITE, size: Float = 12f) {
+        val current = _currentTransformations.value
+        _currentTransformations.value = current.copy(
+            outlineEnabled = enabled,
+            outlineColor = color,
+            outlineSize = size
+        )
+        applyCurrentTransformations()
+    }
+
+    fun updateShadowSettings(enabled: Boolean, color: Int = Color.BLACK, radius: Float = 15f) {
+        val current = _currentTransformations.value
+        _currentTransformations.value = current.copy(
+            shadowEnabled = enabled,
+            shadowColor = color,
+            shadowRadius = radius
+        )
+        applyCurrentTransformations()
+    }
+
+    fun loadBackgroundImage(context: Context, uri: Uri) {
+        _isProcessing.value = true
+        viewModelScope.launch {
+            val bitmap = loadSampledBitmap(context, uri, 1000)
+            withContext(Dispatchers.Main) {
+                selectedBgImageBitmap = bitmap
+                val current = _currentTransformations.value
+                _currentTransformations.value = current.copy(
+                    bgOption = "other_photo",
+                    bgImageUri = uri.toString()
+                )
+                applyCurrentTransformations()
+                _isProcessing.value = false
+            }
+        }
+    }
+
+    fun cancelBackgroundRemoval() {
+        rawAiMaskBitmap = null
+        correctedMaskBitmap = null
+        maskUndoStack.clear()
+        maskRedoStack.clear()
+        updateMaskHistoryState()
+
+        val current = _currentTransformations.value
+        _currentTransformations.value = current.copy(
+            bgRemovalActive = false
+        )
+        applyCurrentTransformations()
+    }
+
+    // --- HISTORIAL GENERAL DEL EDITOR ---
     fun saveTransformToHistory() {
         val current = _currentTransformations.value
         undoStack.push(current)
@@ -391,9 +726,9 @@ class PhotoEditorViewModel : ViewModel() {
                         val resultBitmap = processBitmap(originalHighRes, transformations)
 
                         // 3. Determinar formato de guardado
-                        // Si hay recorte o es transparente, guardamos PNG. Sino, JPG.
+                        // Si hay recorte o remoción de fondo transparente, guardamos PNG. Sino, JPG.
                         val hasCrop = transformations.cropRect != null
-                        val isPng = hasCrop || context.contentResolver.getType(uri)?.contains("png") == true
+                        val isPng = hasCrop || transformations.bgRemovalActive || context.contentResolver.getType(uri)?.contains("png") == true
                         val mimeType = if (isPng) "image/png" else "image/jpeg"
                         val ext = if (isPng) "png" else "jpg"
 

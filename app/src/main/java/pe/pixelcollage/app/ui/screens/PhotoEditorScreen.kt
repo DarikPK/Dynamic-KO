@@ -3,10 +3,13 @@ package pe.pixelcollage.app.ui.screens
 import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.PointF
 import android.graphics.RectF
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -14,6 +17,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -22,6 +26,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -30,6 +35,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -48,6 +54,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import pe.pixelcollage.app.R
 import pe.pixelcollage.app.ui.components.multicolorShimmer
+import pe.pixelcollage.app.ui.theme.ThemeSelectionScreenPreview
+import pe.pixelcollage.app.utils.SegmentationStatus
 import pe.pixelcollage.app.viewmodel.PhotoEditorUiState
 import pe.pixelcollage.app.viewmodel.PhotoEditorViewModel
 import pe.pixelcollage.app.viewmodel.PhotoTransformations
@@ -83,6 +91,14 @@ fun PhotoEditorScreen(
         viewModel.loadPhoto(context, uri)
     }
 
+    // Si se pasa "background_removal" inicialmente, activar el motor de segmentación de inmediato
+    val segmentationStatus by viewModel.segmentationStatus.collectAsState()
+    LaunchedEffect(selectedTool) {
+        if (selectedTool == "background_removal" && segmentationStatus == SegmentationStatus.NOT_INITIALIZED) {
+            viewModel.prepareSubjectSegmentation(context)
+        }
+    }
+
     // Manejar el botón "atrás" del sistema de forma segura
     BackHandler {
         if (canUndo) {
@@ -97,10 +113,9 @@ fun PhotoEditorScreen(
         if (uiState is PhotoEditorUiState.Success && (uiState as PhotoEditorUiState.Success).isSaved) {
             val successState = uiState as PhotoEditorUiState.Success
             Toast.makeText(context, "Imagen guardada con éxito en la galería", Toast.LENGTH_LONG).show()
-            // Compartir la imagen guardada
             successState.savedUri?.let { uri ->
                 val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                    type = "image/jpeg"
+                    type = "image/png" // PNG para asegurar transparencia si se quitó el fondo
                     putExtra(android.content.Intent.EXTRA_STREAM, uri)
                     addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
@@ -239,7 +254,8 @@ fun PhotoEditorScreen(
                         is PhotoEditorUiState.Success -> {
                             PhotoPreviewCanvas(
                                 originalBitmap = state.bitmap,
-                                viewModel = viewModel
+                                viewModel = viewModel,
+                                activeTool = selectedTool
                             )
                         }
                         is PhotoEditorUiState.Error -> {
@@ -310,22 +326,35 @@ fun PhotoEditorScreen(
                                     }
                                 )
                             }
+                            "background_removal" -> {
+                                BackgroundRemovalToolPanel(
+                                    viewModel = viewModel,
+                                    segmentationStatus = segmentationStatus,
+                                    transformations = transformations,
+                                    onClose = {
+                                        viewModel.cancelBackgroundRemoval()
+                                        selectedTool = "none"
+                                    },
+                                    onApply = {
+                                        viewModel.saveTransformToHistory()
+                                        selectedTool = "none"
+                                    }
+                                )
+                            }
                             else -> {
                                 // Barra de herramientas principal desplazable horizontalmente
                                 EditorToolsBar(
                                     activeTool = selectedTool,
                                     onToolSelect = { toolName ->
-                                        if (toolName == "ai_remove" || toolName == "ai_bg" || toolName == "ai_enhance") {
+                                        if (toolName == "ai_remove" || toolName == "ai_enhance") {
                                             aiUnavailableToolName = when (toolName) {
                                                 "ai_remove" -> "Eliminar objeto"
-                                                "ai_bg" -> "Quitar fondo"
                                                 else -> "Mejorar calidad"
                                             }
                                             showAiUnavailableDialog = true
                                         } else {
                                             selectedTool = toolName
                                             if (toolName == "adjustments") {
-                                                // Guardar estado previo en historial para poder cancelar
                                                 viewModel.saveTransformToHistory()
                                             }
                                         }
@@ -362,7 +391,7 @@ fun PhotoEditorScreen(
                             Box(
                                 modifier = Modifier
                                     .size(72.dp)
-                                    .multicolorShimmer() // Reutilización de multicolorShimmer como indicador premium de procesamiento
+                                    .multicolorShimmer() // Reutilización de multicolorShimmer
                             ) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.fillMaxSize(),
@@ -457,13 +486,14 @@ fun PhotoEditorTopBar(
 @Composable
 fun PhotoPreviewCanvas(
     originalBitmap: Bitmap,
-    viewModel: PhotoEditorViewModel
+    viewModel: PhotoEditorViewModel,
+    activeTool: String
 ) {
     // Escala y arrastre para soporte completo de zoom
     var scale by remember { mutableStateOf(1f) }
     var offset by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
 
-    // Interacción para botón "Comparar" (Al pulsar, muestra la imagen original sin cambios)
+    // Interacción para botón "Comparar"
     val compareInteractionSource = remember { MutableInteractionSource() }
     val isComparing by compareInteractionSource.collectIsPressedAsState()
 
@@ -479,19 +509,83 @@ fun PhotoPreviewCanvas(
         label = "ImageEntryScale"
     )
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .pointerInput(Unit) {
-                detectTransformGestures { _, pan, zoom, _ ->
-                    scale = (scale * zoom).coerceIn(1f, 5f)
-                    if (scale > 1f) {
-                        offset += pan
-                    } else {
-                        offset = androidx.compose.ui.geometry.Offset.Zero
-                    }
+    // Capturar trazos táctiles para la máscara manual en caso de que esté activa la corrección
+    var lastPoint by remember { mutableStateOf<android.graphics.PointF?>(null) }
+    val points = remember { mutableStateListOf<android.graphics.PointF>() }
+
+    val transformations by viewModel.currentTransformations.collectAsState()
+
+    // El patrón de tablero de ajedrez (checkerboard) clásico se dibuja detrás de la imagen si hay transparencia
+    val checkerboardModifier = if (transformations.bgRemovalActive && transformations.bgOption == "transparent") {
+        Modifier.drawBehind {
+            val tileSize = 16.dp.toPx()
+            val w = size.width
+            val h = size.height
+            var y = 0f
+            var rowIdx = 0
+            while (y < h) {
+                var x = 0f
+                var colIdx = 0
+                while (x < w) {
+                    val color = if ((rowIdx + colIdx) % 2 == 0) Color(0xFF252529) else Color(0xFF19191D)
+                    drawRect(
+                        color = color,
+                        topLeft = androidx.compose.ui.geometry.Offset(x, y),
+                        size = androidx.compose.ui.geometry.Size(
+                            if (x + tileSize > w) w - x else tileSize,
+                            if (y + tileSize > h) h - y else tileSize
+                        )
+                    )
+                    x += tileSize
+                    colIdx++
                 }
-            },
+                y += tileSize
+                rowIdx++
+            }
+        }
+    } else {
+        Modifier
+    }
+
+    // Modificador de dibujo manual opcional cuando se está en modo pincel de máscara
+    var brushMode by remember { mutableStateOf("recover") } // recover, erase
+    var brushSize by remember { mutableStateOf(40f) }
+
+    val drawingModifier = if (activeTool == "background_removal") {
+        Modifier.pointerInput(Unit) {
+            detectDragGestures(
+                onDragStart = { startOffset ->
+                    points.clear()
+                    val p = android.graphics.PointF(startOffset.x / size.width, startOffset.y / size.height)
+                    points.add(p)
+                    viewModel.saveMaskToHistory()
+                },
+                onDrag = { change, _ ->
+                    val pos = change.position
+                    val p = android.graphics.PointF(pos.x / size.width, pos.y / size.height)
+                    points.add(p)
+                    viewModel.applyManualStrokeToMask(points, brushMode, brushSize)
+                },
+                onDragEnd = {
+                    points.clear()
+                }
+            )
+        }
+    } else {
+        Modifier.pointerInput(Unit) {
+            detectTransformGestures { _, pan, zoom, _ ->
+                scale = (scale * zoom).coerceIn(1f, 5f)
+                if (scale > 1f) {
+                    offset += pan
+                } else {
+                    offset = androidx.compose.ui.geometry.Offset.Zero
+                }
+            }
+        }
+    }
+
+    Box(
+        modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -503,6 +597,8 @@ fun PhotoPreviewCanvas(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
+                    .then(checkerboardModifier)
+                    .then(drawingModifier)
                     .clip(RoundedCornerShape(8.dp))
                     .graphicsLayer(
                         scaleX = scale * entryScale,
@@ -541,7 +637,62 @@ fun PhotoPreviewCanvas(
                 }
             }
 
-            // Control Comparar debajo del lienzo (Fila inferior flotante para fácil acceso táctil)
+            // Si es Quitar fondo, mostrar controles contextuales de dibujo manual sobre el lienzo
+            if (activeTool == "background_removal") {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        IconButton(
+                            onClick = { brushMode = "recover" },
+                            modifier = Modifier.background(if (brushMode == "recover") Color(0xFF7E57C2) else Color(0xFF212129), shape = CircleShape)
+                        ) {
+                            Icon(Icons.Default.Brush, contentDescription = "Recuperar", tint = Color.White)
+                        }
+                        IconButton(
+                            onClick = { brushMode = "erase" },
+                            modifier = Modifier.background(if (brushMode == "erase") Color(0xFF7E57C2) else Color(0xFF212129), shape = CircleShape)
+                        ) {
+                            Icon(Icons.Default.Delete, contentDescription = "Borrar", tint = Color.White)
+                        }
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f).padding(horizontal = 16.dp)
+                    ) {
+                        Text("TAMAÑO", color = Color.White.copy(alpha = 0.6f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Slider(
+                            value = brushSize,
+                            onValueChange = { brushSize = it },
+                            valueRange = 10f..100f,
+                            colors = SliderDefaults.colors(thumbColor = Color(0xFFB39DDB), activeTrackColor = Color(0xFF7E57C2)),
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    }
+
+                    Row {
+                        val canUndoMask by viewModel.canUndoMask.collectAsState()
+                        val canRedoMask by viewModel.canRedoMask.collectAsState()
+
+                        IconButton(onClick = { viewModel.undoMaskStroke() }, enabled = canUndoMask) {
+                            Icon(Icons.Default.Undo, contentDescription = "Deshacer trazo", tint = if (canUndoMask) Color.White else Color.White.copy(alpha = 0.3f))
+                        }
+                        IconButton(onClick = { viewModel.redoMaskStroke() }, enabled = canRedoMask) {
+                            Icon(Icons.Default.Redo, contentDescription = "Rehacer trazo", tint = if (canRedoMask) Color.White else Color.White.copy(alpha = 0.3f))
+                        }
+                        IconButton(onClick = { viewModel.resetMaskToAi() }) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Restablecer IA", tint = Color.White)
+                        }
+                    }
+                }
+            }
+
+            // Control Comparar debajo del lienzo
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -600,8 +751,8 @@ fun EditorToolsBar(
         ToolItem(id = "crop", name = "Recortar", icon = Icons.Default.Crop, active = activeTool == "crop", onSelect = onToolSelect)
         ToolItem(id = "rotate", name = "Rotar", icon = Icons.Default.RotateRight, active = activeTool == "rotate", onSelect = onToolSelect)
         ToolItem(id = "adjustments", name = "Ajustes", icon = Icons.Default.Tune, active = activeTool == "adjustments", onSelect = onToolSelect)
+        ToolItem(id = "background_removal", name = "Quitar fondo", icon = Icons.Default.ContentCut, active = activeTool == "background_removal", onSelect = onToolSelect)
         ToolItem(id = "ai_remove", name = "Eliminar objeto", icon = Icons.Default.LayersClear, active = false, onSelect = onToolSelect, isAi = true)
-        ToolItem(id = "ai_bg", name = "Quitar fondo", icon = Icons.Default.ContentCut, active = false, onSelect = onToolSelect, isAi = true)
         ToolItem(id = "ai_enhance", name = "Mejorar calidad", icon = Icons.Default.AutoAwesome, active = false, onSelect = onToolSelect, isAi = true)
     }
 }
@@ -754,13 +905,12 @@ fun CropToolPanel(
                     Icon(Icons.Default.Close, contentDescription = "Cancelar", tint = Color(0xFFE57373))
                 }
                 IconButton(onClick = {
-                    // Calcular el RectF simulado o aplicar la proporción
                     val rect = when (selectedRatio) {
                         "1:1" -> RectF(0.1f, 0.1f, 0.9f, 0.9f)
                         "4:5" -> RectF(0.15f, 0.1f, 0.85f, 0.9f)
                         "9:16" -> RectF(0.2f, 0.05f, 0.8f, 0.95f)
                         "16:9" -> RectF(0.05f, 0.2f, 0.95f, 0.8f)
-                        else -> RectF(0.1f, 0.1f, 0.9f, 0.9f) // Proporción libre/defecto
+                        else -> RectF(0.1f, 0.1f, 0.9f, 0.9f)
                     }
                     onConfirmCrop(rect)
                 }) {
@@ -851,7 +1001,6 @@ fun AdjustmentsToolPanel(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Slider del ajuste activo
         val currentValue = when (activeAdjustmentTab) {
             "brightness" -> transformations.brightness
             "contrast" -> transformations.contrast
@@ -907,7 +1056,6 @@ fun AdjustmentsToolPanel(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Pestañas de Ajustes
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -946,5 +1094,271 @@ fun AdjustmentTabButton(
         contentAlignment = Alignment.Center
     ) {
         Text(label, color = if (active) Color(0xFFB39DDB) else Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+fun BackgroundRemovalToolPanel(
+    viewModel: PhotoEditorViewModel,
+    segmentationStatus: SegmentationStatus,
+    transformations: PhotoTransformations,
+    onClose: () -> Unit,
+    onApply: () -> Unit
+) {
+    val context = LocalContext.current
+
+    // Selector de fondo (otra foto)
+    val bgImagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            viewModel.loadBackgroundImage(context, uri)
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text("Quitar fondo", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text("Procesado localmente en tu dispositivo", color = Color.White.copy(alpha = 0.5f), fontSize = 10.sp)
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                IconButton(onClick = onClose) {
+                    Icon(Icons.Default.Close, contentDescription = "Cancelar", tint = Color(0xFFE57373))
+                }
+                IconButton(onClick = onApply, enabled = segmentationStatus == SegmentationStatus.SUCCESS) {
+                    Icon(Icons.Default.Check, contentDescription = "Confirmar", tint = if (segmentationStatus == SegmentationStatus.SUCCESS) Color(0xFF81C784) else Color.White.copy(alpha = 0.3f))
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        when (segmentationStatus) {
+            SegmentationStatus.NOT_INITIALIZED -> {
+                Button(
+                    onClick = { viewModel.prepareSubjectSegmentation(context) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7E57C2))
+                ) {
+                    Text("Inicializar Inteligencia Artificial", color = Color.White)
+                }
+            }
+            SegmentationStatus.DOWNLOADING_MODEL -> {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E24)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("Preparando Quitar fondo...", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text("Esta descarga se realiza una sola vez de forma segura.", color = Color.White.copy(alpha = 0.6f), fontSize = 11.sp, textAlign = TextAlign.Center)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        LinearProgressIndicator(color = Color(0xFFB39DDB), modifier = Modifier.fillMaxWidth(0.8f))
+                    }
+                }
+            }
+            SegmentationStatus.INITIALIZED -> {
+                // El modelo ya está listo, iniciar el procesamiento automáticamente
+                LaunchedEffect(Unit) {
+                    viewModel.executeSubjectSegmentation(context)
+                }
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(60.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = Color(0xFFB39DDB))
+                }
+            }
+            SegmentationStatus.PROCESSING -> {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E24)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        CircularProgressIndicator(color = Color(0xFFB39DDB), modifier = Modifier.size(24.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text("Detectando sujeto principal...", color = Color.White, fontSize = 13.sp)
+                    }
+                }
+            }
+            SegmentationStatus.SUCCESS -> {
+                // Mostrar controles completos de fondos
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text("OPCIONES DE FONDO", color = Color.White.copy(alpha = 0.6f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        // 1. Transparente
+                        BgOptionButton(
+                            label = "Transparente",
+                            icon = Icons.Default.Texture,
+                            active = transformations.bgOption == "transparent",
+                            onClick = { viewModel.updateBackgroundOption("transparent") }
+                        )
+                        // 2. Color Blanco
+                        BgOptionButton(
+                            label = "Blanco",
+                            icon = Icons.Default.Palette,
+                            active = transformations.bgOption == "color" && transformations.bgColor == android.graphics.Color.WHITE,
+                            onClick = {
+                                viewModel.updateBackgroundColor(android.graphics.Color.WHITE)
+                                viewModel.updateBackgroundOption("color")
+                            }
+                        )
+                        // 3. Color Negro
+                        BgOptionButton(
+                            label = "Negro",
+                            icon = Icons.Default.Palette,
+                            active = transformations.bgOption == "color" && transformations.bgColor == android.graphics.Color.BLACK,
+                            onClick = {
+                                viewModel.updateBackgroundColor(android.graphics.Color.BLACK)
+                                viewModel.updateBackgroundOption("color")
+                            }
+                        )
+                        // 4. Degradados locales
+                        repeat(8) { idx ->
+                            BgOptionButton(
+                                label = "Degradado ${idx + 1}",
+                                icon = Icons.Default.Gradient,
+                                active = transformations.bgOption == "gradient" && transformations.bgGradientIndex == idx,
+                                onClick = {
+                                    viewModel.updateBackgroundGradientIndex(idx)
+                                    viewModel.updateBackgroundOption("gradient")
+                                }
+                            )
+                        }
+                        // 5. Otra Foto
+                        BgOptionButton(
+                            label = "Otra Foto",
+                            icon = Icons.Default.AddPhotoAlternate,
+                            active = transformations.bgOption == "other_photo",
+                            onClick = {
+                                bgImagePickerLauncher.launch("image/*")
+                            }
+                        )
+                        // 6. Desenfocar original
+                        BgOptionButton(
+                            label = "Desenfocar Original",
+                            icon = Icons.Default.BlurOn,
+                            active = transformations.bgOption == "blur_original",
+                            onClick = {
+                                viewModel.updateBackgroundOption("blur_original")
+                            }
+                        )
+                    }
+
+                    // Slider adicional de desenfoque si la opción activa es "blur_original"
+                    if (transformations.bgOption == "blur_original") {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("DESENFOQUE", color = Color.White.copy(alpha = 0.6f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            Slider(
+                                value = transformations.blurRadius,
+                                onValueChange = { viewModel.updateBlurRadius(it) },
+                                valueRange = 1f..25f,
+                                colors = SliderDefaults.colors(thumbColor = Color(0xFFB39DDB), activeTrackColor = Color(0xFF7E57C2)),
+                                modifier = Modifier.padding(start = 12.dp).weight(1f)
+                            )
+                        }
+                    }
+
+                    // Toggles rápidos para Contorno y Sombra
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(
+                                checked = transformations.outlineEnabled,
+                                onCheckedChange = { viewModel.updateOutlineSettings(it) },
+                                colors = CheckboxDefaults.colors(checkedColor = Color(0xFF7E57C2))
+                            )
+                            Text("Contorno", color = Color.White, fontSize = 12.sp)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(
+                                checked = transformations.shadowEnabled,
+                                onCheckedChange = { viewModel.updateShadowSettings(it) },
+                                colors = CheckboxDefaults.colors(checkedColor = Color(0xFF7E57C2))
+                            )
+                            Text("Sombra", color = Color.White, fontSize = 12.sp)
+                        }
+                    }
+                }
+            }
+            SegmentationStatus.ERROR -> {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("No pudimos identificar un sujeto en esta foto.", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text("Prueba con otra imagen donde se vea con mayor claridad.", color = Color.White.copy(alpha = 0.6f), fontSize = 11.sp, textAlign = TextAlign.Center)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Button(
+                        onClick = { viewModel.executeSubjectSegmentation(context) },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7E57C2))
+                    ) {
+                        Text("Reintentar", color = Color.White)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun BgOptionButton(
+    label: String,
+    icon: ImageVector,
+    active: Boolean,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .background(
+                if (active) Color(0xFF7E57C2).copy(alpha = 0.25f) else Color(0xFF212129),
+                shape = RoundedCornerShape(8.dp)
+            )
+            .border(
+                1.dp,
+                if (active) Color(0xFFB39DDB) else Color.White.copy(alpha = 0.12f),
+                shape = RoundedCornerShape(8.dp)
+            )
+            .clickable { onClick() }
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Icon(icon, contentDescription = null, tint = if (active) Color(0xFFB39DDB) else Color.White, modifier = Modifier.size(14.dp))
+            Text(label, color = if (active) Color(0xFFB39DDB) else Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+        }
     }
 }
