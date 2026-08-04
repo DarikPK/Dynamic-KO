@@ -41,6 +41,10 @@ import coil.compose.AsyncImage
 import androidx.compose.ui.graphics.asImageBitmap
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import pe.pixelcollage.app.ui.navigation.Screen
 import pe.pixelcollage.app.viewmodel.MainViewModel
 import pe.pixelcollage.app.viewmodel.ProjectViewModel
@@ -69,6 +73,30 @@ fun HomeScreen(
     // Cargar el proyecto cuando entra en composición
     LaunchedEffect(Unit) {
         projectViewModel.loadProject(context)
+    }
+
+    var preselectedToolForPicker by remember { mutableStateOf("none") }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            val type = context.contentResolver.getType(uri)
+            val isValid = type?.contains("image/jpeg") == true ||
+                          type?.contains("image/png") == true ||
+                          type?.contains("image/webp") == true ||
+                          uri.path?.endsWith(".jpg", ignoreCase = true) == true ||
+                          uri.path?.endsWith(".jpeg", ignoreCase = true) == true ||
+                          uri.path?.endsWith(".png", ignoreCase = true) == true ||
+                          uri.path?.endsWith(".webp", ignoreCase = true) == true
+
+            if (isValid) {
+                val encodedUri = java.net.URLEncoder.encode(uri.toString(), "UTF-8")
+                navController.navigate(Screen.PhotoEditor.route + "/$encodedUri?tool=$preselectedToolForPicker")
+            } else {
+                Toast.makeText(context, "Este formato todavía no es compatible.", Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     // Efecto de efectos secundarios para pintar de negro la barra de estado y la barra de navegación del sistema de manera limpia y sin cortes
@@ -125,7 +153,12 @@ fun HomeScreen(
                 )
 
                 // Tarjeta secundaria de Editar Foto (Azul) - Refinada
-                EditPhotoCardRefined()
+                EditPhotoCardRefined(
+                    onStartEditing = { tool ->
+                        preselectedToolForPicker = tool
+                        photoPickerLauncher.launch("image/*")
+                    }
+                )
 
                 // Sección de Recientes - Mejorada
                 RecientesSectionRefined(
@@ -468,7 +501,9 @@ fun CreateCollageCardRefined(
 }
 
 @Composable
-fun EditPhotoCardRefined() {
+fun EditPhotoCardRefined(
+    onStartEditing: (preselectedTool: String) -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -558,7 +593,7 @@ fun EditPhotoCardRefined() {
                             .height(38.dp)
                             .shadow(elevation = 4.dp, shape = RoundedCornerShape(12.dp))
                             .background(Color.White, shape = RoundedCornerShape(12.dp))
-                            .clickable(enabled = false) {}
+                            .clickable(enabled = true) { onStartEditing("none") }
                             .padding(horizontal = 12.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -594,12 +629,14 @@ fun EditPhotoCardRefined() {
                             EditActionItem(
                                 icon = Icons.Default.Delete,
                                 label = "Eliminar objeto",
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                onClick = { onStartEditing("ai_remove") }
                             )
                             EditActionItem(
                                 icon = Icons.Default.Brush,
                                 label = "Quitar fondo",
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                onClick = { onStartEditing("ai_bg") }
                             )
                         }
                         Row(
@@ -609,12 +646,14 @@ fun EditPhotoCardRefined() {
                             EditActionItem(
                                 icon = Icons.Default.Star,
                                 label = "Mejorar calidad",
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                onClick = { onStartEditing("ai_enhance") }
                             )
                             EditActionItem(
                                 icon = Icons.Default.GridView,
                                 label = "Ver todas",
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                onClick = { onStartEditing("none") }
                             )
                         }
                     }
@@ -639,7 +678,8 @@ fun EditPhotoCardRefined() {
 fun EditActionItem(
     icon: ImageVector,
     label: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
 ) {
     Box(
         modifier = modifier
@@ -657,7 +697,7 @@ fun EditActionItem(
                 ),
                 shape = RoundedCornerShape(8.dp)
             )
-            .clickable(enabled = false) {}
+            .clickable(enabled = true, onClick = onClick)
             .padding(horizontal = 4.dp),
         contentAlignment = Alignment.Center
     ) {

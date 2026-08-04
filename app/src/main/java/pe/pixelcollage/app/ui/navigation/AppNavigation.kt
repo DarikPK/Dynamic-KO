@@ -263,6 +263,22 @@ fun AppNavigation(
             )
         }
         composable(
+            route = Screen.PhotoEditor.route + "/{imageUri}?tool={tool}",
+            arguments = listOf(
+                navArgument("imageUri") { type = NavType.StringType },
+                navArgument("tool") { type = NavType.StringType; defaultValue = "none" }
+            )
+        ) { backStackEntry ->
+            val imageUri = backStackEntry.arguments?.getString("imageUri") ?: ""
+            val tool = backStackEntry.arguments?.getString("tool") ?: "none"
+            val decodedImageUri = URLDecoder.decode(imageUri, StandardCharsets.UTF_8.toString())
+            PhotoEditorScreen(
+                navController = navController,
+                imageUri = decodedImageUri,
+                initialTool = tool
+            )
+        }
+        composable(
             route = Screen.ImageUpload.route + "/{groupId}",
             arguments = listOf(navArgument("groupId") { type = NavType.StringType })
         ) { backStackEntry ->
