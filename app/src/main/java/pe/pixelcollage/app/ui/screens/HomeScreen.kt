@@ -10,7 +10,6 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -39,6 +38,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import androidx.compose.ui.graphics.asImageBitmap
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import pe.pixelcollage.app.ui.navigation.Screen
 import pe.pixelcollage.app.viewmodel.MainViewModel
 import pe.pixelcollage.app.viewmodel.ProjectViewModel
@@ -85,93 +87,187 @@ fun HomeScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 14.dp, vertical = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(paddingValues),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Cabecera con Logotipo, Ajustes y Nombre
+            // Cabecera con Logotipo, Ajustes, Botón ESTÁNDAR y Menú sobre fondo negro puro de extremo a extremo
             HeaderSection(
                 onSettingsClick = { navController.navigate("account_management") }
             )
 
-            // Tarjeta principal de Crear Collage (Morado/Violeta) - Rediseño Premium con previsualización refinada
-            CreateCollageCardRefined(
-                onNavigateToTemplates = { navController.navigate(Screen.Templates.route) },
-                onNavigateToClassic = { navController.navigate(Screen.Main.route) }
-            )
+            // Contenedor con scroll para las tarjetas y contenido de la pantalla principal
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Tarjeta principal de Crear Collage (Morado/Violeta) - Rediseño Premium con previsualización refinada
+                CreateCollageCardRefined(
+                    onNavigateToTemplates = { navController.navigate(Screen.Templates.route) },
+                    onNavigateToClassic = { navController.navigate(Screen.Main.route) }
+                )
 
-            // Tarjeta secundaria de Editar Foto (Azul) - Refinada
-            EditPhotoCardRefined()
+                // Tarjeta secundaria de Editar Foto (Azul) - Refinada
+                EditPhotoCardRefined()
 
-            // Sección de Recientes - Mejorada
-            RecientesSectionRefined(
-                hasContent = hasContent,
-                clientName = coverConfig.clientNameStyle.content,
-                mainImageUri = coverConfig.mainImageUri,
-                pageGroupsCount = pageGroups.size,
-                onOpenProject = {
-                    navController.navigate(Screen.Main.route)
-                },
-                onStartNewProject = {
-                    navController.navigate(Screen.Templates.route)
-                }
-            )
+                // Sección de Recientes - Mejorada
+                RecientesSectionRefined(
+                    hasContent = hasContent,
+                    clientName = coverConfig.clientNameStyle.content,
+                    mainImageUri = coverConfig.mainImageUri,
+                    pageGroupsCount = pageGroups.size,
+                    onOpenProject = {
+                        navController.navigate(Screen.Main.route)
+                    },
+                    onStartNewProject = {
+                        navController.navigate(Screen.Templates.route)
+                    }
+                )
 
-            // Versión de la app
-            AppVersionSection(context = context)
+                // Versión de la app
+                AppVersionSection(context = context)
+            }
         }
     }
 }
 
+// Función helper ultra-limpia para remover el fondo negro de una imagen y dejarlo transparente de manera quirúrgica
+private fun getTransparentLogo(context: Context, resId: Int): Bitmap {
+    val src = BitmapFactory.decodeResource(context.resources, resId) ?:
+        return Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+
+    val width = src.width
+    val height = src.height
+    val pixels = IntArray(width * height)
+    src.getPixels(pixels, 0, width, 0, 0, width, height)
+
+    var hasBlackBackground = false
+    for (i in pixels.indices) {
+        val color = pixels[i]
+        val a = (color shr 24) and 0xFF
+        val r = (color shr 16) and 0xFF
+        val g = (color shr 8) and 0xFF
+        val b = color and 0xFF
+        // Si el píxel es opaco pero es negro o casi negro, hacerlo transparente
+        if (a > 200 && r < 20 && g < 20 && b < 20) {
+            pixels[i] = 0x00000000
+            hasBlackBackground = true
+        }
+    }
+
+    if (!hasBlackBackground) {
+        return src
+    }
+
+    val result = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+    result.setPixels(pixels, 0, width, 0, 0, width, height)
+    return result
+}
+
 @Composable
 fun HeaderSection(onSettingsClick: () -> Unit) {
-    Row(
+    val context = LocalContext.current
+
+    // Contenedor con fondo negro puro (#000000) de extremo a extremo que abarca todo el ancho superior
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+            .background(Color.Black)
+            .padding(horizontal = 8.dp, vertical = 12.dp)
     ) {
-        // Espaciador para balancear perfectamente el botón de ajustes de la derecha
-        Spacer(modifier = Modifier.width(36.dp))
+        // 1. Botón hamburguesa (Menú) alineado perfectamente a la izquierda
+        Row(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(start = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(
+                onClick = { /* Acción futura de menú de navegación */ }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Menu,
+                    contentDescription = "Menú de navegación",
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
 
-        // Columna central con el Logotipo Oficial y Subtítulo
+        // 2. Columna central con el Logotipo Oficial y Subtítulo centrado de forma absoluta
         Column(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .align(Alignment.Center)
+                .fillMaxWidth(0.52f),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Cargar el logotipo con remoción quirúrgica de fondo negro en un remember para evitar sobrecarga de performance
+            val logoBitmap = remember(context) {
+                getTransparentLogo(context, pe.pixelcollage.app.R.drawable.ic_official_logo)
+            }
             Image(
-                painter = painterResource(id = pe.pixelcollage.app.R.drawable.ic_official_logo),
+                bitmap = logoBitmap.asImageBitmap(),
                 contentDescription = "Logo Oficial Pixel Collage",
                 modifier = Modifier
-                    .height(38.dp)
-                    .fillMaxWidth(0.72f),
+                    .height(58.dp) // Redimensionado un 55%-70% más grande para que sea el claro protagonista
+                    .fillMaxWidth(), // Adaptativo
                 contentScale = ContentScale.Fit
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = "Todo para tus fotos, en un solo lugar",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                color = Color.White.copy(alpha = 0.85f), // Color blanco con opacidad reducida para jerarquía visual premium
+                fontWeight = FontWeight.Normal,
+                fontSize = 11.sp,
                 textAlign = TextAlign.Center
             )
         }
 
-        // Botón de Ajustes a la derecha
-        IconButton(
-            onClick = onSettingsClick,
+        // 3. Botones "ESTÁNDAR" y Ajustes (Engranaje) alineados perfectamente a la derecha
+        Row(
             modifier = Modifier
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f), shape = CircleShape)
-                .size(36.dp)
+                .align(Alignment.CenterEnd)
+                .padding(end = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.Settings,
-                contentDescription = "Ajustes de cuenta",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(18.dp)
-            )
+            // Botón ESTÁNDAR con un diseño premium y pulido que destaca sobre fondo negro
+            Box(
+                modifier = Modifier
+                    .background(
+                        brush = Brush.linearGradient(
+                            colors = listOf(Color(0xFF7E57C2), Color(0xFF5E35B1))
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    .clickable { /* Acción futura */ }
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    text = "ESTÁNDAR",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color.White,
+                    fontSize = 10.sp
+                )
+            }
+
+            // Icono de Configuración (engranaje) con contraste idóneo sobre fondo negro
+            IconButton(
+                onClick = onSettingsClick
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "Ajustes de cuenta",
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
         }
     }
 }
