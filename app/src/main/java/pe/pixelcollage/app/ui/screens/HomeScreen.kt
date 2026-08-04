@@ -134,38 +134,32 @@ fun HeaderSection(onSettingsClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
+        // Espaciador para balancear perfectamente el botón de ajustes de la derecha
+        Spacer(modifier = Modifier.width(36.dp))
+
+        // Columna central con el Logotipo Oficial y Subtítulo
+        Column(
+            modifier = Modifier.weight(1f),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Image(
+                painter = painterResource(id = pe.pixelcollage.app.R.drawable.ic_official_logo),
+                contentDescription = "Logo Oficial Pixel Collage",
                 modifier = Modifier
-                    .size(40.dp)
-                    .background(
-                        Brush.linearGradient(listOf(Color(0xFF7E57C2), Color(0xFF5E35B1))),
-                        shape = RoundedCornerShape(10.dp)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Palette,
-                    contentDescription = "Logo",
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(10.dp))
-            Column {
-                Text(
-                    text = "Pixel Collage",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Text(
-                    text = "Todo para tus fotos, en un solo lugar",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-                )
-            }
+                    .height(38.dp)
+                    .fillMaxWidth(0.72f),
+                contentScale = ContentScale.Fit
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = "Todo para tus fotos, en un solo lugar",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                textAlign = TextAlign.Center
+            )
         }
+
+        // Botón de Ajustes a la derecha
         IconButton(
             onClick = onSettingsClick,
             modifier = Modifier
