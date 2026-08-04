@@ -110,6 +110,11 @@ fun AppNavigation(
                     navController = navController
                 )
             }
+            composable(Screen.Subscription.route) {
+                SubscriptionScreen(
+                    navController = navController
+                )
+            }
             composable(Screen.Main.route) {
                 MainScreen(
                     windowSizeClass = windowSizeClass,

@@ -69,6 +69,19 @@ fun HomeScreen(
         projectViewModel.loadProject(context)
     }
 
+    // Efecto de efectos secundarios para pintar de negro la barra de estado de manera limpia y sin cortes
+    val view = androidx.compose.ui.platform.LocalView.current
+    if (!view.isInEditMode) {
+        val window = (context as? android.app.Activity)?.window
+        if (window != null) {
+            val windowInsetsController = androidx.core.view.WindowCompat.getInsetsController(window, view)
+            SideEffect {
+                window.statusBarColor = android.graphics.Color.BLACK
+                windowInsetsController.isAppearanceLightStatusBars = false // Iconos claros para fondo negro
+            }
+        }
+    }
+
     val isCompact = windowSizeClass.widthSizeClass == WindowWidthSizeClass.Compact
 
     // Fondo neutro y elegante para resaltar las tarjetas
@@ -87,12 +100,12 @@ fun HomeScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
+                .padding(bottom = paddingValues.calculateBottomPadding()), // Solo padding inferior para la barra de navegación
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Cabecera con Logotipo, Ajustes, Botón ESTÁNDAR y Menú sobre fondo negro puro de extremo a extremo
+            // Cabecera con Logotipo, Botón ESTÁNDAR y Menú sobre fondo negro puro de extremo a extremo, extendiéndose tras la StatusBar
             HeaderSection(
-                onSettingsClick = { navController.navigate("account_management") }
+                navController = navController
             )
 
             // Contenedor con scroll para las tarjetas y contenido de la pantalla principal
@@ -169,15 +182,16 @@ private fun getTransparentLogo(context: Context, resId: Int): Bitmap {
 }
 
 @Composable
-fun HeaderSection(onSettingsClick: () -> Unit) {
+fun HeaderSection(navController: NavController) {
     val context = LocalContext.current
 
-    // Contenedor con fondo negro puro (#000000) de extremo a extremo que abarca todo el ancho superior
+    // Contenedor con fondo negro puro (#000000) de extremo a extremo que abarca la barra de estado (statusBarsPadding)
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .background(Color.Black)
-            .padding(horizontal = 8.dp, vertical = 12.dp)
+            .statusBarsPadding() // Hace que el fondo negro se extienda por debajo de la StatusBar sin cortes ni líneas
+            .padding(horizontal = 14.dp, vertical = 14.dp) // Espaciado refinado y respirable
     ) {
         // 1. Botón hamburguesa (Menú) alineado perfectamente a la izquierda
         Row(
@@ -213,11 +227,11 @@ fun HeaderSection(onSettingsClick: () -> Unit) {
                 bitmap = logoBitmap.asImageBitmap(),
                 contentDescription = "Logo Oficial Pixel Collage",
                 modifier = Modifier
-                    .height(58.dp) // Redimensionado un 55%-70% más grande para que sea el claro protagonista
+                    .height(84.dp) // Aumentado en un 40%-60% su tamaño anterior (de 58dp a 84dp de altura) para ser el protagonista
                     .fillMaxWidth(), // Adaptativo
                 contentScale = ContentScale.Fit
             )
-            Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(4.dp)) // Espaciado refinado entre logo y subtítulo
             Text(
                 text = "Todo para tus fotos, en un solo lugar",
                 style = MaterialTheme.typography.bodySmall,
@@ -228,15 +242,14 @@ fun HeaderSection(onSettingsClick: () -> Unit) {
             )
         }
 
-        // 3. Botones "ESTÁNDAR" y Ajustes (Engranaje) alineados perfectamente a la derecha
+        // 3. Botón "ESTÁNDAR" alineado perfectamente a la derecha (engranaje eliminado completamente)
         Row(
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .padding(end = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // Botón ESTÁNDAR con un diseño premium y pulido que destaca sobre fondo negro
+            // Botón ESTÁNDAR con un diseño premium y pulido que destaca sobre fondo negro, ahora completamente funcional
             Box(
                 modifier = Modifier
                     .background(
@@ -245,7 +258,9 @@ fun HeaderSection(onSettingsClick: () -> Unit) {
                         ),
                         shape = RoundedCornerShape(12.dp)
                     )
-                    .clickable { /* Acción futura */ }
+                    .clickable {
+                        navController.navigate(Screen.Subscription.route)
+                    }
                     .padding(horizontal = 10.dp, vertical = 6.dp)
             ) {
                 Text(
@@ -254,18 +269,6 @@ fun HeaderSection(onSettingsClick: () -> Unit) {
                     fontWeight = FontWeight.ExtraBold,
                     color = Color.White,
                     fontSize = 10.sp
-                )
-            }
-
-            // Icono de Configuración (engranaje) con contraste idóneo sobre fondo negro
-            IconButton(
-                onClick = onSettingsClick
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = "Ajustes de cuenta",
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
                 )
             }
         }
