@@ -1,5 +1,6 @@
 package pe.pixelcollage.app.ui.components
 
+import android.graphics.Bitmap
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.*
@@ -9,6 +10,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.drawscope.Stroke
 
 /**
  * Un componente de estrella decorativa (Sparkle) animado de forma independiente y premium.
@@ -134,4 +136,68 @@ fun Modifier.multicolorShimmer(): Modifier = composed {
                 )
             }
     )
+}
+
+/**
+ * Un componente animado de selección discontinua ("marching ants") de alto rendimiento.
+ * Traza los bordes de la máscara pixel-a-pixel y anima el patrón de rayas alternadas blancas
+ * y negras en tiempo real para simular movimiento continuo.
+ */
+@Composable
+fun MarchingAntsOutline(
+    mask: Bitmap,
+    modifier: Modifier = Modifier
+) {
+    // Recalcular la trayectoria del contorno únicamente cuando la máscara cambia
+    val path = remember(mask) {
+        val p = Path()
+        val width = mask.width
+        val height = mask.height
+        val step = 4
+        for (y in 0 until height step step) {
+            for (x in 0 until width step step) {
+                val pixel = mask.getPixel(x, y)
+                val alpha = Color.alpha(pixel)
+                if (alpha > 50) {
+                    var isEdge = false
+                    if (x - step >= 0 && Color.alpha(mask.getPixel(x - step, y)) < 50) isEdge = true
+                    else if (x + step < width && Color.alpha(mask.getPixel(x + step, y)) < 50) isEdge = true
+                    else if (y - step >= 0 && Color.alpha(mask.getPixel(x, y - step)) < 50) isEdge = true
+                    else if (y + step < height && Color.alpha(mask.getPixel(x, y + step)) < 50) isEdge = true
+
+                    if (isEdge) {
+                        p.addRect(androidx.compose.ui.geometry.Rect(x.toFloat(), y.toFloat(), (x + step).toFloat(), (y + step).toFloat()))
+                    }
+                }
+            }
+        }
+        p
+    }
+
+    val infiniteTransition = rememberInfiniteTransition(label = "MarchingAntsTransition")
+    val phase by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 40f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "MarchingAntsPhase"
+    )
+
+    Canvas(modifier = modifier) {
+        // Dibujar borde negro de fondo para máximo contraste
+        drawPath(
+            path = path,
+            color = Color.Black,
+            style = Stroke(width = 6f)
+        )
+        // Dibujar líneas discontinuas blancas encima (Líneas de hormigas)
+        val dashEffect = PathEffect.dashPathEffect(floatArrayOf(15f, 15f), phase)
+        drawPath(
+            path = path,
+            color = Color.White,
+            style = Stroke(width = 3f, pathEffect = dashEffect)
+        )
+    }
 }

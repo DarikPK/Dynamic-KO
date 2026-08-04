@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import pe.pixelcollage.app.R
+import pe.pixelcollage.app.ui.components.MarchingAntsOutline
 import pe.pixelcollage.app.ui.components.multicolorShimmer
 import pe.pixelcollage.app.utils.SegmentationStatus
 import pe.pixelcollage.app.viewmodel.PhotoEditorUiState
@@ -492,6 +493,7 @@ fun PhotoPreviewCanvas(
     val context = LocalContext.current
     val transformations by viewModel.currentTransformations.collectAsState()
     val isInteractiveSelecting by viewModel.isInteractiveSelecting.collectAsState()
+    val currentMask by viewModel.currentMask.collectAsState()
 
     var scale by remember { mutableStateOf(1f) }
     var offset by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
@@ -512,7 +514,6 @@ fun PhotoPreviewCanvas(
         label = "ImageEntryScale"
     )
 
-    // Capturar trazos táctiles para la máscara manual o toques interactivos
     val points = remember { mutableStateListOf<android.graphics.PointF>() }
 
     // El patrón de tablero de ajedrez (checkerboard) clásico se dibuja detrás de la imagen si hay transparencia
@@ -550,13 +551,9 @@ fun PhotoPreviewCanvas(
     var brushMode by remember { mutableStateOf("recover") } // recover, erase
     var brushSize by remember { mutableStateOf(40f) }
 
-    // Almacenar el tamaño real renderizado de la imagen para calcular coordenadas táctiles exactas
-    var containerWidth by remember { mutableStateOf(1) }
-    var containerHeight by remember { mutableStateOf(1) }
-
     val drawingModifier = if (activeTool == "background_removal") {
         if (isInteractiveSelecting) {
-            // Toque inteligente interactivo MediaPipe: detecta toques simples en lugar de arrastre
+            // Toque inteligente interactivo MediaPipe
             Modifier.pointerInput(Unit) {
                 detectTapGestures { tapOffset ->
                     val normX = (tapOffset.x / size.width).coerceIn(0f, 1f)
@@ -614,10 +611,6 @@ fun PhotoPreviewCanvas(
                     .fillMaxWidth()
                     .then(checkerboardModifier)
                     .then(drawingModifier)
-                    .onGloballyPositioned { coordinates ->
-                        containerWidth = coordinates.size.width
-                        containerHeight = coordinates.size.height
-                    }
                     .clip(RoundedCornerShape(8.dp))
                     .graphicsLayer(
                         scaleX = scale * entryScale,
@@ -628,14 +621,27 @@ fun PhotoPreviewCanvas(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                Image(
-                    bitmap = originalBitmap.asImageBitmap(),
-                    contentDescription = "Previsualización",
+                Box(
                     modifier = Modifier
                         .fillMaxWidth(0.92f)
                         .fillMaxHeight(0.92f),
-                    contentScale = ContentScale.Fit
-                )
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        bitmap = originalBitmap.asImageBitmap(),
+                        contentDescription = "Previsualización",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit
+                    )
+
+                    // SI SE SELECCIONA INTERACTIVAMENTE: Dibujamos las líneas de hormigas (marching ants) animadas de alto contraste sobre la silueta
+                    if (isInteractiveSelecting && currentMask != null) {
+                        MarchingAntsOutline(
+                            mask = currentMask,
+                            modifier = Modifier.matchParentSize()
+                        )
+                    }
+                }
 
                 if (isComparing) {
                     Box(
@@ -1126,6 +1132,8 @@ fun BackgroundRemovalToolPanel(
 ) {
     val context = LocalContext.current
     val isInteractiveSelecting by viewModel.isInteractiveSelecting.collectAsState()
+    val isAddMode by viewModel.isSelectionModeAdd.collectAsState()
+    val tolerance by viewModel.tolerance.collectAsState()
 
     val bgImagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -1191,8 +1199,8 @@ fun BackgroundRemovalToolPanel(
                 }
             }
             SegmentationStatus.INITIALIZED -> {
-                // El modelo ya está listo, iniciar el procesamiento automáticamente
-                viewModel.handleInteractiveTouch(context, PointF(0.5f, 0.5f)) // Toque de inicialización por defecto
+                // Modelo listo, no realiza toques automáticos, espera la interacción del usuario
+                viewModel.setSelectionMode(true) // Iniciar por defecto en modo Agregar
             }
             SegmentationStatus.PROCESSING -> {
                 Card(
@@ -1212,7 +1220,7 @@ fun BackgroundRemovalToolPanel(
             }
             SegmentationStatus.SUCCESS, SegmentationStatus.ERROR -> {
                 if (isInteractiveSelecting) {
-                    // Flujo Táctil Interactivo: Mostrar el mensaje "Toca lo que deseas conservar" y botón "Continuar"
+                    // Flujo Táctil Interactivo: Mostrar el mensaje "Toca una zona para comenzar la selección", modos explícitos, tolerancia adaptativa y continuar
                     Card(
                         colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A24)),
                         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFB39DDB).copy(alpha = 0.3f)),
@@ -1220,7 +1228,8 @@ fun BackgroundRemovalToolPanel(
                     ) {
                         Column(
                             modifier = Modifier.padding(14.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -1234,34 +1243,117 @@ fun BackgroundRemovalToolPanel(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "Toca lo que deseas conservar",
+                                    text = "Toca una zona para comenzar la selección",
                                     color = Color.White,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 13.sp
                                 )
                             }
-                            Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Cada toque añade o quita objetos de la selección.",
+                                text = "Usa Agregar o Quitar para perfeccionar la selección inteligente por objetos.",
                                 color = Color.White.copy(alpha = 0.6f),
                                 fontSize = 11.sp,
                                 textAlign = TextAlign.Center
                             )
-                            Spacer(modifier = Modifier.height(10.dp))
-                            Button(
-                                onClick = { viewModel.confirmInteractiveSelection() },
+
+                            // DOS BOTONES EXPLÍCITOS Y SIEMPRE VISIBLES: AGREGAR (verde) Y QUITAR (rojo)
+                            Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFF7E57C2),
-                                    contentColor = Color.White
-                                )
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                Text("Continuar", fontWeight = FontWeight.Bold)
+                                Button(
+                                    onClick = { viewModel.setSelectionMode(true) },
+                                    modifier = Modifier.weight(1f),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (isAddMode) Color(0xFF26A69A) else Color(0xFF212129),
+                                        contentColor = Color.White
+                                    ),
+                                    border = androidx.compose.foundation.BorderStroke(
+                                        width = 1.5.dp,
+                                        color = if (isAddMode) Color(0xFF00E676) else Color.White.copy(alpha = 0.12f)
+                                    ),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Icon(Icons.Default.Add, contentDescription = "Agregar", modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Agregar", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                }
+
+                                Button(
+                                    onClick = {
+                                        // Validación de modo Quitar: Primero debe haber agregado un área
+                                        if (viewModel.canUndoMask.value || transformations.bgRemovalActive) {
+                                            viewModel.setSelectionMode(false)
+                                        } else {
+                                            Toast.makeText(context, "Primero agrega un área a la selección.", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (!isAddMode) Color(0xFFEC407A) else Color(0xFF212129),
+                                        contentColor = Color.White
+                                    ),
+                                    border = androidx.compose.foundation.BorderStroke(
+                                        width = 1.5.dp,
+                                        color = if (!isAddMode) Color(0xFFE57373) else Color.White.copy(alpha = 0.12f)
+                                    ),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Icon(Icons.Default.Remove, contentDescription = "Quitar", modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Quitar", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                }
+                            }
+
+                            // SLIDER DE TOLERANCIA (0 a 100) REAL EN TIEMPO REAL
+                            Column(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("TOLERANCIA ADAPTATIVA", color = Color.White.copy(alpha = 0.6f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                    Text("${tolerance.toInt()}", color = Color(0xFFB39DDB), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
+                                Slider(
+                                    value = tolerance,
+                                    onValueChange = { viewModel.updateToleranceSlider(it) },
+                                    valueRange = 0f..100f,
+                                    colors = SliderDefaults.colors(
+                                        thumbColor = Color(0xFFB39DDB),
+                                        activeTrackColor = Color(0xFF7E57C2)
+                                    )
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                TextButton(
+                                    onClick = { viewModel.resetInteractiveSelection() },
+                                    modifier = Modifier.weight(0.4f),
+                                    colors = ButtonDefaults.textButtonColors(contentColor = Color.White.copy(alpha = 0.6f))
+                                ) {
+                                    Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Restablecer", fontSize = 12.sp)
+                                }
+
+                                Button(
+                                    onClick = { viewModel.confirmInteractiveSelection() },
+                                    modifier = Modifier.weight(0.6f),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFF7E57C2),
+                                        contentColor = Color.White
+                                    )
+                                ) {
+                                    Text("Continuar", fontWeight = FontWeight.Bold)
+                                }
                             }
                         }
                     }
                 } else {
-                    // Flujo Clásico: Opciones de Fondos y Pincel manual
+                    // Flujo Clásico de Fondos y Refinar pincel manual
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Text("OPCIONES DE FONDO", color = Color.White.copy(alpha = 0.6f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.height(8.dp))

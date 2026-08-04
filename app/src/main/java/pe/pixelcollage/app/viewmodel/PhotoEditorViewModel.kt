@@ -85,15 +85,31 @@ class PhotoEditorViewModel : ViewModel() {
     private val _isInteractiveSelecting = MutableStateFlow(false)
     val isInteractiveSelecting: StateFlow<Boolean> = _isInteractiveSelecting.asStateFlow()
 
+    // Control de Modos Explícitos: Agregar (true) y Quitar (false)
+    private val _isSelectionModeAdd = MutableStateFlow(true)
+    val isSelectionModeAdd: StateFlow<Boolean> = _isSelectionModeAdd.asStateFlow()
+
+    // Control de Tolerancia (0 a 100)
+    private val _tolerance = MutableStateFlow(50f)
+    val tolerance: StateFlow<Float> = _tolerance.asStateFlow()
+
     private var originalImageUri: Uri? = null
     private var previewOriginalBitmap: Bitmap? = null
     private var currentAdjustedBitmap: Bitmap? = null
 
-    // Máscara binaria original devuelta por la IA, y la copia de trabajo corregible manualmente
+    // Máscaras binarias: la de IA corregible, la de IA sin cambios y la acumulada pura táctil (baseCombinedMask)
     private var rawAiMaskBitmap: Bitmap? = null
     private var correctedMaskBitmap: Bitmap? = null
+        set(value) {
+            field = value
+            _currentMask.value = value
+        }
+    private var baseCombinedMask: Bitmap? = null
 
-    // Historial independiente para corrección manual de máscara (pinceladas)
+    private val _currentMask = MutableStateFlow<Bitmap?>(null)
+    val currentMask: StateFlow<Bitmap?> = _currentMask.asStateFlow()
+
+    // Historial independiente para corrección manual de máscara (pinceladas o toques)
     private val maskUndoStack = Stack<Bitmap>()
     private val maskRedoStack = Stack<Bitmap>()
 
@@ -313,8 +329,7 @@ class PhotoEditorViewModel : ViewModel() {
         return bitmap
     }
 
-    // Compone la vista previa interactiva: Imagen original completa, pero atenuando un 50% las zonas no seleccionadas
-    // y dibujando un contorno luminoso sutil sobre las zonas seleccionadas.
+    // Compone la vista previa interactiva: Imagen original completa con realce de áreas seleccionadas
     private fun composeInteractiveSelectionPreview(src: Bitmap, mask: Bitmap): Bitmap {
         val width = src.width
         val height = src.height
@@ -324,12 +339,11 @@ class PhotoEditorViewModel : ViewModel() {
         // 1. Dibujar el original completo
         canvas.drawBitmap(src, 0f, 0f, null)
 
-        // 2. Dibujar capa de atenuación oscura (50% de opacidad) únicamente sobre las zonas no seleccionadas
+        // 2. Capa de atenuación semitransparente sobre zonas no seleccionadas (15%-25%)
         val dimLayer = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val dimCanvas = Canvas(dimLayer)
-        dimCanvas.drawColor(Color.parseColor("#80000000")) // Capa negra semi-transparente
+        dimCanvas.drawColor(Color.parseColor("#4D000000")) // ~30% de atenuación oscura discreta
 
-        // Multiplicamos la capa de atenuación por la máscara invertida (así solo se atenúa el fondo)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OUT)
         dimCanvas.drawBitmap(mask, 0f, 0f, paint)
@@ -337,13 +351,16 @@ class PhotoEditorViewModel : ViewModel() {
 
         canvas.drawBitmap(dimLayer, 0f, 0f, null)
 
-        // 3. Dibujar un contorno luminoso sutil en violeta Pixel (#B39DDB) en el borde del sujeto
-        val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#B39DDB")
-            style = Paint.Style.STROKE
-            strokeWidth = 6f
-        }
-        canvas.drawBitmap(mask, 0f, 0f, borderPaint)
+        // 3. Superposición interior sutil del 20% violeta premium (#B39DDB) dentro del área seleccionada
+        val overlayLayer = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val overlayCanvas = Canvas(overlayLayer)
+        overlayCanvas.drawColor(Color.parseColor("#33B39DDB")) // 20% de opacidad violeta
+
+        paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN)
+        overlayCanvas.drawBitmap(mask, 0f, 0f, paint)
+        paint.xfermode = null
+
+        canvas.drawBitmap(overlayLayer, 0f, 0f, null)
 
         return output
     }
@@ -429,27 +446,158 @@ class PhotoEditorViewModel : ViewModel() {
         viewModelScope.launch {
             removalEngine.prepareModel(context)
             _segmentationStatus.value = removalEngine.getStatus()
-            // Iniciamos la selección interactiva táctil
+
+            // Inicializar la máscara de trabajo de forma completamente transparente (vacía por defecto!)
+            val original = previewOriginalBitmap
+            if (original != null) {
+                val width = original.width
+                val height = original.height
+                correctedMaskBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).apply {
+                    eraseColor(Color.TRANSPARENT)
+                }
+                rawAiMaskBitmap = correctedMaskBitmap?.copy(Bitmap.Config.ARGB_8888, true)
+                baseCombinedMask = correctedMaskBitmap?.copy(Bitmap.Config.ARGB_8888, true)
+
+                // Calcular tolerancia inicial adaptativa basada en la resolución real
+                val initialTol = calculateAdaptiveInitialTolerance(original)
+                _tolerance.value = initialTol
+            }
+
             _isInteractiveSelecting.value = true
+            _isSelectionModeAdd.value = true
+            _currentTransformations.value = _currentTransformations.value.copy(
+                bgRemovalActive = false // No aplicar recorte inmediato de fondo
+            )
+            applyCurrentTransformations()
         }
     }
 
-    // Procesa un toque en coordenadas relativas (0.0f a 1.0f) agregando/quitando selección de forma instantánea
+    private fun calculateAdaptiveInitialTolerance(bitmap: Bitmap): Float {
+        val minDim = Math.min(bitmap.width, bitmap.height)
+        val base = if (minDim < 600) 40f else 48f
+        return base.coerceIn(35f, 55f)
+    }
+
+    // Cambia el modo de selección: Agregar (true) o Quitar (false)
+    fun setSelectionMode(add: Boolean) {
+        _isSelectionModeAdd.value = add
+    }
+
+    // Procesa un toque en coordenadas relativas (0.0f a 1.0f) realizando unión o resta de máscaras según el modo activo
     fun handleInteractiveTouch(context: Context, point: PointF) {
         val original = previewOriginalBitmap ?: return
+        val baseMask = baseCombinedMask ?: return
         _isProcessing.value = true
 
         viewModelScope.launch {
-            val result = removalEngine.processTouch(context, original, point, correctedMaskBitmap)
-            result.onSuccess { updatedMask ->
-                correctedMaskBitmap = updatedMask
-                rawAiMaskBitmap = updatedMask.copy(updatedMask.config ?: Bitmap.Config.ARGB_8888, true)
+            // Generar una máscara de toque a partir de la segmentación interactiva
+            val result = removalEngine.processTouch(context, original, point, null)
+            result.onSuccess { touchMask ->
+                // Guardar la máscara combinada previa en el historial
+                saveMaskToHistory()
+
+                val width = baseMask.width
+                val height = baseMask.height
+                val newCombined = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                val canvas = Canvas(newCombined)
+
+                canvas.drawBitmap(baseMask, 0f, 0f, null)
+
+                val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+                if (_isSelectionModeAdd.value) {
+                    // MODO AGREGAR: Unión de máscaras (SRC_OVER)
+                    paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER)
+                    canvas.drawBitmap(touchMask, 0f, 0f, paint)
+                } else {
+                    // MODO QUITAR: Resta de máscaras (DST_OUT)
+                    paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OUT)
+                    canvas.drawBitmap(touchMask, 0f, 0f, paint)
+                }
+
+                baseCombinedMask = newCombined
+
+                // Aplicar la tolerancia actual (crecimiento/erosión morfológica)
+                val tolerancedMask = applyToleranceMorphology(newCombined, _tolerance.value)
+                correctedMaskBitmap = tolerancedMask
+                rawAiMaskBitmap = tolerancedMask.copy(tolerancedMask.config ?: Bitmap.Config.ARGB_8888, true)
+
                 _segmentationStatus.value = SegmentationStatus.SUCCESS
                 applyCurrentTransformations()
             }.onFailure {
                 _segmentationStatus.value = SegmentationStatus.ERROR
             }
             _isProcessing.value = false
+        }
+    }
+
+    // Aplica dilatación (Tolerancia > 50) o erosión (Tolerancia < 50) en tiempo real
+    private fun applyToleranceMorphology(baseMask: Bitmap, toleranceValue: Float): Bitmap {
+        val width = baseMask.width
+        val height = baseMask.height
+        val out = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(out)
+
+        val radius = ((toleranceValue - 50f) / 10f * 3f) // Rango de -15 a 15 píxeles de radio
+
+        if (radius > 0.5f) {
+            // Dilatación (Expandir): Dibujar la máscara desplazada en múltiples direcciones
+            val r = radius.toInt().coerceAtMost(15)
+            canvas.drawBitmap(baseMask, 0f, 0f, null)
+            val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER)
+            }
+            for (dx in -r..r step 2) {
+                for (dy in -r..r step 2) {
+                    if (dx*dx + dy*dy <= r*r) {
+                        canvas.drawBitmap(baseMask, dx.toFloat(), dy.toFloat(), paint)
+                    }
+                }
+            }
+        } else if (radius < -0.5f) {
+            // Erosión (Contraer): Invertir, dilatar, e invertir de vuelta
+            val r = (-radius).toInt().coerceAtMost(15)
+            val inverted = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val invCanvas = Canvas(inverted)
+            invCanvas.drawColor(Color.WHITE)
+            val maskPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OUT)
+            }
+            invCanvas.drawBitmap(baseMask, 0f, 0f, maskPaint)
+
+            // Dilatar la máscara invertida
+            val dilatedInv = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val dilCanvas = Canvas(dilatedInv)
+            dilCanvas.drawBitmap(inverted, 0f, 0f, null)
+            val unionPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER)
+            }
+            for (dx in -r..r step 2) {
+                for (dy in -r..r step 2) {
+                    if (dx*dx + dy*dy <= r*r) {
+                        dilCanvas.drawBitmap(inverted, dx.toFloat(), dy.toFloat(), unionPaint)
+                    }
+                }
+            }
+
+            // Invertir de vuelta
+            canvas.drawColor(Color.WHITE)
+            canvas.drawBitmap(dilatedInv, 0f, 0f, maskPaint)
+        } else {
+            canvas.drawBitmap(baseMask, 0f, 0f, null)
+        }
+        return out
+    }
+
+    // Actualiza la tolerancia en tiempo real aplicando morfología sobre el último estado combinado
+    fun updateToleranceSlider(value: Float) {
+        _tolerance.value = value
+        val base = baseCombinedMask ?: return
+        viewModelScope.launch(Dispatchers.Default) {
+            val toleranced = applyToleranceMorphology(base, value)
+            withContext(Dispatchers.Main) {
+                correctedMaskBitmap = toleranced
+                applyCurrentTransformations()
+            }
         }
     }
 
@@ -465,8 +613,29 @@ class PhotoEditorViewModel : ViewModel() {
         applyCurrentTransformations()
     }
 
+    // Vacía completamente la máscara regresando al estado inicial vacío
+    fun resetInteractiveSelection() {
+        val original = previewOriginalBitmap ?: return
+        val width = original.width
+        val height = original.height
+
+        saveMaskToHistory()
+
+        correctedMaskBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).apply {
+            eraseColor(Color.TRANSPARENT)
+        }
+        rawAiMaskBitmap = correctedMaskBitmap?.copy(Bitmap.Config.ARGB_8888, true)
+        baseCombinedMask = correctedMaskBitmap?.copy(Bitmap.Config.ARGB_8888, true)
+
+        // Regresar tolerancia a su valor inicial adaptativo
+        val initialTol = calculateAdaptiveInitialTolerance(original)
+        _tolerance.value = initialTol
+        _isSelectionModeAdd.value = true
+
+        applyCurrentTransformations()
+    }
+
     fun executeSubjectSegmentation(context: Context) {
-        // Ejecución automática fallback si fuese necesaria
         prepareSubjectSegmentation(context)
     }
 
@@ -490,6 +659,7 @@ class PhotoEditorViewModel : ViewModel() {
             maskRedoStack.push(currentMask)
             val previousMask = maskUndoStack.pop()
             correctedMaskBitmap = previousMask
+            baseCombinedMask = previousMask.copy(previousMask.config ?: Bitmap.Config.ARGB_8888, true)
             updateMaskHistoryState()
             applyCurrentTransformations()
         }
@@ -501,6 +671,7 @@ class PhotoEditorViewModel : ViewModel() {
             maskUndoStack.push(currentMask)
             val nextMask = maskRedoStack.pop()
             correctedMaskBitmap = nextMask
+            baseCombinedMask = nextMask.copy(nextMask.config ?: Bitmap.Config.ARGB_8888, true)
             updateMaskHistoryState()
             applyCurrentTransformations()
         }
@@ -549,7 +720,8 @@ class PhotoEditorViewModel : ViewModel() {
     fun resetMaskToAi() {
         saveMaskToHistory()
         rawAiMaskBitmap?.let { raw ->
-            correctedMaskBitmap = raw.copy(raw.config ?: Bitmap.Config.ARGB_8888, true)
+            correctedMaskBitmap = raw.copy(raw.config ?: raw.config, true)
+            baseCombinedMask = raw.copy(raw.config ?: raw.config, true)
             applyCurrentTransformations()
         }
     }
@@ -619,6 +791,7 @@ class PhotoEditorViewModel : ViewModel() {
     fun cancelBackgroundRemoval() {
         rawAiMaskBitmap = null
         correctedMaskBitmap = null
+        baseCombinedMask = null
         _isInteractiveSelecting.value = false
         maskUndoStack.clear()
         maskRedoStack.clear()
