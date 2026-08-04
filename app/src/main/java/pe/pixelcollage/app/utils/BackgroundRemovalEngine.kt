@@ -121,10 +121,10 @@ class MlKitBackgroundRemovalEngine : BackgroundRemovalEngine {
                             for (x in 0 until width) {
                                 if (maskBuffer.hasRemaining()) {
                                     val confidence = maskBuffer.get() // 0.0f a 1.0f
-                                    val colorValue = if (confidence > 0.4f) Color.WHITE else Color.BLACK
+                                    val colorValue = if (confidence > 0.4f) Color.WHITE else Color.TRANSPARENT
                                     maskPixels[y * width + x] = colorValue
                                 } else {
-                                    maskPixels[y * width + x] = Color.BLACK
+                                    maskPixels[y * width + x] = Color.TRANSPARENT
                                 }
                             }
                         }
@@ -135,7 +135,7 @@ class MlKitBackgroundRemovalEngine : BackgroundRemovalEngine {
                             for (x in 0 until width) {
                                 val pixel = foreground.getPixel(x, y)
                                 val alpha = Color.alpha(pixel)
-                                maskBitmap.setPixel(x, y, if (alpha > 50) Color.WHITE else Color.BLACK)
+                                maskBitmap.setPixel(x, y, if (alpha > 50) Color.WHITE else Color.TRANSPARENT)
                             }
                         }
                     }
@@ -211,7 +211,7 @@ class MlKitBackgroundRemovalEngine : BackgroundRemovalEngine {
                         maskPixels[idx] = Color.WHITE
                         foregroundPixels[idx] = pixel
                     } else {
-                        maskPixels[idx] = Color.BLACK
+                        maskPixels[idx] = Color.TRANSPARENT
                         foregroundPixels[idx] = Color.TRANSPARENT
                     }
                 }

@@ -190,7 +190,12 @@ class PhotoEditorViewModel : ViewModel() {
     private fun processBitmap(src: Bitmap, transform: PhotoTransformations): Bitmap {
         var bitmap = src
 
-        // 1. Aplicar Recorte si existe (coordenadas normalizadas)
+        // 1. Aplicar Remoción de Fondo si está activa (sobre la imagen base sin crop ni rotación para alineación perfecta)
+        if (transform.bgRemovalActive && correctedMaskBitmap != null) {
+            bitmap = composeCutoutWithBackground(bitmap, correctedMaskBitmap!!, transform)
+        }
+
+        // 2. Aplicar Recorte si existe (coordenadas normalizadas)
         transform.cropRect?.let { rect ->
             val left = (rect.left * bitmap.width).toInt().coerceIn(0, bitmap.width - 1)
             val top = (rect.top * bitmap.height).toInt().coerceIn(0, bitmap.height - 1)
@@ -203,7 +208,7 @@ class PhotoEditorViewModel : ViewModel() {
             }
         }
 
-        // 2. Aplicar Rotación y Volteo
+        // 3. Aplicar Rotación y Volteo
         if (transform.rotationDegrees != 0f || transform.flipHorizontal || transform.flipVertical) {
             val matrix = Matrix()
             if (transform.rotationDegrees != 0f) {
@@ -215,11 +220,6 @@ class PhotoEditorViewModel : ViewModel() {
                 matrix.postScale(scaleX, scaleY)
             }
             bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
-        }
-
-        // 3. Aplicar Remoción de Fondo si está activa
-        if (transform.bgRemovalActive && correctedMaskBitmap != null) {
-            bitmap = composeCutoutWithBackground(bitmap, correctedMaskBitmap!!, transform)
         }
 
         // 4. Aplicar Ajustes Básicos (Brillo, Contraste, Saturación, Temperatura, Exposición) vía ColorMatrix
@@ -473,7 +473,10 @@ class PhotoEditorViewModel : ViewModel() {
 
         val canvas = Canvas(mask)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = if (mode == "recover") Color.WHITE else Color.BLACK
+            color = Color.WHITE
+            if (mode == "erase") {
+                xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
+            }
             style = Paint.Style.STROKE
             strokeWidth = brushSize
             strokeCap = Paint.Cap.ROUND
@@ -488,7 +491,14 @@ class PhotoEditorViewModel : ViewModel() {
             }
             canvas.drawPath(path, paint)
         } else if (points.isNotEmpty()) {
-            canvas.drawCircle(points[0].x * width, points[0].y * height, brushSize / 2f, paint.apply { style = Paint.Style.FILL })
+            val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.WHITE
+                if (mode == "erase") {
+                    xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
+                }
+                style = Paint.Style.FILL
+            }
+            canvas.drawCircle(points[0].x * width, points[0].y * height, brushSize / 2f, fillPaint)
         }
 
         applyCurrentTransformations()
