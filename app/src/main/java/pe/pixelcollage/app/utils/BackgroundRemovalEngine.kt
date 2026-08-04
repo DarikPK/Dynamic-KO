@@ -142,9 +142,9 @@ class MediaPipeInteractiveSegmentationEngine : SegmentationEngine {
                                 val pb = Color.blue(pixel)
 
                                 val colorDist = Math.sqrt(
-                                    Math.pow(pr - baseR, 2.0) +
-                                    Math.pow(pg - baseG, 2.0) +
-                                    Math.pow(pb - baseB, 2.0)
+                                    Math.pow((pr - baseR).toDouble(), 2.0) +
+                                    Math.pow((pg - baseG).toDouble(), 2.0) +
+                                    Math.pow((pb - baseB).toDouble(), 2.0)
                                 )
 
                                 if (colorDist < colorTolerance) {

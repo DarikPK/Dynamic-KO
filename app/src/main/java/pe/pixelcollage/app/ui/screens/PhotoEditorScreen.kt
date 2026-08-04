@@ -489,6 +489,7 @@ fun PhotoPreviewCanvas(
     viewModel: PhotoEditorViewModel,
     activeTool: String
 ) {
+    val context = LocalContext.current
     val transformations by viewModel.currentTransformations.collectAsState()
     val isInteractiveSelecting by viewModel.isInteractiveSelecting.collectAsState()
 
