@@ -4,6 +4,8 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.withTransform
@@ -30,7 +32,7 @@ fun Sparkle(
     val infiniteTransition = rememberInfiniteTransition(label = "SparkleTransition")
 
     // Animación para el brillo (opacidad)
-    val alpha by infiniteTransition.animateFloat(
+    val alphaAnim by infiniteTransition.animateFloat(
         initialValue = minAlpha,
         targetValue = maxAlpha,
         animationSpec = infiniteRepeatable(
@@ -69,7 +71,7 @@ fun Sparkle(
         withTransform({
             scale(scaleX = scale, scaleY = scale)
         }) {
-            drawPath(path = path, color = color.copy(alpha = alpha))
+            drawPath(path = path, color = color.copy(alpha = alphaAnim))
         }
     }
 }
@@ -79,55 +81,57 @@ fun Sparkle(
  * El destello se desplaza lentamente de izquierda a derecha de forma periódica, respetando
  * la silueta y transparencia del contenido original.
  */
-fun Modifier.multicolorShimmer(): Modifier = this.then(
-    Modifier
-        .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
-        .drawWithContent {
-            // 1. Dibujar el contenido original
-            drawContent()
+fun Modifier.multicolorShimmer(): Modifier = composed {
+    // Transición infinita con un retardo para pausar el ciclo entre barridos
+    val infiniteTransition = rememberInfiniteTransition(label = "ShimmerTransition")
+    val xProgress by infiniteTransition.animateFloat(
+        initialValue = -1.2f,
+        targetValue = 2.2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = 3000,
+                easing = LinearEasing
+            ),
+            repeatMode = RepeatMode.Restart,
+            initialStartOffset = StartOffset(4500, StartOffsetType.Delay)
+        ),
+        label = "ShimmerProgress"
+    )
 
-            // 2. Transición infinita con un retardo para pausar el ciclo entre barridos
-            val infiniteTransition = rememberInfiniteTransition(label = "ShimmerTransition")
-            val xProgress by infiniteTransition.animateFloat(
-                initialValue = -1.2f,
-                targetValue = 2.2f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(
-                        durationMillis = 3000,
-                        easing = LinearEasing
-                    ),
-                    repeatMode = RepeatMode.Restart,
-                    initialStartOffset = StartOffset(4500, StartOffsetType.Delay)
-                ),
-                label = "ShimmerProgress"
-            )
+    // Colores elegantes y mágicos del destello: Azul celeste, Lavanda, Blanco brillante, Oro
+    val shimmerColors = listOf(
+        Color.Transparent,
+        Color(0xFF80D0FF).copy(alpha = 0.15f), // Azul celeste suave
+        Color(0xFFE0B0FF).copy(alpha = 0.45f), // Lavanda premium
+        Color.White.copy(alpha = 0.85f),       // Destello de luz central brillante
+        Color(0xFFFFD700).copy(alpha = 0.45f), // Oro suave
+        Color.Transparent
+    )
 
-            // Colores elegantes y mágicos del destello: Azul celeste, Lavanda, Blanco brillante, Oro
-            val shimmerColors = listOf(
-                Color.Transparent,
-                Color(0xFF80D0FF).copy(alpha = 0.15f), // Azul celeste suave
-                Color(0xFFE0B0FF).copy(alpha = 0.45f), // Lavanda premium
-                Color.White.copy(alpha = 0.85f),       // Destello de luz central brillante
-                Color(0xFFFFD700).copy(alpha = 0.45f), // Oro suave
-                Color.Transparent
-            )
+    this.then(
+        Modifier
+            .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+            .drawWithContent {
+                // 1. Dibujar el contenido original
+                drawContent()
 
-            val width = size.width
-            val height = size.height
+                val width = size.width
+                val height = size.height
 
-            val startX = width * xProgress
-            val endX = startX + (width * 0.5f)
+                val startX = width * xProgress
+                val endX = startX + (width * 0.5f)
 
-            val brush = Brush.linearGradient(
-                colors = shimmerColors,
-                start = Offset(startX, 0f),
-                end = Offset(endX, height)
-            )
+                val brush = Brush.linearGradient(
+                    colors = shimmerColors,
+                    start = Offset(startX, 0f),
+                    end = Offset(endX, height)
+                )
 
-            // Dibujar el gradiente usando BlendMode.SrcAtop para respetar la transparencia del logo
-            drawRect(
-                brush = brush,
-                blendMode = BlendMode.SrcAtop
-            )
-        }
-)
+                // Dibujar el gradiente usando BlendMode.SrcAtop para respetar la transparencia del logo
+                drawRect(
+                    brush = brush,
+                    blendMode = BlendMode.SrcAtop
+                )
+            }
+    )
+}
