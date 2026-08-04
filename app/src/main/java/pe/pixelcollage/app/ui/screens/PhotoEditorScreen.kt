@@ -54,7 +54,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import pe.pixelcollage.app.R
 import pe.pixelcollage.app.ui.components.multicolorShimmer
-import pe.pixelcollage.app.ui.theme.ThemeSelectionScreenPreview
 import pe.pixelcollage.app.utils.SegmentationStatus
 import pe.pixelcollage.app.viewmodel.PhotoEditorUiState
 import pe.pixelcollage.app.viewmodel.PhotoEditorViewModel
