@@ -69,7 +69,7 @@ fun HomeScreen(
         projectViewModel.loadProject(context)
     }
 
-    // Efecto de efectos secundarios para pintar de negro la barra de estado de manera limpia y sin cortes
+    // Efecto de efectos secundarios para pintar de negro la barra de estado y la barra de navegación del sistema de manera limpia y sin cortes
     val view = androidx.compose.ui.platform.LocalView.current
     if (!view.isInEditMode) {
         val window = (context as? android.app.Activity)?.window
@@ -77,19 +77,17 @@ fun HomeScreen(
             val windowInsetsController = androidx.core.view.WindowCompat.getInsetsController(window, view)
             SideEffect {
                 window.statusBarColor = android.graphics.Color.BLACK
-                windowInsetsController.isAppearanceLightStatusBars = false // Iconos claros para fondo negro
+                window.navigationBarColor = android.graphics.Color.BLACK
+                windowInsetsController.isAppearanceLightStatusBars = false // Iconos claros para fondo de barra de estado negro
+                windowInsetsController.isAppearanceLightNavigationBars = false // Iconos claros para fondo de barra de navegación negro
             }
         }
     }
 
     val isCompact = windowSizeClass.widthSizeClass == WindowWidthSizeClass.Compact
 
-    // Fondo neutro y elegante para resaltar las tarjetas
-    val backgroundColor = if (isSystemInDarkTheme()) {
-        MaterialTheme.colorScheme.background
-    } else {
-        Color(0xFFF7F7F9) // Un gris-marfil claro sumamente elegante y neutro
-    }
+    // Fondo principal en negro puro #000000
+    val backgroundColor = Color.Black
 
     Scaffold(
         bottomBar = {
@@ -940,7 +938,7 @@ fun RecientesSectionRefined(
             text = "Recientes",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
+            color = Color.White
         )
 
         if (hasContent) {
@@ -950,9 +948,9 @@ fun RecientesSectionRefined(
                     .clickable(onClick = onOpenProject),
                 shape = RoundedCornerShape(14.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    containerColor = Color(0xFF1A1A1E)
                 ),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.15f))
             ) {
                 Row(
                     modifier = Modifier.padding(10.dp),
@@ -971,13 +969,13 @@ fun RecientesSectionRefined(
                         Box(
                             modifier = Modifier
                                 .size(56.dp)
-                                .background(MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(10.dp)),
+                                .background(Color.White.copy(alpha = 0.08f), shape = RoundedCornerShape(10.dp)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Collections,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                tint = Color.White.copy(alpha = 0.5f),
                                 modifier = Modifier.size(24.dp)
                             )
                         }
@@ -990,12 +988,12 @@ fun RecientesSectionRefined(
                             text = if (clientName.isNotBlank()) clientName else "Proyecto sin título",
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = Color.White
                         )
                         Text(
                             text = "Collage Clásico • $pageGroupsCount grupos de páginas",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = Color.White.copy(alpha = 0.6f)
                         )
                     }
 
@@ -1003,7 +1001,7 @@ fun RecientesSectionRefined(
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = "Continuar editando",
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = Color(0xFFB39DDB),
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -1015,8 +1013,9 @@ fun RecientesSectionRefined(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                )
+                    containerColor = Color(0xFF1A1A1E)
+                ),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.12f))
             ) {
                 Column(
                     modifier = Modifier
@@ -1028,7 +1027,7 @@ fun RecientesSectionRefined(
                     Icon(
                         imageVector = Icons.Default.FolderOpen,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                        tint = Color.White.copy(alpha = 0.4f),
                         modifier = Modifier.size(32.dp)
                     )
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -1036,13 +1035,13 @@ fun RecientesSectionRefined(
                             text = "Aún no tienes proyectos recientes",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = Color.White,
                             textAlign = TextAlign.Center
                         )
                         Text(
                             text = "Tus collages y ediciones aparecerán aquí",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            color = Color.White.copy(alpha = 0.6f),
                             textAlign = TextAlign.Center
                         )
                     }
@@ -1050,7 +1049,11 @@ fun RecientesSectionRefined(
                         onClick = onStartNewProject,
                         shape = RoundedCornerShape(50),
                         modifier = Modifier.height(36.dp),
-                        contentPadding = PaddingValues(horizontal = 16.dp)
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF7E57C2),
+                            contentColor = Color.White
+                        )
                     ) {
                         Text(text = "Crear collage", style = MaterialTheme.typography.labelLarge)
                     }
@@ -1063,32 +1066,44 @@ fun RecientesSectionRefined(
 @Composable
 fun HomeNavigationBar(currentRoute: String, navController: NavController) {
     NavigationBar(
-        containerColor = MaterialTheme.colorScheme.surface,
-        tonalElevation = 8.dp
+        containerColor = Color.Black,
+        tonalElevation = 0.dp
     ) {
+        val navItemColors = NavigationBarItemDefaults.colors(
+            selectedIconColor = Color(0xFFB39DDB), // Morado lavanda brillante
+            selectedTextColor = Color(0xFFB39DDB),
+            unselectedIconColor = Color.White.copy(alpha = 0.5f),
+            unselectedTextColor = Color.White.copy(alpha = 0.5f),
+            indicatorColor = Color(0xFF7E57C2).copy(alpha = 0.25f) // Sutil resplandor morado
+        )
+
         NavigationBarItem(
             selected = currentRoute == Screen.Home.route,
             onClick = { /* Ya estamos aquí */ },
             icon = { Icon(imageVector = Icons.Default.Home, contentDescription = "Inicio") },
-            label = { Text("Inicio") }
+            label = { Text("Inicio") },
+            colors = navItemColors
         )
         NavigationBarItem(
             selected = false,
             onClick = { navController.navigate(Screen.ImageManager.route) },
             icon = { Icon(imageVector = Icons.Default.PhotoLibrary, contentDescription = "Fotos") },
-            label = { Text("Fotos") }
+            label = { Text("Fotos") },
+            colors = navItemColors
         )
         NavigationBarItem(
             selected = false,
             onClick = { navController.navigate(Screen.Templates.route) },
             icon = { Icon(imageVector = Icons.Default.GridView, contentDescription = "Modelos") },
-            label = { Text("Modelos") }
+            label = { Text("Modelos") },
+            colors = navItemColors
         )
         NavigationBarItem(
             selected = false,
             onClick = { navController.navigate("account_management") },
             icon = { Icon(imageVector = Icons.Default.AccountCircle, contentDescription = "Perfil") },
-            label = { Text("Perfil") }
+            label = { Text("Perfil") },
+            colors = navItemColors
         )
     }
 }
@@ -1100,7 +1115,7 @@ fun AppVersionSection(context: Context) {
     Text(
         text = "v$versionName",
         style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+        color = Color.White.copy(alpha = 0.4f),
         modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
     )
 }
