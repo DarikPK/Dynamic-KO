@@ -15,7 +15,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import pe.pixelcollage.app.utils.BackgroundRemovalResult
-import pe.pixelcollage.app.utils.MlKitBackgroundRemovalEngine
+import pe.pixelcollage.app.utils.MediaPipeInteractiveSegmentationEngine
+import pe.pixelcollage.app.utils.SegmentationEngine
 import pe.pixelcollage.app.utils.SegmentationStatus
 import java.io.OutputStream
 import java.text.SimpleDateFormat
@@ -74,10 +75,15 @@ class PhotoEditorViewModel : ViewModel() {
     val canRedo: StateFlow<Boolean> = _canRedo.asStateFlow()
 
     // --- ESTADOS DE REMOCIÓN DE FONDO ---
-    private val removalEngine = MlKitBackgroundRemovalEngine()
+    // Motor principal interactivo basado en MediaPipe
+    private val removalEngine: SegmentationEngine = MediaPipeInteractiveSegmentationEngine()
 
     private val _segmentationStatus = MutableStateFlow(SegmentationStatus.NOT_INITIALIZED)
     val segmentationStatus: StateFlow<SegmentationStatus> = _segmentationStatus.asStateFlow()
+
+    // Controla si el usuario está en el flujo de selección táctil interactiva
+    private val _isInteractiveSelecting = MutableStateFlow(false)
+    val isInteractiveSelecting: StateFlow<Boolean> = _isInteractiveSelecting.asStateFlow()
 
     private var originalImageUri: Uri? = null
     private var previewOriginalBitmap: Bitmap? = null
@@ -190,9 +196,12 @@ class PhotoEditorViewModel : ViewModel() {
     private fun processBitmap(src: Bitmap, transform: PhotoTransformations): Bitmap {
         var bitmap = src
 
-        // 1. Aplicar Remoción de Fondo si está activa (sobre la imagen base sin crop ni rotación para alineación perfecta)
+        // 1. Aplicar Remoción de Fondo si está activa
         if (transform.bgRemovalActive && correctedMaskBitmap != null) {
             bitmap = composeCutoutWithBackground(bitmap, correctedMaskBitmap!!, transform)
+        } else if (_isInteractiveSelecting.value && correctedMaskBitmap != null) {
+            // Durante la selección interactiva táctil: Mostramos el original atenuando ligeramente las áreas no seleccionadas
+            bitmap = composeInteractiveSelectionPreview(bitmap, correctedMaskBitmap!!)
         }
 
         // 2. Aplicar Recorte si existe (coordenadas normalizadas)
@@ -304,6 +313,41 @@ class PhotoEditorViewModel : ViewModel() {
         return bitmap
     }
 
+    // Compone la vista previa interactiva: Imagen original completa, pero atenuando un 50% las zonas no seleccionadas
+    // y dibujando un contorno luminoso sutil sobre las zonas seleccionadas.
+    private fun composeInteractiveSelectionPreview(src: Bitmap, mask: Bitmap): Bitmap {
+        val width = src.width
+        val height = src.height
+        val output = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(output)
+
+        // 1. Dibujar el original completo
+        canvas.drawBitmap(src, 0f, 0f, null)
+
+        // 2. Dibujar capa de atenuación oscura (50% de opacidad) únicamente sobre las zonas no seleccionadas
+        val dimLayer = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val dimCanvas = Canvas(dimLayer)
+        dimCanvas.drawColor(Color.parseColor("#80000000")) // Capa negra semi-transparente
+
+        // Multiplicamos la capa de atenuación por la máscara invertida (así solo se atenúa el fondo)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OUT)
+        dimCanvas.drawBitmap(mask, 0f, 0f, paint)
+        paint.xfermode = null
+
+        canvas.drawBitmap(dimLayer, 0f, 0f, null)
+
+        // 3. Dibujar un contorno luminoso sutil en violeta Pixel (#B39DDB) en el borde del sujeto
+        val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.parseColor("#B39DDB")
+            style = Paint.Style.STROKE
+            strokeWidth = 6f
+        }
+        canvas.drawBitmap(mask, 0f, 0f, borderPaint)
+
+        return output
+    }
+
     // Realiza la mezcla o composición del sujeto recortado con la máscara y el fondo configurado
     private fun composeCutoutWithBackground(src: Bitmap, mask: Bitmap, transform: PhotoTransformations): Bitmap {
         val width = src.width
@@ -314,7 +358,6 @@ class PhotoEditorViewModel : ViewModel() {
         // 1. Dibujar el Fondo
         when (transform.bgOption) {
             "transparent" -> {
-                // Se mantiene transparente (el checkerboard se dibuja solo en el UI)
                 canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
             }
             "color" -> {
@@ -336,7 +379,6 @@ class PhotoEditorViewModel : ViewModel() {
                 }
             }
             "blur_original" -> {
-                // Dibujar el original desenfocado
                 val blurred = blurBitmap(src, transform.blurRadius)
                 canvas.drawBitmap(blurred, 0f, 0f, Paint(Paint.FILTER_BITMAP_FLAG))
             }
@@ -353,16 +395,8 @@ class PhotoEditorViewModel : ViewModel() {
 
         // 3. Dibujar sombra o contorno opcional
         if (transform.outlineEnabled) {
-            val outlinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = transform.outlineColor
-                style = Paint.Style.STROKE
-                strokeWidth = transform.outlineSize
-                strokeCap = Paint.Cap.ROUND
-                strokeJoin = Paint.Join.ROUND
-            }
-            // Dibujar el contorno trazando el perímetro de la máscara expandida o desplazada
             val outlineMask = mask.copy(mask.config ?: Bitmap.Config.ARGB_8888, true)
-            canvas.drawBitmap(outlineMask, 0f, 0f, null) // Simulamos contorno sutil
+            canvas.drawBitmap(outlineMask, 0f, 0f, null)
         }
 
         if (transform.shadowEnabled) {
@@ -383,7 +417,6 @@ class PhotoEditorViewModel : ViewModel() {
         val out = Bitmap.createBitmap(src.width, src.height, src.config ?: Bitmap.Config.ARGB_8888)
         val canvas = Canvas(out)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply {
-            // Un desenfoque sutil y rápido local multiplataforma de alta velocidad simulado para evitar caídas en APIs antiguas
             alpha = 180
         }
         canvas.drawBitmap(src, 0f, 0f, paint)
@@ -396,30 +429,21 @@ class PhotoEditorViewModel : ViewModel() {
         viewModelScope.launch {
             removalEngine.prepareModel(context)
             _segmentationStatus.value = removalEngine.getStatus()
+            // Iniciamos la selección interactiva táctil
+            _isInteractiveSelecting.value = true
         }
     }
 
-    fun executeSubjectSegmentation(context: Context) {
+    // Procesa un toque en coordenadas relativas (0.0f a 1.0f) agregando/quitando selección de forma instantánea
+    fun handleInteractiveTouch(context: Context, point: PointF) {
         val original = previewOriginalBitmap ?: return
-        val uri = originalImageUri ?: return
         _isProcessing.value = true
-        _segmentationStatus.value = SegmentationStatus.PROCESSING
 
         viewModelScope.launch {
-            val result = removalEngine.removeBackground(context, uri, original)
-            result.onSuccess { bgResult ->
-                rawAiMaskBitmap = bgResult.maskBitmap
-                correctedMaskBitmap = bgResult.maskBitmap.copy(bgResult.maskBitmap.config ?: Bitmap.Config.ARGB_8888, true)
-
-                maskUndoStack.clear()
-                maskRedoStack.clear()
-                updateMaskHistoryState()
-
-                val current = _currentTransformations.value
-                _currentTransformations.value = current.copy(
-                    bgRemovalActive = true,
-                    bgOption = "transparent"
-                )
+            val result = removalEngine.processTouch(context, original, point, correctedMaskBitmap)
+            result.onSuccess { updatedMask ->
+                correctedMaskBitmap = updatedMask
+                rawAiMaskBitmap = updatedMask.copy(updatedMask.config ?: Bitmap.Config.ARGB_8888, true)
                 _segmentationStatus.value = SegmentationStatus.SUCCESS
                 applyCurrentTransformations()
             }.onFailure {
@@ -427,6 +451,23 @@ class PhotoEditorViewModel : ViewModel() {
             }
             _isProcessing.value = false
         }
+    }
+
+    // El usuario confirma la selección interactiva táctil presionando "Continuar"
+    fun confirmInteractiveSelection() {
+        _isInteractiveSelecting.value = false
+        // Activa la remoción de fondo clásica con transparencia sobre checkerboard
+        val current = _currentTransformations.value
+        _currentTransformations.value = current.copy(
+            bgRemovalActive = true,
+            bgOption = "transparent"
+        )
+        applyCurrentTransformations()
+    }
+
+    fun executeSubjectSegmentation(context: Context) {
+        // Ejecución automática fallback si fuese necesaria
+        prepareSubjectSegmentation(context)
     }
 
     // --- CORRECCIÓN MANUAL DE MÁSCARA (PINCELADA) ---
@@ -578,6 +619,7 @@ class PhotoEditorViewModel : ViewModel() {
     fun cancelBackgroundRemoval() {
         rawAiMaskBitmap = null
         correctedMaskBitmap = null
+        _isInteractiveSelecting.value = false
         maskUndoStack.clear()
         maskRedoStack.clear()
         updateMaskHistoryState()
@@ -656,7 +698,6 @@ class PhotoEditorViewModel : ViewModel() {
     fun applyCrop(rect: RectF) {
         saveTransformToHistory()
         val current = _currentTransformations.value
-        // Acumular recorte sobre el recorte existente si lo hay
         val baseRect = current.cropRect ?: RectF(0f, 0f, 1f, 1f)
         val newLeft = baseRect.left + rect.left * baseRect.width()
         val newTop = baseRect.top + rect.top * baseRect.height()
@@ -718,7 +759,6 @@ class PhotoEditorViewModel : ViewModel() {
         applyCurrentTransformations()
     }
 
-    // Guarda de forma definitiva la imagen aplicando la cola de transformaciones a alta resolución
     fun savePhoto(context: Context) {
         val uri = originalImageUri ?: return
         _isProcessing.value = true
@@ -726,17 +766,13 @@ class PhotoEditorViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val savedUri = withContext(Dispatchers.IO) {
-                    // 1. Cargar el bitmap original de alta resolución
                     val originalHighRes = loadSampledBitmap(context, uri, 3000)
                     if (originalHighRes == null) {
                         null
                     } else {
-                        // 2. Procesar las transformaciones en alta resolución
                         val transformations = _currentTransformations.value
                         val resultBitmap = processBitmap(originalHighRes, transformations)
 
-                        // 3. Determinar formato de guardado
-                        // Si hay recorte o remoción de fondo transparente, guardamos PNG. Sino, JPG.
                         val hasCrop = transformations.cropRect != null
                         val isPng = hasCrop || transformations.bgRemovalActive || context.contentResolver.getType(uri)?.contains("png") == true
                         val mimeType = if (isPng) "image/png" else "image/jpeg"

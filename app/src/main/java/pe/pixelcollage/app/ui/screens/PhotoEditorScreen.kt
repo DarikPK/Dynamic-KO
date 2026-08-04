@@ -18,6 +18,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -44,6 +45,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -90,7 +92,6 @@ fun PhotoEditorScreen(
         viewModel.loadPhoto(context, uri)
     }
 
-    // Si se pasa "background_removal" inicialmente, activar el motor de segmentación de inmediato
     val segmentationStatus by viewModel.segmentationStatus.collectAsState()
     LaunchedEffect(selectedTool) {
         if (selectedTool == "background_removal" && segmentationStatus == SegmentationStatus.NOT_INITIALIZED) {
@@ -114,7 +115,7 @@ fun PhotoEditorScreen(
             Toast.makeText(context, "Imagen guardada con éxito en la galería", Toast.LENGTH_LONG).show()
             successState.savedUri?.let { uri ->
                 val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                    type = "image/png" // PNG para asegurar transparencia si se quitó el fondo
+                    type = "image/png" // PNG para asegurar transparencia
                     putExtra(android.content.Intent.EXTRA_STREAM, uri)
                     addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
@@ -488,7 +489,9 @@ fun PhotoPreviewCanvas(
     viewModel: PhotoEditorViewModel,
     activeTool: String
 ) {
-    // Escala y arrastre para soporte completo de zoom
+    val transformations by viewModel.currentTransformations.collectAsState()
+    val isInteractiveSelecting by viewModel.isInteractiveSelecting.collectAsState()
+
     var scale by remember { mutableStateOf(1f) }
     var offset by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
 
@@ -508,11 +511,8 @@ fun PhotoPreviewCanvas(
         label = "ImageEntryScale"
     )
 
-    // Capturar trazos táctiles para la máscara manual en caso de que esté activa la corrección
-    var lastPoint by remember { mutableStateOf<android.graphics.PointF?>(null) }
+    // Capturar trazos táctiles para la máscara manual o toques interactivos
     val points = remember { mutableStateListOf<android.graphics.PointF>() }
-
-    val transformations by viewModel.currentTransformations.collectAsState()
 
     // El patrón de tablero de ajedrez (checkerboard) clásico se dibuja detrás de la imagen si hay transparencia
     val checkerboardModifier = if (transformations.bgRemovalActive && transformations.bgOption == "transparent") {
@@ -546,29 +546,44 @@ fun PhotoPreviewCanvas(
         Modifier
     }
 
-    // Modificador de dibujo manual opcional cuando se está en modo pincel de máscara
     var brushMode by remember { mutableStateOf("recover") } // recover, erase
     var brushSize by remember { mutableStateOf(40f) }
 
+    // Almacenar el tamaño real renderizado de la imagen para calcular coordenadas táctiles exactas
+    var containerWidth by remember { mutableStateOf(1) }
+    var containerHeight by remember { mutableStateOf(1) }
+
     val drawingModifier = if (activeTool == "background_removal") {
-        Modifier.pointerInput(Unit) {
-            detectDragGestures(
-                onDragStart = { startOffset ->
-                    points.clear()
-                    val p = android.graphics.PointF(startOffset.x / size.width, startOffset.y / size.height)
-                    points.add(p)
-                    viewModel.saveMaskToHistory()
-                },
-                onDrag = { change, _ ->
-                    val pos = change.position
-                    val p = android.graphics.PointF(pos.x / size.width, pos.y / size.height)
-                    points.add(p)
-                    viewModel.applyManualStrokeToMask(points, brushMode, brushSize)
-                },
-                onDragEnd = {
-                    points.clear()
+        if (isInteractiveSelecting) {
+            // Toque inteligente interactivo MediaPipe: detecta toques simples en lugar de arrastre
+            Modifier.pointerInput(Unit) {
+                detectTapGestures { tapOffset ->
+                    val normX = (tapOffset.x / size.width).coerceIn(0f, 1f)
+                    val normY = (tapOffset.y / size.height).coerceIn(0f, 1f)
+                    viewModel.handleInteractiveTouch(context, PointF(normX, normY))
                 }
-            )
+            }
+        } else {
+            // Corrección manual por pincel
+            Modifier.pointerInput(Unit) {
+                detectDragGestures(
+                    onDragStart = { startOffset ->
+                        points.clear()
+                        val p = android.graphics.PointF(startOffset.x / size.width, startOffset.y / size.height)
+                        points.add(p)
+                        viewModel.saveMaskToHistory()
+                    },
+                    onDrag = { change, _ ->
+                        val pos = change.position
+                        val p = android.graphics.PointF(pos.x / size.width, pos.y / size.height)
+                        points.add(p)
+                        viewModel.applyManualStrokeToMask(points, brushMode, brushSize)
+                    },
+                    onDragEnd = {
+                        points.clear()
+                    }
+                )
+            }
         }
     } else {
         Modifier.pointerInput(Unit) {
@@ -598,6 +613,10 @@ fun PhotoPreviewCanvas(
                     .fillMaxWidth()
                     .then(checkerboardModifier)
                     .then(drawingModifier)
+                    .onGloballyPositioned { coordinates ->
+                        containerWidth = coordinates.size.width
+                        containerHeight = coordinates.size.height
+                    }
                     .clip(RoundedCornerShape(8.dp))
                     .graphicsLayer(
                         scaleX = scale * entryScale,
@@ -636,8 +655,8 @@ fun PhotoPreviewCanvas(
                 }
             }
 
-            // Si es Quitar fondo, mostrar controles contextuales de dibujo manual sobre el lienzo
-            if (activeTool == "background_removal") {
+            // Si es Quitar fondo manual (no interactivo), mostrar controles de dibujo manual sobre el lienzo
+            if (activeTool == "background_removal" && !isInteractiveSelecting) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1105,8 +1124,8 @@ fun BackgroundRemovalToolPanel(
     onApply: () -> Unit
 ) {
     val context = LocalContext.current
+    val isInteractiveSelecting by viewModel.isInteractiveSelecting.collectAsState()
 
-    // Selector de fondo (otra foto)
     val bgImagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -1126,15 +1145,17 @@ fun BackgroundRemovalToolPanel(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                Text("Quitar fondo", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text("Procesado localmente en tu dispositivo", color = Color.White.copy(alpha = 0.5f), fontSize = 10.sp)
+                Text("Quitar fondo inteligente", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text("Procesado localmente en tu dispositivo de forma segura", color = Color.White.copy(alpha = 0.5f), fontSize = 10.sp)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 IconButton(onClick = onClose) {
                     Icon(Icons.Default.Close, contentDescription = "Cancelar", tint = Color(0xFFE57373))
                 }
-                IconButton(onClick = onApply, enabled = segmentationStatus == SegmentationStatus.SUCCESS) {
-                    Icon(Icons.Default.Check, contentDescription = "Confirmar", tint = if (segmentationStatus == SegmentationStatus.SUCCESS) Color(0xFF81C784) else Color.White.copy(alpha = 0.3f))
+                if (!isInteractiveSelecting) {
+                    IconButton(onClick = onApply, enabled = segmentationStatus == SegmentationStatus.SUCCESS) {
+                        Icon(Icons.Default.Check, contentDescription = "Confirmar", tint = if (segmentationStatus == SegmentationStatus.SUCCESS) Color(0xFF81C784) else Color.White.copy(alpha = 0.3f))
+                    }
                 }
             }
         }
@@ -1170,15 +1191,7 @@ fun BackgroundRemovalToolPanel(
             }
             SegmentationStatus.INITIALIZED -> {
                 // El modelo ya está listo, iniciar el procesamiento automáticamente
-                LaunchedEffect(Unit) {
-                    viewModel.executeSubjectSegmentation(context)
-                }
-                Box(
-                    modifier = Modifier.fillMaxWidth().height(60.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(color = Color(0xFFB39DDB))
-                }
+                viewModel.handleInteractiveTouch(context, PointF(0.5f, 0.5f)) // Toque de inicialización por defecto
             }
             SegmentationStatus.PROCESSING -> {
                 Card(
@@ -1192,137 +1205,164 @@ fun BackgroundRemovalToolPanel(
                     ) {
                         CircularProgressIndicator(color = Color(0xFFB39DDB), modifier = Modifier.size(24.dp))
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text("Detectando sujeto principal...", color = Color.White, fontSize = 13.sp)
+                        Text("Analizando fotografía táctil...", color = Color.White, fontSize = 13.sp)
                     }
                 }
             }
-            SegmentationStatus.SUCCESS -> {
-                // Mostrar controles completos de fondos
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Text("OPCIONES DE FONDO", color = Color.White.copy(alpha = 0.6f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+            SegmentationStatus.SUCCESS, SegmentationStatus.ERROR -> {
+                if (isInteractiveSelecting) {
+                    // Flujo Táctil Interactivo: Mostrar el mensaje "Toca lo que deseas conservar" y botón "Continuar"
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A24)),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFB39DDB).copy(alpha = 0.3f)),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        // 1. Transparente
-                        BgOptionButton(
-                            label = "Transparente",
-                            icon = Icons.Default.Texture,
-                            active = transformations.bgOption == "transparent",
-                            onClick = { viewModel.updateBackgroundOption("transparent") }
-                        )
-                        // 2. Color Blanco
-                        BgOptionButton(
-                            label = "Blanco",
-                            icon = Icons.Default.Palette,
-                            active = transformations.bgOption == "color" && transformations.bgColor == android.graphics.Color.WHITE,
-                            onClick = {
-                                viewModel.updateBackgroundColor(android.graphics.Color.WHITE)
-                                viewModel.updateBackgroundOption("color")
+                        Column(
+                            modifier = Modifier.padding(14.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.TouchApp,
+                                    contentDescription = null,
+                                    tint = Color(0xFFB39DDB),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Toca lo que deseas conservar",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp
+                                )
                             }
-                        )
-                        // 3. Color Negro
-                        BgOptionButton(
-                            label = "Negro",
-                            icon = Icons.Default.Palette,
-                            active = transformations.bgOption == "color" && transformations.bgColor == android.graphics.Color.BLACK,
-                            onClick = {
-                                viewModel.updateBackgroundColor(android.graphics.Color.BLACK)
-                                viewModel.updateBackgroundOption("color")
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Cada toque añade o quita objetos de la selección.",
+                                color = Color.White.copy(alpha = 0.6f),
+                                fontSize = 11.sp,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Button(
+                                onClick = { viewModel.confirmInteractiveSelection() },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF7E57C2),
+                                    contentColor = Color.White
+                                )
+                            ) {
+                                Text("Continuar", fontWeight = FontWeight.Bold)
                             }
-                        )
-                        // 4. Degradados locales
-                        repeat(8) { idx ->
+                        }
+                    }
+                } else {
+                    // Flujo Clásico: Opciones de Fondos y Pincel manual
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text("OPCIONES DE FONDO", color = Color.White.copy(alpha = 0.6f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
                             BgOptionButton(
-                                label = "Degradado ${idx + 1}",
-                                icon = Icons.Default.Gradient,
-                                active = transformations.bgOption == "gradient" && transformations.bgGradientIndex == idx,
+                                label = "Transparente",
+                                icon = Icons.Default.Texture,
+                                active = transformations.bgOption == "transparent",
+                                onClick = { viewModel.updateBackgroundOption("transparent") }
+                            )
+                            BgOptionButton(
+                                label = "Blanco",
+                                icon = Icons.Default.Palette,
+                                active = transformations.bgOption == "color" && transformations.bgColor == android.graphics.Color.WHITE,
                                 onClick = {
-                                    viewModel.updateBackgroundGradientIndex(idx)
-                                    viewModel.updateBackgroundOption("gradient")
+                                    viewModel.updateBackgroundColor(android.graphics.Color.WHITE)
+                                    viewModel.updateBackgroundOption("color")
+                                }
+                            )
+                            BgOptionButton(
+                                label = "Negro",
+                                icon = Icons.Default.Palette,
+                                active = transformations.bgOption == "color" && transformations.bgColor == android.graphics.Color.BLACK,
+                                onClick = {
+                                    viewModel.updateBackgroundColor(android.graphics.Color.BLACK)
+                                    viewModel.updateBackgroundOption("color")
+                                }
+                            )
+                            repeat(8) { idx ->
+                                BgOptionButton(
+                                    label = "Degradado ${idx + 1}",
+                                    icon = Icons.Default.Gradient,
+                                    active = transformations.bgOption == "gradient" && transformations.bgGradientIndex == idx,
+                                    onClick = {
+                                        viewModel.updateBackgroundGradientIndex(idx)
+                                        viewModel.updateBackgroundOption("gradient")
+                                    }
+                                )
+                            }
+                            BgOptionButton(
+                                label = "Otra Foto",
+                                icon = Icons.Default.AddPhotoAlternate,
+                                active = transformations.bgOption == "other_photo",
+                                onClick = {
+                                    bgImagePickerLauncher.launch("image/*")
+                                }
+                            )
+                            BgOptionButton(
+                                label = "Desenfocar Original",
+                                icon = Icons.Default.BlurOn,
+                                active = transformations.bgOption == "blur_original",
+                                onClick = {
+                                    viewModel.updateBackgroundOption("blur_original")
                                 }
                             )
                         }
-                        // 5. Otra Foto
-                        BgOptionButton(
-                            label = "Otra Foto",
-                            icon = Icons.Default.AddPhotoAlternate,
-                            active = transformations.bgOption == "other_photo",
-                            onClick = {
-                                bgImagePickerLauncher.launch("image/*")
-                            }
-                        )
-                        // 6. Desenfocar original
-                        BgOptionButton(
-                            label = "Desenfocar Original",
-                            icon = Icons.Default.BlurOn,
-                            active = transformations.bgOption == "blur_original",
-                            onClick = {
-                                viewModel.updateBackgroundOption("blur_original")
-                            }
-                        )
-                    }
 
-                    // Slider adicional de desenfoque si la opción activa es "blur_original"
-                    if (transformations.bgOption == "blur_original") {
+                        if (transformations.bgOption == "blur_original") {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("DESENFOQUE", color = Color.White.copy(alpha = 0.6f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                Slider(
+                                    value = transformations.blurRadius,
+                                    onValueChange = { viewModel.updateBlurRadius(it) },
+                                    valueRange = 1f..25f,
+                                    colors = SliderDefaults.colors(thumbColor = Color(0xFFB39DDB), activeTrackColor = Color(0xFF7E57C2)),
+                                    modifier = Modifier.padding(start = 12.dp).weight(1f)
+                                )
+                            }
+                        }
+
                         Spacer(modifier = Modifier.height(12.dp))
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            Text("DESENFOQUE", color = Color.White.copy(alpha = 0.6f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                            Slider(
-                                value = transformations.blurRadius,
-                                onValueChange = { viewModel.updateBlurRadius(it) },
-                                valueRange = 1f..25f,
-                                colors = SliderDefaults.colors(thumbColor = Color(0xFFB39DDB), activeTrackColor = Color(0xFF7E57C2)),
-                                modifier = Modifier.padding(start = 12.dp).weight(1f)
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Checkbox(
+                                    checked = transformations.outlineEnabled,
+                                    onCheckedChange = { viewModel.updateOutlineSettings(it) },
+                                    colors = CheckboxDefaults.colors(checkedColor = Color(0xFF7E57C2))
+                                )
+                                Text("Contorno", color = Color.White, fontSize = 12.sp)
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Checkbox(
+                                    checked = transformations.shadowEnabled,
+                                    onCheckedChange = { viewModel.updateShadowSettings(it) },
+                                    colors = CheckboxDefaults.colors(checkedColor = Color(0xFF7E57C2))
+                                )
+                                Text("Sombra", color = Color.White, fontSize = 12.sp)
+                            }
                         }
-                    }
-
-                    // Toggles rápidos para Contorno y Sombra
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(
-                                checked = transformations.outlineEnabled,
-                                onCheckedChange = { viewModel.updateOutlineSettings(it) },
-                                colors = CheckboxDefaults.colors(checkedColor = Color(0xFF7E57C2))
-                            )
-                            Text("Contorno", color = Color.White, fontSize = 12.sp)
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(
-                                checked = transformations.shadowEnabled,
-                                onCheckedChange = { viewModel.updateShadowSettings(it) },
-                                colors = CheckboxDefaults.colors(checkedColor = Color(0xFF7E57C2))
-                            )
-                            Text("Sombra", color = Color.White, fontSize = 12.sp)
-                        }
-                    }
-                }
-            }
-            SegmentationStatus.ERROR -> {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text("No pudimos identificar un sujeto en esta foto.", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                    Text("Prueba con otra imagen donde se vea con mayor claridad.", color = Color.White.copy(alpha = 0.6f), fontSize = 11.sp, textAlign = TextAlign.Center)
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Button(
-                        onClick = { viewModel.executeSubjectSegmentation(context) },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7E57C2))
-                    ) {
-                        Text("Reintentar", color = Color.White)
                     }
                 }
             }
